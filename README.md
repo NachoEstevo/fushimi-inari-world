@@ -60,7 +60,7 @@ The reception building follows the mapped Juyosho footprint. Counter interiors, 
 
 Known gaps include the Mitsurugi lateral-access collider, several retaining-wall and ground transitions, entrance proportions and side buildings, and detailed correspondence to each real shrine. The scene is still GPU-heavy. Static meshes are batched and vegetation is spatially partitioned, but a complete performance qualification has not been completed.
 
-See [R17 references and validation](fushimi_inari/integrated-world/REFERENCES-R17.md), [personal-photo reference notes](fushimi_inari/integrated-world/REFERENCES-R16.md), and the [geographic manifest](fushimi_inari/geography/manifest.json).
+See [R18 video references](fushimi_inari/integrated-world/REFERENCES-R18.md), [R17 references and validation](fushimi_inari/integrated-world/REFERENCES-R17.md), [personal-photo reference notes](fushimi_inari/integrated-world/REFERENCES-R16.md), and the [geographic manifest](fushimi_inari/geography/manifest.json).
 
 ## Project structure
 
