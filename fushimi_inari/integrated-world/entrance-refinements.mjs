@@ -4,6 +4,22 @@ import {refineTemizuyaCanopy} from './temizuya-canopy.mjs';
 
 // Refinements use the authored metre coordinates and preserve interaction roots.
 export function refineEntranceObjects(object,materials){
+  if(object.isGroup&&object.children.some(o=>o.geometry?.parameters?.width===4.8&&o.geometry.parameters.depth===8.8)){
+    // Retain the earlier interactive counter while finishing its plain shell.
+    const timber=materialsWood(),dark=new THREE.MeshStandardMaterial({color:'#343a32',roughness:.94});
+    for(const z of [-4.44,4.44]){
+      for(const x of [-2.28,0,2.28])box(.13,3.35,.10,x,1.72,z,timber,object);
+      for(const y of [.95,2.9,3.3])box(4.65,.13,.10,0,y,z,timber,object);
+      for(const x of [-1.13,1.13]){
+        box(1.86,1.45,.04,x,1.95,z,dark,object);
+        for(let i=0;i<12;i++)box(.045,1.45,.05,x-.82+i*.149,1.95,z+Math.sign(z)*.035,timber,object);
+      }
+    }
+    for(const x of [-2.44,2.44]){
+      for(let z=-4.25;z<=4.25;z+=2.125)box(.10,3.3,.13,x,1.72,z,timber,object);
+      box(.10,.13,8.7,x,3.27,0,timber,object);
+    }
+  }
   if(object.userData.zone==='temizuya'&&object.isGroup){refineBasin(object,materials);refineTemizuyaCanopy(object,materials);}
   if(object.userData.zone==='entrance'){
     const shops=[];object.traverse(g=>{
@@ -122,7 +138,22 @@ export function buildReception(root,features,ground,m,colliders){
   for(const wing of wings){
     const {x,z,w,d}=wing;
     box(w,3.0,d,x,1.5,z,m.plasterMat,g);box(w+.18,.34,d+.18,x,.17,z,m.entryStoneMat,g);
-    box(w,.65,d+.03,x,.65,z,vermilion,g);
+    // Expand both axes: the former end faces were coplanar with the plaster.
+    box(w+.04,.65,d+.04,x,.65,z,vermilion,g);
+    for(const side of [-1,1]){
+      const ex=x+side*(w/2+.035);
+      for(const dz of [-d/2+.10,0,d/2-.10])box(.10,2.95,.12,ex,1.7,z+dz,wood,g);
+      for(const y of [1.02,2.65,3.05])box(.10,.12,d+.12,ex,y,z,wood,g);
+      // Closed gable infill; avoids the exposed black underside at the ends.
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute([ex,3,z-d/2,ex,4.12,z,ex,3,z+d/2],3));geo.computeVertexNormals();
+      const infill=new THREE.Mesh(geo,m.plasterMat);infill.material=m.plasterMat.clone();infill.material.side=THREE.DoubleSide;g.add(infill);
+    }
+    for(const side of [-1,1]){
+      const ez=z+side*(d/2+.035);
+      box(w+.12,.14,.10,x,2.95,ez,wood,g);
+      for(let px=x-w/2+.1;px<x+w/2;px+=2.4)box(.10,2.9,.10,px,1.6,ez,wood,g);
+      box(w+1.05,.16,.12,x,3.12,z+side*(d/2+.6),wood,g);
+    }
     const roof=new THREE.BufferGeometry(),v=[],uv=[];
     const corner=[[-w/2-.5,3.15,-d/2-.6],[w/2+.5,3.15,-d/2-.6],[-w/2-.5,4.15,0],[w/2+.5,4.15,0],[-w/2-.5,3.15,d/2+.6],[w/2+.5,3.15,d/2+.6]];
     for(const i of [0,2,1,1,2,3,2,4,3,3,4,5]){const q=corner[i];v.push(q[0]+x,q[1],q[2]+z);uv.push(q[0]/2,q[2]/2);}

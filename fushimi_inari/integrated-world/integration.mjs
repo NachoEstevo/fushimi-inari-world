@@ -20,6 +20,7 @@ import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mj
 import {entryHeight} from './entry-profile.mjs';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {refineRomonWings} from './romon-wings.mjs';
+import {buildCourtyardShop,courtyardShopId} from './courtyard-shop.mjs';
 import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
@@ -298,6 +299,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
+  buildCourtyardShop(root,features,ground,legacy.materials,colliders);
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
@@ -355,5 +357,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>b.id===courtyardShopId||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
