@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stairProfile,inferredTreads,mappedTreads} from './stair-profile.mjs';
+import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs';
 test('mapped ten-count on the long upper ascent cannot produce metre-high risers',()=>{
   const p=stairProfile(73.03,171.56,181.76,10);
   assert.ok(p.rise<=.16);assert.equal(p.mapped,10);
@@ -32,4 +32,12 @@ test('mapped count follows an interior summit in both directions without flatten
 });
 test('infeasible mapped interior rise is rejected instead of creating giant steps',()=>{
   assert.equal(mappedTreads([[0,0,0],[4,0,0],[8,0,0]],x=>x===4?3:0,10),null);
+});
+test('long inferred stairs follow interior terrain without discarding mapped bends',()=>{
+  const points=[[0,0,0],[20,0,0],[20,0,10]],sampled=sampledStairAlignment(points);
+  assert.ok(sampled.includes(points[1]));assert.ok(sampled.includes(points[2]));
+  const treads=inferredTreads(sampled,x=>x<10?x*.1:(20-x)*.1);
+  assert.equal(Math.max(...treads.map(s=>s.level)),1);
+  assert.ok(treads.every(s=>s.rise<=.16));
+  assert.throws(()=>sampledStairAlignment(points,0));
 });

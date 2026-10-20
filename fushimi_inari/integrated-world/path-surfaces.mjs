@@ -1,6 +1,6 @@
 import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
-import {stairProfile,inferredTreads,mappedTreads} from './stair-profile.mjs?v=9';
+import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=11';
 
 export function makePathSurfaces(features,ground){
   const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],profileReview:[],correctedStairProfiles:[]};
@@ -16,7 +16,7 @@ export function makePathSurfaces(features,ground){
     if(stair&&profile.mapped!==null&&!mapped){
       profile.conflict=true;profile.unresolved=true;profile.status='inferred-count-source-dem-conflict';
     }
-    const resolved=stair?(mapped??inferredTreads(path.points,ground)):null;
+    const resolved=stair?(mapped??inferredTreads(sampledStairAlignment(path.points),ground)):null;
     const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
     if(stair){
       const maxRise=Math.max(...resolved.map(t=>t.rise)),minimumRun=Math.min(...resolved.map(t=>Math.hypot(t.b[0]-t.a[0],t.b[2]-t.a[2])));

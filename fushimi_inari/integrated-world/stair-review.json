@@ -1,5 +1,5 @@
 {
-  "revision": 10,
+  "revision": 11,
   "units": "meters",
   "status": "Unresolved; measurements required. Derived OSM/GSI data, see geography/manifest.json.",
   "profiles": [
@@ -18,7 +18,7 @@
       "minimumRun": 2.983506996807619,
       "center": [
         -186.8955,
-        30.560000000000002,
+        30.56,
         670.1044999999999
       ],
       "rawDemStart": 30.512569,
@@ -41,9 +41,9 @@
       "startHeight": 33.708862,
       "endHeight": 33.738809999999994,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.029947999999990316,
-      "minimumRun": 7.812602959321565,
+      "renderedCount": 2,
+      "maxRise": 0.016288499999987494,
+      "minimumRun": 3.9063014796607543,
       "center": [
         -227.627,
         33.730000000000004,
@@ -69,9 +69,9 @@
       "startHeight": 33.591828,
       "endHeight": 33.630645,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.038817000000001656,
-      "minimumRun": 7.467044462168358,
+      "renderedCount": 2,
+      "maxRise": 0.01940850000000438,
+      "minimumRun": 3.733522231084125,
       "center": [
         -244.823,
         33.61,
@@ -93,13 +93,13 @@
       "reasons": [
         "ground profile cannot resolve endpoint rise"
       ],
-      "length": 7.4539091086489355,
+      "length": 7.453909108648936,
       "startHeight": 33.634844,
       "endHeight": 33.623991000000004,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.010852999999997337,
-      "minimumRun": 7.4539091086489355,
+      "renderedCount": 2,
+      "maxRise": 0.006073499999999399,
+      "minimumRun": 3.726954554324466,
       "center": [
         -242.656,
         33.625,
@@ -121,7 +121,7 @@
       "reasons": [
         "ground profile cannot resolve endpoint rise"
       ],
-      "length": 1.2777578017762599,
+      "length": 1.27775780177626,
       "startHeight": 58.057362,
       "endHeight": 58.007423999999986,
       "mappedCount": 3,
@@ -149,20 +149,20 @@
       "reasons": [
         "mapped count incompatible with intermediate DEM profile"
       ],
-      "length": 13.186976681559731,
-      "startHeight": 92.75828299999999,
-      "endHeight": 94.10164200000001,
+      "length": 13.186976681559733,
+      "startHeight": 92.758283,
+      "endHeight": 94.101642,
       "mappedCount": 1,
-      "renderedCount": 9,
-      "maxRise": 0.14926211111111343,
-      "minimumRun": 1.4652196312843908,
+      "renderedCount": 10,
+      "maxRise": 0.15287416666665976,
+      "minimumRun": 1.0989147234633072,
       "center": [
         541.1785,
-        93.33500000000001,
+        93.335,
         -296.4605
       ],
-      "rawDemStart": 92.75828299999999,
-      "rawDemEnd": 94.10164200000001,
+      "rawDemStart": 92.758283,
+      "rawDemEnd": 94.101642,
       "adaptedGround": false,
       "nearPilgrimage": true,
       "nearestAnchor": {
@@ -178,18 +178,18 @@
         "ground profile cannot resolve endpoint rise"
       ],
       "length": 7.515598512427347,
-      "startHeight": 30.423503999999998,
+      "startHeight": 30.423504,
       "endHeight": 30.419319,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.0041849999999961085,
-      "minimumRun": 7.515598512427347,
+      "renderedCount": 2,
+      "maxRise": 0.0020924999999998306,
+      "minimumRun": 3.757799256213616,
       "center": [
         -187.7255,
         30.42,
         784.719
       ],
-      "rawDemStart": 30.423503999999998,
+      "rawDemStart": 30.423504,
       "rawDemEnd": 30.419319,
       "adaptedGround": false,
       "nearPilgrimage": false,
@@ -207,18 +207,18 @@
       ],
       "length": 6.012631038073146,
       "startHeight": 29.916404999999997,
-      "endHeight": 29.875398999999998,
+      "endHeight": 29.875399,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.04100599999999943,
-      "minimumRun": 6.012631038073146,
+      "renderedCount": 2,
+      "maxRise": 0.020503000000001492,
+      "minimumRun": 3.006315519036573,
       "center": [
         -208.762,
         29.9,
         663.648
       ],
       "rawDemStart": 29.916404999999997,
-      "rawDemEnd": 29.875398999999998,
+      "rawDemEnd": 29.875399,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
@@ -238,9 +238,9 @@
       "startHeight": 66.33888734095414,
       "endHeight": 70.167766,
       "mappedCount": 10,
-      "renderedCount": 24,
-      "maxRise": 0.1595366107935773,
-      "minimumRun": 0.9150052415225948,
+      "renderedCount": 27,
+      "maxRise": 0.15735813333333462,
+      "minimumRun": 0.7320041932180911,
       "center": [
         544.2574999999999,
         68.69999999999999,
@@ -264,24 +264,24 @@
       ],
       "length": 29.34519655752882,
       "startHeight": 87.717684,
-      "endHeight": 91.41818300000001,
+      "endHeight": 91.418183,
       "mappedCount": 6,
-      "renderedCount": 24,
-      "maxRise": 0.15418745833333367,
-      "minimumRun": 1.22271652323034,
+      "renderedCount": 26,
+      "maxRise": 0.15599538888888986,
+      "minimumRun": 0.8151443488202267,
       "center": [
         549.6485,
         89.605,
-        -245.60399999999998
+        -245.604
       ],
       "rawDemStart": 87.717684,
-      "rawDemEnd": 91.41818300000001,
+      "rawDemEnd": 91.418183,
       "adaptedGround": false,
       "nearPilgrimage": true,
       "nearestAnchor": {
         "id": "mitsu",
         "label": "Mitsu-tsuji",
-        "distance": 91.45041348320959
+        "distance": 91.4504134832096
       }
     },
     {
@@ -292,18 +292,18 @@
         "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
       ],
       "length": 36.90717099703059,
-      "startHeight": 94.10164200000001,
+      "startHeight": 94.101642,
       "endHeight": 102.78897600000002,
       "mappedCount": 24,
       "renderedCount": 56,
-      "maxRise": 0.15931377777777161,
-      "minimumRun": 0.4773988930914783,
+      "maxRise": 0.21607381096653455,
+      "minimumRun": 0.2937839342101131,
       "center": [
         545.4287073212638,
-        97.21797337613775,
+        97.21797337613776,
         -320.77178432587044
       ],
-      "rawDemStart": 94.10164200000001,
+      "rawDemStart": 94.101642,
       "rawDemEnd": 102.34230200000006,
       "adaptedGround": true,
       "nearPilgrimage": true,
@@ -323,9 +323,9 @@
       "startHeight": 70.167766,
       "endHeight": 81.73656400000003,
       "mappedCount": 6,
-      "renderedCount": 73,
-      "maxRise": 0.15976202777777992,
-      "minimumRun": 0.46894928274168246,
+      "renderedCount": 76,
+      "maxRise": 0.15901681250000385,
+      "minimumRun": 0.3517119620562481,
       "center": [
         545.3301750795796,
         76.4005101294661,
@@ -338,7 +338,7 @@
       "nearestAnchor": {
         "id": "kumataka",
         "label": "Kumataka-sha",
-        "distance": 50.803879278989484
+        "distance": 50.80387927898949
       }
     },
     {
@@ -351,13 +351,13 @@
       "startHeight": 81.73656400000003,
       "endHeight": 87.717684,
       "mappedCount": 20,
-      "renderedCount": 38,
-      "maxRise": 0.15739789473684146,
-      "minimumRun": 0.7529310133095096,
+      "renderedCount": 40,
+      "maxRise": 0.15926050000000205,
+      "minimumRun": 0.6812232977562328,
       "center": [
         546.337,
         84.83500000000001,
-        -216.98399999999998
+        -216.984
       ],
       "rawDemStart": 81.73656400000003,
       "rawDemEnd": 87.717684,
@@ -379,9 +379,9 @@
       "startHeight": 35.743918,
       "endHeight": 35.726538999999995,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.017379000000005362,
-      "minimumRun": 7.833712912789066,
+      "renderedCount": 2,
+      "maxRise": 0.012451499999997395,
+      "minimumRun": 3.916856456394533,
       "center": [
         -150.8115,
         35.735,
@@ -407,9 +407,9 @@
       "startHeight": 171.474861,
       "endHeight": 181.77763199999995,
       "mappedCount": 10,
-      "renderedCount": 66,
-      "maxRise": 0.15788720000000087,
-      "minimumRun": 0.7474562722277884,
+      "renderedCount": 73,
+      "maxRise": 0.15995922222221756,
+      "minimumRun": 0.6050836489462726,
       "center": [
         822.0985304214861,
         176.0087468161281,
@@ -434,7 +434,7 @@
       ],
       "length": 1.519401197840903,
       "startHeight": 50.593096,
-      "endHeight": 50.592648000000004,
+      "endHeight": 50.592648,
       "mappedCount": 9,
       "renderedCount": 1,
       "maxRise": 0.0004479999999986717,
@@ -445,7 +445,7 @@
         -1116.201
       ],
       "rawDemStart": 50.593096,
-      "rawDemEnd": 50.592648000000004,
+      "rawDemEnd": 50.592648,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
@@ -470,7 +470,7 @@
       "center": [
         -38.5835,
         45.985,
-        -917.1610000000001
+        -917.161
       ],
       "rawDemStart": 45.982957,
       "rawDemEnd": 45.989832,
@@ -518,7 +518,7 @@
       ],
       "length": 3.45715750292057,
       "startHeight": 44.790917,
-      "endHeight": 44.886264000000004,
+      "endHeight": 44.886264,
       "mappedCount": 6,
       "renderedCount": 6,
       "maxRise": 0.015891166666667306,
@@ -526,16 +526,16 @@
       "center": [
         32.5075,
         44.80500000000001,
-        -1173.0014999999999
+        -1173.0015
       ],
       "rawDemStart": 44.790917,
-      "rawDemEnd": 44.886264000000004,
+      "rawDemEnd": 44.886264,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
         "id": "mitsu",
         "label": "Mitsu-tsuji",
-        "distance": 986.9051234776823
+        "distance": 986.9051234776824
       }
     },
     {
@@ -548,13 +548,13 @@
       "startHeight": 45.180964,
       "endHeight": 45.22895200000001,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.047988000000003694,
-      "minimumRun": 12.486371850942174,
+      "renderedCount": 3,
+      "maxRise": 0.020193999999996493,
+      "minimumRun": 4.162123950314057,
       "center": [
-        24.616500000000002,
+        24.6165,
         45.15,
-        -1244.9025000000001
+        -1244.9025
       ],
       "rawDemStart": 45.180964,
       "rawDemEnd": 45.22895200000001,
@@ -630,18 +630,18 @@
         "ground profile cannot resolve endpoint rise"
       ],
       "length": 7.237296801983448,
-      "startHeight": 30.552400000000002,
+      "startHeight": 30.5524,
       "endHeight": 30.55651,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.0041099999999971715,
-      "minimumRun": 7.237296801983448,
+      "renderedCount": 2,
+      "maxRise": 0.0020549999999985857,
+      "minimumRun": 3.6186484009916673,
       "center": [
         -189.8515,
         30.55,
         558.924
       ],
-      "rawDemStart": 30.552400000000002,
+      "rawDemStart": 30.5524,
       "rawDemEnd": 30.55651,
       "adaptedGround": false,
       "nearPilgrimage": false,
@@ -657,13 +657,13 @@
       "reasons": [
         "ground profile cannot resolve endpoint rise"
       ],
-      "length": 12.983811497399307,
+      "length": 12.983811497399309,
       "startHeight": 30.55651,
       "endHeight": 30.535089,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.021421000000000134,
-      "minimumRun": 12.983811497399307,
+      "renderedCount": 3,
+      "maxRise": 0.007646666666669688,
+      "minimumRun": 4.327937165799768,
       "center": [
         -190.093,
         30.54,
@@ -687,18 +687,18 @@
       ],
       "length": 8.729376209100003,
       "startHeight": 30.512569,
-      "endHeight": 30.474671999999998,
+      "endHeight": 30.474672,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.03789700000000096,
-      "minimumRun": 8.729376209100003,
+      "renderedCount": 2,
+      "maxRise": 0.01926249999999996,
+      "minimumRun": 4.364688104550002,
       "center": [
         -188.3095,
-        30.490000000000002,
+        30.49,
         674.496
       ],
       "rawDemStart": 30.512569,
-      "rawDemEnd": 30.474671999999998,
+      "rawDemEnd": 30.474672,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
@@ -717,9 +717,9 @@
       "startHeight": 30.513990999999997,
       "endHeight": 30.512569,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.001421999999998036,
-      "minimumRun": 9.202241574746822,
+      "renderedCount": 2,
+      "maxRise": 0.0033945000000024095,
+      "minimumRun": 4.601120787373411,
       "center": [
         -188.5695,
         30.51,
@@ -742,18 +742,18 @@
         "ground profile cannot resolve endpoint rise"
       ],
       "length": 12.438467148326518,
-      "startHeight": 29.973824999999998,
+      "startHeight": 29.973825,
       "endHeight": 29.997344,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.02351900000000029,
-      "minimumRun": 12.438467148326518,
+      "renderedCount": 3,
+      "maxRise": 0.007839666666669132,
+      "minimumRun": 4.146155716108764,
       "center": [
         -205.6695,
-        29.990000000000002,
+        29.99,
         664.171
       ],
-      "rawDemStart": 29.973824999999998,
+      "rawDemStart": 29.973825,
       "rawDemEnd": 29.997344,
       "adaptedGround": false,
       "nearPilgrimage": false,
@@ -771,18 +771,18 @@
       ],
       "length": 36.439380483208055,
       "startHeight": 29.997344,
-      "endHeight": 29.971633999999998,
+      "endHeight": 29.971634,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.02571000000000012,
-      "minimumRun": 36.439380483208055,
+      "renderedCount": 8,
+      "maxRise": 0.00612862500000233,
+      "minimumRun": 4.554922560400936,
       "center": [
         -205.5465,
-        29.990000000000002,
+        29.99,
         688.5944999999999
       ],
       "rawDemStart": 29.997344,
-      "rawDemEnd": 29.971633999999998,
+      "rawDemEnd": 29.971634,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
@@ -801,9 +801,9 @@
       "startHeight": 30.424756999999996,
       "endHeight": 30.422019,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.0027379999999972426,
-      "minimumRun": 12.69016138589267,
+      "renderedCount": 3,
+      "maxRise": 0.0038899999999983943,
+      "minimumRun": 4.230053795297557,
       "center": [
         -187.735,
         30.42,
@@ -831,11 +831,11 @@
       "mappedCount": 3,
       "renderedCount": 3,
       "maxRise": 0.014921000000001072,
-      "minimumRun": 0.43028930835991724,
+      "minimumRun": 0.4302893083599173,
       "center": [
         350.11400000000003,
         64.84,
-        -979.4110000000001
+        -979.411
       ],
       "rawDemStart": 64.850827,
       "rawDemEnd": 64.80606399999999,
@@ -882,25 +882,25 @@
         "ground profile cannot resolve endpoint rise"
       ],
       "length": 6.744364314003291,
-      "startHeight": 48.063157000000004,
-      "endHeight": 48.100013000000004,
+      "startHeight": 48.063157,
+      "endHeight": 48.100013,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.03685600000000022,
-      "minimumRun": 6.744364314003291,
+      "renderedCount": 2,
+      "maxRise": 0.02461599999998043,
+      "minimumRun": 3.372182157001557,
       "center": [
         73.0065,
         48.06,
         -1158.0955
       ],
-      "rawDemStart": 48.063157000000004,
-      "rawDemEnd": 48.100013000000004,
+      "rawDemStart": 48.063157,
+      "rawDemEnd": 48.100013,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
         "id": "mitsu",
         "label": "Mitsu-tsuji",
-        "distance": 953.1318533563443
+        "distance": 953.1318533563444
       }
     },
     {
@@ -928,7 +928,7 @@
       "nearestAnchor": {
         "id": "mitsu",
         "label": "Mitsu-tsuji",
-        "distance": 969.7946489660839
+        "distance": 969.794648966084
       }
     },
     {
@@ -938,18 +938,18 @@
         "ground profile cannot resolve endpoint rise"
       ],
       "length": 2.005676943079451,
-      "startHeight": 47.251450999999996,
+      "startHeight": 47.251451,
       "endHeight": 47.32091500000001,
       "mappedCount": 6,
       "renderedCount": 6,
       "maxRise": 0.011577333333335105,
       "minimumRun": 0.33427949051305283,
       "center": [
-        60.349000000000004,
-        47.269999999999996,
+        60.349,
+        47.27,
         -1184.851
       ],
-      "rawDemStart": 47.251450999999996,
+      "rawDemStart": 47.251451,
       "rawDemEnd": 47.32091500000001,
       "adaptedGround": false,
       "nearPilgrimage": false,
@@ -998,7 +998,7 @@
       "endHeight": 46.887569,
       "mappedCount": null,
       "renderedCount": 1,
-      "maxRise": 0.09315199999999635,
+      "maxRise": 0.09315199999999636,
       "minimumRun": 4.865280361911327,
       "center": [
         47.9245,
@@ -1026,10 +1026,10 @@
       "endHeight": 49.56914600000002,
       "mappedCount": 4,
       "renderedCount": 4,
-      "maxRise": 0.010057500000002051,
+      "maxRise": 0.010057500000002053,
       "minimumRun": 0.45849999999995816,
       "center": [
-        449.84900000000005,
+        449.8490000000001,
         49.61,
         885.146
       ],
@@ -1135,10 +1135,10 @@
         "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
       ],
       "length": 7.101469145390591,
-      "startHeight": 183.79392799999994,
-      "endHeight": 183.79392799999994,
+      "startHeight": 183.7939279999999,
+      "endHeight": 183.7939279999999,
       "mappedCount": null,
-      "renderedCount": 2,
+      "renderedCount": 3,
       "maxRise": 0,
       "minimumRun": 1.6286515895058808,
       "center": [
@@ -1164,8 +1164,8 @@
         "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
       ],
       "length": 1.2097921309050523,
-      "startHeight": 183.79392799999994,
-      "endHeight": 183.79392799999994,
+      "startHeight": 183.7939279999999,
+      "endHeight": 183.7939279999999,
       "mappedCount": 3,
       "renderedCount": 3,
       "maxRise": 0,
@@ -1197,7 +1197,7 @@
       "endHeight": 231.047797,
       "mappedCount": 14,
       "renderedCount": 14,
-      "maxRise": 0.0000791051090394441,
+      "maxRise": 7.91051090394441e-05,
       "minimumRun": 0.5144488828457334,
       "center": [
         1171.141,
@@ -1211,7 +1211,7 @@
       "nearestAnchor": {
         "id": "summit",
         "label": "Ichinomine",
-        "distance": 9.433929616018979
+        "distance": 9.43392961601898
       }
     },
     {
@@ -1229,7 +1229,7 @@
       "maxRise": 0.029535999999993123,
       "minimumRun": 0.495176736125602,
       "center": [
-        105.66499999999999,
+        105.665,
         49.78,
         -42.641
       ],
@@ -1254,10 +1254,10 @@
       "endHeight": 88.82454599999998,
       "mappedCount": 5,
       "renderedCount": 13,
-      "maxRise": 0.15219007692307684,
-      "minimumRun": 0.7021810569122202,
+      "maxRise": 0.15871358333332827,
+      "minimumRun": 0.652025267132741,
       "center": [
-        363.45550000000003,
+        363.4555,
         87.815,
         -807.3835
       ],
@@ -1341,7 +1341,7 @@
       "maxRise": 0.00440791666666603,
       "minimumRun": 0.3953367147831465,
       "center": [
-        387.52049999999997,
+        387.5205,
         72.21000000000001,
         445.122
       ],
@@ -1365,8 +1365,8 @@
       "startHeight": 60.356106999999994,
       "endHeight": 67.94751799999999,
       "mappedCount": 30,
-      "renderedCount": 42,
-      "maxRise": 0.1807478809523808,
+      "renderedCount": 41,
+      "maxRise": 0.20435585714286225,
       "minimumRun": 0.2852025019528523,
       "center": [
         395.229,
@@ -1391,7 +1391,7 @@
       ],
       "length": 3.0762478768785333,
       "startHeight": 28.67307,
-      "endHeight": 28.698971999999998,
+      "endHeight": 28.698972,
       "mappedCount": null,
       "renderedCount": 1,
       "maxRise": 0.025901999999998537,
@@ -1402,7 +1402,7 @@
         -1240.6
       ],
       "rawDemStart": 28.67307,
-      "rawDemEnd": 28.698971999999998,
+      "rawDemEnd": 28.698972,
       "adaptedGround": false,
       "nearPilgrimage": false,
       "nearestAnchor": {
@@ -1421,12 +1421,12 @@
       "startHeight": 26.847142,
       "endHeight": 26.898573000000003,
       "mappedCount": null,
-      "renderedCount": 1,
-      "maxRise": 0.05143100000000089,
-      "minimumRun": 5.1233724244875125,
+      "renderedCount": 2,
+      "maxRise": 0.025932500000003245,
+      "minimumRun": 2.5616862122437207,
       "center": [
         -581.582,
-        26.865000000000002,
+        26.865,
         -802.1234999999999
       ],
       "rawDemStart": 26.847142,

@@ -5,16 +5,17 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs?v=10';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=10b';
+import {makePathSurfaces} from './path-surfaces.mjs?v=11';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
-import {refineShrineFinishes} from './shrine-finishes.mjs?v=10c';
+import {refineShrineFinishes} from './shrine-finishes.mjs?v=11';
 import {fineGranite} from './surface-materials.mjs';
 import {entryHeight} from './entry-profile.mjs';
+import {refineRomonCurtain} from './romon-curtain.mjs';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spec=await fetch('anchors.json').then(r=>r.json());
@@ -223,6 +224,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrando ${id} con sus detalles originales…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
+    if(id==='romon')refineRomonCurtain(gltf.scene);
     gltf.scene.traverse(object=>{
       if(!object.isMesh)return;
       object.castShadow=true;object.receiveShadow=true;

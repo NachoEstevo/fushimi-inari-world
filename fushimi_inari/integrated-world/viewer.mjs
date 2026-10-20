@@ -3,7 +3,7 @@ import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs?v=10b';
 import {installExplorationHUD} from './exploration-hud.mjs';
-import {integrate} from './integration.mjs?v=10c';
+import {integrate} from './integration.mjs?v=11';
 import {installWalking} from './walking.mjs';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';

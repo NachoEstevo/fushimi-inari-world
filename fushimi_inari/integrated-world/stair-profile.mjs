@@ -28,6 +28,19 @@ export function inferredTreads(points,ground,counts=null){
   return treads;
 }
 
+// Sample the existing 10 m DEM inside long OSM edges; retain every original
+// vertex. This improves conformance, without claiming new survey precision.
+export function sampledStairAlignment(points,spacing=5){
+  if(!Number.isFinite(spacing)||spacing<=0)throw new Error('Positive sample spacing required');
+  if(!points.length)return [];
+  const sampled=[points[0]];
+  for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i],count=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[2]-a[2])/spacing));
+    for(let j=1;j<=count;j++)sampled.push(j===count?b:[a[0]+(b[0]-a[0])*j/count,0,a[2]+(b[2]-a[2])*j/count]);
+  }
+  return sampled;
+}
+
 // Preserve a credible mapped total while respecting every intermediate node.
 // The DEM cannot certify tread heights; infeasible allocations stay unresolved.
 export function mappedTreads(points,ground,count){

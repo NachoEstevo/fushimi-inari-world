@@ -1,4 +1,6 @@
-# Mundo integrado · revisión 03
+# Mundo integrado · revisión 11
+
+Últimos cambios, fuentes y validación: [REFERENCES-R11.md](REFERENCES-R11.md).
 
 Abrir `http://127.0.0.1:8420/integrated-world/index.html` o ejecutar
 `../iniciar_experiencia_3d.bat`. La demo inicial y ambas experiencias anteriores
