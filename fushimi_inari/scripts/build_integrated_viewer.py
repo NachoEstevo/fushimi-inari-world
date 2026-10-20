@@ -24,7 +24,7 @@ html=html.replace('<script type="module"', '<div id="interaction" hidden></div><
 (out/"index.html").write_text(html,encoding="utf-8")
 js=(root/"geography/viewer.mjs").read_text(encoding="utf-8")
 js=js.replace("from './geo-core.mjs'","from '../geography/geo-core.mjs'")
-js="import {installExplorationHUD} from './exploration-hud.mjs?v=14';\nimport {integrate} from './integration.mjs?v=14';\nimport {installWalking} from './walking.mjs?v=14';\nimport {createAudio} from './audio.mjs';\n"+js
+js="import {installExplorationHUD} from './exploration-hud.mjs?v=14';\nimport {integrate} from './integration.mjs?v=15';\nimport {installWalking} from './walking.mjs?v=14';\nimport {createAudio} from './audio.mjs';\n"+js
 js=js.replace("fetch(`${name}.json`)","fetch(`../geography/${name}.json`)")
 js=js.replace("const ground=(x,z)=>heightAt(terrain,x,z);","let assembly=null;\n  const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);")
 js=js.replace("renderer.outputColorSpace=", "renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;\n  renderer.outputColorSpace=")
@@ -56,7 +56,7 @@ js=js[:start]+"""  for(let r=0;r<terrain.rows-1;r++)for(let c=0;c<terrain.cols-1
 """ +js[end:]
 start=js.index("  terrainMaterial.onBeforeCompile")
 end=js.index("\n  function meshFrom",start)
-js=js[:start]+"""  const courtyard=assembly.legacy.materials.gravelMat.clone();courtyard.color.set('#c2bbae');
+js=js[:start]+"""  const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
   const landscape=spatialMeshes(terrainGeo,terrainMaterial,160,(x,z)=>{
     const dx=x-romon.target[0],dz=z-romon.target[2],c=Math.cos(romon.yaw),s=Math.sin(romon.yaw);
@@ -141,7 +141,7 @@ js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night');
 """)
-js="import {installExplorationMenu} from './exploration-menu.mjs';\nimport {protectOrbit} from './orbit-clearance.mjs';\nimport {installSky} from './sky.mjs';\nimport {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs?v=10b';\n"+js
+js="import {installExplorationMenu} from './exploration-menu.mjs';\nimport {protectOrbit} from './orbit-clearance.mjs';\nimport {installSky} from './sky.mjs';\nimport {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs?v=15';\n"+js
 js=js.replace("  const controls=new OrbitControls", "  const sky=installSky(scene,camera);\n  const controls=new OrbitControls")
 js=js.replace("    renderer.render(scene,camera);", "    sky.update();renderer.render(scene,camera);")
 js=js.replace("  let mapTimer=0;","  const recordRender=renderStats(renderer);\n  let mapTimer=0;")

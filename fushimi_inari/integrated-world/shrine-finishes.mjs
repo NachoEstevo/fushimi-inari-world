@@ -12,6 +12,15 @@ export function refineShrineFinishes(object,granite){
   refinePeakLanterns(object);
   object.traverse(mesh=>{
     const dimensions=mesh.geometry?.parameters;
+    // Preserve the original stone torii placement; give its kasagi the curved
+    // silhouette visible in the Mitsurugi panorama instead of a straight box.
+    if(object.userData.zone==='mitsurugi'&&mesh.geometry?.type==='BoxGeometry'&&dimensions.width===2.65&&dimensions.height===.16&&dimensions.depth===.24){
+      const geo=new THREE.BoxGeometry(2.65,.16,.24,20,1,1),p=geo.attributes.position;
+      for(let i=0;i<p.count;i++)p.setY(i,p.getY(i)+.16*Math.pow(Math.abs(p.getX(i)/1.325),2));
+      geo.computeVertexNormals();mesh.geometry=geo;mesh.material=granite;
+    }
+    if(object.userData.zone==='mitsurugi'&&mesh.geometry?.type==='CylinderGeometry'&&dimensions.height===2.35&&dimensions.radiusTop===.11)mesh.material=granite;
+
     if(mesh.geometry?.type==='BoxGeometry'&&Math.abs(dimensions.height-.17)<.001&&dimensions.width>=3.6&&dimensions.depth<.5)mesh.material=granite;
     if(mesh.geometry?.type!=='PlaneGeometry'||Math.abs(mesh.geometry.parameters.height-1.08)>.001||!mesh.material.map)return;
     const width=mesh.geometry.parameters.width;

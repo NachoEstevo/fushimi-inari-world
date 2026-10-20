@@ -1,3 +1,4 @@
+import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -5,15 +6,15 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs?v=10';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=13';
+import {makePathSurfaces} from './path-surfaces.mjs?v=15';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
-import {refineShrineFinishes} from './shrine-finishes.mjs?v=12';
-import {fineGranite} from './surface-materials.mjs';
+import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
+import {fineGranite,courtyardGravel} from './surface-materials.mjs?v=15';
 import {entryHeight} from './entry-profile.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
 
@@ -22,6 +23,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spatial=makeSpatial(terrain,features,spec);
   const legacy=await buildLegacy(renderer,callbacks);
   legacy.materials.entryStoneMat=fineGranite();
+  legacy.materials.gravelMat.copy(courtyardGravel());
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
@@ -271,6 +273,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
+  const margins=buildPathMargins(root,surfaces,ground,features,anchors);
   const terraces=supportTerraces(root,legacy,ground);
   for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
     if(!mesh.parent)continue;
@@ -322,7 +325,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     objects.forEach(o=>o.removeFromParent());
   }
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
-    forest,terraces,yotsutsuji,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    forest,margins,terraces,yotsutsuji,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
     excludesBuilding:b=>teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

@@ -3,9 +3,9 @@ import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
-import {buildPathMeshes} from './path-meshes.mjs?v=10b';
+import {buildPathMeshes} from './path-meshes.mjs?v=15';
 import {installExplorationHUD} from './exploration-hud.mjs?v=14';
-import {integrate} from './integration.mjs?v=14';
+import {integrate} from './integration.mjs?v=15';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -64,7 +64,7 @@ try {
   const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
-  const courtyard=assembly.legacy.materials.gravelMat.clone();courtyard.color.set('#c2bbae');
+  const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
   const landscape=spatialMeshes(terrainGeo,terrainMaterial,160,(x,z)=>{
     const dx=x-romon.target[0],dz=z-romon.target[2],c=Math.cos(romon.yaw),s=Math.sin(romon.yaw);

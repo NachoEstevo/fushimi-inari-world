@@ -3,6 +3,14 @@ import {pathSampler} from './spatial.mjs';
 import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=13';
 
 export function makePathSurfaces(features,ground){
+  const junctions=new Map(),pathNodes=new Map();
+  for(const path of features.paths){
+    pathNodes.set(path.id,new Set(path.nodeIds??[]));
+    (path.nodeIds??[]).forEach((id,i)=>{
+      if(!junctions.has(id))junctions.set(id,{point:path.points[i],paths:new Set()});
+      junctions.get(id).paths.add(path.id);
+    });
+  }
   const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],profileReview:[],correctedStairProfiles:[]};
   for(const path of features.paths){
     if(path.tags.tunnel==='yes'||path.tags.bridge==='yes')continue;
@@ -65,7 +73,20 @@ export function makePathSurfaces(features,ground){
     }
     return best;
   }
-  return {segments,stats,sample,height:(x,z)=>sample(x,z)?.height??ground(x,z),
+  function edgeCovered(x,z,y,pathId){
+    for(const s of cells.get(`${Math.floor(x/size)},${Math.floor(z/size)}`)??[]){
+      if(s.id===pathId)continue;
+      const connected=[...(pathNodes.get(s.id)??[])].some(id=>{
+        const j=junctions.get(id);
+        return j.paths.has(pathId)&&Math.hypot(x-j.point[0],z-j.point[2])<s.width+3;
+      });
+      if(!connected)continue;
+      const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],t=Math.max(0,Math.min(1,((x-s.a[0])*dx+(z-s.a[2])*dz)/(dx*dx+dz*dz)));
+      if(Math.hypot(x-s.a[0]-t*dx,z-s.a[2]-t*dz)<s.width/2+.12&&Math.abs(y-s.ya-(s.yb-s.ya)*t)<.25)return true;
+    }
+    return false;
+  }
+  return {segments,stats,sample,edgeCovered,height:(x,z)=>sample(x,z)?.height??ground(x,z),
     terrainHeight(x,z){
       const road=sample(x,z),base=ground(x,z);
       // Cut a shallow roadbed so a coarse cross-slope cannot cover the treads.

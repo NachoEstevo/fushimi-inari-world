@@ -27,11 +27,28 @@ export function buildPathMeshes(network,legacy){
     if(s.kind==='stone'){
       for(const side of [-1,1]){
         const inner=side*s.width/2,outer=inner+side*.13;
-        quad(buckets.edge,point(s.a,s.ya+.025,inner),point(s.b,s.yb+.025,inner),point(s.b,s.yb+.025,outer),point(s.a,s.ya+.025,outer));
-        quad(buckets.edge,point(s.a,s.ya-.30,outer),point(s.b,s.yb-.30,outer),point(s.b,s.yb+.025,outer),point(s.a,s.ya+.025,outer));
-        if(s.handrail){
-          const offset=outer+side*.06;
-          quad(buckets.rail,point(s.a,s.ya+.82,offset),point(s.b,s.yb+.82,offset),point(s.b,s.yb+.86,offset),point(s.a,s.ya+.86,offset));
+        // Open only mapped, connected junction mouths; never infer a junction
+        // from a projected crossing or a neighbouring parallel trail.
+        const cuts=Math.max(1,Math.ceil(len/.45));
+        const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+        for(let part=0;part<cuts;part++){
+          const a=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),part/cuts);
+          const b=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),(part+1)/cuts);
+          const oa=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),part/cuts);
+          const ob=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),(part+1)/cuts);
+          const m=lerp(a,b,.5);
+          if(network.edgeCovered(m[0],m[2],m[1],s.id))continue;
+          const up=(p,h)=>[p[0],p[1]+h,p[2]];
+          quad(buckets.edge,up(a,.025),up(b,.025),up(ob,.025),up(oa,.025));
+          quad(buckets.edge,up(oa,-.30),up(ob,-.30),up(ob,.025),up(oa,.025));
+          if(s.handrail)quad(buckets.rail,up(oa,.82),up(ob,.82),up(ob,.86),up(oa,.86));
+          // Narrow, uneven earth shoulder on mountain paths, below the curb.
+          if(s.ya>55&&!senbon){
+            const spread=.28+.10*Math.sin(s.distance*1.73+side);
+            const ea=[oa[0]+side*startNormal[0]*spread,oa[1]-.12,oa[2]+side*startNormal[1]*spread];
+            const eb=[ob[0]+side*endNormal[0]*spread,ob[1]-.12,ob[2]+side*endNormal[1]*spread];
+            if(!network.sample(ea[0],ea[2])&&!network.sample(eb[0],eb[2]))quad(buckets.earth,up(oa,-.08),up(ob,-.08),eb,ea);
+          }
         }
       }
     }
