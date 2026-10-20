@@ -1,6 +1,6 @@
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
-import {buildOkushaCourt} from './okusha-details.mjs?v=25c';
+import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
 import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
@@ -12,7 +12,7 @@ import {extendForest} from './forest.mjs?v=25';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs?v=15';
-import {buildSenbon} from './senbon.mjs';
+import {buildSenbon} from './senbon.mjs?v=26';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';

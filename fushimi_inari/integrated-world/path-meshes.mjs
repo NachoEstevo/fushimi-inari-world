@@ -2,10 +2,15 @@ import * as THREE from 'three';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
+import {outsideArrival} from './okusha-arrival.mjs';
 
 export function buildPathMeshes(network,legacy){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[]},senbonUV=[];
-  const quad=(out,a,b,c,d)=>out.push(...a,...c,...b,...a,...d,...c);
+  const quad=(out,a,b,c,d)=>{
+    for(const polygon of outsideArrival([a,b,c,d]))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
+      out.push(...p.slice(0,3));if(out===buckets.senbon)senbonUV.push(p[3],p[4]);
+    }
+  };
   for(const [index,s] of network.segments.entries()){
     const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],len=Math.hypot(dx,dz);
     const adjacent=(candidate,end)=>candidate?.id===s.id&&Math.hypot(candidate[end][0]-(end==='b'?s.a:s.b)[0],candidate[end][2]-(end==='b'?s.a:s.b)[2])<.001?candidate:null;
@@ -15,9 +20,8 @@ export function buildPathMeshes(network,legacy){
     const senbon=['way/260121328','way/377968455'].includes(s.id);
     if(senbon){
       const w=.66;
-      quad(buckets.senbon,point(s.a,s.ya,-w),point(s.b,s.yb,-w),point(s.b,s.yb,w),point(s.a,s.ya,w));
       const va=s.distance/.65,vb=(s.distance+len)/.65;
-      senbonUV.push(0,va,1,vb,0,vb,0,va,1,va,1,vb);
+      quad(buckets.senbon,[...point(s.a,s.ya,-w),0,va],[...point(s.b,s.yb,-w),0,vb],[...point(s.b,s.yb,w),1,vb],[...point(s.a,s.ya,w),1,va]);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
     }else quad(buckets[s.stair&&s.kind==='stone'?'edge':s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
     if(s.stair){

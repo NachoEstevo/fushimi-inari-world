@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {routeSpec} from './route-spec.mjs';
-import {toriiVariation,spacedGateStations} from './torii-variation.mjs';
+import {toriiVariation} from './torii-variation.mjs';
+import {senbonLayout} from './senbon-layout.mjs';
 import {toriiMaterials} from './torii-materials.mjs';
 
 // Refines the original Inari-torii construction at its actual small-gate scale.
@@ -31,24 +32,14 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
   red.forEach(g=>g.dispose());black.forEach(g=>g.dispose());
   // Original column maps stay on columns; beam UVs use a separate wood finish.
   const mats=[],fresh=[],weathered=[];
+  const layouts=senbonLayout(spatial.twins,s.spacing);
   spatial.twins.forEach((path,index)=>{
     const source=s.paths[index];
-    // The OSM centerlines meet at shared fork nodes. Keep that joining apron
-    // open: placing two complete gates on a shared vertex blocks both lanes.
-    const other=spatial.twins[1-index];
-    const otherPoints=Array.from({length:170},(_,i)=>other.at(i/169).point);
-    const separated=distance=>{
-      const p=path.at(distance/path.total).point;
-      return Math.min(...otherPoints.map(q=>Math.hypot(p[0]-q[0],p[2]-q[2])))>2.15;
-    };
-    let start=0,end=path.total;
-    while(start<path.total*.3&&!separated(start))start+=.25;
-    while(end>path.total*.7&&!separated(end))end-=.25;
-    const stations=spacedGateStations(end-start,{...s.spacing,seed:133742+index*509}).map(d=>d+start);
+    const {stations,exitYaw}=layouts[index];
     stations.forEach((distance,i)=>{
       const {point,yaw:heading}=path.at(distance/path.total),[x,,z]=point;
       const variation=toriiVariation(133742+index*509,i,index===0?.34:.46);
-      const yaw=heading+variation.yaw;
+      const yaw=i===stations.length-1?exitYaw:heading+variation.yaw;
       const large=index===1&&i<source.largeCount;
       const scale=large?1.12:1;
       const sx=scale*variation.width,sy=scale*variation.height;
