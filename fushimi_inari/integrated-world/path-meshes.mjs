@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {spatialMeshes} from './spatial-mesh.mjs';
-import {pathOffset} from './path-frame.mjs';
+import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
 
 export function buildPathMeshes(network,legacy){
@@ -19,7 +19,7 @@ export function buildPathMeshes(network,legacy){
       const va=s.distance/.65,vb=(s.distance+len)/.65;
       senbonUV.push(0,va,1,vb,0,vb,0,va,1,va,1,vb);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
-    }else quad(buckets[s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
+    }else quad(buckets[s.stair&&s.kind==='stone'?'edge':s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
     if(s.stair){
       const p=s.riserAt==='b'?s.b:s.a,y=s.riserAt==='b'?s.yb:s.ya;
       quad(buckets.edge,point(p,y-s.rise,-s.width/2),point(p,y,-s.width/2),point(p,y,s.width/2),point(p,y-s.rise,s.width/2));

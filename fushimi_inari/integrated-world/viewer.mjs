@@ -1,9 +1,9 @@
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
-import {buildPathMeshes} from './path-meshes.mjs';
+import {buildPathMeshes} from './path-meshes.mjs?v=10b';
 import {installExplorationHUD} from './exploration-hud.mjs';
-import {integrate} from './integration.mjs?v=9';
+import {integrate} from './integration.mjs?v=10c';
 import {installWalking} from './walking.mjs';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';

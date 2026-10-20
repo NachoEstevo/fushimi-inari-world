@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import {leafClusterMaterial} from './leaf-cluster.mjs';
 
-// Evergreen broadleaf silhouette: lanceolate/elliptic leaves rather than
-// enlarged fern cards. Shii/kashi presence is sourced; each tree is inferred.
+// Evergreen sprays distributed through a three-dimensional crown volume.
+// Shii/kashi presence is sourced; each tree and leaf arrangement is inferred.
 export function evergreenCanopy(leafCount=384){
-  const positions=[],colors=[];
+  const positions=[],colors=[],uv=[];
   let seed=137;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const vertex=(p,c)=>{positions.push(...p);colors.push(...c);};
@@ -17,14 +18,17 @@ export function evergreenCanopy(leafCount=384){
     const along=new THREE.Vector3(Math.cos(angle+.6),(random()-.5)*.9,Math.sin(angle+.6)).normalize();
     const across=new THREE.Vector3(-along.z,.12,along.x).normalize();
     const densityScale=Math.sqrt(384/leafCount);
-    const length=(.055+random()*.04)*densityScale,width=length*(.4+random()*.18);
+    const length=(.13+random()*.07)*densityScale,width=length*(.65+random()*.15);
     const tip=center.clone().addScaledVector(along,length),base=center.clone().addScaledVector(along,-length);
     const left=center.clone().addScaledVector(across,width),right=center.clone().addScaledVector(across,-width);
     const shade=.75+random()*.45;
     const c=[.16*shade,.30*shade,.095*shade];
-    // Twice as many smaller leaves at the same near-level triangle budget.
+    // A cutout spray uses two triangles, retaining the existing LOD budget.
     for(const tri of [[base,left,tip],[base,tip,right]])for(const p of tri)vertex(p.toArray(),c);
+    uv.push(0,0,0,1,1,1,0,0,1,1,1,0);
   }
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
-  return {geometry:geo,material:new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.58})};
+  // The first 48 vertices are retained authored twigs, sampling a solid leaf.
+  geo.setAttribute('uv',new THREE.Float32BufferAttribute([...Array(48).fill([.5,.5]).flat(),...uv],2));
+  return {geometry:geo,material:leafClusterMaterial()};
 }

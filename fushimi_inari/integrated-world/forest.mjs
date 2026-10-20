@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {routeSpec} from './route-spec.mjs';
-import {evergreenCanopy} from './evergreen-canopy.mjs';
+import {evergreenCanopy} from './evergreen-canopy.mjs?v=10';
 
 // Reuses original trunk, crown and understory assets. A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.

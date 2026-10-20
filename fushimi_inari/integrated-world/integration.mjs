@@ -2,17 +2,17 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildLegacy} from './legacy-builders.mjs';
-import {extendForest} from './forest.mjs';
+import {extendForest} from './forest.mjs?v=10';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=9';
+import {makePathSurfaces} from './path-surfaces.mjs?v=10b';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
-import {refineShrineFinishes} from './shrine-finishes.mjs?v=9';
+import {refineShrineFinishes} from './shrine-finishes.mjs?v=10c';
 import {fineGranite} from './surface-materials.mjs';
 import {entryHeight} from './entry-profile.mjs';
 
@@ -202,6 +202,20 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const object of [...legacy.scene.children])moveObject(object);
   callbacks.progress?.('Adaptando pavimento, escaleras y torii al recorrido…');
   const surfaces=makePathSurfaces(features,ground),twinColliders=[];
+  const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
+  const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
+  for(const review of surfaces.stats.profileReview){
+    const path=sourcePaths.get(review.id),a=path.points[0],b=path.points.at(-1);
+    review.rawDemStart=heightAt(terrain,a[0],a[2]);review.rawDemEnd=heightAt(terrain,b[0],b[2]);
+    review.adaptedGround=Math.abs(review.rawDemStart-review.startHeight)>.02||Math.abs(review.rawDemEnd-review.endHeight)>.02;
+    review.nearPilgrimage=(pilgrimage(review.center[0],review.center[2])?.distance??Infinity)<12;
+    const nearestAnchor=anchors.reduce((best,anchor)=>{
+      const distance=Math.hypot(anchor.target[0]-review.center[0],anchor.target[2]-review.center[2]);
+      return !best||distance<best.distance?{id:anchor.id,label:anchor.label,distance}:best;
+    },null);
+    review.nearestAnchor=nearestAnchor;
+    if(review.adaptedGround)review.reasons.push('local terrace grading modifies raw DEM; inspect authored stairs before changing heights');
+  }
   const senbon=buildSenbon(root,legacy,spatial,surfaces.height,twinColliders);
 
   // Reuse each lower building as a rigid object, never stretch the old compressed precinct.

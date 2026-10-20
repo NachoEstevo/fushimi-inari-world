@@ -35,7 +35,7 @@ export function refineShrineRoofs(object){
     if(mesh.geometry?.type==='BoxGeometry'&&Math.abs(p.height-.42)<.001&&p.width>5.5&&p.width<6.8&&p.depth>4.4&&p.depth<5)roofs.push(mesh);
   });
   for(const roof of roofs){
-    const p=roof.geometry.parameters,parent=roof.parent,base=roof.position.y-.18,rise=.94;
+    const p=roof.geometry.parameters,parent=roof.parent,base=roof.position.y-.18,rise=object.userData.zone==='summit'?.76:.94;
     roof.geometry=curvedRoof(p.width,p.depth,rise);roof.position.y=base;
     const authoredUpper=parent.children.find(m=>m.geometry?.type==='BoxGeometry'&&Math.abs(m.geometry.parameters.height-.36)<.001&&m.geometry.parameters.width>4.8);
     roof.material=(authoredUpper?.material??roof.material).clone();roof.material.color.set('#96918a');roof.material.roughness=.92;
@@ -43,6 +43,9 @@ export function refineShrineRoofs(object){
     for(const sibling of [...parent.children]){
       if(sibling===roof||sibling.geometry?.type!=='BoxGeometry')continue;
       const d=sibling.geometry.parameters;
+      // Official Ichinomine view shows one broad canopy without the projecting
+      // front gable used by the two lower peaks. Keep its hanging plaque.
+      if(object.userData.zone==='summit'&&((Math.abs(d.width-2.35)<.001&&Math.abs(d.height-.52)<.001)||(Math.abs(d.width-.55)<.001&&Math.abs(d.height-.34)<.001))){parent.remove(sibling);continue;}
       if(Math.abs(d.height-.36)<.001&&d.width>4.8){parent.remove(sibling);continue;}
       if(Math.abs(d.height-.24)<.001&&d.width>4.8)sibling.position.y=base+rise+.13;
       if(Math.abs(d.width-.28)<.001&&Math.abs(d.height-.32)<.001)sibling.position.y=base+rise+.16;

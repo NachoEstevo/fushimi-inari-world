@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import {refineShrineRoofs} from './shrine-roofs.mjs?v=9';
+import {refineShrineRoofs} from './shrine-roofs.mjs?v=10';
+import {refinePeakLanterns} from './shrine-lanterns.mjs?v=10c';
 
 // Official shrine photographs show a pink Ninomine maku versus the red summit
 // curtain. Retain the authored crest and calligraphy; folds are inferred.
 export function refineShrineFinishes(object,granite){
   if(!['summit','ninomine','sannomine'].includes(object.userData.zone))return;
   refineShrineRoofs(object);
+  refinePeakLanterns(object);
   object.traverse(mesh=>{
     const dimensions=mesh.geometry?.parameters;
     if(mesh.geometry?.type==='BoxGeometry'&&Math.abs(dimensions.height-.17)<.001&&dimensions.width>=3.6&&dimensions.depth<.5)mesh.material=granite;

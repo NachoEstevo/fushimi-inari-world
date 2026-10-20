@@ -1,0 +1,1471 @@
+{
+  "revision": 10,
+  "units": "meters",
+  "status": "Unresolved; measurements required. Derived OSM/GSI data, see geography/manifest.json.",
+  "profiles": [
+    {
+      "id": "way/127324423",
+      "source": "https://www.openstreetmap.org/way/127324423",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.983506996807619,
+      "startHeight": 30.512569,
+      "endHeight": 30.611283,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.09871400000000108,
+      "minimumRun": 2.983506996807619,
+      "center": [
+        -186.8955,
+        30.560000000000002,
+        670.1044999999999
+      ],
+      "rawDemStart": 30.512569,
+      "rawDemEnd": 30.611283,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 671.8760896478605
+      }
+    },
+    {
+      "id": "way/223276652",
+      "source": "https://www.openstreetmap.org/way/223276652",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.812602959321565,
+      "startHeight": 33.708862,
+      "endHeight": 33.738809999999994,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.029947999999990316,
+      "minimumRun": 7.812602959321565,
+      "center": [
+        -227.627,
+        33.730000000000004,
+        -343.87149999999997
+      ],
+      "rawDemStart": 33.708862,
+      "rawDemEnd": 33.738809999999994,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 377.82605474113353
+      }
+    },
+    {
+      "id": "way/223276653",
+      "source": "https://www.openstreetmap.org/way/223276653",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.467044462168358,
+      "startHeight": 33.591828,
+      "endHeight": 33.630645,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.038817000000001656,
+      "minimumRun": 7.467044462168358,
+      "center": [
+        -244.823,
+        33.61,
+        -514.1904999999999
+      ],
+      "rawDemStart": 33.591828,
+      "rawDemEnd": 33.630645,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 544.1888896506891
+      }
+    },
+    {
+      "id": "way/223276686",
+      "source": "https://www.openstreetmap.org/way/223276686",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.4539091086489355,
+      "startHeight": 33.634844,
+      "endHeight": 33.623991000000004,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.010852999999997337,
+      "minimumRun": 7.4539091086489355,
+      "center": [
+        -242.656,
+        33.625,
+        -504.4275
+      ],
+      "rawDemStart": 33.634844,
+      "rawDemEnd": 33.623991000000004,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 534.2205977798403
+      }
+    },
+    {
+      "id": "way/260121349",
+      "source": "https://www.openstreetmap.org/way/260121349",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.2777578017762599,
+      "startHeight": 58.057362,
+      "endHeight": 58.007423999999986,
+      "mappedCount": 3,
+      "renderedCount": 3,
+      "maxRise": 0.016646000000003863,
+      "minimumRun": 0.4259192672587102,
+      "center": [
+        298.9785,
+        58.040000000000006,
+        -1442.556
+      ],
+      "rawDemStart": 58.057362,
+      "rawDemEnd": 58.007423999999986,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1135.395039099718
+      }
+    },
+    {
+      "id": "way/301527765",
+      "source": "https://www.openstreetmap.org/way/301527765",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 13.186976681559731,
+      "startHeight": 92.75828299999999,
+      "endHeight": 94.10164200000001,
+      "mappedCount": 1,
+      "renderedCount": 9,
+      "maxRise": 0.14926211111111343,
+      "minimumRun": 1.4652196312843908,
+      "center": [
+        541.1785,
+        93.33500000000001,
+        -296.4605
+      ],
+      "rawDemStart": 92.75828299999999,
+      "rawDemEnd": 94.10164200000001,
+      "adaptedGround": false,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 43.191587867315064
+      }
+    },
+    {
+      "id": "way/335685443",
+      "source": "https://www.openstreetmap.org/way/335685443",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.515598512427347,
+      "startHeight": 30.423503999999998,
+      "endHeight": 30.419319,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.0041849999999961085,
+      "minimumRun": 7.515598512427347,
+      "center": [
+        -187.7255,
+        30.42,
+        784.719
+      ],
+      "rawDemStart": 30.423503999999998,
+      "rawDemEnd": 30.419319,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 785.4653457099492
+      }
+    },
+    {
+      "id": "way/335685459",
+      "source": "https://www.openstreetmap.org/way/335685459",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 6.012631038073146,
+      "startHeight": 29.916404999999997,
+      "endHeight": 29.875398999999998,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.04100599999999943,
+      "minimumRun": 6.012631038073146,
+      "center": [
+        -208.762,
+        29.9,
+        663.648
+      ],
+      "rawDemStart": 29.916404999999997,
+      "rawDemEnd": 29.875398999999998,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 669.1919937865366
+      }
+    },
+    {
+      "id": "way/439990443",
+      "source": "https://www.openstreetmap.org/way/439990443",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile",
+        "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
+      ],
+      "length": 21.96012579654316,
+      "startHeight": 66.33888734095414,
+      "endHeight": 70.167766,
+      "mappedCount": 10,
+      "renderedCount": 24,
+      "maxRise": 0.1595366107935773,
+      "minimumRun": 0.9150052415225948,
+      "center": [
+        544.2574999999999,
+        68.69999999999999,
+        -156.52100000000002
+      ],
+      "rawDemStart": 67.412788,
+      "rawDemEnd": 70.167766,
+      "adaptedGround": true,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 22.068766532137673
+      }
+    },
+    {
+      "id": "way/439990444",
+      "source": "https://www.openstreetmap.org/way/439990444",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 29.34519655752882,
+      "startHeight": 87.717684,
+      "endHeight": 91.41818300000001,
+      "mappedCount": 6,
+      "renderedCount": 24,
+      "maxRise": 0.15418745833333367,
+      "minimumRun": 1.22271652323034,
+      "center": [
+        549.6485,
+        89.605,
+        -245.60399999999998
+      ],
+      "rawDemStart": 87.717684,
+      "rawDemEnd": 91.41818300000001,
+      "adaptedGround": false,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 91.45041348320959
+      }
+    },
+    {
+      "id": "way/439990449",
+      "source": "https://www.openstreetmap.org/way/439990449",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile",
+        "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
+      ],
+      "length": 36.90717099703059,
+      "startHeight": 94.10164200000001,
+      "endHeight": 102.78897600000002,
+      "mappedCount": 24,
+      "renderedCount": 56,
+      "maxRise": 0.15931377777777161,
+      "minimumRun": 0.4773988930914783,
+      "center": [
+        545.4287073212638,
+        97.21797337613775,
+        -320.77178432587044
+      ],
+      "rawDemStart": 94.10164200000001,
+      "rawDemEnd": 102.34230200000006,
+      "adaptedGround": true,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 19.554347676140846
+      }
+    },
+    {
+      "id": "way/439990450",
+      "source": "https://www.openstreetmap.org/way/439990450",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 35.85795603347583,
+      "startHeight": 70.167766,
+      "endHeight": 81.73656400000003,
+      "mappedCount": 6,
+      "renderedCount": 73,
+      "maxRise": 0.15976202777777992,
+      "minimumRun": 0.46894928274168246,
+      "center": [
+        545.3301750795796,
+        76.4005101294661,
+        -185.23909273642397
+      ],
+      "rawDemStart": 70.167766,
+      "rawDemEnd": 81.73656400000003,
+      "adaptedGround": false,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 50.803879278989484
+      }
+    },
+    {
+      "id": "way/439990452",
+      "source": "https://www.openstreetmap.org/way/439990452",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 28.61137850576233,
+      "startHeight": 81.73656400000003,
+      "endHeight": 87.717684,
+      "mappedCount": 20,
+      "renderedCount": 38,
+      "maxRise": 0.15739789473684146,
+      "minimumRun": 0.7529310133095096,
+      "center": [
+        546.337,
+        84.83500000000001,
+        -216.98399999999998
+      ],
+      "rawDemStart": 81.73656400000003,
+      "rawDemEnd": 87.717684,
+      "adaptedGround": false,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 82.56250249356542
+      }
+    },
+    {
+      "id": "way/464711672",
+      "source": "https://www.openstreetmap.org/way/464711672",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.833712912789066,
+      "startHeight": 35.743918,
+      "endHeight": 35.726538999999995,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.017379000000005362,
+      "minimumRun": 7.833712912789066,
+      "center": [
+        -150.8115,
+        35.735,
+        -1490.1395
+      ],
+      "rawDemStart": 35.743918,
+      "rawDemEnd": 35.726538999999995,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1353.0432624068235
+      }
+    },
+    {
+      "id": "way/649037624",
+      "source": "https://www.openstreetmap.org/way/649037624",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 73.03270909117285,
+      "startHeight": 171.474861,
+      "endHeight": 181.77763199999995,
+      "mappedCount": 10,
+      "renderedCount": 66,
+      "maxRise": 0.15788720000000087,
+      "minimumRun": 0.7474562722277884,
+      "center": [
+        822.0985304214861,
+        176.0087468161281,
+        -140.11629665931324
+      ],
+      "rawDemStart": 171.474861,
+      "rawDemEnd": 181.77763199999995,
+      "adaptedGround": false,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "chaya_s",
+        "label": "Nishimura-tei",
+        "distance": 69.09854201763461
+      }
+    },
+    {
+      "id": "way/775459047",
+      "source": "https://www.openstreetmap.org/way/775459047",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 1.519401197840903,
+      "startHeight": 50.593096,
+      "endHeight": 50.592648000000004,
+      "mappedCount": 9,
+      "renderedCount": 1,
+      "maxRise": 0.0004479999999986717,
+      "minimumRun": 1.519401197840903,
+      "center": [
+        195.904,
+        50.435,
+        -1116.201
+      ],
+      "rawDemStart": 50.593096,
+      "rawDemEnd": 50.592648000000004,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 858.8512203757995
+      }
+    },
+    {
+      "id": "way/775463560",
+      "source": "https://www.openstreetmap.org/way/775463560",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.560142378853235,
+      "startHeight": 45.982957,
+      "endHeight": 45.989832,
+      "mappedCount": 3,
+      "renderedCount": 3,
+      "maxRise": 0.0022916666666669507,
+      "minimumRun": 0.8533807929510783,
+      "center": [
+        -38.5835,
+        45.985,
+        -917.1610000000001
+      ],
+      "rawDemStart": 45.982957,
+      "rawDemEnd": 45.989832,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 831.3471357665521
+      }
+    },
+    {
+      "id": "way/775644599",
+      "source": "https://www.openstreetmap.org/way/775644599",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.47126222809317,
+      "startHeight": 50.902131,
+      "endHeight": 50.917042,
+      "mappedCount": 6,
+      "renderedCount": 6,
+      "maxRise": 0.0024851666666675007,
+      "minimumRun": 0.41187703801552833,
+      "center": [
+        60.664,
+        50.91,
+        -1044.4885
+      ],
+      "rawDemStart": 50.902131,
+      "rawDemEnd": 50.917042,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 864.2019096844498
+      }
+    },
+    {
+      "id": "way/775661613",
+      "source": "https://www.openstreetmap.org/way/775661613",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 3.45715750292057,
+      "startHeight": 44.790917,
+      "endHeight": 44.886264000000004,
+      "mappedCount": 6,
+      "renderedCount": 6,
+      "maxRise": 0.015891166666667306,
+      "minimumRun": 0.5761929171534274,
+      "center": [
+        32.5075,
+        44.80500000000001,
+        -1173.0014999999999
+      ],
+      "rawDemStart": 44.790917,
+      "rawDemEnd": 44.886264000000004,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 986.9051234776823
+      }
+    },
+    {
+      "id": "way/775678667",
+      "source": "https://www.openstreetmap.org/way/775678667",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 12.486371850942174,
+      "startHeight": 45.180964,
+      "endHeight": 45.22895200000001,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.047988000000003694,
+      "minimumRun": 12.486371850942174,
+      "center": [
+        24.616500000000002,
+        45.15,
+        -1244.9025000000001
+      ],
+      "rawDemStart": 45.180964,
+      "rawDemEnd": 45.22895200000001,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1052.4900107338312
+      }
+    },
+    {
+      "id": "way/775831327",
+      "source": "https://www.openstreetmap.org/way/775831327",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 0.8852734040961617,
+      "startHeight": 57.382643,
+      "endHeight": 57.45965999999999,
+      "mappedCount": 6,
+      "renderedCount": 1,
+      "maxRise": 0.07701699999999079,
+      "minimumRun": 0.8852734040961617,
+      "center": [
+        127.4445,
+        57.474999999999994,
+        -936.52
+      ],
+      "rawDemStart": 57.382643,
+      "rawDemEnd": 57.45965999999999,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 737.4945640384409
+      }
+    },
+    {
+      "id": "way/780206288",
+      "source": "https://www.openstreetmap.org/way/780206288",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.5727961442758347,
+      "startHeight": 37.937067,
+      "endHeight": 37.896095,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.040971999999996456,
+      "minimumRun": 2.5727961442758347,
+      "center": [
+        -87.142,
+        37.91,
+        -1415.511
+      ],
+      "rawDemStart": 37.937067,
+      "rawDemEnd": 37.896095,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1256.2307769231734
+      }
+    },
+    {
+      "id": "way/790920584",
+      "source": "https://www.openstreetmap.org/way/790920584",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 7.237296801983448,
+      "startHeight": 30.552400000000002,
+      "endHeight": 30.55651,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.0041099999999971715,
+      "minimumRun": 7.237296801983448,
+      "center": [
+        -189.8515,
+        30.55,
+        558.924
+      ],
+      "rawDemStart": 30.552400000000002,
+      "rawDemEnd": 30.55651,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 562.7777419445887
+      }
+    },
+    {
+      "id": "way/790920586",
+      "source": "https://www.openstreetmap.org/way/790920586",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 12.983811497399307,
+      "startHeight": 30.55651,
+      "endHeight": 30.535089,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.021421000000000134,
+      "minimumRun": 12.983811497399307,
+      "center": [
+        -190.093,
+        30.54,
+        569.0264999999999
+      ],
+      "rawDemStart": 30.55651,
+      "rawDemEnd": 30.535089,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 572.7507122223856
+      }
+    },
+    {
+      "id": "way/790920589",
+      "source": "https://www.openstreetmap.org/way/790920589",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 8.729376209100003,
+      "startHeight": 30.512569,
+      "endHeight": 30.474671999999998,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.03789700000000096,
+      "minimumRun": 8.729376209100003,
+      "center": [
+        -188.3095,
+        30.490000000000002,
+        674.496
+      ],
+      "rawDemStart": 30.512569,
+      "rawDemEnd": 30.474671999999998,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 676.4316335050054
+      }
+    },
+    {
+      "id": "way/790920590",
+      "source": "https://www.openstreetmap.org/way/790920590",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 9.202241574746822,
+      "startHeight": 30.513990999999997,
+      "endHeight": 30.512569,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.001421999999998036,
+      "minimumRun": 9.202241574746822,
+      "center": [
+        -188.5695,
+        30.51,
+        665.5345
+      ],
+      "rawDemStart": 30.513990999999997,
+      "rawDemEnd": 30.512569,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 667.6169545633934
+      }
+    },
+    {
+      "id": "way/790920592",
+      "source": "https://www.openstreetmap.org/way/790920592",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 12.438467148326518,
+      "startHeight": 29.973824999999998,
+      "endHeight": 29.997344,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.02351900000000029,
+      "minimumRun": 12.438467148326518,
+      "center": [
+        -205.6695,
+        29.990000000000002,
+        664.171
+      ],
+      "rawDemStart": 29.973824999999998,
+      "rawDemEnd": 29.997344,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 669.1413852626738
+      }
+    },
+    {
+      "id": "way/790920593",
+      "source": "https://www.openstreetmap.org/way/790920593",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 36.439380483208055,
+      "startHeight": 29.997344,
+      "endHeight": 29.971633999999998,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.02571000000000012,
+      "minimumRun": 36.439380483208055,
+      "center": [
+        -205.5465,
+        29.990000000000002,
+        688.5944999999999
+      ],
+      "rawDemStart": 29.997344,
+      "rawDemEnd": 29.971633999999998,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 693.1570601909065
+      }
+    },
+    {
+      "id": "way/790920595",
+      "source": "https://www.openstreetmap.org/way/790920595",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 12.69016138589267,
+      "startHeight": 30.424756999999996,
+      "endHeight": 30.422019,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.0027379999999972426,
+      "minimumRun": 12.69016138589267,
+      "center": [
+        -187.735,
+        30.42,
+        772.869
+      ],
+      "rawDemStart": 30.424756999999996,
+      "rawDemEnd": 30.422019,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 773.7199385992324
+      }
+    },
+    {
+      "id": "way/881505933",
+      "source": "https://www.openstreetmap.org/way/881505933",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.290867925079865,
+      "startHeight": 64.850827,
+      "endHeight": 64.80606399999999,
+      "mappedCount": 3,
+      "renderedCount": 3,
+      "maxRise": 0.014921000000001072,
+      "minimumRun": 0.43028930835991724,
+      "center": [
+        350.11400000000003,
+        64.84,
+        -979.4110000000001
+      ],
+      "rawDemStart": 64.850827,
+      "rawDemEnd": 64.80606399999999,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 674.9992666077496
+      }
+    },
+    {
+      "id": "way/891328518",
+      "source": "https://www.openstreetmap.org/way/891328518",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 4.375261935016001,
+      "startHeight": 53.61398799999999,
+      "endHeight": 53.640596,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.02660800000001018,
+      "minimumRun": 4.375261935016001,
+      "center": [
+        144.19349999999997,
+        53.635,
+        -1065.901
+      ],
+      "rawDemStart": 53.61398799999999,
+      "rawDemEnd": 53.640596,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 837.692692827895
+      }
+    },
+    {
+      "id": "way/901989776",
+      "source": "https://www.openstreetmap.org/way/901989776",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 6.744364314003291,
+      "startHeight": 48.063157000000004,
+      "endHeight": 48.100013000000004,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.03685600000000022,
+      "minimumRun": 6.744364314003291,
+      "center": [
+        73.0065,
+        48.06,
+        -1158.0955
+      ],
+      "rawDemStart": 48.063157000000004,
+      "rawDemEnd": 48.100013000000004,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 953.1318533563443
+      }
+    },
+    {
+      "id": "way/901989782",
+      "source": "https://www.openstreetmap.org/way/901989782",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 3.470800051861231,
+      "startHeight": 47.49276599999999,
+      "endHeight": 47.528904,
+      "mappedCount": 8,
+      "renderedCount": 8,
+      "maxRise": 0.004517250000001027,
+      "minimumRun": 0.4338500064825968,
+      "center": [
+        64.53649999999999,
+        47.495000000000005,
+        -1172.445
+      ],
+      "rawDemStart": 47.49276599999999,
+      "rawDemEnd": 47.528904,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 969.7946489660839
+      }
+    },
+    {
+      "id": "way/901989787",
+      "source": "https://www.openstreetmap.org/way/901989787",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.005676943079451,
+      "startHeight": 47.251450999999996,
+      "endHeight": 47.32091500000001,
+      "mappedCount": 6,
+      "renderedCount": 6,
+      "maxRise": 0.011577333333335105,
+      "minimumRun": 0.33427949051305283,
+      "center": [
+        60.349000000000004,
+        47.269999999999996,
+        -1184.851
+      ],
+      "rawDemStart": 47.251450999999996,
+      "rawDemEnd": 47.32091500000001,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 982.6133150054502
+      }
+    },
+    {
+      "id": "way/902014341",
+      "source": "https://www.openstreetmap.org/way/902014341",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.1287692412535053,
+      "startHeight": 46.887569,
+      "endHeight": 46.913602999999995,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.02603399999999567,
+      "minimumRun": 1.1287692412535053,
+      "center": [
+        45.019000000000005,
+        46.9,
+        -1136.388
+      ],
+      "rawDemStart": 46.887569,
+      "rawDemEnd": 46.913602999999995,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 949.278483146542
+      }
+    },
+    {
+      "id": "way/902014342",
+      "source": "https://www.openstreetmap.org/way/902014342",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 4.865280361911327,
+      "startHeight": 46.794417,
+      "endHeight": 46.887569,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.09315199999999635,
+      "minimumRun": 4.865280361911327,
+      "center": [
+        47.9245,
+        46.835,
+        -1137.123
+      ],
+      "rawDemStart": 46.794417,
+      "rawDemEnd": 46.887569,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 948.335883492368
+      }
+    },
+    {
+      "id": "way/1010380145",
+      "source": "https://www.openstreetmap.org/way/1010380145",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.8340000000000032,
+      "startHeight": 49.52891600000001,
+      "endHeight": 49.56914600000002,
+      "mappedCount": 4,
+      "renderedCount": 4,
+      "maxRise": 0.010057500000002051,
+      "minimumRun": 0.45849999999995816,
+      "center": [
+        449.84900000000005,
+        49.61,
+        885.146
+      ],
+      "rawDemStart": 49.52891600000001,
+      "rawDemEnd": 49.56914600000002,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 838.4753658730828
+      }
+    },
+    {
+      "id": "way/1010380146",
+      "source": "https://www.openstreetmap.org/way/1010380146",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 2.536023856354669,
+      "startHeight": 49.328132,
+      "endHeight": 49.419648,
+      "mappedCount": 5,
+      "renderedCount": 5,
+      "maxRise": 0.01830320000000114,
+      "minimumRun": 0.5072047712708884,
+      "center": [
+        442.155,
+        49.435,
+        885.1845000000001
+      ],
+      "rawDemStart": 49.328132,
+      "rawDemEnd": 49.419648,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 836.8577925168947
+      }
+    },
+    {
+      "id": "way/1157645025",
+      "source": "https://www.openstreetmap.org/way/1157645025",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.6362130056933388,
+      "startHeight": 41.976518,
+      "endHeight": 41.992627000000006,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.016109000000007256,
+      "minimumRun": 1.6362130056933388,
+      "center": [
+        38.451,
+        41.98,
+        158.2185
+      ],
+      "rawDemStart": 41.976518,
+      "rawDemEnd": 41.992627000000006,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "gehaiden",
+        "label": "Gehaiden",
+        "distance": 160.1056843751964
+      }
+    },
+    {
+      "id": "way/1160074503",
+      "source": "https://www.openstreetmap.org/way/1160074503",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 3.769347158328608,
+      "startHeight": 33.55697299999999,
+      "endHeight": 33.504810000000006,
+      "mappedCount": 20,
+      "renderedCount": 20,
+      "maxRise": 0.0026081499999992984,
+      "minimumRun": 0.18846735791641356,
+      "center": [
+        -246.0455,
+        33.44,
+        -760.5125
+      ],
+      "rawDemStart": 33.55697299999999,
+      "rawDemEnd": 33.504810000000006,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 783.2477677762638
+      }
+    },
+    {
+      "id": "way/1270763270",
+      "source": "https://www.openstreetmap.org/way/1270763270",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
+      ],
+      "length": 7.101469145390591,
+      "startHeight": 183.79392799999994,
+      "endHeight": 183.79392799999994,
+      "mappedCount": null,
+      "renderedCount": 2,
+      "maxRise": 0,
+      "minimumRun": 1.6286515895058808,
+      "center": [
+        1204.821103008406,
+        185.27343300272096,
+        -169.63643191738515
+      ],
+      "rawDemStart": 185.7234859999999,
+      "rawDemEnd": 184.3679250000001,
+      "adaptedGround": true,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "mitsurugi",
+        "label": "Mitsurugi-sha",
+        "distance": 2.3681271038995657
+      }
+    },
+    {
+      "id": "way/1270763271",
+      "source": "https://www.openstreetmap.org/way/1270763271",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
+      ],
+      "length": 1.2097921309050523,
+      "startHeight": 183.79392799999994,
+      "endHeight": 183.79392799999994,
+      "mappedCount": 3,
+      "renderedCount": 3,
+      "maxRise": 0,
+      "minimumRun": 0.4032640436349501,
+      "center": [
+        1201.97,
+        184.25,
+        -175.5565
+      ],
+      "rawDemStart": 183.88516700000008,
+      "rawDemEnd": 184.39389499999996,
+      "adaptedGround": true,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "mitsurugi",
+        "label": "Mitsurugi-sha",
+        "distance": 5.64287375811296
+      }
+    },
+    {
+      "id": "way/1271062689",
+      "source": "https://www.openstreetmap.org/way/1271062689",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "local terrace grading modifies raw DEM; inspect authored stairs before changing heights"
+      ],
+      "length": 7.202284359840287,
+      "startHeight": 231.04668952847345,
+      "endHeight": 231.047797,
+      "mappedCount": 14,
+      "renderedCount": 14,
+      "maxRise": 0.0000791051090394441,
+      "minimumRun": 0.5144488828457334,
+      "center": [
+        1171.141,
+        231.225,
+        15.457
+      ],
+      "rawDemStart": 231.042045,
+      "rawDemEnd": 231.18077,
+      "adaptedGround": true,
+      "nearPilgrimage": true,
+      "nearestAnchor": {
+        "id": "summit",
+        "label": "Ichinomine",
+        "distance": 9.433929616018979
+      }
+    },
+    {
+      "id": "way/1274410498",
+      "source": "https://www.openstreetmap.org/way/1274410498",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise",
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 0.495176736125602,
+      "startHeight": 49.765581999999995,
+      "endHeight": 49.79511799999999,
+      "mappedCount": 5,
+      "renderedCount": 1,
+      "maxRise": 0.029535999999993123,
+      "minimumRun": 0.495176736125602,
+      "center": [
+        105.66499999999999,
+        49.78,
+        -42.641
+      ],
+      "rawDemStart": 49.765581999999995,
+      "rawDemEnd": 49.79511799999999,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "tamayama",
+        "label": "Tamayama Inari",
+        "distance": 8.970941979524776
+      }
+    },
+    {
+      "id": "way/1275931671",
+      "source": "https://www.openstreetmap.org/way/1275931671",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 9.128353739859117,
+      "startHeight": 86.84607499999998,
+      "endHeight": 88.82454599999998,
+      "mappedCount": 5,
+      "renderedCount": 13,
+      "maxRise": 0.15219007692307684,
+      "minimumRun": 0.7021810569122202,
+      "center": [
+        363.45550000000003,
+        87.815,
+        -807.3835
+      ],
+      "rawDemStart": 86.84607499999998,
+      "rawDemEnd": 88.82454599999998,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 508.7102533235398
+      }
+    },
+    {
+      "id": "way/1327852998",
+      "source": "https://www.openstreetmap.org/way/1327852998",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 8.185980026850817,
+      "startHeight": 26.995273,
+      "endHeight": 27.019341,
+      "mappedCount": 14,
+      "renderedCount": 14,
+      "maxRise": 0.0017191428571428397,
+      "minimumRun": 0.5847128590606804,
+      "center": [
+        -571.4695,
+        27.005,
+        -793.758
+      ],
+      "rawDemStart": 26.995273,
+      "rawDemEnd": 27.019341,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 936.0905047025368
+      }
+    },
+    {
+      "id": "way/1387673527",
+      "source": "https://www.openstreetmap.org/way/1387673527",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 3.3292439081569007,
+      "startHeight": 28.837038,
+      "endHeight": 28.901584,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.06454599999999999,
+      "minimumRun": 3.3292439081569007,
+      "center": [
+        -504.5795,
+        28.880000000000003,
+        -759.828
+      ],
+      "rawDemStart": 28.837038,
+      "rawDemEnd": 28.901584,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 873.2350670949088
+      }
+    },
+    {
+      "id": "way/1396734933",
+      "source": "https://www.openstreetmap.org/way/1396734933",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 4.744040577398147,
+      "startHeight": 72.171789,
+      "endHeight": 72.224684,
+      "mappedCount": 12,
+      "renderedCount": 12,
+      "maxRise": 0.00440791666666603,
+      "minimumRun": 0.3953367147831465,
+      "center": [
+        387.52049999999997,
+        72.21000000000001,
+        445.122
+      ],
+      "rawDemStart": 72.171789,
+      "rawDemEnd": 72.224684,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 397.11665234065674
+      }
+    },
+    {
+      "id": "way/1402555559",
+      "source": "https://www.openstreetmap.org/way/1402555559",
+      "reasons": [
+        "mapped count incompatible with intermediate DEM profile"
+      ],
+      "length": 11.978505082020858,
+      "startHeight": 60.356106999999994,
+      "endHeight": 67.94751799999999,
+      "mappedCount": 30,
+      "renderedCount": 42,
+      "maxRise": 0.1807478809523808,
+      "minimumRun": 0.2852025019528523,
+      "center": [
+        395.229,
+        64.045,
+        147.676
+      ],
+      "rawDemStart": 60.356106999999994,
+      "rawDemEnd": 67.94751799999999,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 152.45128414021315
+      }
+    },
+    {
+      "id": "way/1496838898",
+      "source": "https://www.openstreetmap.org/way/1496838898",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 3.0762478768785333,
+      "startHeight": 28.67307,
+      "endHeight": 28.698971999999998,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.025901999999998537,
+      "minimumRun": 3.0762478768785333,
+      "center": [
+        -404.3605,
+        28.675,
+        -1240.6
+      ],
+      "rawDemStart": 28.67307,
+      "rawDemEnd": 28.698971999999998,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 1286.857680149693
+      }
+    },
+    {
+      "id": "way/1496839986",
+      "source": "https://www.openstreetmap.org/way/1496839986",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 5.1233724244875125,
+      "startHeight": 26.847142,
+      "endHeight": 26.898573000000003,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.05143100000000089,
+      "minimumRun": 5.1233724244875125,
+      "center": [
+        -581.582,
+        26.865000000000002,
+        -802.1234999999999
+      ],
+      "rawDemStart": 26.847142,
+      "rawDemEnd": 26.898573000000003,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 948.502648375981
+      }
+    },
+    {
+      "id": "way/1543930363",
+      "source": "https://www.openstreetmap.org/way/1543930363",
+      "reasons": [
+        "ground profile cannot resolve endpoint rise"
+      ],
+      "length": 1.4520223827476109,
+      "startHeight": 49.43842000000001,
+      "endHeight": 49.37587,
+      "mappedCount": null,
+      "renderedCount": 1,
+      "maxRise": 0.06255000000000877,
+      "minimumRun": 1.4520223827476109,
+      "center": [
+        197.044,
+        49.39,
+        -151.2385
+      ],
+      "rawDemStart": 49.43842000000001,
+      "rawDemEnd": 49.37587,
+      "adaptedGround": false,
+      "nearPilgrimage": false,
+      "nearestAnchor": {
+        "id": "byakko",
+        "label": "Byakko-sha",
+        "distance": 143.58960009781347
+      }
+    }
+  ]
+}

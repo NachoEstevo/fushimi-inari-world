@@ -3,7 +3,7 @@ import {pathSampler} from './spatial.mjs';
 import {stairProfile,inferredTreads,mappedTreads} from './stair-profile.mjs?v=9';
 
 export function makePathSurfaces(features,ground){
-  const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],correctedStairProfiles:[]};
+  const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],profileReview:[],correctedStairProfiles:[]};
   for(const path of features.paths){
     if(path.tags.tunnel==='yes'||path.tags.bridge==='yes')continue;
     const sampler=pathSampler(path.points),length=sampler.total;
@@ -18,6 +18,18 @@ export function makePathSurfaces(features,ground){
     }
     const resolved=stair?(mapped??inferredTreads(path.points,ground)):null;
     const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
+    if(stair){
+      const maxRise=Math.max(...resolved.map(t=>t.rise)),minimumRun=Math.min(...resolved.map(t=>Math.hypot(t.b[0]-t.a[0],t.b[2]-t.a[2])));
+      const reasons=[];
+      if(Math.abs(h1-h0)<.1)reasons.push('ground profile cannot resolve endpoint rise');
+      if(profile.conflict)reasons.push('mapped count incompatible with intermediate DEM profile');
+      if(maxRise>.24)reasons.push('insufficient horizontal run for safe inferred risers');
+      if(minimumRun<.18)reasons.push('tread shorter than 18 cm');
+      if(reasons.length){
+        profile.unresolved=true;
+        stats.profileReview.push({id:path.id,source:`https://www.openstreetmap.org/${path.id}`,reasons,length,startHeight:h0,endHeight:h1,mappedCount:profile.mapped,renderedCount:count,maxRise,minimumRun,center:sampler.at(.5).point});
+      }
+    }
     if(stair){stats.stairWays++;stats.treads+=count;if(sourceCount>0)stats.sourceStepCounts++;}
     if(profile?.unresolved)stats.unresolvedStairProfiles.push(path.id);
     if(profile?.conflict)stats.correctedStairProfiles.push({id:path.id,sourceCount:profile.mapped,renderedCount:count,rise:profile.rise,status:profile.status});
