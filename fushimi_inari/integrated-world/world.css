@@ -1,6 +1,30 @@
-header h1{font-family:Georgia,serif}aside{max-height:calc(100vh - 190px);overflow:auto}#panels{position:fixed;top:24px;right:160px}#interaction{position:fixed;left:25px;top:130px;width:340px;max-height:60vh;overflow:auto;padding:22px;background:#152720f5;border:1px solid #a8b69a55;border-radius:12px;line-height:1.7}#interaction small{display:block;color:#a4b5a4}#interaction button{margin-top:10px}#crosshair{position:fixed;left:50%;top:50%;font-size:20px;pointer-events:none;text-shadow:0 1px 4px black}.panels-hidden aside,.walking aside,#map-panel{display:none}.walking header{opacity:.45}.walking #panels{display:none}#audio{margin-top:8px}label[for=light],label[for=place]{margin-top:8px}#position{max-width:55%;text-align:center}.walking #position{max-width:calc(100% - 340px);left:20px;transform:none;bottom:45px}
-#navigation{position:fixed;right:18px;bottom:44px;width:270px;max-height:calc(100vh - 122px);overflow:auto;background:#132420ed;border:1px solid #81978066;padding:12px;border-radius:10px;box-shadow:0 8px 30px #0005}
-#navigation strong{font-size:11px;letter-spacing:2px}#navigation button{padding:7px;font-size:11px}#navigation select{padding:7px;font-size:11px}#navigation label{margin:9px 0 5px}#walk-map{width:100%;height:auto;display:block;border-radius:5px;margin:8px 0}#map-range{width:145px}#nav-location{font-size:10px;white-space:nowrap}#checkpoint-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}#navigation p{font-size:10px;color:#b4c7b3;margin-bottom:0}
-@media(max-width:700px){#panels{top:90px;right:16px}#interaction{left:10px;width:260px}#navigation{right:8px;width:205px;max-height:calc(100vh - 150px)}#navigation label,#navigation p{font-size:9px}#checkpoint-buttons button{font-size:10px}.walking #position{max-width:calc(100% - 235px);left:8px}#map-range{width:110px}#walk-map{max-height:155px}}
-#navigation details{margin-top:12px;border-top:1px solid #81978044;padding-top:10px;font-size:11px}#navigation summary{cursor:pointer;color:#c8d6bf}#navigation input[type=checkbox]{width:auto;margin-right:6px}#navigation input[type=range]{width:100%}#navigation small{display:block;font-size:10px;line-height:1.5;color:#a9baa4}#navigation details label{display:block}#ambient-toggle{margin-top:9px;width:100%}
-#walk-map{position:sticky;top:0;z-index:1;background:#162c25;box-shadow:0 5px 12px #132420}#navigation details a{color:#cbd9bd}
+/* Quiet exploration HUD; settings remain available in the Escape dialog. */
+:root{color-scheme:light;color:#29332e;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+header{top:26px;left:30px;right:30px;color:white;text-shadow:0 2px 18px #0008}
+header h1{font-family:Georgia,serif;font-size:30px;letter-spacing:-.7px;margin:5px 0}
+header .eyebrow{color:#ffffffb8;font-size:9px;letter-spacing:2px}
+header #summary,#panels,#position,#map-panel,header #overview{display:none!important}
+.walking header{opacity:1}
+button,select{color:#303b35;background:#ffffff70;border:1px solid #ffffffa0;border-radius:9px;padding:10px 12px;font:inherit}
+button:hover{background:#ffffffd9}button:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #567d67;outline-offset:3px}
+button:disabled{opacity:.4}select{width:100%}option{background:#f5f6f3;color:#29332e}
+label{color:#45534a;font-size:12px;margin:16px 0 7px}a{color:inherit}
+#menu-open{position:fixed;right:26px;top:26px;background:#ffffff65;backdrop-filter:blur(14px);font-size:12px;box-shadow:0 4px 24px #0001}
+#navigation{position:fixed;right:22px;bottom:42px;width:250px;padding:12px;border:1px solid #ffffff7a;border-radius:16px;background:#ffffff42;backdrop-filter:blur(14px);box-shadow:0 8px 30px #0001;color:#fff}
+#navigation strong{font-size:9px;letter-spacing:2px}#navigation .row{gap:8px}#nav-collapse{flex:0 0 28px;padding:3px;background:transparent;color:#fff;border:0}
+#walk-map{width:100%;height:auto;display:block;border-radius:8px;margin:8px 0;opacity:.88}
+#map-range{width:130px;padding:5px;font-size:10px;background:#ffffff70}#nav-location{font-size:10px}
+#nav-content>small{display:none}
+#exploration-menu{width:min(440px,calc(100vw - 28px));max-height:calc(100dvh - 48px);padding:25px;border:1px solid #ffffffb8;border-radius:22px;background:#ffffffd4;color:#29332e;backdrop-filter:blur(24px);box-shadow:0 24px 100px #0004;overflow:auto}
+#exploration-menu::backdrop{background:#16231d33;backdrop-filter:blur(4px)}
+.menu-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.menu-heading h2{font-family:Georgia,serif;font-size:27px;font-weight:400;margin:0}.menu-heading button{font-size:25px;border:0;background:transparent;padding:0 8px}
+#menu-settings>label:first-child{margin-top:0}#menu-settings details{color:#536158;border-color:#65746725}#menu-settings details label{font-size:12px}#menu-settings small{font-size:10px;color:#66736a}#menu-settings input[type=range]{width:100%}#ambient-toggle{width:100%;margin:12px 0 0}
+#menu-route{color:#3d4b41;border-color:#65746725;margin-top:22px}summary{cursor:pointer}
+#exploration-menu aside{display:block!important;position:static;width:auto;max-height:none;padding:12px 0 0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;overflow:visible}
+#exploration-menu aside .eyebrow,#exploration-menu aside #audio{display:none}#exploration-menu aside .note{color:#657268}#exploration-menu aside details{color:#536158;border-color:#65746725}#route-info{color:#526e5c}button.primary{background:#526e5c;border-color:#526e5c;color:white}button.primary:hover{background:#405d4a}
+.menu-help{font-size:11px;color:#66736a;line-height:1.7;margin:22px 0 0}
+#interaction{position:fixed;left:24px;top:115px;width:min(340px,calc(100vw - 48px));max-height:65vh;overflow:auto;padding:24px;background:#ffffffdb;backdrop-filter:blur(20px);border:1px solid #fff9;border-radius:18px;line-height:1.7}#interaction small{font-size:11px;color:#657268;display:block}
+#crosshair{position:fixed;left:50%;top:50%;font-size:18px;color:#fffd;pointer-events:none;text-shadow:0 1px 4px #000}
+footer{background:transparent;padding:10px 22px;color:#ffffffa8;text-shadow:0 1px 5px #000;font-size:9px;pointer-events:none}footer a{pointer-events:auto;color:inherit}
+#loading{color:white}
+@media(max-width:700px){header{left:18px;top:20px;right:100px}header h1{font-size:24px;max-width:230px}header .eyebrow{font-size:7px;letter-spacing:1px}#menu-open{right:16px;top:20px;padding:9px;font-size:11px}#navigation{right:12px;bottom:48px;width:200px;padding:9px}#exploration-menu{padding:22px;max-height:calc(100dvh - 24px)}footer{font-size:8px;padding:8px 12px}#map-range{width:115px}}

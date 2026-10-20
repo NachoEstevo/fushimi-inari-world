@@ -46,7 +46,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const keys=new Set(),direction=new THREE.Vector3(),right=new THREE.Vector3();
   const ray=new THREE.Raycaster(),panel=document.getElementById('interaction');
   const crosshair=document.getElementById('crosshair'),button=document.getElementById('freewalk');
-  let active=false,footstep=0;
+  let active=false,footstep=0,paused=false;
   function stop(){
     active=false;keys.clear();dragging=false;controls.enabled=true;crosshair.hidden=true;
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(8));
@@ -56,18 +56,18 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     document.activeElement?.blur();
     onStart();active=true;controls.enabled=false;crosshair.hidden=false;
     camera.position.y=assembly.walkHeight(camera.position.x,camera.position.z)+1.7;
-    document.body.classList.add('walking');button.textContent='Salir · Esc';
+    document.body.classList.add('walking');button.textContent='Vista libre';
   }
   button.onclick=()=>{if(active)stop();else start();};
   let dragging=false,lastX=0,lastY=0;
   const euler=new THREE.Euler(0,0,0,'YXZ');
   renderer.domElement.addEventListener('pointerdown',e=>{
-    if(!active)return;dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);
+    if(!active||paused)return;dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);
   });
   renderer.domElement.addEventListener('pointerup',()=>dragging=false);
   renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
   renderer.domElement.addEventListener('pointermove',e=>{
-    if(!active||!dragging)return;
+    if(!active||paused||!dragging)return;
     euler.setFromQuaternion(camera.quaternion);euler.y-=(e.clientX-lastX)*.003;
     euler.x=THREE.MathUtils.clamp(euler.x-(e.clientY-lastY)*.003,-1.45,1.45);
     camera.quaternion.setFromEuler(euler);lastX=e.clientX;lastY=e.clientY;
@@ -89,15 +89,14 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     data.onTrigger?.();
   }
   addEventListener('keydown',e=>{
-    if(!active)return;
+    if(!active||paused)return;
     if(e.target.closest?.('input,select,textarea'))return;
     if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){keys.add(e.code);e.preventDefault();}
     if(e.code==='KeyE')interact();
-    if(e.code==='Escape')stop();
   });
   addEventListener('keyup',e=>keys.delete(e.code));
   addEventListener('blur',()=>{keys.clear();if(active)stop();});
-  return {stop,start,get active(){return active;},teleport(point,target){
+  return {stop,start,pause(value){paused=value;keys.clear();dragging=false;},get active(){return active;},teleport(point,target){
     keys.clear();dragging=false;panel.hidden=true;
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){
@@ -111,6 +110,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     start();return true;
   },update(dt){
     if(!active)return false;
+    if(paused)return true;
     camera.getWorldDirection(direction);direction.y=0;direction.normalize();right.crossVectors(direction,camera.up).normalize();
     const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
     const side=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
@@ -127,7 +127,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
         audio.step(assembly.surfaces.sample(camera.position.x,camera.position.z)?.segment.kind==='stone');footstep=0;
       }
     }
-    document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m s.n.m. · WASD · arrastrar para mirar · Shift correr · E interactuar · Esc salir`;
+    document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m s.n.m. · WASD · arrastrar para mirar · Shift correr · E interactuar · Esc menú`;
     return true;
   }};
 }

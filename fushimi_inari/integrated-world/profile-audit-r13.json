@@ -1,0 +1,657 @@
+{
+  "revision": 13,
+  "reviewed": 54,
+  "scope": "Every profile flagged in revision 12. Walkability checks do not certify measured terrain.",
+  "profiles": [
+    {
+      "id": "way/127324423",
+      "source": "https://www.openstreetmap.org/way/127324423",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.09871400000000108,
+      "minimumRun": 2.983506996807619,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/223276652",
+      "source": "https://www.openstreetmap.org/way/223276652",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.016288499999987494,
+      "minimumRun": 3.9063014796607543,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/223276653",
+      "source": "https://www.openstreetmap.org/way/223276653",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.01940850000000438,
+      "minimumRun": 3.733522231084125,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/223276686",
+      "source": "https://www.openstreetmap.org/way/223276686",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.006073499999999399,
+      "minimumRun": 3.726954554324466,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/260121349",
+      "source": "https://www.openstreetmap.org/way/260121349",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.016646000000003863,
+      "minimumRun": 0.4259192672587102,
+      "renderedCount": 3,
+      "mappedCount": 3,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/301527765",
+      "source": "https://www.openstreetmap.org/way/301527765",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15287416666665976,
+      "minimumRun": 1.0989147234633072,
+      "renderedCount": 10,
+      "mappedCount": 1,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/335685443",
+      "source": "https://www.openstreetmap.org/way/335685443",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0020924999999998306,
+      "minimumRun": 3.757799256213616,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/335685459",
+      "source": "https://www.openstreetmap.org/way/335685459",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.020503000000001492,
+      "minimumRun": 3.006315519036573,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/439990443",
+      "source": "https://www.openstreetmap.org/way/439990443",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15735813333333462,
+      "minimumRun": 0.7320041932180911,
+      "renderedCount": 27,
+      "mappedCount": 10,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles",
+        "Empalme con escaleras originales y terraza local"
+      ]
+    },
+    {
+      "id": "way/439990444",
+      "source": "https://www.openstreetmap.org/way/439990444",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15599538888888986,
+      "minimumRun": 0.8151443488202267,
+      "renderedCount": 26,
+      "mappedCount": 6,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/439990448",
+      "source": "https://www.openstreetmap.org/way/439990448",
+      "result": "artificial-sampling-conflict-fixed; fidelity-unverified",
+      "mappedCount": 15,
+      "needed": [
+        "Medidas locales para certificar replica; conteo fuente conservado"
+      ]
+    },
+    {
+      "id": "way/439990449",
+      "source": "https://www.openstreetmap.org/way/439990449",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.21607381096653455,
+      "minimumRun": 0.2937839342101131,
+      "renderedCount": 56,
+      "mappedCount": 24,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles",
+        "Empalme con escaleras originales y terraza local"
+      ]
+    },
+    {
+      "id": "way/439990450",
+      "source": "https://www.openstreetmap.org/way/439990450",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15901681250000385,
+      "minimumRun": 0.3517119620562481,
+      "renderedCount": 76,
+      "mappedCount": 6,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/439990452",
+      "source": "https://www.openstreetmap.org/way/439990452",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15926050000000205,
+      "minimumRun": 0.6812232977562328,
+      "renderedCount": 40,
+      "mappedCount": 20,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/464711672",
+      "source": "https://www.openstreetmap.org/way/464711672",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.012451499999997395,
+      "minimumRun": 3.916856456394533,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/649037624",
+      "source": "https://www.openstreetmap.org/way/649037624",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15995922222221756,
+      "minimumRun": 0.6050836489462726,
+      "renderedCount": 73,
+      "mappedCount": 10,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/775459047",
+      "source": "https://www.openstreetmap.org/way/775459047",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0004479999999986717,
+      "minimumRun": 1.519401197840903,
+      "renderedCount": 1,
+      "mappedCount": 9,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/775463560",
+      "source": "https://www.openstreetmap.org/way/775463560",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0022916666666669507,
+      "minimumRun": 0.8533807929510783,
+      "renderedCount": 3,
+      "mappedCount": 3,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/775644599",
+      "source": "https://www.openstreetmap.org/way/775644599",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0024851666666675007,
+      "minimumRun": 0.41187703801552833,
+      "renderedCount": 6,
+      "mappedCount": 6,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/775661613",
+      "source": "https://www.openstreetmap.org/way/775661613",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.015891166666667306,
+      "minimumRun": 0.5761929171534274,
+      "renderedCount": 6,
+      "mappedCount": 6,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/775678667",
+      "source": "https://www.openstreetmap.org/way/775678667",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.020193999999996493,
+      "minimumRun": 4.162123950314057,
+      "renderedCount": 3,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/775831327",
+      "source": "https://www.openstreetmap.org/way/775831327",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.07701699999999079,
+      "minimumRun": 0.8852734040961617,
+      "renderedCount": 1,
+      "mappedCount": 6,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/780206288",
+      "source": "https://www.openstreetmap.org/way/780206288",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.040971999999996456,
+      "minimumRun": 2.5727961442758347,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920584",
+      "source": "https://www.openstreetmap.org/way/790920584",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0020549999999985857,
+      "minimumRun": 3.6186484009916673,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920586",
+      "source": "https://www.openstreetmap.org/way/790920586",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.007646666666669688,
+      "minimumRun": 4.327937165799768,
+      "renderedCount": 3,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920589",
+      "source": "https://www.openstreetmap.org/way/790920589",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.01926249999999996,
+      "minimumRun": 4.364688104550002,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920590",
+      "source": "https://www.openstreetmap.org/way/790920590",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0033945000000024095,
+      "minimumRun": 4.601120787373411,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920592",
+      "source": "https://www.openstreetmap.org/way/790920592",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.007839666666669132,
+      "minimumRun": 4.146155716108764,
+      "renderedCount": 3,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920593",
+      "source": "https://www.openstreetmap.org/way/790920593",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.00612862500000233,
+      "minimumRun": 4.554922560400936,
+      "renderedCount": 8,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/790920595",
+      "source": "https://www.openstreetmap.org/way/790920595",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0038899999999983943,
+      "minimumRun": 4.230053795297557,
+      "renderedCount": 3,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/881505933",
+      "source": "https://www.openstreetmap.org/way/881505933",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.014921000000001072,
+      "minimumRun": 0.4302893083599173,
+      "renderedCount": 3,
+      "mappedCount": 3,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/891328518",
+      "source": "https://www.openstreetmap.org/way/891328518",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.02660800000001018,
+      "minimumRun": 4.375261935016001,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/901989776",
+      "source": "https://www.openstreetmap.org/way/901989776",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.02461599999998043,
+      "minimumRun": 3.372182157001557,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/901989782",
+      "source": "https://www.openstreetmap.org/way/901989782",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.004517250000001027,
+      "minimumRun": 0.4338500064825968,
+      "renderedCount": 8,
+      "mappedCount": 8,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/901989787",
+      "source": "https://www.openstreetmap.org/way/901989787",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.011577333333335105,
+      "minimumRun": 0.33427949051305283,
+      "renderedCount": 6,
+      "mappedCount": 6,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/902014341",
+      "source": "https://www.openstreetmap.org/way/902014341",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.02603399999999567,
+      "minimumRun": 1.1287692412535053,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/902014342",
+      "source": "https://www.openstreetmap.org/way/902014342",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.09315199999999636,
+      "minimumRun": 4.865280361911327,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1010380145",
+      "source": "https://www.openstreetmap.org/way/1010380145",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.010057500000002053,
+      "minimumRun": 0.45849999999995816,
+      "renderedCount": 4,
+      "mappedCount": 4,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1010380146",
+      "source": "https://www.openstreetmap.org/way/1010380146",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.01830320000000114,
+      "minimumRun": 0.5072047712708884,
+      "renderedCount": 5,
+      "mappedCount": 5,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1157645025",
+      "source": "https://www.openstreetmap.org/way/1157645025",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.016109000000007256,
+      "minimumRun": 1.6362130056933388,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1160074503",
+      "source": "https://www.openstreetmap.org/way/1160074503",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0026081499999992984,
+      "minimumRun": 0.18846735791641356,
+      "renderedCount": 20,
+      "mappedCount": 20,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1270763270",
+      "source": "https://www.openstreetmap.org/way/1270763270",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0,
+      "minimumRun": 1.6286515895058808,
+      "renderedCount": 3,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Empalme con escaleras originales y terraza local"
+      ]
+    },
+    {
+      "id": "way/1270763271",
+      "source": "https://www.openstreetmap.org/way/1270763271",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0,
+      "minimumRun": 0.4032640436349501,
+      "renderedCount": 3,
+      "mappedCount": 3,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Empalme con escaleras originales y terraza local"
+      ]
+    },
+    {
+      "id": "way/1271062689",
+      "source": "https://www.openstreetmap.org/way/1271062689",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 7.91051090394441e-05,
+      "minimumRun": 0.5144488828457334,
+      "renderedCount": 14,
+      "mappedCount": 14,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Empalme con escaleras originales y terraza local"
+      ]
+    },
+    {
+      "id": "way/1274410498",
+      "source": "https://www.openstreetmap.org/way/1274410498",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.029535999999993123,
+      "minimumRun": 0.495176736125602,
+      "renderedCount": 1,
+      "mappedCount": 5,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel",
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/1275931671",
+      "source": "https://www.openstreetmap.org/way/1275931671",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.15871358333332827,
+      "minimumRun": 0.652025267132741,
+      "renderedCount": 13,
+      "mappedCount": 5,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/1276691447",
+      "source": "https://www.openstreetmap.org/way/1276691447",
+      "result": "artificial-sampling-conflict-fixed; fidelity-unverified",
+      "mappedCount": 7,
+      "needed": [
+        "Medidas locales para certificar replica; conteo fuente conservado"
+      ]
+    },
+    {
+      "id": "way/1327852998",
+      "source": "https://www.openstreetmap.org/way/1327852998",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.0017191428571428397,
+      "minimumRun": 0.5847128590606804,
+      "renderedCount": 14,
+      "mappedCount": 14,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1387673527",
+      "source": "https://www.openstreetmap.org/way/1387673527",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.06454599999999999,
+      "minimumRun": 3.3292439081569007,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1396734933",
+      "source": "https://www.openstreetmap.org/way/1396734933",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.00440791666666603,
+      "minimumRun": 0.3953367147831465,
+      "renderedCount": 12,
+      "mappedCount": 12,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1402555559",
+      "source": "https://www.openstreetmap.org/way/1402555559",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.20435585714286225,
+      "minimumRun": 0.2852025019528523,
+      "renderedCount": 41,
+      "mappedCount": 30,
+      "needed": [
+        "Conteo y cotas intermedias: fuente y perfil estimado no compatibles"
+      ]
+    },
+    {
+      "id": "way/1496838898",
+      "source": "https://www.openstreetmap.org/way/1496838898",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.025901999999998537,
+      "minimumRun": 3.0762478768785333,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1496839986",
+      "source": "https://www.openstreetmap.org/way/1496839986",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.025932500000003245,
+      "minimumRun": 2.5616862122437207,
+      "renderedCount": 2,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    },
+    {
+      "id": "way/1543930363",
+      "source": "https://www.openstreetmap.org/way/1543930363",
+      "result": "playable-estimate; fidelity-unverified",
+      "maxRise": 0.06255000000000877,
+      "minimumRun": 1.4520223827476109,
+      "renderedCount": 1,
+      "mappedCount": null,
+      "needed": [
+        "Cotas de descansos: el DEM no resuelve el desnivel"
+      ]
+    }
+  ]
+}

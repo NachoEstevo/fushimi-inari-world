@@ -1,11 +1,12 @@
+import {installExplorationMenu} from './exploration-menu.mjs';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs?v=10b';
-import {installExplorationHUD} from './exploration-hud.mjs?v=12';
-import {integrate} from './integration.mjs?v=12';
-import {installWalking} from './walking.mjs';
+import {installExplorationHUD} from './exploration-hud.mjs?v=13';
+import {integrate} from './integration.mjs?v=13';
+import {installWalking} from './walking.mjs?v=13';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -299,6 +300,7 @@ try {
     hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
+  const menu=installExplorationMenu({walker,controls,camera,assembly});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
 
@@ -338,7 +340,7 @@ try {
     sky.update();const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    hud.update(time);audio.update(camera,$('light').value==='night');
+    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night');
 
   }
   requestAnimationFrame(animate);

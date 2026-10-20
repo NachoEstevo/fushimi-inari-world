@@ -1,6 +1,6 @@
 import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
-import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=12';
+import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=13';
 
 export function makePathSurfaces(features,ground){
   const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],profileReview:[],correctedStairProfiles:[]};

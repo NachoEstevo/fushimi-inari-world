@@ -1,6 +1,6 @@
-# Mundo integrado · revisión 12
+# Mundo integrado · revisión 13
 
-Últimos cambios, fuentes y validación: [REFERENCES-R12.md](REFERENCES-R12.md).
+Últimos cambios, fuentes y validación: [REFERENCES-R13.md](REFERENCES-R13.md).
 
 Abrir `http://127.0.0.1:8420/integrated-world/index.html` o ejecutar
 `../iniciar_experiencia_3d.bat`. La demo inicial y ambas experiencias anteriores
@@ -10,7 +10,7 @@ siguen disponibles en sus ubicaciones originales.
 
 - **Visitar sector integrado:** 22 accesos a los pabellones y sectores trasladados.
 - **Caminar:** WASD/flechas, arrastrar para mirar, Shift para correr, E para
-  interactuar y Esc para salir. No depende de Pointer Lock, que el navegador
+  interactuar y Esc para abrir el menú. No depende de Pointer Lock, que el navegador
   integrado rechazó durante la prueba.
 - **Recorrer:** avance guiado sobre la red OSM, con pausa y velocidad seleccionable.
 - **Túnel de Senbon:** elegir cualquiera de las dos vías cartografiadas.

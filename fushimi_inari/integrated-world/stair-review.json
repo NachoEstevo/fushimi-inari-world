@@ -1,5 +1,5 @@
 {
-  "revision": 12,
+  "revision": 13,
   "units": "meters",
   "status": "Unresolved; measurements required. Derived OSM/GSI data, see geography/manifest.json.",
   "profiles": [
@@ -282,34 +282,6 @@
         "id": "mitsu",
         "label": "Mitsu-tsuji",
         "distance": 91.4504134832096
-      }
-    },
-    {
-      "id": "way/439990448",
-      "source": "https://www.openstreetmap.org/way/439990448",
-      "reasons": [
-        "mapped count incompatible with intermediate DEM profile"
-      ],
-      "length": 28.03237788700773,
-      "startHeight": 70.07106999999998,
-      "endHeight": 67.09515199999998,
-      "mappedCount": 15,
-      "renderedCount": 23,
-      "maxRise": 0.14130416666666198,
-      "minimumRun": 1.1680157452919877,
-      "center": [
-        250.4835,
-        68.625,
-        -0.6125000000000007
-      ],
-      "rawDemStart": 70.07106999999998,
-      "rawDemEnd": 67.09515199999998,
-      "adaptedGround": false,
-      "nearPilgrimage": true,
-      "nearestAnchor": {
-        "id": "senbon",
-        "label": "Senbon Torii",
-        "distance": 62.46514822282902
       }
     },
     {
@@ -1225,8 +1197,8 @@
       "endHeight": 231.047797,
       "mappedCount": 14,
       "renderedCount": 14,
-      "maxRise": 0.0011074715265522173,
-      "minimumRun": 0.2770109369169319,
+      "maxRise": 7.91051090394441e-05,
+      "minimumRun": 0.5144488828457334,
       "center": [
         1171.141,
         231.225,
@@ -1300,34 +1272,6 @@
       }
     },
     {
-      "id": "way/1276691447",
-      "source": "https://www.openstreetmap.org/way/1276691447",
-      "reasons": [
-        "mapped count incompatible with intermediate DEM profile"
-      ],
-      "length": 16.873659472681112,
-      "startHeight": 68.677013,
-      "endHeight": 70.113492,
-      "mappedCount": 7,
-      "renderedCount": 12,
-      "maxRise": 0.12353600000000142,
-      "minimumRun": 1.4061382893900705,
-      "center": [
-        248.782,
-        69.43,
-        -880.437
-      ],
-      "rawDemStart": 68.677013,
-      "rawDemEnd": 70.113492,
-      "adaptedGround": false,
-      "nearPilgrimage": false,
-      "nearestAnchor": {
-        "id": "mitsu",
-        "label": "Mitsu-tsuji",
-        "distance": 624.7712503188668
-      }
-    },
-    {
       "id": "way/1327852998",
       "source": "https://www.openstreetmap.org/way/1327852998",
       "reasons": [
@@ -1338,7 +1282,7 @@
       "endHeight": 27.019341,
       "mappedCount": 14,
       "renderedCount": 14,
-      "maxRise": 0.0017191428571433473,
+      "maxRise": 0.0017191428571428397,
       "minimumRun": 0.5847128590606804,
       "center": [
         -571.4695,

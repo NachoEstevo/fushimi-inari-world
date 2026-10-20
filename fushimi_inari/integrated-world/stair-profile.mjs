@@ -47,7 +47,14 @@ export function mappedTreads(points,ground,count){
   if(!Number.isInteger(count)||count<1)return null;
   // A credible total must also fit terrain between OSM vertices, not only
   // endpoint elevations. Keep the total or explicitly reject the conflict.
-  points=sampledStairAlignment(points);
+  const shaped=[points[0]];
+  for(let i=1;i<points.length;i++){
+    const samples=sampledStairAlignment([points[i-1],points[i]]);
+    const heights=samples.map(p=>ground(p[0],p[2]));
+    for(let j=1;j<samples.length-1;j++)if((heights[j]-heights[j-1])*(heights[j+1]-heights[j])<0)shaped.push(samples[j]);
+    shaped.push(points[i]);
+  }
+  points=shaped;
   const flights=points.slice(1).map((b,i)=>{
     const a=points[i],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
     const rise=Math.abs(ground(b[0],b[2])-ground(a[0],a[2]));
@@ -60,5 +67,7 @@ export function mappedTreads(points,ground,count){
     eligible.sort((a,b)=>(b.rise||b.length*.01)/(b.count+1)-(a.rise||a.length*.01)/(a.count+1));
     eligible[0].count++;
   }
+  // Preserve source bends and detected peaks/valleys, but do not force a
+  // separate integer flight at each arbitrary terrain sampling boundary.
   return inferredTreads(points,ground,flights.map(f=>f.count));
 }

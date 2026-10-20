@@ -49,3 +49,8 @@ test('mapped count cannot hide an intermediate hill on a long single edge',()=>{
   assert.ok(treads.every(t=>t.rise<=.24));
   assert.equal(mappedTreads(points,ground,4),null);
 });
+test('arbitrary terrain sample boundaries do not inflate a valid mapped total',()=>{
+  const treads=mappedTreads([[0,0,0],[16,0,0]],x=>x*.1,7);
+  assert.equal(treads.length,7);
+  assert.ok(treads.every(t=>t.rise<=.24));
+});

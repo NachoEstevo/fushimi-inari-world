@@ -5,7 +5,7 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs?v=10';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=12';
+import {makePathSurfaces} from './path-surfaces.mjs?v=13';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';

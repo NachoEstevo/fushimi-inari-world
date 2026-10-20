@@ -18,7 +18,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     <small>Campanillas interpretativas. <a href="../assets/audio/CREDITS.md" target="_blank" rel="noopener">Créditos de audio</a></small></details>
     <p>WASD · arrastrar para mirar · Shift acelera · Esc salir</p></div>`;
   document.body.append(panel);
-  panel.querySelector('#ambient-toggle').onclick=()=>{document.getElementById('audio').click();panel.querySelector('#ambient-toggle').textContent=document.getElementById('audio').textContent;};
+  panel.querySelector('#ambient-toggle').onclick=()=>{document.getElementById('audio').click();document.getElementById('ambient-toggle').textContent=document.getElementById('audio').textContent;};
   for(const input of panel.querySelectorAll('select'))input.onchange=()=>input.blur();
   const canvas=panel.querySelector('canvas'),ctx=canvas.getContext('2d');
   const select=panel.querySelector('#checkpoint-select');
