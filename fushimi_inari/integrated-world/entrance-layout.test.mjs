@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {separatedTemizuya,entryWallRuns,entryGardenTiers,westStairHeight} from './entrance-layout.mjs';
+import {separatedTemizuya,entryWallRuns,entryGardenTiers,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {rotateXZ} from './spatial.mjs';
 
 test('pavilion clears inherited corridor roof and retains mapped lateral offset',()=>{
@@ -32,4 +32,14 @@ test('planted tiers are set back with a continuous retaining level',()=>{
   assert.equal(upper.base,lower.top);
   assert.ok(upper.front<lower.back);
   for(const tier of entryGardenTiers){assert.ok(tier.front>tier.back);assert.ok(tier.top>tier.base);}
+});
+
+test('landing transition joins both datums and leaves unrelated courtyard untouched',()=>{
+  assert.equal(westLandingTransition(-22,-3.4,2),1.6);
+  assert.equal(westLandingTransition(-22,-7.4,2),2);
+  assert.equal(westLandingTransition(-10,-5,2),2);
+  for(const end of [1.2,2.1]){
+    let last=1.6;
+    for(let z=-3.4;z>=-7.4;z-=.05){const y=westLandingTransition(-22,z,end);assert.ok(Math.abs(y-last)<.011);last=y;}
+  }
 });

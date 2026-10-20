@@ -18,7 +18,8 @@ import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
-import {separatedTemizuya,westStairHeight} from './entrance-layout.mjs';
+import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
+import {refineRomonWings} from './romon-wings.mjs';
 import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
@@ -174,7 +175,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       if(a.id==='romon')localY=entryHeight(localX,localZ,localY);
       weightedHeight+=(a.target[1]+localY-a.source[1])*influence;weight+=influence;
     }
-    return weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
+    const courtyard=weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
+    const datum=byId.romon.target[1]-byId.romon.source[1];
+    return datum+westLandingTransition(ex,ez,courtyard-datum);
   }
   function moveObject(object){
     refineEntranceObjects(object,legacy.materials);
@@ -255,6 +258,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
       if(id==='romon'&&object.material===legacy.materials.precinctPaving)refineEntryPaving(object,legacy.materials.precinctPaving,legacy.materials.precinctCobbles);
     });
+    if(id==='romon')refineRomonWings(gltf.scene,legacy.materials);
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
   }
   const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';

@@ -26,6 +26,14 @@ export function buildEntranceBoundaries(root,romon,features,surfaces,materials,c
   // Level landing at the mapped path endpoint; tile dimensions remain inferred.
   for(let ix=0;ix<5;ix++)for(let iz=0;iz<5;iz++)
     box(1.006,.12,1.044,-24.8+(ix+.5)*1.02,1.54,-3.4+(iz+.5)*1.058,stone);
+  // Flush threshold drains: visible across the courtyard entrance at 01:40.
+  // The west counterpart follows that construction vocabulary (inferred).
+  const drain=new THREE.MeshStandardMaterial({color:'#303331',metalness:.35,roughness:.85});
+  for(const [start,end,z]of [[-24.65,-19.85,-3.22],[-4.4,4.4,-5.24]]){
+    box(end-start,.012,.20,(start+end)/2,1.607,z,drain);
+    for(let x=start+.035;x<end;x+=.07)box(.023,.012,.19,x,1.618,z,rail);
+    for(const side of [-1,1])box(end-start,.045,.075,(start+end)/2,1.589,z+side*.14,stone);
+  }
   group.position.fromArray(romon.target);group.rotation.y=romon.yaw;
   group.translateX(-romon.source[0]);group.translateY(-romon.source[1]);group.translateZ(-romon.source[2]);root.add(group);
   const path=features.paths.find(p=>p.id==='way/626313854');

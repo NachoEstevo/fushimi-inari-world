@@ -19,3 +19,10 @@ export function westStairHeight(x,z){
   if(x< -24.8||x> -19.7||z< -3.4||z>14.5)return null;
   return 1.6*Math.max(0,Math.min(1,(13.8-z)/(13.8-1.89)));
 }
+
+// Release the flat landing into the existing courtyard grade over four metres.
+export function westLandingTransition(x,z,courtyardHeight){
+  if(x< -24.8||x> -19.7||z> -3.4||z< -7.4)return courtyardHeight;
+  const t=(-z-3.4)/4,s=t*t*(3-2*t);
+  return 1.6+(courtyardHeight-1.6)*s;
+}
