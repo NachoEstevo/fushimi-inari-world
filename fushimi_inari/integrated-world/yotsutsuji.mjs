@@ -111,6 +111,20 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
     for(const dx of [-.92,.92])box(.18,.40,.38,x+dx,y+.20,z,legacy.materials.stoneMat);
     colliders.push({type:'box',args:[x,z,1.25,.26,0,y,y+.55,'yotsu_rest_bench']});
   }
+  // Additional west-facing rest seat on the planted margin, clear of stairs.
+  // This furnishing is interpretive, not a surveyed historical bench.
+  {
+    const x=794.15,z=-219.85,y=ground(x,z)+.11;
+    const turf=new THREE.MeshStandardMaterial({color:0x65734b,roughness:1});
+    box(1.45,.045,1.55,x,y-.045,z,turf);
+    for(const dz of [-.48,-.24,0,.24,.48])box(.55,.075,.20,x,y+.45,z+dz,wood);
+    box(.08,.30,1.45,x+.28,y+.77,z,wood);
+    for(const dz of [-.52,.52]){
+      box(.36,.40,.12,x,y+.20,z+dz,legacy.materials.stoneMat);
+      box(.07,.65,.07,x+.28,y+.46,z+dz,wood);
+    }
+    colliders.push({type:'box',args:[x,z,.32,.74,0,y,y+.95,'city_facing_bench']});
+  }
   // Low stone edge frames the outlook; the southern descent remains open.
   const edgeX=792.2,edgeZ=-218.2,edgeY=ground(edgeX,edgeZ);
   const edge=box(.30,.55,3.7,edgeX,edgeY+.275,edgeZ,legacy.materials.entryStoneMat);

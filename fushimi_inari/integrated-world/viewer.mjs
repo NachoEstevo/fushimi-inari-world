@@ -1,3 +1,4 @@
+import {installCityPanorama} from './city-panorama.mjs';
 import {terrainTriangles} from './terrain-triangles.mjs?v=24';
 import {installExplorationMenu} from './exploration-menu.mjs';
 import {installPhotoMode} from './photo-mode.mjs?v=27c';
@@ -9,8 +10,8 @@ import {distantCanopy} from './distant-canopy.mjs?v=25';
 import {blendCourtyardGround} from './courtyard-ground.mjs';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=26';
-import {installExplorationHUD} from './exploration-hud.mjs?v=27';
-import {integrate} from './integration.mjs?v=27b';
+import {installExplorationHUD} from './exploration-hud.mjs?v=28';
+import {integrate} from './integration.mjs?v=28';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -116,6 +117,7 @@ try {
     for(const child of chunks.children)child.receiveShadow=false;
     buildingGroup.add(chunks);mesh.geometry.dispose();
   }
+  const panorama=installCityPanorama(scene,features,ground,assembly.excludesBuilding);
   const canopy=distantCanopy(features,ground,assembly.pathDistance,terrain);scene.add(canopy.group);
   document.body.dataset.aerialContext=JSON.stringify({footprints:features.buildings.length,crowns:canopy.group.userData.count,canopyTriangles:canopy.group.userData.count*20,provenance:'OSM footprints; satellite-interpreted woodland; estimated heights'});
 
@@ -293,7 +295,7 @@ try {
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=id==='yotsu'?[-300,80,-300]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const target=['yotsu','kojingamine','west_view'].includes(id)?[-800,60,id==='kojingamine'?-1100:-300]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;
@@ -348,7 +350,7 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
-    sky.update();canopy.update(camera);
+    sky.update();canopy.update(camera);panorama.update(camera,$('buildings').checked);
     for(const {object,bounds} of assembly.forestChunks)object.visible=camera.position.distanceTo(bounds.center)<bounds.radius+400;
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.

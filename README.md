@@ -24,6 +24,14 @@ Open [the integrated world](http://127.0.0.1:8420/integrated-world/index.html).
 
 ## Explore
 
+The Checkpoints tab includes Yotsutsuji, Kojingamine and the western trail
+outlook. An additional west-facing bench sits on a planted margin at Yotsutsuji.
+City facade detail is built on first approach to these outlooks, shown within
+135 m and hidden beyond 180 m (or outside 115–340 m camera elevation). It retains
+its buffers for reuse; the ordinary low-cost aerial massing remains available.
+Footprints are mapped, while windows, building heights without OSM metadata and
+the added bench placement are interpretive. See [R28 notes](docs/r28-outlooks.md).
+
 | Control | Action |
 | --- | --- |
 | **Esc** | Open the tabbed exploration menu |

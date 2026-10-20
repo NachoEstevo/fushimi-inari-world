@@ -15,7 +15,7 @@ import {makePathSurfaces} from './path-surfaces.mjs?v=15';
 import {buildSenbon} from './senbon.mjs?v=26';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
-import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=27b';
+import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=28';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
@@ -330,6 +330,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
   buildCourtyardShop(root,features,ground,legacy.materials,colliders);
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
+  // Existing mapped outlooks: checkpoints use their connected trail nodes.
+  // No invented large terrace is flattened into the mountainside.
+  for(const [id,label,osm] of [
+    ['kojingamine','Kojingamine · north Kyoto view','node/749327432'],
+    ['west_view','Western trail · Kyoto view','node/9673171303']
+  ]){
+    const poi=features.pois.find(p=>p.id===osm);
+    if(poi){const a={id,label,osm,target:[...poi.point],radius:0};anchors.push(a);byId[id]=a;}
+  }
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
   buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders);
