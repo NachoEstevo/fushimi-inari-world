@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 07")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 08")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -113,7 +113,7 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
     const mode=$('light').value;
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
     sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
-    hemi.intensity=mode==='night'?.4:1.6;scene.background.set(mode==='night'?'#122039':mode==='gold'?'#9aada4':'#aabdb8');
+    hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
@@ -136,9 +136,11 @@ js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     hud.update(time);audio.update(camera,$('light').value==='night');
 """)
-js="import {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs';\n"+js
+js="import {installSky} from './sky.mjs';\nimport {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs';\n"+js
+js=js.replace("  const controls=new OrbitControls", "  const sky=installSky(scene,camera);\n  const controls=new OrbitControls")
+js=js.replace("    renderer.render(scene,camera);", "    sky.update();renderer.render(scene,camera);")
 js=js.replace("  let mapTimer=0;","  const recordRender=renderStats(renderer);\n  let mapTimer=0;")
-js=js.replace("    renderer.render(scene,camera);","    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);")
+js=js.replace("    sky.update();renderer.render(scene,camera);","    sky.update();const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);")
 start=js.index("  const pathGroup=new THREE.Group();")
 end=js.index("  // Footprints are sourced.",start)
 js=js[:start]+"  const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy);scene.add(pathGroup);\n\n"+js[end:]

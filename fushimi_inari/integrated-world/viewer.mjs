@@ -1,3 +1,4 @@
+import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs';
@@ -25,6 +26,7 @@ try {
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
   $('world').append(renderer.domElement);
   const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.2,12000);
+  const sky=installSky(scene,camera);
   const controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=3;controls.maxDistance=6000;
   const hemi=new THREE.HemisphereLight(0xe9f1e3,0x61765f,1.6);scene.add(hemi);
@@ -293,7 +295,7 @@ try {
     const mode=$('light').value;
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
     sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
-    hemi.intensity=mode==='night'?.4:1.6;scene.background.set(mode==='night'?'#122039':mode==='gold'?'#9aada4':'#aabdb8');
+    hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
@@ -328,7 +330,7 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
-    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
+    sky.update();const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     hud.update(time);audio.update(camera,$('light').value==='night');
