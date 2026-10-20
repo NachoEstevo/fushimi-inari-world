@@ -6,6 +6,20 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const obstacles=new SpatialCollisionWorld(4);
   for(const c of assembly.colliders)obstacles[c.type==='box'?'addBox':'addCylinder'](...c.args);
   const audit={samples:0,blocked:0,maxCorrection:0,examples:[]};
+  const heightAudit={samples:0,maxJump:0,jumps:[]};
+  for(const route of [assembly.spatial.main,assembly.spatial.returning]){
+    let previous=null;
+    for(let i=1;i<route.length;i++){
+      const a=route[i-1],b=route[i],count=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[2]-a[2])/.25));
+      for(let j=0;j<count;j++){
+        const f=j/count,x=a[0]+(b[0]-a[0])*f,z=a[2]+(b[2]-a[2])*f,y=assembly.walkHeight(x,z,previous?.y);
+        if(previous){const jump=Math.abs(y-previous.y);heightAudit.maxJump=Math.max(heightAudit.maxJump,jump);
+          if(jump>.4&&heightAudit.jumps.length<20)heightAudit.jumps.push({x,z,jump,y,previous:previous.y,base:assembly.surfaces.height(x,z),path:assembly.surfaces.sample(x,z)?.segment.id});}
+        previous={y};heightAudit.samples++;
+      }
+    }
+  }
+  document.body.dataset.walkHeightAudit=JSON.stringify(heightAudit);
   const localBranches=assembly.surfaces.segments.filter(s=>s.kind!=='restricted'&&s.a[0]>735&&s.a[0]<840&&s.a[2]>-280&&s.a[2]<-170)
     .map(s=>[(s.a[0]+s.b[0])/2,(s.ya+s.yb)/2,(s.a[2]+s.b[2])/2]);
   audit.localBranchSamples=localBranches.length;
@@ -109,7 +123,9 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
         const resolved=obstacles.resolvePlayer(x,camera.position.y,z);
         camera.position.set(resolved.x,assembly.walkHeight(resolved.x,resolved.z,camera.position.y-1.7)+1.7,resolved.z);
       }
-      footstep+=step.distance*step.count;if(footstep>.7){audio.step(true);footstep=0;}
+      footstep+=step.distance*step.count;if(footstep>.7){
+        audio.step(assembly.surfaces.sample(camera.position.x,camera.position.z)?.segment.kind==='stone');footstep=0;
+      }
     }
     document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m s.n.m. · WASD · arrastrar para mirar · Shift correr · E interactuar · Esc salir`;
     return true;

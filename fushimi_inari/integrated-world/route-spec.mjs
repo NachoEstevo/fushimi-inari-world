@@ -1,7 +1,7 @@
 // Meters. OSM dimensions/counts are dated survey claims; other dimensions remain
 // inferred from photographs and comparable wooden Inari torii, not a laser survey.
 export const routeSpec = {
-  revision: 4,
+  revision: 6,
   senbon: {
     pillarDiameter: .15, pillarCenters: 1.82, height: 2.55,
     crossbarUnderside: 1.98, beamWidth: 2.95, blackBaseHeight: .46,
@@ -15,5 +15,5 @@ export const routeSpec = {
     otherDimensions:'Inferred; photo proportions and 5-sun wooden torii catalog comparison',
   },
   stairs: {targetRise:.15, minimumTread:.28, provenance:'OSM steps and step_count; intermediate risers inferred from GSI DEM'},
-  forest: {seed:20261020, nearSpacing:6.5, farSpacing:16, provenance:'Reference-informed mixed canopy; individual tree positions and species unverified'}
+  forest: {seed:20261020, nearSpacing:6.5, farSpacing:16, provenance:'Kyoto city documents shii/kashi evergreen forest. Broadleaf-dominant mix and individual positions inferred; legacy sugi and understory preserved.'}
 };

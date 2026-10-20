@@ -261,7 +261,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   function walkHeight(x,z,previous=ground(x,z)){
     const base=surfaces.height(x,z);
     floorRay.set(new THREE.Vector3(x,Math.max(base,previous)+.42,z),down);floorRay.far=2;
-    const hit=floorRay.intersectObjects(walkSurfaces,false).find(hit=>hit.point.y>=base-.15);
+    const hit=floorRay.intersectObjects(walkSurfaces,false).find(hit=>hit.point.y>=base-.15&&hit.point.y<=Math.max(base,previous)+.24);
     return hit?Math.max(base,hit.point.y+.025):base;
   }
   const buckets=new Map(),retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes]);

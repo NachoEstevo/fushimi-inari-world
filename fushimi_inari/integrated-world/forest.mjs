@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {routeSpec} from './route-spec.mjs';
+import {evergreenCanopy} from './evergreen-canopy.mjs';
 
 // Reuses original trunk, crown and understory assets. A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.
@@ -24,20 +25,29 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     if(distance>27&&random()>.20)continue;
     const key=`${Math.floor(px/80)},${Math.floor(pz/80)}`;
     if(!buckets.has(key))buckets.set(key,[]);
-    buckets.get(key).push({x:px,y,z:pz,scale:1.25+random()*.75,yaw:random()*Math.PI*2,broad:random()<.38,under:distance<22});
+    buckets.get(key).push({x:px,y,z:pz,scale:.85+random()*.65,yaw:random()*Math.PI*2,broad:random()<.76,under:distance<22});
   }
   const crownMat=legacy.foliage[1].material.clone();crownMat.color.set('#879e70');crownMat.roughness=.9;
   const broadMat=legacy.foliage[3].material.clone();broadMat.color.set('#8b9a75');broadMat.roughness=.9;
+  const evergreen=evergreenCanopy();
+  const distantEvergreen=evergreenCanopy(96);
+  const branchGeo=new THREE.CylinderGeometry(.035,.12,1,6);branchGeo.translate(0,.5,0);
   let total=0,understory=0,broadleaf=0;
   for(const trees of buckets.values()){
-    const matrices=[[],[],[],[]],dummy=new THREE.Object3D();
+    const matrices=[[],[],[],[],[]],dummy=new THREE.Object3D();
     const put=(bucket,x,y,z,sx,sy,sz,yaw)=>{dummy.position.set(x,y,z);dummy.rotation.set(0,yaw,0);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();matrices[bucket].push(dummy.matrix.clone());};
     for(const tree of trees){
       const {x,y,z,scale,yaw,broad,under}=tree;
-      put(0,x,y-.2,z,scale*.70,scale,scale*.70,yaw);
+      put(0,x,y-.2,z,scale*.70,scale*(broad?.68:1),scale*.70,yaw);
       if(broad){
         broadleaf++;
-        for(let layer=0;layer<4;layer++)put(2,x+Math.sin(layer*2+yaw)*2,y+(8.1+layer*.75)*scale,z+Math.cos(layer*2+yaw)*2,3.8*scale,2.4*scale,3.8*scale,yaw+layer);
+        for(let layer=0;layer<5;layer++){
+          const bx=x+Math.sin(layer*2+yaw)*1.3,by=y+(7.2+layer*.5)*scale,bz=z+Math.cos(layer*2+yaw)*1.3;
+          put(2,bx,by,bz,2.4*scale,2.1*scale,2.4*scale,yaw+layer);
+          const start=new THREE.Vector3(x,y+5.8*scale,z),delta=new THREE.Vector3(bx,by,bz).sub(start);
+          dummy.position.copy(start);dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());
+          dummy.scale.set(scale,delta.length(),scale);dummy.updateMatrix();matrices[4].push(dummy.matrix.clone());
+        }
       }else for(let layer=0;layer<3;layer++)put(1,x,y+(7.8+layer*1.75)*scale,z,(1.65-layer*.32)*scale,(1.05-layer*.10)*scale,(1.65-layer*.32)*scale,yaw+layer*.8);
       if(under)for(let n=0;n<3;n++){
         const ux=x+(random()-.5)*6,uz=z+(random()-.5)*6;
@@ -46,11 +56,20 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
       }
       colliders.push({type:'cylinder',args:[x,z,.40*scale,y,y+9*scale,'forest_tree']});
     }
-    const assets=[[legacy.foliage[0].geometry,legacy.foliage[0].material],[legacy.foliage[1].geometry,crownMat],[legacy.foliage[3].geometry,broadMat],[legacy.foliage[3].geometry,broadMat]];
+    const assets=[[legacy.foliage[0].geometry,legacy.foliage[0].material],[legacy.foliage[1].geometry,crownMat],[evergreen.geometry,evergreen.material],[legacy.foliage[3].geometry,broadMat],[branchGeo,legacy.foliage[0].material]];
     matrices.forEach((list,index)=>{
       if(!list.length)return;
       const mesh=new THREE.InstancedMesh(...assets[index],list.length);
-      list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=index!==3;mesh.receiveShadow=true;mesh.computeBoundingSphere();root.add(mesh);
+      list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=index!==3;mesh.receiveShadow=true;mesh.computeBoundingSphere();
+      if(index===2){
+        // Per-cell LOD keeps nearby leaves dense without drawing the full
+        // botanical geometry for the entire mountain in the overview.
+        const center=mesh.boundingSphere.center.clone(),lod=new THREE.LOD();lod.position.copy(center);
+        mesh.position.copy(center).negate();
+        const far=new THREE.InstancedMesh(distantEvergreen.geometry,distantEvergreen.material,list.length);
+        list.forEach((matrix,i)=>far.setMatrixAt(i,matrix));far.position.copy(mesh.position);far.receiveShadow=true;far.computeBoundingSphere();
+        lod.addLevel(mesh,0);lod.addLevel(far,110);root.add(lod);
+      }else root.add(mesh);
     });
     total+=trees.length;
   }

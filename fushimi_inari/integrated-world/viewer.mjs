@@ -253,6 +253,10 @@ try {
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
     if(a.id==='romon'){
       camera.position.set(near[0]-35,ground(near[0]-35,near[2]+14)+8,near[2]+14);
+    }else if(a.id==='chaya_s'){
+      camera.position.set(798,170,-222);controls.target.set(814,168,-204);
+    }else if(a.id==='chaya_n'){
+      camera.position.set(804,176,-250);controls.target.set(816,174,-243);
     }else if(a.id==='senbon'){
       const eye=assembly.spatial.twins[0].at(.04).point,target=assembly.spatial.twins[0].at(.07).point;
       camera.position.set(eye[0],ground(eye[0],eye[2])+1.7,eye[2]);
@@ -276,7 +280,7 @@ try {
   }});
   const startGuided=$('walk').onclick;$('walk').onclick=()=>{walker.stop();startGuided();};
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Mostrar paneles':'Ocultar paneles';};
-  $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';};
+  $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';document.getElementById('ambient-toggle').textContent=$('audio').textContent;};
   $('light').onchange=()=>{
     const mode=$('light').value;
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
@@ -318,7 +322,7 @@ try {
     renderer.render(scene,camera);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    hud.update(time);
+    hud.update(time);audio.update(camera,$('light').value==='night');
 
   }
   requestAnimationFrame(animate);

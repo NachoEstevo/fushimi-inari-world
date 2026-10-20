@@ -25,9 +25,23 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
     const minX=Math.min(...xs),minZ=Math.min(...zs),cx=(Math.min(...xs)+Math.max(...xs))/2;
     const vertices=[],uv=[];
     const tri=(a,b,c)=>{for(const p of [a,b,c]){vertices.push(...p);uv.push(p[0]/2,p[2]/2);}};
-    const roofY=x=>spec.floor+spec.height+.55-Math.abs(x-cx)*.065;
+    const halfWidth=(Math.max(...xs)-minX)/2,wallTop=spec.floor+spec.height;
+    const roofY=x=>wallTop+.18+(halfWidth-Math.abs(x-cx))*.28;
+    // Split the footprint at the ridge: triangulating only perimeter vertices
+    // had flattened the roof even when its height function described a gable.
+    const clip=(polygon,side)=>{
+      const out=[];
+      polygon.forEach((a,i)=>{
+        const b=polygon[(i+1)%polygon.length],ina=(a[0]-cx)*side>=0,inb=(b[0]-cx)*side>=0;
+        if(ina)out.push(a);
+        if(ina!==inb){const t=(cx-a[0])/(b[0]-a[0]);out.push([cx,0,a[2]+(b[2]-a[2])*t]);}
+      });return out;
+    };
     for(const face of THREE.ShapeUtils.triangulateShape(points.map(p=>new THREE.Vector2(p[0],p[2])),[])){
-      tri(...face.map(i=>[points[i][0],roofY(points[i][0]),points[i][2]]));
+      for(const side of [-1,1]){
+        const poly=clip(face.map(i=>points[i]),side);
+        for(let i=1;i<poly.length-1;i++)tri(...[poly[0],poly[i],poly[i+1]].map(p=>[p[0],roofY(p[0]),p[2]]));
+      }
     }
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.computeVertexNormals();
@@ -41,6 +55,17 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
       box(len,spec.floor-bottom,.3,x,(bottom+spec.floor)/2,z,legacy.materials.stoneMat,yaw);
       box(len,spec.height,.22,x,spec.floor+spec.height/2,z,front?wood:legacy.materials.plasterMat,yaw);
       box(len+.25,.22,.5,x,spec.floor+spec.height,z,roofMat,yaw);
+      // Close each gable to its actual roof profile.
+      const edgePoints=[a,...((a[0]-cx)*(b[0]-cx)<0?[[cx,0,a[2]+dz*(cx-a[0])/dx]]:[]),b];
+      const gable=[];
+      for(let j=0;j<edgePoints.length-1;j++){
+        const p=edgePoints[j],q=edgePoints[j+1];
+        gable.push(p[0],wallTop,p[2],q[0],wallTop,q[2],q[0],roofY(q[0]),q[2],
+          p[0],wallTop,p[2],q[0],roofY(q[0]),q[2],p[0],roofY(p[0]),p[2]);
+      }
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(gable,3));g.computeVertexNormals();
+      const gm=wood.clone();gm.side=THREE.DoubleSide;gm.normalMap=null;
+      const infill=new THREE.Mesh(g,gm);infill.castShadow=true;group.add(infill);
       colliders.push({type:'box',args:[x,z,len/2,.18,yaw,bottom,spec.floor+spec.height,'tea_house_wall']});
       if(!front||len<2)return;
       const normal=spec.front==='north'?[0,-1]:[-1,0];
@@ -54,9 +79,12 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
         for(const level of levels){
           box(len/bays-.16,1.35,.055,wx,spec.floor+level,wz,glass,yaw);
           for(const offset of [-.68,.68])box(len/bays,.07,.10,wx,spec.floor+level+offset,wz,wood,yaw);
+          box(.045,1.35,.08,wx,spec.floor+level,wz,wood,yaw);
         }
       }
       box(len,.10,1.05,x+normal[0]*.5,spec.floor+2.8,z+normal[1]*.5,roofMat,yaw);
+      for(let j=0;j<=bays;j++)box(.055,.12,1.08,a[0]+dx*j/bays+normal[0]*.5,spec.floor+2.77,a[2]+dz*j/bays+normal[1]*.5,wood,yaw);
+      box(len,.10,.10,x+normal[0]*.97,spec.floor+2.78,z+normal[1]*.97,roofMat,yaw);
     });
   }
   // A bounded, sloped forecourt follows the existing junction instead of

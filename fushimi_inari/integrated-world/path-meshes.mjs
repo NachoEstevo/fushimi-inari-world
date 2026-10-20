@@ -42,7 +42,8 @@ export function buildPathMeshes(network,legacy){
   ctx.putImageData(pixels,0,0);ctx.fillStyle='#66685f';
   ctx.fillRect(0,0,512,2);ctx.fillRect(0,254,512,2);ctx.fillRect(254,0,3,256);
   const paving=new THREE.CanvasTexture(tile);paving.wrapS=paving.wrapT=THREE.RepeatWrapping;paving.colorSpace=THREE.SRGBColorSpace;paving.anisotropy=8;
-  const materials={stone:legacy.materials.flagstoneMat,edge:legacy.materials.stoneMat,earth,
+  const stairFace=legacy.materials.flagstoneMat.clone();stairFace.color.set('#b8b9ae');
+  const materials={stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
     senbon:new THREE.MeshStandardMaterial({map:paving,roughness:.91}),
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
     restricted:new THREE.MeshStandardMaterial({color:0x766e5e,roughness:1}),

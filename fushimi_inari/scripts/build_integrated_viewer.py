@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 05")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 06")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -75,6 +75,10 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
     if(a.id==='romon'){
       camera.position.set(near[0]-35,ground(near[0]-35,near[2]+14)+8,near[2]+14);
+    }else if(a.id==='chaya_s'){
+      camera.position.set(798,170,-222);controls.target.set(814,168,-204);
+    }else if(a.id==='chaya_n'){
+      camera.position.set(804,176,-250);controls.target.set(816,174,-243);
     }else if(a.id==='senbon'){
       const eye=assembly.spatial.twins[0].at(.04).point,target=assembly.spatial.twins[0].at(.07).point;
       camera.position.set(eye[0],ground(eye[0],eye[2])+1.7,eye[2]);
@@ -98,7 +102,7 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
   }});
   const startGuided=$('walk').onclick;$('walk').onclick=()=>{walker.stop();startGuided();};
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Mostrar paneles':'Ocultar paneles';};
-  $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';};
+  $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';document.getElementById('ambient-toggle').textContent=$('audio').textContent;};
   $('light').onchange=()=>{
     const mode=$('light').value;
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
@@ -124,7 +128,7 @@ js=js.replace("y=ground(x,z);","y=assembly.walkHeight(x,z,camera.position.y-1.7)
 js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,camera);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    hud.update(time);
+    hud.update(time);audio.update(camera,$('light').value==='night');
 """)
 js="import {buildPathMeshes} from './path-meshes.mjs';\n"+js
 start=js.index("  const pathGroup=new THREE.Group();")
@@ -142,9 +146,9 @@ js=js.replace("const terrainMaterial=new THREE.MeshStandardMaterial({vertexColor
 # Retain the original sound synthesis, with a working mute.
 source=(root/"interactive_viewer/index.html").read_text(encoding="utf-8")
 audio=source[source.index("    function initAmbientAudio()"):source.index("    btnAudio.addEventListener")]
-(out/"audio.mjs").write_text("export function createAudio(){let audioCtx=null,audioEnabled=false;\n"+audio+"""
+(out/"audio.mjs").write_text("import {createAmbience} from './ambient-audio.mjs';\nexport function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null;\n"+audio.replace("      whiteNoise.start();","      // Continuous legacy noise is replaced by intermittent breeze.\n      whiteNoise.disconnect();filter.disconnect();gain.disconnect();\n      ambience=createAmbience(audioCtx);")+"""
 return {bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,toggle(){initAmbientAudio();audioEnabled=!audioEnabled;if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
+step:playFootstepTick,update:(camera,night)=>ambience?.update(camera,night),toggle(){initAmbientAudio();audioEnabled=!audioEnabled;ambience.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
 }
 """,encoding="utf-8")
 print("Built integrated explorer and preserved audio synthesis.")

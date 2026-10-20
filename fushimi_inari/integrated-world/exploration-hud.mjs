@@ -6,8 +6,16 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     <label for="walk-speed">Velocidad a pie</label><select id="walk-speed"><option value="1.6">Paseo · 1,6 m/s</option><option value="3" selected>Ágil · 3 m/s</option><option value="6">Rápido · 6 m/s</option><option value="10">Explorar · 10 m/s</option></select>
     <label>Ir a un checkpoint</label><div id="checkpoint-buttons"></div>
     <label for="checkpoint-select">Todos los lugares</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Ir</button></div>
+    <details><summary>Ambiente · primavera</summary>
+    <button id="ambient-toggle">Sonido: apagado</button>
+    <label for="ambient-volume">Volumen del ambiente</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
+    <label><input id="ambient-birds" type="checkbox" checked> Uguisu · grabación real</label>
+    <label><input id="ambient-wind" type="checkbox" checked> Brisa y hojas</label>
+    <label><input id="ambient-chimes" type="checkbox"> Campanillas junto a las casas de té</label>
+    <small>Campanillas interpretativas. <a href="../assets/audio/CREDITS.md" target="_blank" rel="noopener">Créditos de audio</a></small></details>
     <p>WASD · arrastrar para mirar · Shift acelera · Esc salir</p></div>`;
   document.body.append(panel);
+  panel.querySelector('#ambient-toggle').onclick=()=>{document.getElementById('audio').click();panel.querySelector('#ambient-toggle').textContent=document.getElementById('audio').textContent;};
   for(const input of panel.querySelectorAll('select'))input.onchange=()=>input.blur();
   const canvas=panel.querySelector('canvas'),ctx=canvas.getContext('2d');
   const select=panel.querySelector('#checkpoint-select');

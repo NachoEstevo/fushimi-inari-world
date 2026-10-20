@@ -1,9 +1,9 @@
 import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
-import {routeSpec} from './route-spec.mjs';
+import {stairProfile,inferredTreads} from './stair-profile.mjs';
 
 export function makePathSurfaces(features,ground){
-  const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[]};
+  const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],correctedStairProfiles:[]};
   for(const path of features.paths){
     if(path.tags.tunnel==='yes'||path.tags.bridge==='yes')continue;
     const sampler=pathSampler(path.points),length=sampler.total;
@@ -11,24 +11,27 @@ export function makePathSurfaces(features,ground){
     const stair=path.tags.highway==='steps',width=pathWidth(path.tags);
     const sourceCount=Number(path.tags.step_count);
     const h0=ground(...[path.points[0][0],path.points[0][2]]),last=path.points.at(-1),h1=ground(last[0],last[2]);
-    const count=stair?Math.max(1,Number.isFinite(sourceCount)&&sourceCount>0?Math.round(sourceCount):Math.min(Math.ceil(length/routeSpec.stairs.minimumTread),Math.max(1,Math.round(Math.abs(h1-h0)/routeSpec.stairs.targetRise)))):Math.ceil(length/1.5);
+    const profile=stair?stairProfile(length,h0,h1,sourceCount):null;
+    const resolved=profile?.conflict?inferredTreads(path.points,ground):null;
+    const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
     if(stair){stats.stairWays++;stats.treads+=count;if(sourceCount>0)stats.sourceStepCounts++;}
-    if(stair&&(Math.abs(h1-h0)/count>.24||Math.abs(h1-h0)<.1))stats.unresolvedStairProfiles.push(path.id);
+    if(profile?.unresolved)stats.unresolvedStairProfiles.push(path.id);
+    if(profile?.conflict)stats.correctedStairProfiles.push({id:path.id,sourceCount:profile.mapped,renderedCount:count,rise:profile.rise,status:profile.status});
     stats.paths++;
     const kind=isRestricted(path.tags)?'restricted':['dirt','ground','earth','unpaved','gravel'].includes(path.tags.surface)?'earth':['footway','steps','pedestrian','path'].includes(path.tags.highway)?'stone':'street';
     for(let i=0;i<count;i++){
-      const a=sampler.at(i/count).point,b=sampler.at((i+1)/count).point;
+      const tread=resolved?.[i],a=tread?.a??sampler.at(i/count).point,b=tread?.b??sampler.at((i+1)/count).point;
       let ya=ground(a[0],a[2])+.14,yb=ground(b[0],b[2])+.14;
       if(stair){
         // A single tread has one level. Endpoint levels remain tied to the DEM;
         // intermediate step geometry is inferred, never labelled measured.
         const level=h1>=h0?(i+1)/count:i/count;
-        ya=yb=h0+(h1-h0)*level+.14;
+        ya=yb=(tread?.level??h0+(h1-h0)*level)+.14;
       }
-      const rise=stair?Math.abs(h1-h0)/count:0;
+      const rise=stair?(tread?.rise??Math.abs(h1-h0)/count):0;
       const segment={a,b,ya,yb,width,kind,stair,rise,
-        riserAt:stair?(h1>=h0?'a':'b'):null,
-        id:path.id,distance:i*length/count,handrail:stair&&path.tags.handrail==='yes'};
+        riserAt:tread?.riserAt??(stair?(h1>=h0?'a':'b'):null),
+        id:path.id,profileStatus:profile?.status,distance:tread?.distance??i*length/count,handrail:stair&&path.tags.handrail==='yes'};
       segments.push(segment);
       const pad=width/2+.3;
       for(let x=Math.floor((Math.min(a[0],b[0])-pad)/size);x<=Math.floor((Math.max(a[0],b[0])+pad)/size);x++)

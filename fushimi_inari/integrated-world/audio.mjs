@@ -1,4 +1,5 @@
-export function createAudio(){let audioCtx=null,audioEnabled=false;
+import {createAmbience} from './ambient-audio.mjs';
+export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null;
     function initAmbientAudio() {
       if (audioCtx) return;
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,7 +22,9 @@ export function createAudio(){let audioCtx=null,audioEnabled=false;
       whiteNoise.connect(filter);
       filter.connect(gain);
       gain.connect(audioCtx.destination);
-      whiteNoise.start();
+      // Continuous legacy noise is replaced by intermittent breeze.
+      whiteNoise.disconnect();filter.disconnect();gain.disconnect();
+      ambience=createAmbience(audioCtx);
     }
 
     function playBellChime() {
@@ -77,5 +80,5 @@ export function createAudio(){let audioCtx=null,audioEnabled=false;
 
 
 return {bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,toggle(){initAmbientAudio();audioEnabled=!audioEnabled;if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
+step:playFootstepTick,update:(camera,night)=>ambience?.update(camera,night),toggle(){initAmbientAudio();audioEnabled=!audioEnabled;ambience.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
 }

@@ -1,0 +1,24 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {stairProfile,inferredTreads} from './stair-profile.mjs';
+test('mapped ten-count on the long upper ascent cannot produce metre-high risers',()=>{
+  const p=stairProfile(73.03,171.56,181.76,10);
+  assert.ok(p.rise<=.16);assert.equal(p.mapped,10);
+  assert.equal(p.conflict,true);assert.equal(p.unresolved,true);
+});
+test('valid survey counts survive in either walking direction',()=>{
+  for(const ends of [[164.86,166.1],[166.1,164.86]]){
+    const p=stairProfile(6.27,...ends,10);assert.equal(p.count,10);assert.equal(p.conflict,false);
+  }
+});
+test('flat DEM and physically impossible short stairways remain visibly unresolved in data',()=>{
+  assert.equal(stairProfile(3,50,50.01,5).unresolved,true);
+  assert.equal(stairProfile(.5,50,52,5).unresolved,true);
+});
+test('inferred flights meet the terrain at interior shared nodes instead of bridging over branches',()=>{
+  const steps=inferredTreads([[0,0,0],[10,0,0],[20,0,0]],x=>x<=10?x*.1:1+(x-10)*.4);
+  const first=steps.filter(s=>s.b[0]<=10);
+  assert.equal(first.at(-1).level,1);
+  assert.ok(steps.every(s=>s.rise<=.16));
+  assert.equal(steps.at(-1).level,5);
+});
