@@ -39,6 +39,10 @@ The minimap follows your position. Movement speed, free flight, routes and sound
 
 ## Entrance details
 
+![Satellite-guided woodland and mapped surrounding neighbourhoods](docs/images/aerial-context.png)
+
+The aerial view now includes the surrounding OSM building footprints and lightweight distant forest crowns. Google Maps satellite views guide broad woodland coverage; building heights and individual trees remain approximate. Toggle these layers under **Esc → Routes → Layers and sources**. The lower court shares a connected ground level, with original building pedestals retained. See [R23 reference and validation notes](fushimi_inari/integrated-world/REFERENCES-R23.md).
+
 ![Purification basin with ladles and water](docs/images/temizuya.png)
 
 The original buildings remain the foundation of the scene. Current refinements include grey slab paving and aggregate, gilded fittings, curved gable ornaments, leafy shrubs, a hollow purification basin with animated water, and additional detail on the original approach shops.

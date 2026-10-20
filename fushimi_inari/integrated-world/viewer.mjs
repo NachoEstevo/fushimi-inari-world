@@ -3,6 +3,8 @@ import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
+import {distantCanopy} from './distant-canopy.mjs';
+import {blendCourtyardGround} from './courtyard-ground.mjs';
 import {buildPathMeshes} from './path-meshes.mjs?v=16';
 import {installExplorationHUD} from './exploration-hud.mjs?v=14';
 import {integrate} from './integration.mjs?v=17';
@@ -66,11 +68,8 @@ try {
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
   const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
-  const landscape=spatialMeshes(terrainGeo,terrainMaterial,160,(x,z)=>{
-    const dx=x-romon.target[0],dz=z-romon.target[2],c=Math.cos(romon.yaw),s=Math.sin(romon.yaw);
-    const lx=c*dx-s*dz,lz=s*dx+c*dz;
-    return Math.abs(lx)<25&&lz>-20&&lz<22?courtyard:terrainMaterial;
-  });scene.add(landscape);terrainGeo.dispose();
+  blendCourtyardGround(terrainMaterial,courtyard,romon);
+  const landscape=spatialMeshes(terrainGeo,terrainMaterial,160);scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.computeVertexNormals();
@@ -89,7 +88,7 @@ try {
   const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy);scene.add(pathGroup);
 
   // Footprints are sourced. Extrusion height is metadata-based or explicitly inferred.
-  const buildingGroup=new THREE.Group();scene.add(buildingGroup);buildingGroup.visible=false;
+  const buildingGroup=new THREE.Group();scene.add(buildingGroup);buildingGroup.visible=$('buildings').checked;
   const buildings={ordinary:[],sacred:[]};
   let inferredHeightCount=0;
   for(const b of features.buildings){
@@ -108,8 +107,23 @@ try {
     }
     for(const triangle of THREE.ShapeUtils.triangulateShape(contour,[]))for(const j of triangle)v.push(ring[j][0],roof,ring[j][2]);
   }
-  buildingGroup.add(meshFrom(buildings.ordinary,new THREE.MeshStandardMaterial({color:0x94a098,roughness:1,side:THREE.DoubleSide})));
-  buildingGroup.add(meshFrom(buildings.sacred,new THREE.MeshStandardMaterial({color:0xbb6348,roughness:1,side:THREE.DoubleSide})));
+  // Existing OSM footprints, partitioned so offscreen neighbourhoods are culled.
+  for(const [kind,tint] of [['ordinary',0xaaa79e],['sacred',0x87796c]]){
+    const material=new THREE.MeshLambertMaterial({color:tint,side:THREE.DoubleSide});
+    const mesh=meshFrom(buildings[kind],material);
+    const normal=mesh.geometry.attributes.normal;
+    const shades=[];
+    for(let i=0;i<normal.count;i++){
+      const shade=Math.abs(normal.getY(i))>.7?.48:1;
+      shades.push(shade,shade,shade);
+    }
+    mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));material.vertexColors=true;
+    const chunks=spatialMeshes(mesh.geometry,material,256);
+    for(const child of chunks.children)child.receiveShadow=false;
+    buildingGroup.add(chunks);mesh.geometry.dispose();
+  }
+  const canopy=distantCanopy(features,ground,assembly.pathDistance,terrain);scene.add(canopy.group);
+  document.body.dataset.aerialContext=JSON.stringify({footprints:features.buildings.length,crowns:canopy.group.userData.count,canopyTriangles:canopy.group.userData.count*20,provenance:'OSM footprints; satellite-interpreted woodland; estimated heights'});
 
   const waterVertices=[];
   for(const w of features.water){
@@ -211,6 +225,7 @@ try {
     controls.enabled=true;controls.update();$('stop').disabled=true;$('walk').textContent='Resume';
   };
   $('buildings').onchange=e=>buildingGroup.visible=e.target.checked;
+  $('aerial-canopy').onchange=e=>canopy.group.visible=e.target.checked;
   $('paths').onchange=e=>{pathGroup.visible=e.target.checked;drawMap();};
   $('landmarks').onchange=e=>{landmarkGroup.visible=e.target.checked;drawMap();};
   for(const id of ['start','destination','via'])$(id).onchange=()=>{$('itinerary').value='custom';clearRoute();$('route-info').textContent='Selection changed. Plan the new route.';drawMap();};
@@ -337,7 +352,14 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
-    sky.update();const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
+    sky.update();canopy.update(camera);
+    // The neighbourhood massing is an aerial backdrop, never a replacement for
+    // detailed architecture at walking distance. Chunk bounds make this cheap.
+    for(const chunks of buildingGroup.children)for(const mesh of chunks.children){
+      const b=mesh.geometry.boundingSphere;
+      mesh.visible=camera.position.distanceTo(b.center)>b.radius+100;
+    }
+    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night');

@@ -1,5 +1,5 @@
 import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs';
-import {refineRomonGold,refineEntryPaving,refineRomonGables} from './precinct-details.mjs';
+import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -18,6 +18,7 @@ import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
+import {precinctLevel,lowerCourtBlend} from './precinct-grade.mjs';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {refineRomonWings} from './romon-wings.mjs';
 import {buildCourtyardShop,courtyardShopId} from './courtyard-shop.mjs';
@@ -59,6 +60,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(gozendani)byId.gozendani.source=gozendani.position.toArray();
   // Keep local floor datums exactly consistent with the original builders.
   for(const a of anchors)a.source[1]=legacy.sampleGroundHeight(a.source[0],a.source[2]);
+  // GSI's 10 m grid cannot resolve the court versus raised building plinths.
+  // Video-guided shared court datum; preserve the hall's own authored podium.
+  byId.gehaiden.target[1]=byId.romon.target[1];
   byId.temizuya.mappedTarget=[...byId.temizuya.target];
   byId.temizuya.target=separatedTemizuya(byId.romon,byId.temizuya);
   byId.temizuya.placementStatus='Video-inferred roof clearance; mapped POI retained as mappedTarget';
@@ -172,13 +176,14 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       if(!influence)continue;
       let localY=a.source[1];
       if(a.id==='romon'||a.id==='naihaiden')
-        localY=a.id==='romon'&&Math.abs(localX)>5.2&&localZ>2.5&&localZ<6.5?0:legacy.sampleGroundHeight(localX,localZ);
+        localY=a.id==='romon'&&Math.abs(localX)>5.2&&localZ>2.5&&localZ<6.5?0:precinctLevel(localZ);
       if(a.id==='romon')localY=entryHeight(localX,localZ,localY);
       weightedHeight+=(a.target[1]+localY-a.source[1])*influence;weight+=influence;
     }
     const courtyard=weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
     const datum=byId.romon.target[1]-byId.romon.source[1];
-    return datum+westLandingTransition(ex,ez,courtyard-datum);
+    const connected=lowerCourtBlend(ex,ez,courtyard,byId.romon.target[1]);
+    return datum+westLandingTransition(ex,ez,connected-datum);
   }
   function moveObject(object){
     refineEntranceObjects(object,legacy.materials);
@@ -247,6 +252,14 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
+    if(id==='romon'){
+      // Export manifest: these two materials contain only T00 approach slabs.
+      // Terrain + mapped path surfaces now own the outdoor floor; a rigid slab
+      // cannot follow their grade and leaves exposed vertical/triangular edges.
+      const obsolete=[];
+      gltf.scene.traverse(o=>{if(o.isMesh&&/Courtyard_Gravel_Dark|Flagstone_Walkway/.test(o.material.name))obsolete.push(o);});
+      obsolete.forEach(o=>{o.removeFromParent();o.geometry.dispose();});
+    }
     if(id==='romon'){refineRomonCurtain(gltf.scene);refineRomonGold(gltf.scene,legacy.materials.goldMat);refineRomonGables(gltf.scene,legacy.materials.goldMat);}
     gltf.scene.traverse(object=>{
       if(!object.isMesh||object.material===legacy.materials.goldMat)return;
@@ -257,7 +270,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
       for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
-      if(id==='romon'&&object.material===legacy.materials.precinctPaving)refineEntryPaving(object,legacy.materials.precinctPaving,legacy.materials.precinctCobbles);
     });
     if(id==='romon')refineRomonWings(gltf.scene,legacy.materials);
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
