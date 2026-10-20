@@ -65,6 +65,12 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
       const mesh=new THREE.InstancedMesh(...assets[index],list.length);
       list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=index!==3;mesh.receiveShadow=true;mesh.computeBoundingSphere();
       if(index===2){
+        const tint=new THREE.Color();
+        const tintLeaves=target=>list.forEach((_,i)=>{
+          const n=(Math.sin(i*12.9898+trees[0].x*.13)*43758.5453)%1;
+          tint.setHSL(.22+Math.abs(n)*.035,.12,.78+Math.abs(n)*.16);target.setColorAt(i,tint);
+        });
+        tintLeaves(mesh);
         // Per-cell LOD keeps nearby leaves dense without drawing the full
         // botanical geometry for the entire mountain in the overview.
         const center=mesh.boundingSphere.center.clone(),lod=new THREE.LOD();lod.position.copy(center);
@@ -72,6 +78,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
         const far=new THREE.InstancedMesh(distantEvergreen.geometry,distantEvergreen.material,list.length);
         list.forEach((matrix,i)=>far.setMatrixAt(i,matrix));far.position.copy(mesh.position);far.receiveShadow=true;far.computeBoundingSphere();
         const horizon=new THREE.InstancedMesh(horizonEvergreen.geometry,horizonEvergreen.material,list.length);
+        tintLeaves(far);tintLeaves(horizon);
         list.forEach((matrix,i)=>horizon.setMatrixAt(i,matrix));horizon.position.copy(mesh.position);horizon.computeBoundingSphere();
         lod.addLevel(mesh,0);lod.addLevel(far,85,.12);lod.addLevel(horizon,200,.15);root.add(lod);
       }else root.add(mesh);

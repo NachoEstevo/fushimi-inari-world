@@ -11,12 +11,13 @@ export function stairProfile(length,h0,h1,sourceCount){
     status:conflict?'inferred-count-source-dem-conflict':rise<.1?'dem-unresolved':mapped?'mapped-count-dem-heights':'inferred'};
 }
 
-export function inferredTreads(points,ground){
+export function inferredTreads(points,ground,counts=null){
   const treads=[];let distance=0;
   for(let i=1;i<points.length;i++){
     const a=points[i-1],b=points[i],len=Math.hypot(b[0]-a[0],b[2]-a[2]);
     if(len<.001)continue;
     const h0=ground(a[0],a[2]),h1=ground(b[0],b[2]),profile=stairProfile(len,h0,h1,NaN);
+    if(counts){profile.count=counts[i-1];profile.rise=Math.abs(h1-h0)/profile.count;}
     const at=f=>[a[0]+(b[0]-a[0])*f,0,a[2]+(b[2]-a[2])*f];
     for(let j=0;j<profile.count;j++){
       const level=h0+(h1-h0)*(h1>=h0?(j+1)/profile.count:j/profile.count);
@@ -25,4 +26,23 @@ export function inferredTreads(points,ground){
     distance+=len;
   }
   return treads;
+}
+
+// Preserve a credible mapped total while respecting every intermediate node.
+// The DEM cannot certify tread heights; infeasible allocations stay unresolved.
+export function mappedTreads(points,ground,count){
+  if(!Number.isInteger(count)||count<1)return null;
+  const flights=points.slice(1).map((b,i)=>{
+    const a=points[i],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
+    const rise=Math.abs(ground(b[0],b[2])-ground(a[0],a[2]));
+    return {length,rise,count:Math.max(1,Math.ceil(rise/.24)),max:Math.floor(length/.18)};
+  });
+  if(!flights.length||flights.some(f=>f.count>f.max)||flights.reduce((s,f)=>s+f.count,0)>count||flights.reduce((s,f)=>s+f.max,0)<count)return null;
+  let remaining=count-flights.reduce((s,f)=>s+f.count,0);
+  while(remaining--){
+    const eligible=flights.filter(f=>f.count<f.max);
+    eligible.sort((a,b)=>(b.rise||b.length*.01)/(b.count+1)-(a.rise||a.length*.01)/(a.count+1));
+    eligible[0].count++;
+  }
+  return inferredTreads(points,ground,flights.map(f=>f.count));
 }

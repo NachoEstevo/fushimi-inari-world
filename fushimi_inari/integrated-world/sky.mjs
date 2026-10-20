@@ -21,12 +21,13 @@ export function installSky(scene,camera){
     gradient.addColorStop(.51,horizon);gradient.addColorStop(1,horizon);
     ctx.fillStyle=gradient;ctx.fillRect(0,0,2048,1024);
     // Different widths, heights and separated azimuths; the horizon stays clear.
-    for(const [x,y,w,h] of [[220,292,154,31],[650,350,104,22],[1120,258,178,38],[1660,325,130,28]]){
+    for(const [x,y,w,h] of [[220,402,118,22],[650,433,92,16],[1120,350,148,30],[1660,415,108,20]]){
       ctx.save();ctx.filter='blur(5px)';ctx.globalAlpha=mode==='night'?.32:.86;
       const cloud=ctx.createLinearGradient(0,y-h,0,y+h);
       cloud.addColorStop(0,lit);cloud.addColorStop(.55,lit);cloud.addColorStop(1,shade);
       ctx.fillStyle=cloud;ctx.beginPath();
       for(const [dx,dy,sx,sy] of [[-.65,.18,.35,.53],[-.25,-.15,.41,.84],[.13,-.37,.35,1],[.5,.04,.34,.64],[.02,.34,.77,.43]]){
+        ctx.moveTo(x+dx*w+w*sx,y+dy*h);
         ctx.ellipse(x+dx*w,y+dy*h,w*sx,h*sy,0,0,Math.PI*2);
       }
       ctx.fill();ctx.restore();

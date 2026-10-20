@@ -1,6 +1,6 @@
 import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
-import {stairProfile,inferredTreads} from './stair-profile.mjs';
+import {stairProfile,inferredTreads,mappedTreads} from './stair-profile.mjs?v=9';
 
 export function makePathSurfaces(features,ground){
   const segments=[],cells=new Map(),size=16,stats={paths:0,stairWays:0,treads:0,sourceStepCounts:0,unresolvedStairProfiles:[],correctedStairProfiles:[]};
@@ -12,7 +12,11 @@ export function makePathSurfaces(features,ground){
     const sourceCount=Number(path.tags.step_count);
     const h0=ground(...[path.points[0][0],path.points[0][2]]),last=path.points.at(-1),h1=ground(last[0],last[2]);
     const profile=stair?stairProfile(length,h0,h1,sourceCount):null;
-    const resolved=stair&&(profile.conflict||profile.mapped===null)?inferredTreads(path.points,ground):null;
+    const mapped=stair&&profile.mapped!==null&&!profile.conflict?mappedTreads(path.points,ground,profile.mapped):null;
+    if(stair&&profile.mapped!==null&&!mapped){
+      profile.conflict=true;profile.unresolved=true;profile.status='inferred-count-source-dem-conflict';
+    }
+    const resolved=stair?(mapped??inferredTreads(path.points,ground)):null;
     const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
     if(stair){stats.stairWays++;stats.treads+=count;if(sourceCount>0)stats.sourceStepCounts++;}
     if(profile?.unresolved)stats.unresolvedStairProfiles.push(path.id);

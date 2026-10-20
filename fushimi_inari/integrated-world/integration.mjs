@@ -5,14 +5,14 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs';
+import {makePathSurfaces} from './path-surfaces.mjs?v=9';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
-import {refineShrineFinishes} from './shrine-finishes.mjs';
+import {refineShrineFinishes} from './shrine-finishes.mjs?v=9';
 import {fineGranite} from './surface-materials.mjs';
 import {entryHeight} from './entry-profile.mjs';
 

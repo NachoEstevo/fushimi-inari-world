@@ -12,6 +12,21 @@ function curvedRoof(width,depth,rise,acrossX=false){
   geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }
 
+function gableTrim(mesh,width,depth,rise,material){
+  const group=new THREE.Group();group.position.copy(mesh.position);
+  const up=new THREE.Vector3(0,1,0);
+  for(let i=0;i<24;i++){
+    const x0=-width/2+width*i/24,x1=-width/2+width*(i+1)/24;
+    const height=x=>roofHeight(x/(width/2),rise)+Math.abs(x/(width/2))**6*.09;
+    const a=new THREE.Vector3(x0,height(x0),depth/2+.035),b=new THREE.Vector3(x1,height(x1),depth/2+.035);
+    const delta=b.clone().sub(a);
+    const trim=new THREE.Mesh(new THREE.BoxGeometry(.075,delta.length()+.006,.11),material);
+    trim.position.copy(a).add(b).multiplyScalar(.5);trim.quaternion.setFromUnitVectors(up,delta.normalize());
+    trim.castShadow=true;trim.receiveShadow=true;group.add(trim);
+  }
+  mesh.parent.add(group);
+}
+
 export function refineShrineRoofs(object){
   // Adapt only the known canopy assembly, leaving plaques, ropes and altars intact.
   const roofs=[];
@@ -22,7 +37,9 @@ export function refineShrineRoofs(object){
   for(const roof of roofs){
     const p=roof.geometry.parameters,parent=roof.parent,base=roof.position.y-.18,rise=.94;
     roof.geometry=curvedRoof(p.width,p.depth,rise);roof.position.y=base;
-    roof.material=roof.material.clone();roof.material.color.set('#61594c');roof.material.roughness=.92;
+    const authoredUpper=parent.children.find(m=>m.geometry?.type==='BoxGeometry'&&Math.abs(m.geometry.parameters.height-.36)<.001&&m.geometry.parameters.width>4.8);
+    roof.material=(authoredUpper?.material??roof.material).clone();roof.material.color.set('#96918a');roof.material.roughness=.92;
+    const edgeMaterial=new THREE.MeshStandardMaterial({color:'#66584a',roughness:.94});
     for(const sibling of [...parent.children]){
       if(sibling===roof||sibling.geometry?.type!=='BoxGeometry')continue;
       const d=sibling.geometry.parameters;
@@ -32,6 +49,7 @@ export function refineShrineRoofs(object){
       if(Math.abs(d.width-2.35)<.001&&Math.abs(d.height-.52)<.001){
         sibling.geometry=curvedRoof(d.width,d.depth,.65,true);
         sibling.position.y=base+.28;sibling.material=roof.material;
+        gableTrim(sibling,d.width,d.depth,.65,edgeMaterial);
       }
     }
   }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {refineShrineRoofs} from './shrine-roofs.mjs';
+import {refineShrineRoofs} from './shrine-roofs.mjs?v=9';
 
 // Official shrine photographs show a pink Ninomine maku versus the red summit
 // curtain. Retain the authored crest and calligraphy; folds are inferred.

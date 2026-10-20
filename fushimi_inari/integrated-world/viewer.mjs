@@ -3,7 +3,7 @@ import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs';
 import {installExplorationHUD} from './exploration-hud.mjs';
-import {integrate} from './integration.mjs';
+import {integrate} from './integration.mjs?v=9';
 import {installWalking} from './walking.mjs';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -304,7 +304,7 @@ try {
   const recordRender=renderStats(renderer);
   let mapTimer=0;
   function animate(time){
-    requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;
+    requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     if(walking&&activeRoute.length>1){
       let remaining=dt*Number($('speed').value);
       while(remaining>0&&routeProgress<activeRoute.length-1){
