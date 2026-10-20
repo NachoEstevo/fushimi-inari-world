@@ -1,0 +1,3995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fushimi Inari Taisha & Monte Inari (233m) — Experiencia 3D Ultra-Realista</title>
+  <style>
+    :root {
+      --vermilion: #e03814;
+      --gold: #f2c14e;
+      --bg-glass: rgba(10, 9, 12, 0.82);
+      --border-glass: rgba(242, 193, 78, 0.30);
+      --text-main: #f7f3eb;
+      --text-dim: #bfb8aa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #070709;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+    }
+    #canvas-container {
+      position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1;
+    }
+
+    /* Crosshair */
+    #crosshair {
+      position: fixed; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      pointer-events: none; z-index: 10;
+      opacity: 0.78; transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    #crosshair::before, #crosshair::after {
+      content: ''; position: absolute; background: var(--gold); border-radius: 2px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.85);
+    }
+    #crosshair::before { left: 9px; top: 3px; width: 2px; height: 14px; }
+    #crosshair::after  { left: 3px; top: 9px; width: 14px; height: 2px; }
+    #crosshair.active {
+      transform: translate(-50%, -50%) scale(1.45) rotate(45deg);
+      opacity: 1;
+    }
+
+    /* Top Header HUD */
+    #hud-top {
+      position: fixed; top: 16px; left: 16px; right: 16px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      pointer-events: none; z-index: 12; gap: 12px;
+    }
+    .glass-panel {
+      background: var(--bg-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 12px 16px;
+      pointer-events: auto;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+    }
+    .brand-title {
+      font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em;
+      color: var(--gold); display: flex; align-items: center; gap: 8px;
+    }
+    .brand-sub {
+      font-size: 0.76rem; color: var(--text-dim); margin-top: 3px;
+    }
+    .elevation-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 7px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(224, 56, 20, 0.22);
+      border: 1px solid rgba(224, 56, 20, 0.55);
+      font-size: 0.76rem; font-weight: 600; color: #ffd9c4;
+    }
+
+    /* Waypoint / Lighting Toolbar */
+    #toolbar-right {
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    }
+    .btn-row {
+      display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; max-width: 720px;
+    }
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-main);
+      padding: 5px 10px; border-radius: 7px;
+      font-size: 0.73rem; font-weight: 600;
+      cursor: pointer; transition: all 0.16s ease;
+    }
+    .hud-btn:hover {
+      background: rgba(224, 56, 20, 0.35);
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .hud-btn.active {
+      background: linear-gradient(135deg, #d83210, #9b1c06);
+      border-color: var(--gold);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(224, 56, 20, 0.5);
+    }
+
+    /* Interactive Prompt & Plaque Card */
+    #interaction-prompt {
+      position: fixed; left: 50%; bottom: 108px;
+      transform: translateX(-50%);
+      background: rgba(12, 10, 14, 0.90);
+      border: 1px solid var(--gold);
+      border-radius: 999px;
+      padding: 8px 20px;
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--gold);
+      pointer-events: none; z-index: 14;
+      opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.75);
+    }
+    #interaction-prompt.visible {
+      opacity: 1; transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* Route Guidance Banner */
+    #route-guide-banner {
+      position: fixed; left: 50%; top: 88px;
+      transform: translateX(-50%);
+      background: rgba(14, 11, 15, 0.88);
+      border: 1px solid rgba(242, 193, 78, 0.58);
+      border-radius: 10px;
+      padding: 7px 16px;
+      font-size: 0.79rem; color: #ffe7b8;
+      pointer-events: none; z-index: 12;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+      transition: opacity 0.3s ease;
+    }
+    #route-guide-banner .guide-tag {
+      background: #d83210; color: #fff; font-weight: 700;
+      padding: 2px 8px; border-radius: 5px; font-size: 0.71rem; white-space: nowrap;
+    }
+
+    #lore-modal {
+      position: fixed; left: 20px; bottom: 84px;
+      max-width: 440px; z-index: 15;
+      opacity: 0; transform: translateY(12px);
+      pointer-events: none; transition: all 0.24s ease;
+    }
+    #lore-modal.visible {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+    #lore-title {
+      font-size: 0.98rem; font-weight: 700; color: var(--gold); margin-bottom: 5px;
+    }
+    #lore-body {
+      font-size: 0.81rem; line-height: 1.5; color: var(--text-main);
+    }
+
+    /* Real Precinct & Mountain Minimap (Bottom Right) */
+    #minimap-panel {
+      position: fixed; right: 16px; bottom: 68px;
+      width: 245px; z-index: 14;
+      padding: 10px;
+      transition: width 0.22s ease;
+    }
+    #minimap-panel.expanded {
+      width: 365px;
+    }
+    .minimap-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.74rem; font-weight: 700; color: var(--gold);
+      margin-bottom: 6px;
+    }
+    #minimap-canvas {
+      width: 100%; height: auto; aspect-ratio: 1 / 1.18;
+      border-radius: 8px;
+      background: rgba(8, 12, 10, 0.94);
+      border: 1px solid rgba(242, 193, 78, 0.28);
+      display: block;
+    }
+    .minimap-legend {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+      font-size: 0.66rem; color: var(--text-dim);
+    }
+    .legend-dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px;
+    }
+
+    /* Bottom Controls Bar */
+    #hud-bottom {
+      position: fixed; left: 16px; right: 16px; bottom: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      pointer-events: none; z-index: 12;
+    }
+    .controls-hint {
+      font-size: 0.74rem; color: var(--text-dim);
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    }
+    .kbd {
+      display: inline-block; padding: 2px 6px; border-radius: 5px;
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.24);
+      color: #fff; font-weight: 600; font-size: 0.7rem; margin-right: 3px;
+    }
+
+    /* Loading Overlay */
+    #loader-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: radial-gradient(circle at center, #1b0b08 0%, #070609 100%);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      gap: 16px; transition: opacity 0.6s ease;
+    }
+    #loader-overlay.hidden { opacity: 0; pointer-events: none; }
+    .loader-torii {
+      font-size: 3.2rem; color: var(--vermilion);
+      text-shadow: 0 0 28px rgba(224, 56, 20, 0.85);
+      animation: pulseTorii 1.6s infinite ease-in-out;
+    }
+    @keyframes pulseTorii {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .loader-bar-wrap {
+      width: 340px; height: 6px; background: rgba(255,255,255,0.12);
+      border-radius: 999px; overflow: hidden;
+    }
+    #loader-bar {
+      width: 12%; height: 100%;
+      background: linear-gradient(90deg, var(--vermilion), var(--gold));
+      transition: width 0.25s ease;
+    }
+    #loader-status { font-size: 0.84rem; color: var(--text-dim); }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="loader-overlay">
+    <div class="loader-torii">⛩️</div>
+    <div style="font-size:1.22rem;font-weight:700;color:var(--gold);letter-spacing:0.06em;">
+      伏見稲荷大社 ・ 稲荷山 — FUSHIMI INARI TAISHA
+    </div>
+    <div id="loader-status">Construyendo red completa de senderos, bifurcación Senbon Torii y exclusión botánica...</div>
+    <div class="loader-bar-wrap"><div id="loader-bar"></div></div>
+  </div>
+
+  <div id="canvas-container"></div>
+  <div id="crosshair"></div>
+
+  <div id="route-guide-banner">
+    <span class="guide-tag">順路 MAPA REAL</span>
+    <span id="route-guide-text">Rodeá el salón central (Ge-haiden) por las calzadas de piedra laterales (Izquierda o Derecha) para subir hacia Senbon Torii ⛩️</span>
+  </div>
+
+  <div id="hud-top">
+    <div class="glass-panel">
+      <div class="brand-title">⛩️ FUSHIMI INARI TAISHA & MONTE INARI (稲荷山 233m)</div>
+      <div class="brand-sub" id="zone-subtitle">Zona 01 — Omotesandō & Puerta Rōmon (1589)</div>
+      <div class="elevation-badge">
+        <span id="elev-readout">Altitud: 34 m s.n.m.</span>
+        <span>•</span>
+        <span id="torii-readout">1020+ Torii (Caminos y Bifurcaciones 100% Despejados)</span>
+      </div>
+    </div>
+
+    <div id="toolbar-right">
+      <div class="glass-panel" style="padding:9px 12px;">
+        <div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:5px;text-align:right;">
+          TELETRANSPORTE RÁPIDO — CIRCUITO COMPLETO DE PEREGRINACIÓN (O-YAMA-MEGURI)
+        </div>
+        <div class="btn-row" id="waypoint-buttons">
+          <button class="hud-btn active" data-wp="0">1. Omotesandō</button>
+          <button class="hud-btn" data-wp="1">2. Rōmon & Temizuya</button>
+          <button class="hud-btn" data-wp="2">3. Ge-haiden & Honden</button>
+          <button class="hud-btn" data-wp="3">4. Bifurcación Senbon</button>
+          <button class="hud-btn" data-wp="4">5. Doble Túnel Senbon</button>
+          <button class="hud-btn" data-wp="5">6. Okusha & Omokaru-ishi</button>
+          <button class="hud-btn" data-wp="6">7. Estanque Shin-ike</button>
+          <button class="hud-btn" data-wp="7">8. Mirador Yotsutsuji</button>
+          <button class="hud-btn" data-wp="8">9. Sannomine (三ノ峰)</button>
+          <button class="hud-btn" data-wp="9">10. Ninomine (二ノ峰)</button>
+          <button class="hud-btn" data-wp="10">11. Mitsurugi-sha (御劔社)</button>
+          <button class="hud-btn" data-wp="11">12. Cumbre Ichinomine (233m)</button>
+        </div>
+      </div>
+
+      <div class="glass-panel" style="padding:7px 12px;">
+        <div class="btn-row" id="lighting-buttons">
+          <button class="hud-btn active" data-light="komorebi">🌅 1. Atardecer Komorebi</button>
+          <button class="hud-btn" data-light="noon">☀️ 2. Mediodía</button>
+          <button class="hud-btn" data-light="twilight">🌆 3. Crepúsculo</button>
+          <button class="hud-btn" data-light="night">🏮 4. Noche de Linternas</button>
+          <button class="hud-btn" id="btn-audio">🔊 Audio Shinto</button>
+          <button class="hud-btn" id="btn-fly">🕊️ Modo Vuelo: OFF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="interaction-prompt">Presioná [E] o Click para interactuar</div>
+
+  <div id="lore-modal" class="glass-panel">
+    <div id="lore-title">Detalle Arquitectónico</div>
+    <div id="lore-body">Seleccioná un punto de interés con [E] o Click para explorar su historia y función ritual.</div>
+  </div>
+
+  <!-- Real Precinct & Mountain Trail Minimap -->
+  <div id="minimap-panel" class="glass-panel">
+    <div class="minimap-header">
+      <span>🗺️ 境内・稲荷山案内図 (MAPA EN VIVO)</span>
+      <button class="hud-btn" id="btn-toggle-map" style="padding:2px 7px;font-size:0.66rem;">[M] Vista Total</button>
+    </div>
+    <canvas id="minimap-canvas" width="300" height="350"></canvas>
+    <div class="minimap-legend">
+      <span><i class="legend-dot" style="background:#ff3b14;"></i>Túneles Torii</span>
+      <span><i class="legend-dot" style="background:#f2c14e;"></i>Calzadas 順路</span>
+      <span><i class="legend-dot" style="background:#42f58d;"></i>Tu Posición</span>
+    </div>
+  </div>
+
+  <div id="hud-bottom">
+    <div class="glass-panel" style="padding:8px 14px;">
+      <div class="controls-hint">
+        <span><span class="kbd">Click</span>Capturar Mouse</span>
+        <span><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>Caminar</span>
+        <span><span class="kbd">Shift</span>Correr</span>
+        <span><span class="kbd">Espacio</span>Saltar</span>
+        <span><span class="kbd">F</span>Modo Vuelo Libre</span>
+        <span><span class="kbd">M</span>Zoom Mapa</span>
+        <span><span class="kbd">E</span>Interactuar</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+    const loaderBar = document.getElementById('loader-bar');
+    const loaderStatus = document.getElementById('loader-status');
+    const loaderOverlay = document.getElementById('loader-overlay');
+    const routeGuideBanner = document.getElementById('route-guide-banner');
+    const routeGuideText = document.getElementById('route-guide-text');
+    const minimapPanel = document.getElementById('minimap-panel');
+    const minimapCanvas = document.getElementById('minimap-canvas');
+    const minimapCtx = minimapCanvas.getContext('2d');
+
+    // =========================================================================
+    // 0. SPATIAL COLLISION SYSTEM (Smooth Sliding Resolution)
+    // =========================================================================
+    class SpatialCollisionWorld {
+      constructor(cellSize = 4.0) {
+        this.cellSize = cellSize;
+        this.grid = new Map();
+        this.boxes = [];
+      }
+      _key(cx, cz) { return `${cx},${cz}`; }
+      addCylinder(x, z, r, yMin = -100, yMax = 500, tag = 'col') {
+        const minCx = Math.floor((x - r) / this.cellSize);
+        const maxCx = Math.floor((x + r) / this.cellSize);
+        const minCz = Math.floor((z - r) / this.cellSize);
+        const maxCz = Math.floor((z + r) / this.cellSize);
+        const col = { x, z, r, yMin, yMax, tag };
+        for (let cx = minCx; cx <= maxCx; cx++) {
+          for (let cz = minCz; cz <= maxCz; cz++) {
+            const k = this._key(cx, cz);
+            if (!this.grid.has(k)) this.grid.set(k, []);
+            this.grid.get(k).push(col);
+          }
+        }
+      }
+      addBox(cx, cz, halfW, halfD, yaw = 0, yMin = -100, yMax = 500, tag = 'box') {
+        this.boxes.push({
+          cx, cz, halfW, halfD,
+          cos: Math.cos(-yaw), sin: Math.sin(-yaw),
+          cosF: Math.cos(yaw), sinF: Math.sin(yaw),
+          yMin, yMax, tag
+        });
+      }
+      resolvePlayer(px, py, pz, playerRadius = 0.28) {
+        let x = px, z = pz;
+        const footY = py - 1.55;
+        const headY = py + 0.15;
+
+        for (let iter = 0; iter < 3; iter++) {
+          const gcx = Math.floor(x / this.cellSize);
+          const gcz = Math.floor(z / this.cellSize);
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dz = -1; dz <= 1; dz++) {
+              const bucket = this.grid.get(this._key(gcx + dx, gcz + dz));
+              if (!bucket) continue;
+              for (let i = 0; i < bucket.length; i++) {
+                const c = bucket[i];
+                if (headY < c.yMin || footY > c.yMax) continue;
+                const vx = x - c.x;
+                const vz = z - c.z;
+                const distSq = vx * vx + vz * vz;
+                const minDist = playerRadius + c.r;
+                if (distSq < minDist * minDist && distSq > 1e-8) {
+                  const dist = Math.sqrt(distSq);
+                  const push = (minDist - dist);
+                  x += (vx / dist) * push;
+                  z += (vz / dist) * push;
+                }
+              }
+            }
+          }
+
+          for (let i = 0; i < this.boxes.length; i++) {
+            const b = this.boxes[i];
+            if (headY < b.yMin || footY > b.yMax) continue;
+            const relX = x - b.cx;
+            const relZ = z - b.cz;
+            const lx = relX * b.cos - relZ * b.sin;
+            const lz = relX * b.sin + relZ * b.cos;
+            const clampX = Math.max(-b.halfW, Math.min(b.halfW, lx));
+            const clampZ = Math.max(-b.halfD, Math.min(b.halfD, lz));
+            const dx = lx - clampX;
+            const dz = lz - clampZ;
+            const distSq = dx * dx + dz * dz;
+            if (distSq < playerRadius * playerRadius) {
+              let nLx = 0, nLz = 0;
+              if (distSq > 1e-7) {
+                const dist = Math.sqrt(distSq);
+                const push = playerRadius - dist;
+                nLx = lx + (dx / dist) * push;
+                nLz = lz + (dz / dist) * push;
+              } else {
+                const penX = b.halfW - Math.abs(lx);
+                const penZ = b.halfD - Math.abs(lz);
+                if (penX < penZ) {
+                  nLx = (lx >= 0 ? 1 : -1) * (b.halfW + playerRadius);
+                  nLz = lz;
+                } else {
+                  nLx = lx;
+                  nLz = (lz >= 0 ? 1 : -1) * (b.halfD + playerRadius);
+                }
+              }
+              x = b.cx + nLx * b.cosF - nLz * b.sinF;
+              z = b.cz + nLx * b.sinF + nLz * b.cosF;
+            }
+          }
+        }
+        return { x, z };
+      }
+    }
+
+    const collisionWorld = new SpatialCollisionWorld(4.0);
+
+    // =========================================================================
+    // 1. RENDERER, SCENE, CAMERA & HDRI ENVIRONMENT GENERATOR
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x1b1518, 0.0040);
+
+    const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.12, 650);
+    const controls = new PointerLockControls(camera, renderer.domElement);
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    let currentEnvRT = null;
+
+    function buildDynamicEnvironmentMap(zenithHex, horizonHex, groundHex, sunDir, sunHex, sunStrength) {
+      const envScene = new THREE.Scene();
+      const skyGeo = new THREE.SphereGeometry(60, 32, 24);
+      const skyMat = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {
+          uZenith: { value: new THREE.Color(zenithHex) },
+          uHorizon: { value: new THREE.Color(horizonHex) },
+          uGround: { value: new THREE.Color(groundHex) },
+          uSunDir: { value: sunDir.clone().normalize() },
+          uSunColor: { value: new THREE.Color(sunHex) },
+          uSunStrength: { value: sunStrength }
+        },
+        vertexShader: `
+          varying vec3 vWorldDir;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldDir = normalize(wp.xyz);
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWorldDir;
+          uniform vec3 uZenith;
+          uniform vec3 uHorizon;
+          uniform vec3 uGround;
+          uniform vec3 uSunDir;
+          uniform vec3 uSunColor;
+          uniform float uSunStrength;
+          void main() {
+            vec3 d = normalize(vWorldDir);
+            float y = d.y;
+            vec3 col;
+            if (y >= 0.0) {
+              float t = pow(y, 0.48);
+              col = mix(uHorizon, uZenith, t);
+            } else {
+              float t = clamp(-y * 3.0, 0.0, 1.0);
+              col = mix(uHorizon * 0.65, uGround, t);
+            }
+            float sunCos = max(dot(d, uSunDir), 0.0);
+            col += uSunColor * pow(sunCos, 12.0) * (0.42 * uSunStrength);
+            col += uSunColor * pow(sunCos, 180.0) * (2.6 * uSunStrength);
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      });
+      envScene.add(new THREE.Mesh(skyGeo, skyMat));
+      const rt = pmremGenerator.fromScene(envScene, 0.025);
+      skyGeo.dispose();
+      skyMat.dispose();
+      return rt;
+    }
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.26, 0.52, 0.84
+    );
+    composer.addPass(bloomPass);
+
+    const ColorGradeShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        uContrast: { value: 1.07 },
+        uSaturation: { value: 1.12 },
+        uTint: { value: new THREE.Vector3(1.02, 0.99, 0.96) }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uContrast;
+        uniform float uSaturation;
+        uniform vec3 uTint;
+        varying vec2 vUv;
+        void main() {
+          vec4 tex = texture2D(tDiffuse, vUv);
+          vec3 col = tex.rgb * uTint;
+          float luma = dot(col, vec3(0.299, 0.587, 0.114));
+          col = mix(vec3(luma), col, uSaturation);
+          col = (col - 0.5) * uContrast + 0.5;
+          vec2 uvC = vUv - 0.5;
+          float vig = 1.0 - dot(uvC, uvC) * 0.24;
+          col *= clamp(vig, 0.76, 1.0);
+          gl_FragColor = vec4(max(col, vec3(0.0)), tex.a);
+        }
+      `
+    };
+    const gradePass = new ShaderPass(ColorGradeShader);
+    composer.addPass(gradePass);
+
+    // =========================================================================
+    // 2. PROCEDURAL METRIC UV HELPER
+    // =========================================================================
+    function applyMetricUVs(geo, scaleM = 2.0) {
+      const pos = geo.attributes.position;
+      const norm = geo.attributes.normal;
+      const uv = geo.attributes.uv;
+      if (!pos || !norm || !uv) return geo;
+      for (let i = 0; i < pos.count; i++) {
+        const vx = pos.getX(i), vy = pos.getY(i), vz = pos.getZ(i);
+        const nx = Math.abs(norm.getX(i)), ny = Math.abs(norm.getY(i)), nz = Math.abs(norm.getZ(i));
+        let u = 0, v = 0;
+        if (ny >= nx && ny >= nz) {
+          u = vx / scaleM; v = vz / scaleM;
+        } else if (nx >= ny && nx >= nz) {
+          u = vz / scaleM; v = vy / scaleM;
+        } else {
+          u = vx / scaleM; v = vy / scaleM;
+        }
+        uv.setXY(i, u, v);
+      }
+      uv.needsUpdate = true;
+      return geo;
+    }
+
+    function createMetricBox(w, h, d, mat, uvScale = 2.0) {
+      const geo = applyMetricUVs(new THREE.BoxGeometry(w, h, d), uvScale);
+      return new THREE.Mesh(geo, mat);
+    }
+
+    // =========================================================================
+    // 3. COMPLETE REAL MAP NETWORK, BIFURCATIONS & CORRIDOR EXCLUSION SYSTEM
+    // =========================================================================
+    const TRAIL_WAYPOINTS = [
+      new THREE.Vector3(  0.0,  0.0,   24.0), // 0: Omotesando Entrance
+      new THREE.Vector3(  0.0,  0.0,    6.5), // 1: Foot of Romon Stairs
+      new THREE.Vector3(  0.0,  1.6,   -2.5), // 2: Romon Gate Archway
+      new THREE.Vector3(  0.0,  1.6,  -19.6), // 3: Foot of Sanctuary Stairs
+      new THREE.Vector3(  0.0,  3.2,  -22.2), // 4: Sanctuary Terrace (Nai-haiden & Honden)
+      new THREE.Vector3(  0.0,  3.2,  -39.5), // 5: Rear Convergence Plaza behind Honden
+      new THREE.Vector3( -1.8,  4.4,  -48.5), // 6: Senbon Torii Fork Plaza (Bifurcation Start!)
+      new THREE.Vector3( -3.5,  6.2,  -66.0), // 7: Mid Twin Senbon Torii Tunnels
+      new THREE.Vector3( -2.0,  8.5,  -85.0), // 8: Okusha Hohaisho & Omokaru-ishi (Bifurcation End!)
+      new THREE.Vector3( 14.0, 14.5, -112.0), // 9: Winding Cedar Torii Slope
+      new THREE.Vector3( 22.0, 19.5, -142.0), // 10: Kumataka-sha & Shin-ike Sacred Pond
+      new THREE.Vector3(  4.0, 26.5, -172.0), // 11: Kodama-ga-ike Switchback
+      new THREE.Vector3(-18.0, 34.0, -205.0), // 12: Yotsutsuji Crossroads & Kyoto Panorama
+      new THREE.Vector3(-32.0, 42.5, -238.0), // 13: Sannomine (Third Peak)
+      new THREE.Vector3(-14.0, 50.0, -272.0), // 14: Ninomine (Second Peak)
+      new THREE.Vector3(  0.0, 58.0, -308.0), // 15: Ichinomine Summit (233m Peak)
+    ];
+
+    const trailCurve = new THREE.CatmullRomCurve3(TRAIL_WAYPOINTS, false, 'catmullrom', 0.30);
+    const TRAIL_SAMPLES = 850;
+    const trailLookup = [];
+    for (let i = 0; i <= TRAIL_SAMPLES; i++) {
+      const u = i / TRAIL_SAMPLES;
+      const pt = trailCurve.getPointAt(u);
+      const tan = trailCurve.getTangentAt(u).normalize();
+      const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      trailLookup.push({ u, pt, tan, right });
+    }
+
+    // Twin Senbon Torii Tunnel parameters:
+    // Between u = 0.148 (z ~ -48.5 Fork Plaza) and u = 0.252 (z ~ -81.5 Okusha Approach),
+    // the trail splits into TWO parallel tunnels separated by +/- 2.05m from centerline!
+    const SENBON_U_START = 0.148;
+    const SENBON_U_END   = 0.252;
+    const SENBON_TUNNEL_OFFSET = 2.05; // 4.10m center-to-center between Left and Right tunnels!
+
+    function getTwinTunnelEnvelopeFactor(u) {
+      if (u < SENBON_U_START - 0.012 || u > SENBON_U_END + 0.012) return 0.0;
+      if (u < SENBON_U_START + 0.008) {
+        return Math.max(0.0, Math.min(1.0, (u - (SENBON_U_START - 0.012)) / 0.020));
+      }
+      if (u > SENBON_U_END - 0.008) {
+        return Math.max(0.0, Math.min(1.0, ((SENBON_U_END + 0.012) - u) / 0.020));
+      }
+      return 1.0;
+    }
+
+    //Yotsutsuji East Return Loop Branch (Mitsurugi-sha loop connecting Ichinomine back to Yotsutsuji on the East side!)
+    const EAST_LOOP_WAYPOINTS = [
+      new THREE.Vector3(-18.0, 34.0, -205.0), // Yotsutsuji Crossroads
+      new THREE.Vector3(  6.0, 41.0, -242.0), // Mitsurugi-sha & Gozensui (East Flank Shrine)
+      new THREE.Vector3( 15.0, 49.5, -276.0), // East Ridge Ascent
+      new THREE.Vector3(  0.0, 58.0, -308.0), // Ichinomine Summit (233m)
+    ];
+    const eastLoopCurve = new THREE.CatmullRomCurve3(EAST_LOOP_WAYPOINTS, false, 'catmullrom', 0.32);
+    const eastLoopLookup = [];
+    for (let i = 0; i <= 260; i++) {
+      const u = i / 260;
+      const pt = eastLoopCurve.getPointAt(u);
+      const tan = eastLoopCurve.getTangentAt(u).normalize();
+      const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      eastLoopLookup.push({ u, pt, tan, right });
+    }
+
+    function closestTrailPoint(x, z) {
+      let bestDistSq = Infinity;
+      let best = trailLookup[0];
+      let isEastLoop = false;
+      for (let i = 0; i < trailLookup.length; i++) {
+        const s = trailLookup[i];
+        const dx = x - s.pt.x;
+        const dz = z - s.pt.z;
+        const d2 = dx * dx + dz * dz;
+        if (d2 < bestDistSq) {
+          bestDistSq = d2;
+          best = s;
+        }
+      }
+      if (z < -190) {
+        for (let i = 0; i < eastLoopLookup.length; i++) {
+          const s = eastLoopLookup[i];
+          const dx = x - s.pt.x;
+          const dz = z - s.pt.z;
+          const d2 = dx * dx + dz * dz;
+          if (d2 < bestDistSq) {
+            bestDistSq = d2;
+            best = s;
+            isEastLoop = true;
+          }
+        }
+      }
+      return { sample: best, dist: Math.sqrt(bestDistSq), isEastLoop };
+    }
+
+    /**
+     * Exact Minimum Distance from (x, z) to ANY Walkable Corridor, Bifurcation Tunnel,
+     * Bypass Avenue, or Sanctuary Plaza!
+     * Returns <= 0 if inside a plaza/corridor, or positive meters outside.
+     * Used to GUARANTEE that ZERO trees, bamboo, or ferns ever spawn inside any path!
+     */
+    const SANCTUARY_PLAZAS = [
+      { x:   0.0, z:   14.0, r: 16.0 }, // Omotesando Entrance Plaza
+      { x: -10.5, z:   11.5, r:  6.5 }, // Temizuya Pavilion
+      { x:   0.0, z:  -10.0, r: 21.0 }, // Main Precinct Courtyard (Romon, Ge-haiden, Juyosho, Kagura-den)
+      { x:   0.0, z:  -31.0, r: 19.5 }, // Sanctuary Terrace (Nai-haiden, Honden & North/South Bypass Avenues)
+      { x:  -1.0, z:  -44.0, r: 13.5 }, // Rear Convergence & Approach Torii Plaza
+      { x:  -1.8, z:  -49.0, r: 10.5 }, // Senbon Torii Bifurcation Fork Plaza
+      { x:  -2.0, z:  -85.0, r: 13.5 }, // Okusha Hohaisho & Omokaru-ishi Clearing
+      { x:  22.0, z: -142.0, r: 15.5 }, // Kumataka-sha & Shin-ike Sacred Pond Terrace
+      { x: -18.0, z: -205.0, r: 17.5 }, // Yotsutsuji Crossroads & Chaya Tea Houses
+      { x: -32.0, z: -238.0, r: 10.5 }, // Sannomine Clearing
+      { x: -14.0, z: -272.0, r: 10.5 }, // Ninomine Clearing
+      { x:   6.0, z: -242.0, r:  9.5 }, // Mitsurugi-sha East Loop Clearing
+      { x:   0.0, z: -308.0, r: 15.5 }, // Ichinomine 233m Summit Sanctuary
+    ];
+
+    function minClearanceFromWalkableNetwork(x, z) {
+      let minClear = Infinity;
+
+      // 1. Check all Sanctuary Plazas & Clearings
+      for (let i = 0; i < SANCTUARY_PLAZAS.length; i++) {
+        const p = SANCTUARY_PLAZAS[i];
+        const d = Math.hypot(x - p.x, z - p.z) - p.r;
+        if (d < minClear) minClear = d;
+      }
+
+      // 2. Check Lower Precinct Rectangular Footprint (z in [-44, +26], x in [-20, +20])
+      if (z >= -44.0 && z <= 26.0 && Math.abs(x) <= 20.5) {
+        return -10.0;
+      }
+
+      // 3. Check Main Trail Curve AND Twin Senbon Torii Bifurcation Tunnels
+      for (let i = 0; i < trailLookup.length; i += 2) {
+        const s = trailLookup[i];
+        const dCenter = Math.hypot(x - s.pt.x, z - s.pt.z) - 2.4;
+        if (dCenter < minClear) minClear = dCenter;
+
+        // If inside the Senbon Torii Twin Tunnel zone, also check Left & Right parallel branches!
+        const env = getTwinTunnelEnvelopeFactor(s.u);
+        if (env > 0.01) {
+          const off = SENBON_TUNNEL_OFFSET * env;
+          const lx = s.pt.x - s.right.x * off;
+          const lz = s.pt.z - s.right.z * off;
+          const rx = s.pt.x + s.right.x * off;
+          const rz = s.pt.z + s.right.z * off;
+          const dL = Math.hypot(x - lx, z - lz) - 2.3;
+          const dR = Math.hypot(x - rx, z - rz) - 2.3;
+          if (dL < minClear) minClear = dL;
+          if (dR < minClear) minClear = dR;
+        }
+      }
+
+      // 4. Check East Summit Return Loop (Yotsutsuji <-> Mitsurugi-sha <-> Ichinomine)
+      if (z < -190.0) {
+        for (let i = 0; i < eastLoopLookup.length; i += 2) {
+          const s = eastLoopLookup[i];
+          const dE = Math.hypot(x - s.pt.x, z - s.pt.z) - 2.2;
+          if (dE < minClear) minClear = dE;
+        }
+      }
+
+      return minClear;
+    }
+
+    // Continuous, Glitch-Free Ground Height Function across Precinct, Bifurcations & Mountain Loop
+    function sampleGroundHeight(x, z) {
+      // 1. Lower Shrine Precinct (z from +26 down to -39.5, x within [-20, +20])
+      if (z >= -39.5 && Math.abs(x) <= 19.5) {
+        if (z >= 6.5) return 0.0;
+        if (z >= 2.5) return 1.6 * ((6.5 - z) / 4.0);
+        if (z >= -19.6) return 1.6;
+        if (z >= -22.2) return 1.6 + 1.6 * ((-19.6 - z) / 2.6);
+        return 3.2;
+      }
+
+      // Smooth transition apron behind Honden (z in [-45.5, -39.5]) so lateral avenues at x=+-9.2
+      // blend seamlessly into the Senbon Torii Approach without any height jump!
+      const { sample, dist } = closestTrailPoint(x, z);
+      const trailY = sample.pt.y;
+
+      let flatHalfW = 3.6;
+      if (z > -46.0 && Math.abs(x) < 16.0) {
+        flatHalfW = 14.5;
+      } else if (sample.u >= SENBON_U_START - 0.02 && sample.u <= SENBON_U_END + 0.02) {
+        // Wide flat terrace across BOTH Twin Senbon Torii Tunnels + Fork Plaza!
+        flatHalfW = 6.2;
+      } else if (Math.abs(z - (-85)) < 14) {
+        flatHalfW = 12.5; // Okusha clearing
+      } else if (Math.abs(z - (-142)) < 16) {
+        flatHalfW = 14.0; // Shin-ike pond terrace
+      } else if (Math.abs(z - (-205)) < 18) {
+        flatHalfW = 16.5; // Yotsutsuji crossroads
+      } else if (Math.abs(z - (-238)) < 11 || Math.abs(z - (-272)) < 11 || Math.abs(z - (-242)) < 10) {
+        flatHalfW = 8.5;  // Sannomine, Ninomine, Mitsurugi-sha
+      } else if (Math.abs(z - (-308)) < 17) {
+        flatHalfW = 14.5; // Ichinomine summit plateau
+      }
+
+      if (dist <= flatHalfW) {
+        return trailY;
+      }
+
+      const dOut = dist - flatHalfW;
+      const blend = Math.min(1.0, dOut / 18.0);
+      const smooth = blend * blend * (3.0 - 2.0 * blend);
+
+      let ridgeOffset =
+        Math.sin(x * 0.055 + z * 0.035) * 6.2 +
+        Math.cos(x * 0.11 - z * 0.07) * 2.8 +
+        Math.sin(x * 0.24 + z * 0.19) * 1.0 +
+        Math.min(20.0, dOut * 0.34);
+
+      if (z < -180 && z > -235 && x < -19) {
+        ridgeOffset = -Math.min(28.0, (-19 - x) * 1.08);
+      }
+      if (x > 24 && x < 38 && z < -131 && z > -151) {
+        return trailY - 0.65;
+      }
+      return trailY + smooth * ridgeOffset;
+    }
+
+    // =========================================================================
+    // 4. LOAD ALL SEAMLESS PBR TEXTURES & DE-FRINGED FOLIAGE SPRIGS
+    // =========================================================================
+    const texLoader = new THREE.TextureLoader();
+    const maxAniso = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
+
+    function loadTex(url, isSRGB = true, repeatX = 1, repeatY = 1, clamp = false) {
+      const t = texLoader.load(url);
+      t.colorSpace = isSRGB ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      t.anisotropy = maxAniso;
+      if (clamp) {
+        t.wrapS = THREE.ClampToEdgeWrapping;
+        t.wrapT = THREE.ClampToEdgeWrapping;
+      } else {
+        t.wrapS = THREE.RepeatWrapping;
+        t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(repeatX, repeatY);
+      }
+      return t;
+    }
+
+    const toriiFreshColor = loadTex('assets/textures/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.png', true, 1, 1);
+    const toriiFreshNorm  = loadTex('assets/textures/Torii_Kanji_Column/Torii_Kanji_Column_Normal.png', false, 1, 1);
+    const toriiFreshRough = loadTex('assets/textures/Torii_Kanji_Column/Torii_Kanji_Column_Roughness.png', false, 1, 1);
+
+    const toriiWeathColor = loadTex('assets/textures/nanobanana/torii_weathered_kanji_color.png', true, 1, 1);
+    const toriiWeathNorm  = loadTex('assets/textures/nanobanana/torii_weathered_kanji_normal.png', false, 1, 1);
+    const toriiWeathRough = loadTex('assets/textures/nanobanana/torii_weathered_kanji_roughness.png', false, 1, 1);
+
+    const vermilionWoodColor = loadTex('assets/textures/nanobanana/wood_vermilion_shuiro_color.png', true, 1, 1);
+    const vermilionWoodNorm  = loadTex('assets/textures/nanobanana/wood_vermilion_shuiro_normal.png', false, 1, 1);
+    const vermilionWoodRough = loadTex('assets/textures/nanobanana/wood_vermilion_shuiro_roughness.png', false, 1, 1);
+
+    const roofBarkColor = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_color.png', true, 1, 1);
+    const roofBarkNorm  = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_normal.png', false, 1, 1);
+    const roofBarkRough = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_roughness.png', false, 1, 1);
+
+    const roofCopperColor = loadTex('assets/textures/nanobanana/roof_copper_patina_color.png', true, 1, 1);
+    const roofCopperNorm  = loadTex('assets/textures/nanobanana/roof_copper_patina_normal.png', false, 1, 1);
+    const roofCopperRough = loadTex('assets/textures/nanobanana/roof_copper_patina_roughness.png', false, 1, 1);
+
+    const flagstoneColor = loadTex('assets/textures/nanobanana/stone_flagstone_paving_color.png', true, 1, 1);
+    const flagstoneNorm  = loadTex('assets/textures/nanobanana/stone_flagstone_paving_normal.png', false, 1, 1);
+    const flagstoneRough = loadTex('assets/textures/nanobanana/stone_flagstone_paving_roughness.png', false, 1, 1);
+
+    const ishigakiColor = loadTex('assets/textures/nanobanana/stone_ishigaki_moss_leaves_color.png', true, 1, 1);
+    const ishigakiNorm  = loadTex('assets/textures/nanobanana/stone_ishigaki_moss_leaves_normal.png', false, 1, 1);
+    const ishigakiRough = loadTex('assets/textures/nanobanana/stone_ishigaki_moss_leaves_roughness.png', false, 1, 1);
+
+    const gravelColor = loadTex('assets/textures/nanobanana/surface_courtyard_gravel_color.png', true, 1, 1);
+    const gravelNorm  = loadTex('assets/textures/nanobanana/surface_courtyard_gravel_normal.png', false, 1, 1);
+    const gravelRough = loadTex('assets/textures/nanobanana/surface_courtyard_gravel_roughness.png', false, 1, 1);
+
+    const soilLeavesTex   = loadTex('assets/textures/nanobanana/surface_forest_soil_leaves.png', true, 75, 75);
+    const soilLeavesNorm  = loadTex('assets/textures/nanobanana/surface_forest_soil_leaves_normal.png', false, 75, 75);
+    const soilLeavesRough = loadTex('assets/textures/nanobanana/surface_forest_soil_leaves_roughness.png', false, 75, 75);
+
+    const barkRootsColor  = loadTex('assets/textures/nanobanana/bark_mossy_roots_color.png', true, 1, 3);
+    const barkRootsNorm   = loadTex('assets/textures/nanobanana/bark_mossy_roots_normal.png', false, 1, 3);
+
+    const sugiFoliageTex     = loadTex('assets/textures/nanobanana/foliage_sugi_cedar.png', true, 1, 1, true);
+    const sugiFoliageNorm    = loadTex('assets/textures/nanobanana/foliage_sugi_cedar_normal.png', false, 1, 1, true);
+    const momijiFoliageTex   = loadTex('assets/textures/nanobanana/foliage_momiji_maple.png', true, 1, 1, true);
+    const momijiFoliageNorm  = loadTex('assets/textures/nanobanana/foliage_momiji_maple_normal.png', false, 1, 1, true);
+    const bambooFoliageTex   = loadTex('assets/textures/nanobanana/foliage_bamboo_fern.png', true, 1, 1, true);
+    const bambooFoliageNorm  = loadTex('assets/textures/nanobanana/foliage_bamboo_fern_normal.png', false, 1, 1, true);
+    const understoryFoliageTex  = loadTex('assets/textures/nanobanana/foliage_yatsude_aoki_fern.png', true, 1, 1, true);
+    const understoryFoliageNorm = loadTex('assets/textures/nanobanana/foliage_yatsude_aoki_fern_normal.png', false, 1, 1, true);
+
+    const emaRackTex       = loadTex('assets/textures/nanobanana/prop_kitsune_ema_rack.png', true, 1, 1, true);
+    const otsukaSteleTex   = loadTex('assets/textures/nanobanana/stone_otsuka_carved_kanji.png', true, 1, 1);
+    const chayaLanternTex  = loadTex('assets/textures/nanobanana/prop_chaya_lantern_noren.png', true, 1, 1);
+    const noboriBannerTex  = loadTex('assets/textures/nanobanana/prop_nobori_banners.png', true, 1, 1, true);
+    const suzuRopeMakuTex  = loadTex('assets/textures/nanobanana/prop_suzu_rope_maku.png', true, 1, 1);
+    const kitsuneBibTex    = loadTex('assets/textures/nanobanana/prop_kitsune_bib_stone.png', true, 1, 1);
+    const sudareBlindTex   = loadTex('assets/textures/nanobanana/prop_sudare_bamboo_blind.png', true, 1, 1);
+    const sudareBlindNorm  = loadTex('assets/textures/nanobanana/prop_sudare_bamboo_blind_normal.png', false, 1, 1);
+
+    const vermilionMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: vermilionWoodColor,
+      normalMap: vermilionWoodNorm,
+      normalScale: new THREE.Vector2(0.85, 0.85),
+      roughnessMap: vermilionWoodRough,
+      roughness: 0.32,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.24
+    });
+
+    const blackNemakiMat = new THREE.MeshStandardMaterial({
+      color: 0x121215, roughness: 0.34, metalness: 0.25,
+      normalMap: vermilionWoodNorm, normalScale: new THREE.Vector2(0.35, 0.35)
+    });
+
+    const flagstoneMat = new THREE.MeshStandardMaterial({
+      color: 0xd8d5ce,
+      map: flagstoneColor,
+      normalMap: flagstoneNorm,
+      normalScale: new THREE.Vector2(1.25, 1.25),
+      roughnessMap: flagstoneRough,
+      roughness: 0.78
+    });
+
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: 0xc8c6be,
+      map: ishigakiColor,
+      normalMap: ishigakiNorm,
+      normalScale: new THREE.Vector2(1.45, 1.45),
+      roughnessMap: ishigakiRough,
+      roughness: 0.84
+    });
+
+    const gravelMat = new THREE.MeshStandardMaterial({
+      color: 0x9e9fa4,
+      map: gravelColor,
+      normalMap: gravelNorm,
+      normalScale: new THREE.Vector2(1.3, 1.3),
+      roughnessMap: gravelRough,
+      roughness: 0.88
+    });
+
+    const steleMat = new THREE.MeshStandardMaterial({
+      color: 0xc8c6be,
+      map: otsukaSteleTex,
+      normalMap: ishigakiNorm,
+      normalScale: new THREE.Vector2(1.15, 1.15),
+      roughness: 0.80
+    });
+
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: 0xd8cec4,
+      map: roofBarkColor,
+      normalMap: roofBarkNorm,
+      normalScale: new THREE.Vector2(1.4, 1.4),
+      roughnessMap: roofBarkRough,
+      roughness: 0.82
+    });
+
+    const copperRoofMat = new THREE.MeshStandardMaterial({
+      color: 0xd8efe6,
+      map: roofCopperColor,
+      normalMap: roofCopperNorm,
+      normalScale: new THREE.Vector2(1.1, 1.1),
+      roughnessMap: roofCopperRough,
+      roughness: 0.44,
+      metalness: 0.42
+    });
+
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xf6c445, roughness: 0.20, metalness: 0.92
+    });
+
+    const plasterMat = new THREE.MeshStandardMaterial({
+      color: 0xf4efe4,
+      normalMap: flagstoneNorm,
+      normalScale: new THREE.Vector2(0.22, 0.22),
+      roughness: 0.80
+    });
+
+    const trunkMat = new THREE.MeshStandardMaterial({
+      color: 0xb8a494, map: barkRootsColor, normalMap: barkRootsNorm,
+      normalScale: new THREE.Vector2(1.4, 1.4), roughness: 0.88
+    });
+
+    // =========================================================================
+    // 5. SCULPTED MOUNT INARI TERRAIN & MULTI-BRANCH PAVED STONE WALKWAYS
+    // =========================================================================
+    loaderStatus.textContent = 'Esculpiendo topografía y calzadas de piedra para túneles gemelos y cumbres...';
+    loaderBar.style.width = '28%';
+
+    const TERRAIN_W = 240;
+    const TERRAIN_L = 385;
+    const terrainGeo = new THREE.PlaneGeometry(TERRAIN_W, TERRAIN_L, 210, 320);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const posAttr = terrainGeo.attributes.position;
+    const colors = new Float32Array(posAttr.count * 3);
+    const cForest = new THREE.Color(0x6d7d5e);
+    const cMoss   = new THREE.Color(0x526e42);
+    const cPath   = new THREE.Color(0x88847a);
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i) - 142.0;
+      posAttr.setZ(i, vz);
+
+      let vy = sampleGroundHeight(vx, vz);
+      if (vz > -40.2 && Math.abs(vx) < 17.8) {
+        vy -= 0.14;
+      } else {
+        vy -= 0.05;
+      }
+      posAttr.setY(i, vy);
+
+      const { dist } = closestTrailPoint(vx, vz);
+      const col = cForest.clone();
+      if (dist < 5.2) col.lerp(cPath, 0.65);
+      else if (Math.sin(vx * 0.19 + vz * 0.17) > 0.15) col.lerp(cMoss, 0.45);
+      colors[i * 3 + 0] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+    }
+    terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    terrainGeo.computeVertexNormals();
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      map: soilLeavesTex,
+      normalMap: soilLeavesNorm,
+      normalScale: new THREE.Vector2(1.35, 1.35),
+      roughnessMap: soilLeavesRough,
+      roughness: 0.90,
+      metalness: 0.02
+    });
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.receiveShadow = true;
+    scene.add(terrainMesh);
+
+    /**
+     * Helper to build a continuous paved flagstone ribbon with stone curbs along any curve segment
+     * with optional lateral offset `latOffsetFn(u)`.
+     */
+    function buildRibbonSegment(curveObj, uStart, uEnd, steps, halfW, curbW, latOffsetFn = null) {
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+      let vIdx = 0;
+
+      for (let i = 0; i <= steps; i++) {
+        const u = uStart + (i / steps) * (uEnd - uStart);
+        const pt = curveObj.getPointAt(u);
+        const tan = curveObj.getTangentAt(u).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+
+        const latOff = latOffsetFn ? latOffsetFn(u) : 0.0;
+        const centerPt = pt.clone().addScaledVector(right, latOff);
+
+        const pLL = centerPt.clone().addScaledVector(right, -(halfW + curbW));
+        const pL  = centerPt.clone().addScaledVector(right, -halfW);
+        const pR  = centerPt.clone().addScaledVector(right,  halfW);
+        const pRR = centerPt.clone().addScaledVector(right,  (halfW + curbW));
+
+        const stepSnap = (u > 0.255) ? Math.round(pt.y * 5.0) / 5.0 : pt.y;
+        const yCenter = stepSnap + 0.035;
+        const yCurb   = stepSnap + 0.17;
+
+        positions.push(
+          pLL.x, yCurb,   pLL.z,
+          pL.x,  yCenter, pL.z,
+          pR.x,  yCenter, pR.z,
+          pRR.x, yCurb,   pRR.z
+        );
+        const vCoord = i * 0.45;
+        uvs.push(0.0, vCoord, 0.18, vCoord, 0.82, vCoord, 1.0, vCoord);
+
+        if (i < steps) {
+          const b = vIdx;
+          indices.push(b, b+4, b+1,  b+1, b+4, b+5);
+          indices.push(b+1, b+5, b+2, b+2, b+5, b+6);
+          indices.push(b+2, b+6, b+3, b+3, b+6, b+7);
+        }
+        vIdx += 4;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+
+      const mesh = new THREE.Mesh(geo, flagstoneMat);
+      mesh.receiveShadow = true;
+      mesh.castShadow = true;
+      scene.add(mesh);
+    }
+
+    // 1. Approach Ribbon behind Honden up to Senbon Torii Bifurcation Plaza (u = 0.112 to 0.150)
+    buildRibbonSegment(trailCurve, 0.112, 0.150, 40, 2.1, 0.35);
+
+    // 2. Twin Parallel Paved Walkways for Left & Right Senbon Torii Tunnels (u = 0.146 to 0.256)
+    //    Each tunnel gets its own dedicated 2.0m-wide paved flagstone walkway that splits smoothly at the Fork Plaza
+    //    and rejoins smoothly at Okusha Hohaisho!
+    buildRibbonSegment(trailCurve, 0.144, 0.256, 95, 1.15, 0.25, (u) => -SENBON_TUNNEL_OFFSET * getTwinTunnelEnvelopeFactor(u));
+    buildRibbonSegment(trailCurve, 0.144, 0.256, 95, 1.15, 0.25, (u) => +SENBON_TUNNEL_OFFSET * getTwinTunnelEnvelopeFactor(u));
+
+    // 3. Upper Mountain Trail Ribbon from Okusha (u = 0.254) all the way to Ichinomine Summit (u = 1.0)
+    buildRibbonSegment(trailCurve, 0.254, 1.0, 320, 1.80, 0.36);
+
+    // 4. East Summit Loop Ribbon (Yotsutsuji <-> Mitsurugi-sha <-> Ichinomine)
+    buildRibbonSegment(eastLoopCurve, 0.0, 1.0, 160, 1.55, 0.32);
+
+    // 5. Diagonal Flagstone Convergence Walkways behind Honden (connecting Left x=-9.2 & Right x=+9.2 avenues to z=-42.5 Center Approach!)
+    function buildConvergenceAprons() {
+      // Wide paved stone plaza at the Senbon Torii Bifurcation Fork (z = -48.5, x = -1.8)
+      const forkY = sampleGroundHeight(-1.8, -48.5);
+      const forkPlaza = createMetricBox(8.6, 0.18, 7.2, flagstoneMat, 2.0);
+      forkPlaza.position.set(-1.8, forkY - 0.05, -48.5);
+      forkPlaza.receiveShadow = true;
+      scene.add(forkPlaza);
+
+      // Diagonal stone ramps connecting North (x=-9.2, z=-38.5, y=3.2) and South (x=+9.2, z=-38.5, y=3.2) to Center (x=-0.5, z=-42.5, y=3.5)
+      for (const side of [-1, 1]) {
+        const ramp = createMetricBox(4.6, 0.16, 10.8, flagstoneMat, 2.0);
+        ramp.position.set(side * 4.6, 3.24, -40.2);
+        ramp.rotation.y = side * 0.72;
+        ramp.receiveShadow = true;
+        scene.add(ramp);
+      }
+    }
+    buildConvergenceAprons();
+
+    // =========================================================================
+    // 6. ORGANIC TORII DISTRIBUTION (Generous 2.4m+ Clear Walkable Span!)
+    // =========================================================================
+    loaderStatus.textContent = 'Colocando 1020+ arcos Torii con paso amplio en la bifurcación y en toda la montaña...';
+    loaderBar.style.width = '45%';
+
+    function mergeBufferGeometries(geos) {
+      let totalVerts = 0, totalIdx = 0;
+      for (const g of geos) {
+        totalVerts += g.attributes.position.count;
+        totalIdx += g.index ? g.index.count : g.attributes.position.count;
+      }
+      const pos = new Float32Array(totalVerts * 3);
+      const norm = new Float32Array(totalVerts * 3);
+      const uv = new Float32Array(totalVerts * 2);
+      const idx = new Uint32Array(totalIdx);
+
+      let vOff = 0, iOff = 0;
+      for (const g of geos) {
+        const p = g.attributes.position.array;
+        const n = g.attributes.normal.array;
+        const u = g.attributes.uv.array;
+        pos.set(p, vOff * 3);
+        norm.set(n, vOff * 3);
+        uv.set(u, vOff * 2);
+        if (g.index) {
+          const gi = g.index.array;
+          for (let k = 0; k < gi.length; k++) idx[iOff + k] = gi[k] + vOff;
+          iOff += gi.length;
+        } else {
+          const cnt = g.attributes.position.count;
+          for (let k = 0; k < cnt; k++) idx[iOff + k] = vOff + k;
+          iOff += cnt;
+        }
+        vOff += g.attributes.position.count;
+      }
+      const out = new THREE.BufferGeometry();
+      out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      out.setAttribute('normal', new THREE.BufferAttribute(norm, 3));
+      out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      out.setIndex(new THREE.BufferAttribute(idx, 1));
+      return out;
+    }
+
+    function createToriiUnitGeometries() {
+      const vermGeos = [];
+      const blackGeos = [];
+
+      // Column half-span is 1.24m (2.48m center-to-center -> 2.22m inner clear walk-through width at scale 1.0!)
+      const colL = new THREE.CylinderGeometry(0.122, 0.135, 2.62, 16);
+      colL.translate(-1.24, 0.65 + 1.31, 0);
+      const colR = new THREE.CylinderGeometry(0.122, 0.135, 2.62, 16);
+      colR.translate( 1.24, 0.65 + 1.31, 0);
+      vermGeos.push(colL, colR);
+
+      const nemL = new THREE.CylinderGeometry(0.140, 0.144, 0.68, 16);
+      nemL.translate(-1.24, 0.34, 0);
+      const nemR = new THREE.CylinderGeometry(0.140, 0.144, 0.68, 16);
+      nemR.translate( 1.24, 0.34, 0);
+      blackGeos.push(nemL, nemR);
+
+      const nuki = applyMetricUVs(new THREE.BoxGeometry(3.32, 0.17, 0.15), 1.5);
+      nuki.translate(0, 2.64, 0);
+      const shimaki = applyMetricUVs(new THREE.BoxGeometry(3.66, 0.16, 0.21), 1.5);
+      shimaki.translate(0, 3.18, 0);
+      const gakuzuka = applyMetricUVs(new THREE.BoxGeometry(0.18, 0.42, 0.14), 1.0);
+      gakuzuka.translate(0, 2.91, 0);
+      vermGeos.push(nuki, shimaki, gakuzuka);
+
+      const kasagi = applyMetricUVs(new THREE.BoxGeometry(3.84, 0.14, 0.25), 1.5);
+      kasagi.translate(0, 3.31, 0);
+      const tipL = applyMetricUVs(new THREE.BoxGeometry(0.45, 0.14, 0.25), 1.0);
+      tipL.rotateZ(0.14);
+      tipL.translate(-1.88, 3.35, 0);
+      const tipR = applyMetricUVs(new THREE.BoxGeometry(0.45, 0.14, 0.25), 1.0);
+      tipR.rotateZ(-0.14);
+      tipR.translate( 1.88, 3.35, 0);
+      blackGeos.push(kasagi, tipL, tipR);
+
+      return {
+        vermilionGeo: mergeBufferGeometries(vermGeos),
+        blackGeo: mergeBufferGeometries(blackGeos)
+      };
+    }
+
+    const { vermilionGeo: toriiVermGeo, blackGeo: toriiBlackGeo } = createToriiUnitGeometries();
+
+    const toriiFreshMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: toriiFreshColor,
+      normalMap: toriiFreshNorm,
+      normalScale: new THREE.Vector2(0.95, 0.95),
+      roughnessMap: toriiFreshRough,
+      roughness: 0.30,
+      clearcoat: 0.58,
+      clearcoatRoughness: 0.22
+    });
+
+    const toriiWeatheredMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: toriiWeathColor,
+      normalMap: toriiWeathNorm,
+      normalScale: new THREE.Vector2(1.45, 1.45),
+      roughnessMap: toriiWeathRough,
+      roughness: 0.72,
+      metalness: 0.04
+    });
+
+    const freshTransforms = [];
+    const weatheredTransforms = [];
+    const allBlackTransforms = [];
+    const noboriBannerSpots = [];
+    const leanedMiniTorii = [];
+
+    let rngState = 133742;
+    function rand() {
+      rngState = (rngState * 1664525 + 1013904223) % 4294967296;
+      return rngState / 4294967296;
+    }
+
+    function pushToriiGate(pos, yaw, pitch, roll, scaleX, scaleY, scaleZ, isWeathered, tintHex, registerCollision = true) {
+      const dummy = new THREE.Object3D();
+      dummy.position.copy(pos);
+      dummy.rotation.set(pitch, yaw, roll, 'YXZ');
+      dummy.scale.set(scaleX, scaleY, scaleZ);
+      dummy.updateMatrix();
+      const mat4 = dummy.matrix.clone();
+      const col = new THREE.Color(tintHex);
+
+      if (isWeathered) {
+        weatheredTransforms.push({ mat4, col });
+      } else {
+        freshTransforms.push({ mat4, col });
+      }
+      allBlackTransforms.push(mat4);
+
+      if (registerCollision) {
+        const rightX = Math.cos(yaw);
+        const rightZ = -Math.sin(yaw);
+        const halfSpan = 1.24 * scaleX;
+        const colR = 0.11 * scaleX;
+        const hTop = pos.y + 3.25 * scaleY;
+        collisionWorld.addCylinder(pos.x - rightX * halfSpan, pos.z - rightZ * halfSpan, colR, pos.y, hTop, 'torii');
+        collisionWorld.addCylinder(pos.x + rightX * halfSpan, pos.z + rightZ * halfSpan, colR, pos.y, hTop, 'torii');
+      }
+    }
+
+    // A. LOWER PRECINCT GUIDE TORII ALONG NORTH (Left, x=-9.2) & SOUTH (Right, x=+9.2) HONDEN BYPASS AVENUES
+    for (const sideX of [-9.2, 9.2]) {
+      for (const gz of [-23.2, -26.8, -30.4, -34.0, -37.2]) {
+        const gy = sampleGroundHeight(sideX, gz);
+        pushToriiGate(
+          new THREE.Vector3(sideX, gy, gz),
+          0, 0, (rand() - 0.5) * 0.012,
+          1.22, 1.18, 1.18,
+          false, 0xffe8de, true
+        );
+      }
+    }
+
+    // B. GRAND APPROACH TORII (Behind Honden z = -40.5 to Senbon Fork Plaza z = -46.8)
+    //    Stops cleanly before the Bifurcation Plaza so the V-split entrance to both tunnels is 100% unobstructed!
+    for (let i = 0; i < 9; i++) {
+      const t = i / 8;
+      const u = 0.115 + t * 0.025;
+      const pt = trailCurve.getPointAt(u);
+      const tan = trailCurve.getTangentAt(u).normalize();
+      const yaw = Math.atan2(tan.x, tan.z);
+      const isWeath = (i % 4 === 2);
+      const sGrade = 1.32 - 0.06 * (i % 2);
+      const roll = (rand() - 0.5) * 0.020;
+      const pitch = (rand() - 0.5) * 0.015;
+      const tint = isWeath ? 0xd9a89a : 0xffe4d6;
+      pushToriiGate(pt, yaw, pitch, roll, sGrade, sGrade, sGrade, isWeath, tint, true);
+    }
+
+    // C. TWIN PARALLEL SENBON TORII TUNNELS (u = 0.152 to 0.248)
+    //    Separated by +/- 2.05m (4.10m center-to-center) with scaleW = 0.80 -> 2.0m span per tunnel
+    //    so Left and Right tunnels NEVER overlap or block each other at the bifurcation!
+    for (const side of [-1, 1]) {
+      let u = 0.152;
+      let clusterRemain = 12;
+      while (u <= 0.248) {
+        const pt = trailCurve.getPointAt(u);
+        const tan = trailCurve.getTangentAt(u).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const yaw = Math.atan2(tan.x, tan.z) + (rand() - 0.5) * 0.020;
+        const offsetPos = pt.clone().addScaledVector(right, side * SENBON_TUNNEL_OFFSET);
+        offsetPos.y = pt.y;
+
+        const isWeath = rand() < 0.38;
+        const roll = (rand() - 0.5) * 0.026;
+        const pitch = (rand() - 0.5) * 0.020;
+        const scaleW = 0.80 + (rand() - 0.5) * 0.02;
+        const scaleH = 0.90 + (rand() - 0.5) * 0.04;
+        const tint = isWeath
+          ? new THREE.Color().setHSL(0.02 + rand() * 0.02, 0.75, 0.72 + rand() * 0.14).getHex()
+          : new THREE.Color().setHSL(0.03 + rand() * 0.015, 0.92, 0.88 + rand() * 0.10).getHex();
+
+        pushToriiGate(offsetPos, yaw, pitch, roll, scaleW, scaleH, 0.90, isWeath, tint, true);
+
+        clusterRemain--;
+        if (clusterRemain <= 0) {
+          u += 0.0026 + rand() * 0.0014;
+          clusterRemain = 8 + Math.floor(rand() * 9);
+        } else {
+          u += 0.00105 + rand() * 0.00060;
+        }
+      }
+    }
+
+    // D. FULL MOUNTAIN ASCENT COLONNADE (Okusha u=0.278 up to Ichinomine Summit u=0.985)
+    {
+      let u = 0.278;
+      let clusterRemain = 9;
+      // Clearings where no Torii gate blocks the plaza interior
+      const clearingU = [0.258, 0.435, 0.655, 0.768, 0.882, 0.988];
+
+      while (u <= 0.984) {
+        let inClearing = false;
+        for (const cu of clearingU) {
+          if (Math.abs(u - cu) < 0.018) { inClearing = true; break; }
+        }
+        if (inClearing) {
+          u += 0.004;
+          continue;
+        }
+
+        const pt = trailCurve.getPointAt(u);
+        const tan = trailCurve.getTangentAt(u).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const yaw = Math.atan2(tan.x, tan.z) + (rand() - 0.5) * 0.032;
+
+        const gradeRoll = rand();
+        let sX = 1.08, sY = 1.05, sZ = 1.02;
+        if (gradeRoll < 0.25) {
+          sX = 0.98; sY = 0.95; sZ = 0.94;
+        } else if (gradeRoll > 0.78) {
+          sX = 1.20; sY = 1.16; sZ = 1.12;
+        }
+
+        const isWeath = rand() < 0.50;
+        const rootTiltRoll = (rand() - 0.5) * (isWeath ? 0.042 : 0.020);
+        const rootTiltPitch = (rand() - 0.5) * (isWeath ? 0.032 : 0.016);
+
+        const gatePos = pt.clone();
+        gatePos.y = Math.round(pt.y * 5.0) / 5.0;
+
+        const tint = isWeath
+          ? new THREE.Color().setHSL(0.015 + rand() * 0.025, 0.72, 0.66 + rand() * 0.18).getHex()
+          : new THREE.Color().setHSL(0.028 + rand() * 0.018, 0.95, 0.86 + rand() * 0.12).getHex();
+
+        pushToriiGate(gatePos, yaw, rootTiltPitch, rootTiltRoll, sX, sY, sZ, isWeath, tint, true);
+
+        if (rand() < 0.16) {
+          const side = rand() < 0.5 ? -1 : 1;
+          const mPos = pt.clone().addScaledVector(right, side * (1.98 + rand() * 0.25));
+          mPos.y = gatePos.y + 0.12;
+          leanedMiniTorii.push({
+            pos: mPos,
+            yaw: yaw + Math.PI * 0.5 * side + (rand() - 0.5) * 0.25,
+            roll: -side * (0.14 + rand() * 0.12),
+            scale: 0.22 + rand() * 0.10,
+            weathered: rand() < 0.55
+          });
+        }
+
+        clusterRemain--;
+        if (clusterRemain <= 0) {
+          const gapStep = 0.0042 + rand() * 0.0038;
+          const midU = u + gapStep * 0.5;
+          if (midU < 0.97 && rand() < 0.65) {
+            const bPt = trailCurve.getPointAt(midU);
+            const bTan = trailCurve.getTangentAt(midU).normalize();
+            noboriBannerSpots.push({ pt: bPt, tan: bTan, side: rand() < 0.5 ? -1 : 1 });
+          }
+          u += gapStep;
+          clusterRemain = 5 + Math.floor(rand() * 10);
+        } else {
+          u += 0.00145 + rand() * 0.00145;
+        }
+      }
+    }
+
+    // E. EAST SUMMIT RETURN LOOP TORII (Yotsutsuji <-> Mitsurugi-sha <-> Ichinomine)
+    {
+      let u = 0.06;
+      while (u <= 0.92) {
+        if (Math.abs(u - 0.36) < 0.04) { u += 0.03; continue; }
+        const pt = eastLoopCurve.getPointAt(u);
+        const tan = eastLoopCurve.getTangentAt(u).normalize();
+        const yaw = Math.atan2(tan.x, tan.z);
+        const isWeath = rand() < 0.55;
+        const gatePos = pt.clone();
+        gatePos.y = Math.round(pt.y * 5.0) / 5.0;
+        const tint = isWeath ? 0xd29684 : 0xffe0d0;
+        pushToriiGate(gatePos, yaw, 0, (rand() - 0.5) * 0.03, 1.02, 1.0, 1.0, isWeath, tint, true);
+        u += 0.012 + rand() * 0.008;
+      }
+    }
+
+    for (const m of leanedMiniTorii) {
+      pushToriiGate(m.pos, m.yaw, 0, m.roll, m.scale, m.scale, m.scale, m.weathered, m.weathered ? 0xc88a78 : 0xffdfcf, false);
+    }
+
+    const instToriiFresh = new THREE.InstancedMesh(toriiVermGeo, toriiFreshMat, freshTransforms.length);
+    instToriiFresh.castShadow = true;
+    instToriiFresh.receiveShadow = true;
+    for (let i = 0; i < freshTransforms.length; i++) {
+      instToriiFresh.setMatrixAt(i, freshTransforms[i].mat4);
+      instToriiFresh.setColorAt(i, freshTransforms[i].col);
+    }
+    instToriiFresh.instanceMatrix.needsUpdate = true;
+    if (instToriiFresh.instanceColor) instToriiFresh.instanceColor.needsUpdate = true;
+    scene.add(instToriiFresh);
+
+    const instToriiWeathered = new THREE.InstancedMesh(toriiVermGeo, toriiWeatheredMat, weatheredTransforms.length);
+    instToriiWeathered.castShadow = true;
+    instToriiWeathered.receiveShadow = true;
+    for (let i = 0; i < weatheredTransforms.length; i++) {
+      instToriiWeathered.setMatrixAt(i, weatheredTransforms[i].mat4);
+      instToriiWeathered.setColorAt(i, weatheredTransforms[i].col);
+    }
+    instToriiWeathered.instanceMatrix.needsUpdate = true;
+    if (instToriiWeathered.instanceColor) instToriiWeathered.instanceColor.needsUpdate = true;
+    scene.add(instToriiWeathered);
+
+    const instToriiBlack = new THREE.InstancedMesh(toriiBlackGeo, blackNemakiMat, allBlackTransforms.length);
+    instToriiBlack.castShadow = true;
+    instToriiBlack.receiveShadow = true;
+    for (let i = 0; i < allBlackTransforms.length; i++) {
+      instToriiBlack.setMatrixAt(i, allBlackTransforms[i]);
+    }
+    instToriiBlack.instanceMatrix.needsUpdate = true;
+    scene.add(instToriiBlack);
+
+    const totalToriiCount = freshTransforms.length + weatheredTransforms.length;
+    document.getElementById('torii-readout').textContent = `${totalToriiCount} Torii (Caminos y Bifurcaciones 100% Despejados)`;
+
+    // Nobori Shrine Banners outside the trail curb (side * 2.35m)
+    {
+      const noboriMat = new THREE.MeshStandardMaterial({
+        map: noboriBannerTex, roughness: 0.65, side: THREE.DoubleSide, alphaTest: 0.25
+      });
+      const poleGeo = new THREE.CylinderGeometry(0.025, 0.028, 2.65, 8);
+      poleGeo.translate(0, 1.325, 0);
+      const clothGeo = new THREE.PlaneGeometry(0.58, 1.95);
+      clothGeo.translate(0.31, 1.55, 0);
+
+      for (const nb of noboriBannerSpots) {
+        const right = new THREE.Vector3(-nb.tan.z, 0, nb.tan.x).normalize();
+        const yaw = Math.atan2(nb.tan.x, nb.tan.z);
+        const pos = nb.pt.clone().addScaledVector(right, nb.side * 2.35);
+        pos.y = sampleGroundHeight(pos.x, pos.z);
+
+        const g = new THREE.Group();
+        g.position.copy(pos);
+        g.rotation.y = yaw + (nb.side > 0 ? Math.PI : 0);
+        const pole = new THREE.Mesh(poleGeo, blackNemakiMat);
+        const cloth = new THREE.Mesh(clothGeo, noboriMat);
+        pole.castShadow = true;
+        cloth.castShadow = true;
+        g.add(pole, cloth);
+        scene.add(g);
+      }
+    }
+
+    // =========================================================================
+    // 7. ARCHITECTURAL LANDMARKS, 3D MAP KIOSKS (境内案内図) & BIFURCATION SIGNS
+    // =========================================================================
+    loaderStatus.textContent = 'Construyendo santuarios, paneles de mapa real 3D (境内案内図) y bifurcaciones...';
+    loaderBar.style.width = '62%';
+
+    const interactables = [];
+    const lanternPointLights = [];
+    const lanternEmissiveMeshes = [];
+
+    function registerInteractable(mesh, title, description, onTrigger = null) {
+      mesh.userData.interactable = { title, description, onTrigger };
+      interactables.push(mesh);
+    }
+
+    const lanternGlowMat = new THREE.MeshStandardMaterial({
+      color: 0xffdf9e, emissive: 0xff9b38, emissiveIntensity: 2.2, roughness: 0.35
+    });
+
+    function createStoneLantern(x, z, scale = 1.0, addLight = false, collide = true) {
+      const y = sampleGroundHeight(x, z);
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      g.scale.setScalar(scale);
+
+      const base = createMetricBox(0.72, 0.26, 0.72, stoneMat, 1.0);
+      base.position.y = 0.13;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.20, 0.98, 8), stoneMat);
+      post.position.y = 0.75;
+      const platform = createMetricBox(0.66, 0.14, 0.66, stoneMat, 1.0);
+      platform.position.y = 1.30;
+      const fireBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.42), lanternGlowMat);
+      fireBox.position.y = 1.56;
+      lanternEmissiveMeshes.push(fireBox);
+
+      const kasa = new THREE.Mesh(new THREE.ConeGeometry(0.64, 0.36, 6), stoneMat);
+      kasa.position.y = 1.92;
+      const finial = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), stoneMat);
+      finial.position.y = 2.15;
+
+      g.add(base, post, platform, fireBox, kasa, finial);
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+
+      if (collide) {
+        collisionWorld.addCylinder(x, z, 0.34 * scale, y, y + 2.2 * scale, 'lantern');
+      }
+
+      if (addLight) {
+        const pl = new THREE.PointLight(0xff9436, 2.8, 12.0, 1.8);
+        pl.position.set(x, y + 1.6 * scale, z);
+        scene.add(pl);
+        lanternPointLights.push(pl);
+      }
+      return g;
+    }
+
+    // Create Wooden Directional Trail Signboards & 3D Map Kiosks (境内案内図)
+    function createTrailSignboard(x, z, yaw, titleText, subText, loreDesc = null) {
+      const y = sampleGroundHeight(x, z);
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      g.rotation.y = yaw;
+
+      const postL = createMetricBox(0.11, 2.15, 0.11, vermilionMat, 1.0);
+      postL.position.set(-0.62, 1.075, 0);
+      const postR = createMetricBox(0.11, 2.15, 0.11, vermilionMat, 1.0);
+      postR.position.set( 0.62, 1.075, 0);
+      const roof = createMetricBox(1.62, 0.14, 0.36, roofMat, 1.0);
+      roof.position.set(0, 2.18, 0);
+
+      const cnv = document.createElement('canvas');
+      cnv.width = 512; cnv.height = 256;
+      const ctx = cnv.getContext('2d');
+      ctx.fillStyle = '#f6f0e2';
+      ctx.fillRect(0, 0, 512, 256);
+      ctx.strokeStyle = '#c8280e';
+      ctx.lineWidth = 14;
+      ctx.strokeRect(10, 10, 492, 236);
+      ctx.fillStyle = '#c8280e';
+      ctx.font = 'bold 42px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(titleText, 256, 96);
+      ctx.fillStyle = '#1b1815';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(subText, 256, 162);
+      ctx.fillStyle = '#8c5a18';
+      ctx.font = '21px sans-serif';
+      ctx.fillText('FUSHIMI INARI TAISHA • 伏見稲荷大社', 256, 214);
+
+      const signTex = new THREE.CanvasTexture(cnv);
+      signTex.colorSpace = THREE.SRGBColorSpace;
+      const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.55 });
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.68, 0.08), signMat);
+      board.position.set(0, 1.62, 0);
+
+      g.add(postL, postR, roof, board);
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+
+      registerInteractable(
+        board,
+        `Señalización del Santuario — ${titleText}`,
+        loreDesc || `${subText}. Seguí las calzadas pavimentadas de granito Mikage-ishi y el minimapa interactivo [M] para recorrer todo el predio y la montaña.`,
+        () => {
+          minimapPanel.classList.add('expanded');
+          document.getElementById('btn-toggle-map').textContent = '[M] Vista Local';
+        }
+      );
+      collisionWorld.addCylinder(x, z, 0.36, y, y + 2.2, 'sign');
+    }
+
+    // 1. Lower Precinct Route Signs (順路) around Ge-haiden & Honden
+    createTrailSignboard(-5.6, -5.8,  0.22, '← 順路 千本鳥居', 'SENBON TORII (POR IZQUIERDA)');
+    createTrailSignboard( 5.6, -5.8, -0.22, '千本鳥居 順路 →', 'SENBON TORII (POR DERECHA)');
+    createTrailSignboard(-6.2, -18.8, 0.15, '↑ 千本鳥居・奥社', 'ESCALINATA NORTE A TORII');
+    createTrailSignboard( 6.2, -18.8,-0.15, '↑ 千本鳥居・奥社', 'ESCALINATA SUR A TORII');
+
+    // 2. SENBON TORII BIFURCATION DIVIDER POST (千本鳥居分岐 — 右側通行 Keep Right / Two-Way Twin Tunnels)
+    //    Placed right in the V-split island between the Left (-2.05m) and Right (+2.05m) tunnels at z = -49.2!
+    createTrailSignboard(
+      -2.0, -49.2, 0.12,
+      '← 復路 | 千本鳥居 | 往路 →',
+      'DOBLE TÚNEL SENBON TORII',
+      'En la bifurcación de Senbon Torii (千本鳥居), el camino se divide en dos túneles gemelos paralelos de 2 metros de ancho cada uno: el túnel derecho (往路) para el ascenso hacia Okusha Hōhaisho y el túnel izquierdo (復路) para el retorno. Ambos están 100% despejados y llevan a la explanada de Okusha.'
+    );
+
+    // 3. YOTSUTSUJI CROSSROADS BIFURCATION SIGN (四ツ辻 — Circuito de las Tres Cumbres)
+    createTrailSignboard(
+      -18.0, -209.5, 0.0,
+      '← 三ノ峰・一ノ峰 | 御劔社・一ノ峰 →',
+      'CIRCUITO CUMBRE (233m)',
+      'Encrucijada de Yotsutsuji (四ツ辻, 120m s.n.m.): aquí el sendero se bifurca en el circuito circular de la cumbre (O-yama-meguri). El camino izquierdo sube por Sannomine (三ノ峰) y Ninomine (二ノ峰) hasta la cima Ichinomine (233m); el camino derecho sube/regresa por el santuario Mitsurugi-sha (御劔社).'
+    );
+
+    // Accurate Colliders for the Aligned Lower Precinct GLB Structures
+    function registerLowerPrecinctColliders() {
+      collisionWorld.addCylinder(-3.9, 21.5, 0.42, 0, 9.0, 'outer_torii_L');
+      collisionWorld.addCylinder( 3.9, 21.5, 0.42, 0, 9.0, 'outer_torii_R');
+
+      collisionWorld.addCylinder(-5.45, 6.8, 0.50, 0, 4.0, 'lantern_N');
+      collisionWorld.addCylinder( 5.45, 6.8, 0.50, 0, 4.0, 'lantern_S');
+      collisionWorld.addBox(-4.95, 3.3, 0.95, 0.95, 0, 1.5, 4.8, 'kitsune_N');
+      collisionWorld.addBox( 4.95, 3.3, 0.95, 0.95, 0, 1.5, 4.8, 'kitsune_S');
+
+      // Romon Gate (z = 0.0, y = 1.6): Central archway x in [-1.85, +1.85] is 100% OPEN!
+      collisionWorld.addBox(-3.8, 0.0, 1.75, 2.8, 0, 1.6, 8.0, 'romon_wing_L');
+      collisionWorld.addBox( 3.8, 0.0, 1.75, 2.8, 0, 1.6, 8.0, 'romon_wing_R');
+      collisionWorld.addBox(-12.5, 0.0, 6.4, 2.1, 0, 1.6, 6.5, 'kairo_L');
+      collisionWorld.addBox( 12.5, 0.0, 6.4, 2.1, 0, 1.6, 6.5, 'kairo_R');
+
+      // Ge-haiden (x = 0, z = -12.5, y = 1.6)
+      collisionWorld.addBox(0.0, -12.5, 6.4, 4.5, 0, 1.6, 7.5, 'gehaiden');
+
+      // Nai-haiden & 1499 Honden (x = 0, z = -30.9, y = 3.2)
+      collisionWorld.addBox(0.0, -30.9, 6.5, 7.2, 0, 3.2, 12.0, 'naihaiden_honden');
+    }
+    registerLowerPrecinctColliders();
+
+    // 7A. TEMIZUYA (Purification Water Pavilion at x = -10.5, z = 11.5)
+    function buildTemizuya() {
+      const tx = -10.5, tz = 11.5;
+      const ty = sampleGroundHeight(tx, tz);
+      const g = new THREE.Group();
+      g.position.set(tx, ty, tz);
+
+      const base = createMetricBox(5.2, 0.28, 3.8, flagstoneMat, 1.8);
+      base.position.y = 0.14;
+      g.add(base);
+
+      for (const sx of [-2.1, 2.1]) {
+        for (const sz of [-1.4, 1.4]) {
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 2.65, 12), vermilionMat);
+          col.position.set(sx, 1.45, sz);
+          g.add(col);
+        }
+      }
+
+      const roof = createMetricBox(6.2, 0.55, 4.6, roofMat, 1.6);
+      roof.position.y = 2.95;
+      const ridge = createMetricBox(6.4, 0.24, 0.45, goldMat, 1.0);
+      ridge.position.y = 3.32;
+      g.add(roof, ridge);
+
+      const basin = createMetricBox(2.2, 0.86, 1.25, steleMat, 1.2);
+      basin.position.y = 0.65;
+      const waterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x1e5c68, roughness: 0.06, metalness: 0.1, transmission: 0.65, transparent: true, opacity: 0.88
+      });
+      const water = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.98), waterMat);
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = 1.09;
+      g.add(basin, water);
+
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+
+      collisionWorld.addBox(tx, tz, 1.2, 0.75, 0, ty, ty + 1.5, 'temizuya_basin');
+
+      registerInteractable(
+        basin,
+        'Temizuya (手水舎) — Pabellón de Purificación Ritual',
+        'Antes de cruzar el Rōmon hacia el santuario principal, los peregrinos purifican sus manos y boca con agua fresca de manantial del Monte Inari usando cucharones de bambú (Hishaku).',
+        () => playWaterSplashSound()
+      );
+    }
+    buildTemizuya();
+
+    // 7B. KAGURA-DEN (x = +15.8, z = -12.5) & JUYOSHO (x = -15.8, z = -12.5)
+    function buildCourtyardFlankHalls() {
+      const kx = 15.8, kz = -12.5, ky = 1.6;
+      const kg = new THREE.Group();
+      kg.position.set(kx, ky, kz);
+
+      const podium = createMetricBox(5.6, 0.72, 6.8, stoneMat, 1.8);
+      podium.position.y = 0.36;
+      const stageFloor = createMetricBox(5.2, 0.16, 6.4, vermilionMat, 1.5);
+      stageFloor.position.y = 0.80;
+      kg.add(podium, stageFloor);
+
+      for (const sx of [-2.2, 2.2]) {
+        for (const sz of [-2.8, 0, 2.8]) {
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.16, 3.1, 14), vermilionMat);
+          col.position.set(sx, 2.35, sz);
+          kg.add(col);
+        }
+      }
+
+      const makuMat = new THREE.MeshStandardMaterial({ map: suzuRopeMakuTex, roughness: 0.65 });
+      const maku = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.92, 6.0), makuMat);
+      maku.position.set(-2.22, 3.35, 0);
+      kg.add(maku);
+
+      const roof1 = createMetricBox(6.8, 0.65, 8.0, copperRoofMat, 1.8);
+      roof1.position.y = 4.15;
+      const gableGold = createMetricBox(0.28, 0.75, 2.6, goldMat, 1.0);
+      gableGold.position.set(-3.42, 4.25, 0);
+      kg.add(roof1, gableGold);
+
+      kg.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(kg);
+      collisionWorld.addBox(kx, kz, 2.8, 3.4, 0, ky, ky + 4.5, 'kaguraden');
+
+      registerInteractable(
+        stageFloor,
+        'Kagura-den (神楽殿) — Pabellón de Danza Sagrada',
+        'Escenario ritual con techo de cobre patinado verde (Roku-shō) y filigranas de oro donde las sacerdotisas Miko ejecutan la danza sagrada Kagura acompañada de flautas y tambores.'
+      );
+
+      const jx = -15.8, jz = -12.5, jy = 1.6;
+      const jg = new THREE.Group();
+      jg.position.set(jx, jy, jz);
+      const jBody = createMetricBox(4.8, 3.4, 8.8, plasterMat, 2.0);
+      jBody.position.y = 1.7;
+      const jCounter = createMetricBox(0.6, 1.05, 8.2, vermilionMat, 1.5);
+      jCounter.position.set(2.4, 0.55, 0);
+      const jRoof = createMetricBox(6.0, 0.65, 9.8, roofMat, 1.8);
+      jRoof.position.y = 3.65;
+      jg.add(jBody, jCounter, jRoof);
+      jg.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(jg);
+      collisionWorld.addBox(jx, jz, 2.6, 4.4, 0, jy, jy + 4.0, 'juyosho');
+
+      registerInteractable(
+        jCounter,
+        'Juyosho (授与所) — Pabellón de Amuletos y Ema',
+        'Aquí los peregrinos adquieren amuletos Omamori y las famosas tablillas blancas con forma de rostro de zorro (Kitsune Ema) antes de subir por la escalinata lateral hacia Senbon Torii.'
+      );
+    }
+    buildCourtyardFlankHalls();
+
+      // 7C. OMOTESANDO OUTER TOWNSCAPE, TSUIJIBEI WALLS & KYOTO BASIN PANORAMA
+    //     Enriches the outer approach (z = +26 to +4) and the vast surrounding Kyoto valley & mountains
+    //     while keeping the central 12m Omotesando avenue 100% clear!
+    const flickeringCandleMeshes = [];
+
+    function createCalligraphyMakuTexture(deityKanji, subKanji = '奉納') {
+      const cnv = document.createElement('canvas');
+      cnv.width = 1024; cnv.height = 320;
+      const ctx = cnv.getContext('2d');
+
+      // Deep crimson-vermilion ceremonial fabric background with subtle vertical pleats
+      const grad = ctx.createLinearGradient(0, 0, 0, 320);
+      grad.addColorStop(0, '#b51e0c');
+      grad.addColorStop(0.5, '#cf2610');
+      grad.addColorStop(1, '#981608');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 320);
+
+      for (let x = 0; x < 1024; x += 32) {
+        ctx.fillStyle = (x % 64 === 0) ? 'rgba(0,0,0,0.12)' : 'rgba(255,220,180,0.06)';
+        ctx.fillRect(x, 0, 16, 320);
+      }
+
+      // Top white ceremonial header band (Chichi-tsuke)
+      ctx.fillStyle = '#f5efe4';
+      ctx.fillRect(0, 0, 1024, 34);
+      ctx.fillStyle = '#1b1714';
+      for (let x = 24; x < 1024; x += 64) {
+        ctx.fillRect(x, 6, 18, 22);
+      }
+
+      // Draw left & right circular Fushimi Inari Daki-ine (抱き稲 rice-sheaf) crests
+      for (const cx of [165, 859]) {
+        const cy = 172;
+        ctx.save();
+        ctx.strokeStyle = '#fcf8f0';
+        ctx.lineWidth = 11;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 74, 0.25, Math.PI * 2 - 0.25);
+        ctx.stroke();
+
+        // Inner grain stalks & bow
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 56, 0.4, Math.PI * 2 - 0.4);
+        ctx.stroke();
+
+        // Tie knot at bottom of crest
+        ctx.fillStyle = '#fcf8f0';
+        ctx.fillRect(cx - 18, cy + 54, 36, 14);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 38);
+        ctx.lineTo(cx - 24, cy + 28);
+        ctx.lineTo(cx + 24, cy + 28);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Central Bold White Deity Calligraphy (e.g. 末広大神, 青木大神, 白菊大神)
+      ctx.fillStyle = '#fcf8f2';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 112px serif';
+      ctx.fillText(deityKanji, 512, 178);
+
+      ctx.font = 'bold 38px serif';
+      ctx.fillText(subKanji, 305, 95);
+
+      const tex = new THREE.CanvasTexture(cnv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createHengakuPlaqueTexture(titleKanji) {
+      const cnv = document.createElement('canvas');
+      cnv.width = 256; cnv.height = 512;
+      const ctx = cnv.getContext('2d');
+
+      // Black漆 lacquer board with ornate gold frame
+      ctx.fillStyle = '#111014';
+      ctx.fillRect(0, 0, 256, 512);
+      ctx.strokeStyle = '#eab942';
+      ctx.lineWidth = 18;
+      ctx.strokeRect(12, 12, 232, 488);
+      ctx.strokeStyle = '#9e7418';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(26, 26, 204, 460);
+
+      // Vertical gold calligraphy
+      ctx.fillStyle = '#f7cf65';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const chars = Array.from(titleKanji);
+      const stepY = 410 / Math.max(1, chars.length);
+      ctx.font = `bold ${Math.min(86, Math.floor(stepY * 0.88))}px serif`;
+      chars.forEach((ch, idx) => {
+        ctx.fillText(ch, 128, 68 + stepY * (idx + 0.5));
+      });
+
+      const tex = new THREE.CanvasTexture(cnv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Candle-lighting iron house (ローソク立て Rōsoku-tate) with glowing flickering votive candles
+    function createRosokuCandleHouse(w = 1.35, h = 1.65, d = 0.68) {
+      const g = new THREE.Group();
+      const ironMat = new THREE.MeshStandardMaterial({ color: 0x18191c, roughness: 0.42, metalness: 0.65 });
+      const legL = createMetricBox(0.10, 0.72, d * 0.8, ironMat, 1.0);
+      legL.position.set(-w * 0.42, 0.36, 0);
+      const legR = createMetricBox(0.10, 0.72, d * 0.8, ironMat, 1.0);
+      legR.position.set( w * 0.42, 0.36, 0);
+
+      const boxFrame = createMetricBox(w, h - 0.72, d, ironMat, 1.0);
+      boxFrame.position.set(0, 0.72 + (h - 0.72) * 0.5, 0);
+
+      const roof = createMetricBox(w + 0.22, 0.14, d + 0.20, ironMat, 1.0);
+      roof.position.set(0, h + 0.04, 0);
+      g.add(legL, legR, boxFrame, roof);
+
+      // Glowing interior chamber with 2 rows of white candles + flickering orange flames
+      const innerBack = new THREE.Mesh(
+        new THREE.PlaneGeometry(w * 0.88, (h - 0.86) * 0.82),
+        new THREE.MeshBasicMaterial({ color: 0x3b1d0b, side: THREE.DoubleSide })
+      );
+      innerBack.position.set(0, 0.72 + (h - 0.72) * 0.5, d * 0.505);
+      g.add(innerBack);
+
+      const waxGeo = new THREE.CylinderGeometry(0.018, 0.020, 0.16, 6);
+      const waxMat = new THREE.MeshBasicMaterial({ color: 0xfff6e5 });
+      const flameGeo = new THREE.ConeGeometry(0.028, 0.09, 6);
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xff9d2e });
+
+      for (let row = 0; row < 2; row++) {
+        for (let c = -3; c <= 3; c++) {
+          const cx = c * (w * 0.11);
+          const cy = 0.92 + row * 0.28;
+          const cz = d * 0.52;
+          const wax = new THREE.Mesh(waxGeo, waxMat);
+          wax.position.set(cx, cy, cz);
+          const flame = new THREE.Mesh(flameGeo, flameMat);
+          flame.position.set(cx, cy + 0.12, cz);
+          flame.userData.baseY = cy + 0.12;
+          flame.userData.phase = (c * 1.7 + row * 3.1);
+          flickeringCandleMeshes.push(flame);
+          g.add(wax, flame);
+        }
+      }
+      return g;
+    }
+
+    function buildOmotesandoAndSurroundings() {
+      const g = new THREE.Group();
+
+      // 1. Grand Carved Stone Shrine Pillar (社号標: 官幣大社稲荷神社) beside Dai-ichi Torii (01_omotesando_ichiban_torii.jpg)
+      const pillarX = -5.6, pillarZ = 22.4;
+      const pillarBase1 = createMetricBox(1.45, 0.42, 1.45, stoneMat, 1.2);
+      pillarBase1.position.set(pillarX, 0.21, pillarZ);
+      const pillarBase2 = createMetricBox(1.12, 0.38, 1.12, stoneMat, 1.0);
+      pillarBase2.position.set(pillarX, 0.61, pillarZ);
+      const pillarShaft = createMetricBox(0.74, 4.60, 0.74, steleMat, 1.0);
+      pillarShaft.position.set(pillarX, 3.10, pillarZ);
+      g.add(pillarBase1, pillarBase2, pillarShaft);
+      collisionWorld.addBox(pillarX, pillarZ, 0.75, 0.75, 0, 0, 5.5, 'shagohyo_pillar');
+      registerInteractable(
+        pillarShaft,
+        'Shagōhyō (社号標) — Estela Monumental de Entrada (伏見稲荷大社)',
+        'Columna monolítica de granito de Kyoto tallada con el título histórico del santuario junto al Gran Dai-ichi Torii en la avenida Omotesandō (32 m s.n.m.).'
+      );
+
+      // 2. Imperial 5-Line White Plaster Tsuijibei Walls (五本線筋塀) framing the Outer Precinct
+      const wallTimberMat = new THREE.MeshStandardMaterial({ color: 0x3b261a, roughness: 0.75 });
+      for (const side of [-1, 1]) {
+        // Outer boundary walls along x = +-18.5 from z = +25 down to z = +3
+        const wallX = side * 18.5;
+        const plinth = createMetricBox(0.65, 0.55, 22.0, stoneMat, 2.0);
+        plinth.position.set(wallX, 0.275, 14.0);
+        const plasterWall = createMetricBox(0.42, 2.15, 21.8, plasterMat, 2.0);
+        plasterWall.position.set(wallX, 1.62, 14.0);
+        const tileRoof = createMetricBox(0.92, 0.28, 22.4, roofMat, 2.0);
+        tileRoof.position.set(wallX, 2.82, 14.0);
+        g.add(plinth, plasterWall, tileRoof);
+        collisionWorld.addBox(wallX, 14.0, 0.5, 11.2, 0, 0, 3.2, 'tsuijibei_wall');
+
+        // Front boundary wings at z = +6.2 extending from Kairo out to x = +-22m
+        const fWallX = side * 14.2;
+        const fPlinth = createMetricBox(9.2, 0.55, 0.65, stoneMat, 1.5);
+        fPlinth.position.set(fWallX, 0.275, 6.2);
+        const fPlaster = createMetricBox(9.0, 2.15, 0.42, plasterMat, 1.5);
+        fPlaster.position.set(fWallX, 1.62, 6.2);
+        const fRoof = createMetricBox(9.4, 0.28, 0.92, roofMat, 1.5);
+        fRoof.position.set(fWallX, 2.82, 6.2);
+        g.add(fPlinth, fPlaster, fRoof);
+      }
+
+      // 3. Monzen-machi Traditional Kyoto Street Shops & Inari Chaya Stalls (門前町・参道茶屋)
+      //    Placed along x = +-13.8 (z = +14.5 to +23.5), leaving the central 18m Omotesando avenue wide open!
+      const norenMat = new THREE.MeshStandardMaterial({ map: chayaLanternTex, roughness: 0.62 });
+      const shopConfigs = [
+        { x: -13.8, z: 19.5, rotY:  Math.PI / 2, name: 'Inari Saryō (稲荷茶寮) — Kitsune Udon & Inari-zushi', desc: 'Tradicional casa de té de Monzen-machi frente al Omotesandō donde se sirven Kitsune Udon (fideos con tofu frito dulce, el plato favorito de los zorros mensajeros de Inari) y Suzume-yakitori.' },
+        { x:  13.8, z: 19.5, rotY: -Math.PI / 2, name: 'Artesanías Fushimi Ningyō (伏見人形・狐面舗)', desc: 'Histórica tienda de muñecos de arcilla Fushimi Ningyō, máscaras tradicionales de zorro pintadas a mano (Kitsune-men) y pequeños Torii votivos.' },
+        { x:  13.8, z: 12.2, rotY: -Math.PI / 2, name: 'Tsujiura Senbei Honpo (辻占煎餅本舗)', desc: 'Pastelería tradicional en la entrada del santuario famosa por las galletas de miso con forma de máscara de zorro (Kitsune Senbei) y dulces de fortuna Tsujiura.' }
+      ];
+      for (const sc of shopConfigs) {
+        const sg = new THREE.Group();
+        sg.position.set(sc.x, 0, sc.z);
+        sg.rotation.y = sc.rotY;
+
+        const body = createMetricBox(5.8, 3.2, 4.2, wallTimberMat, 1.6);
+        body.position.set(0, 1.6, 0);
+        const upperPlaster = createMetricBox(5.6, 1.4, 3.8, plasterMat, 1.5);
+        upperPlaster.position.set(0, 3.8, -0.1);
+        const mainRoof = createMetricBox(6.8, 0.45, 5.2, roofMat, 1.6);
+        mainRoof.position.set(0, 4.65, 0);
+        const awning = createMetricBox(6.2, 0.18, 1.6, roofMat, 1.4);
+        awning.position.set(0, 2.55, 2.4);
+        const noren = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.05), norenMat);
+        noren.position.set(0, 2.15, 2.16);
+        const mosenBench = createMetricBox(3.8, 0.46, 0.95, vermilionMat, 1.2);
+        mosenBench.position.set(0, 0.23, 2.75);
+
+        // Glowing warm Chochin paper lanterns under the shop awning
+        for (const lx of [-2.2, 2.2]) {
+          const chochin = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.58, 10), lanternGlowMat);
+          chochin.position.set(lx, 2.15, 2.85);
+          lanternEmissiveMeshes.push(chochin);
+          sg.add(chochin);
+        }
+
+        sg.add(body, upperPlaster, mainRoof, awning, noren, mosenBench);
+        g.add(sg);
+        collisionWorld.addBox(sc.x, sc.z, 2.4, 3.0, 0, 0, 4.8, 'monzen_shop');
+        registerInteractable(mosenBench, sc.name, sc.desc);
+      }
+
+      // 4. Outer Approach Stone Lantern Colonnade flanking Omotesando (x = +-6.8, z = +10 to +24)
+      for (const sideX of [-6.8, 6.8]) {
+        for (const lz of [10.0, 14.5, 19.0, 23.8]) {
+          createStoneLantern(sideX, lz, 0.96, lz === 14.5 || lz === 23.8, true);
+        }
+      }
+
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+    }
+    buildOmotesandoAndSurroundings();
+
+    // 7C-2. OKUSHA HOHAISHO (Inner Shrine), KITSUNE EMA RACKS & OMOKARU-ISHI (z = -85)
+    //       Upgraded to match real photo 04_okusha_hohaisho.jpg with vermilion Tamagaki fence,
+    //       gold-framed plaque, crimson Maku curtain, candle house & river-cobble retaining wall!
+    function buildOkushaZone() {
+      const ox = -2.0, oz = -85.0;
+      const oy = sampleGroundHeight(ox, oz);
+      const g = new THREE.Group();
+      g.position.set(ox, oy, oz);
+
+      const terrace = createMetricBox(18.5, 0.35, 16.0, flagstoneMat, 2.0);
+      terrace.position.y = -0.12;
+      g.add(terrace);
+
+      // Okusha Hohaisho Hall on the West flank (x = -5.8) so central 7m trail is 100% clear
+      const hallBase = createMetricBox(6.0, 0.68, 5.2, stoneMat, 1.6);
+      hallBase.position.set(-5.8, 0.34, -1.2);
+      const hallBody = createMetricBox(5.2, 3.2, 4.4, vermilionMat, 1.6);
+      hallBody.position.set(-5.8, 2.15, -1.2);
+      const hallRoof = createMetricBox(7.0, 0.68, 6.2, roofMat, 1.6);
+      hallRoof.position.set(-5.8, 3.98, -1.2);
+      const roofRidge = createMetricBox(0.42, 0.26, 6.4, goldMat, 1.0);
+      roofRidge.position.set(-5.8, 4.42, -1.2);
+
+      // Authentic crimson Maku curtain (奥社奉拝所) & gold-framed Hengaku plaque
+      const okushaMakuTex = createCalligraphyMakuTexture('奥社奉拝所', '奉納');
+      const makuMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.2, 1.15),
+        new THREE.MeshStandardMaterial({ map: okushaMakuTex, roughness: 0.6, side: THREE.DoubleSide })
+      );
+      makuMesh.position.set(-3.12, 2.85, -1.2);
+      makuMesh.rotation.y = Math.PI / 2;
+
+      const plaqueTex = createHengakuPlaqueTexture('奥社');
+      const plaqueMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.10, 0.88, 0.46),
+        new THREE.MeshStandardMaterial({ map: plaqueTex, roughness: 0.35 })
+      );
+      plaqueMesh.position.set(-2.95, 3.55, -1.2);
+
+      // Front vermilion Tamagaki balustrade as seen in 04_okusha_hohaisho.jpg
+      const tamagakiRail = createMetricBox(0.18, 1.05, 4.8, vermilionMat, 1.2);
+      tamagakiRail.position.set(-2.85, 0.85, -1.2);
+      const candleBox = createRosokuCandleHouse(1.25, 1.55, 0.62);
+      candleBox.position.set(-2.65, 0.0, 1.85);
+      candleBox.rotation.y = Math.PI / 2;
+
+      g.add(hallBase, hallBody, hallRoof, roofRidge, makuMesh, plaqueMesh, tamagakiRail, candleBox);
+      collisionWorld.addBox(ox - 5.6, oz - 1.2, 3.1, 2.6, 0, oy, oy + 4.5, 'okusha_hall');
+
+      registerInteractable(
+        hallBody,
+        'Okusha Hōhaisho (奥社奉拝所) — Santuario Interior del Monte Inari',
+        'Situado a la salida de los túneles gemelos Senbon Torii, este pabellón de oración ("Lugar de Veneración del Santuario Interior") permite venerar a toda la montaña sagrada Inariyama que se alza detrás.'
+      );
+
+      // East perimeter: Tamashi-ishigaki river-cobble retaining wall + Kitsune Ema racks
+      const retainingWall = createMetricBox(1.1, 1.85, 11.5, stoneMat, 2.0);
+      retainingWall.position.set(7.4, 0.92, -0.5);
+      g.add(retainingWall);
+
+      const emaMat = new THREE.MeshStandardMaterial({ map: emaRackTex, roughness: 0.55, side: THREE.DoubleSide });
+      for (let r = 0; r < 3; r++) {
+        const rackFrame = createMetricBox(3.2, 2.1, 0.22, vermilionMat, 1.0);
+        rackFrame.position.set(5.4, 1.05, -3.4 + r * 2.7);
+        rackFrame.rotation.y = -0.35;
+        const emaBoard = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 1.65), emaMat);
+        emaBoard.position.set(0, 0.1, 0.13);
+        const emaBoardBack = emaBoard.clone();
+        emaBoardBack.position.z = -0.13;
+        emaBoardBack.rotation.y = Math.PI;
+        rackFrame.add(emaBoard, emaBoardBack);
+        g.add(rackFrame);
+
+        collisionWorld.addBox(ox + 5.4, oz - 3.4 + r * 2.7, 1.6, 0.25, -0.35, oy, oy + 2.2, 'ema_rack');
+        registerInteractable(
+          rackFrame,
+          'Kitsune Ema (狐絵馬) — Tablillas Votivas de Zorro Blanco',
+          'En Okusha Hōhaisho, a la salida de los túneles Senbon Torii, cuelgan miles de tablillas de madera con forma de cara de zorro blanco donde los visitantes dibujan expresiones y piden deseos.'
+        );
+      }
+
+      for (const side of [-0.85, 0.85]) {
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.45, 10), steleMat);
+        pillar.position.set(4.6 + side, 0.72, 3.6);
+        const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.14, 12), stoneMat);
+        ring.position.set(4.6 + side, 1.48, 3.6);
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 18), steleMat);
+        orb.position.set(4.6 + side, 1.76, 3.6);
+        g.add(pillar, ring, orb);
+
+        collisionWorld.addCylinder(ox + 4.6 + side, oz + 3.6, 0.32, oy, oy + 2.0, 'omokaru');
+        registerInteractable(
+          orb,
+          'Omokaru-ishi (おもかる石) — Las Piedras Pesadas y Ligeras',
+          'Pedí un deseo frente a las linternas de Okusha y levantá la esfera de piedra superior: si la sentís más liviana de lo que esperabas, el deseo se cumplirá pronto; si pesa más, requerirá mayor esfuerzo.',
+          () => {
+            orb.position.y = 2.04;
+            setTimeout(() => { orb.position.y = 1.76; }, 550);
+            playBellChime();
+          }
+        );
+      }
+
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+    }
+    buildOkushaZone();
+
+    // 7D. KUMATAKA-SHA SHRINE & SHIN-IKE SACRED POND (z = -142, x = 22.0)
+    //     Upgraded from real photos 07_kumatakasha_shrine.jpg & 08_shin_ike_pond.jpg:
+    //     Wooden Temizuya pavilion, twin flickering Rosoku candle houses, authentic dark-wood
+    //     Haiden canopy with 熊鷹大神 Maku curtain, waterside stone steps, fallen cedar trunk in pond!
+    function buildKumatakashaAndPond() {
+      const kx = 22.0, kz = -142.0;
+      const ky = sampleGroundHeight(kx, kz);
+      const g = new THREE.Group();
+      g.position.set(kx, ky, kz);
+
+      // Shin-ike Sacred Pond (08_shin_ike_pond.jpg) with stone embankment & half-submerged fallen cedar log
+      const pondWaterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x0d2b25, roughness: 0.07, metalness: 0.16, clearcoat: 1.0, clearcoatRoughness: 0.05
+      });
+      const pond = new THREE.Mesh(new THREE.PlaneGeometry(18.0, 22.0), pondWaterMat);
+      pond.rotation.x = -Math.PI / 2;
+      pond.position.set(10.5, -0.18, 0);
+      g.add(pond);
+
+      // Stone shoreline embankment wall & waterside viewing steps
+      const shoreWall = createMetricBox(0.85, 0.75, 18.0, stoneMat, 2.0);
+      shoreWall.position.set(2.4, 0.10, 0);
+      const fallenLog = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 6.8, 8), trunkMat);
+      fallenLog.position.set(8.2, -0.08, -2.5);
+      fallenLog.rotation.z = Math.PI * 0.47;
+      fallenLog.rotation.y = 0.42;
+      g.add(shoreWall, fallenLog);
+
+      collisionWorld.addBox(kx + 10.5, kz, 8.2, 10.5, 0, ky - 2.0, ky + 3.0, 'shin_ike_pond');
+
+      // Kumataka-sha Worship Pavilion (07_kumatakasha_shrine.jpg) on the West side (x = -5.6)
+      const deck = createMetricBox(9.2, 0.35, 11.5, flagstoneMat, 1.8);
+      deck.position.set(-2.2, 0.12, 0);
+      const shrineBase = createMetricBox(4.8, 0.72, 5.8, stoneMat, 1.5);
+      shrineBase.position.set(-5.8, 0.36, 0);
+      const shrineBody = createMetricBox(4.2, 2.9, 5.2, vermilionMat, 1.5);
+      shrineBody.position.set(-5.8, 1.85, 0);
+      const shrineRoof = createMetricBox(6.0, 0.62, 6.8, copperRoofMat, 1.6);
+      shrineRoof.position.set(-5.8, 3.45, 0);
+
+      const kumaMakuTex = createCalligraphyMakuTexture('熊鷹大神', '奉納');
+      const kumaMaku = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.4, 1.10),
+        new THREE.MeshStandardMaterial({ map: kumaMakuTex, roughness: 0.6, side: THREE.DoubleSide })
+      );
+      kumaMaku.position.set(-3.62, 2.55, 0);
+      kumaMaku.rotation.y = Math.PI / 2;
+
+      const kumaPlaque = new THREE.Mesh(
+        new THREE.BoxGeometry(0.10, 0.85, 0.45),
+        new THREE.MeshStandardMaterial({ map: createHengakuPlaqueTexture('熊鷹社'), roughness: 0.35 })
+      );
+      kumaPlaque.position.set(-3.45, 3.18, 0);
+
+      // Twin flickering Rosoku candle houses flanking the shrine front
+      for (const cz of [-2.4, 2.4]) {
+        const ch = createRosokuCandleHouse(1.30, 1.60, 0.65);
+        ch.position.set(-3.3, 0.25, cz);
+        ch.rotation.y = Math.PI / 2;
+        g.add(ch);
+      }
+
+      // Small wooden Temizuya water basin at the South entrance of Kumataka-sha (z = +5.2, x = -4.2)
+      const kTemizuya = createMetricBox(1.5, 0.82, 1.1, steleMat, 1.0);
+      kTemizuya.position.set(-4.2, 0.48, 5.2);
+      const kTemRoof = createMetricBox(2.2, 0.32, 1.8, roofMat, 1.2);
+      kTemRoof.position.set(-4.2, 2.35, 5.2);
+      g.add(deck, shrineBase, shrineBody, shrineRoof, kumaMaku, kumaPlaque, kTemizuya, kTemRoof);
+
+      collisionWorld.addBox(kx - 5.8, kz, 2.5, 3.0, 0, ky, ky + 3.8, 'kumatakasha');
+
+      registerInteractable(
+        shrineBody,
+        'Kumataka-sha (熊鷹社) & Estanque Sagrado Shin-ike (新池)',
+        'A mitad de ascenso por el Monte Inari se abre el estanque Shin-ike ("Estanque de los Espíritus"). Los fieles encienden velas en las vitrinas de hierro de Kumataka-sha y aplauden hacia el agua: hacia donde se propagan las ondas indica el paradero de lo buscado.',
+        () => playBellChime()
+      );
+
+      // Terraced Otsuka stone steles & stone Kitsune behind Kumataka-sha
+      const bibMat = new THREE.MeshStandardMaterial({ map: kitsuneBibTex, roughness: 0.65 });
+      for (let i = 0; i < 28; i++) {
+        const ox = -9.2 - (i % 4) * 1.35;
+        const oz = -8.5 + Math.floor(i / 4) * 2.5;
+        const h = 1.10 + (i % 3) * 0.32;
+        const stele = createMetricBox(0.56, h, 0.30, steleMat, 1.0);
+        stele.position.set(ox, h * 0.5 + (i % 4) * 0.18, oz);
+        g.add(stele);
+        if (i % 3 === 0) {
+          const fox = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.48, 6), stoneMat);
+          fox.position.set(ox + 0.42, 0.38, oz);
+          const bib = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.14, 8), bibMat);
+          bib.position.set(ox + 0.42, 0.32, oz);
+          g.add(fox, bib);
+        }
+      }
+
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+    }
+    buildKumatakashaAndPond();
+
+    // 7E. YOTSUTSUJI CROSSROADS, CHAYA TEA HOUSES & EXPANDED KYOTO BASIN PANORAMA (z = -205, x = -18.0)
+    //     Matches real photo 09_yotsutsuji_kyoto_view.jpg with Nishiyama mountains, Kamo River & Kyoto Tower!
+    const cityLightsMat = new THREE.MeshBasicMaterial({ color: 0xffc878 });
+    function buildYotsutsujiCrossroads() {
+      const yx = -18.0, yz = -205.0;
+      const yy = sampleGroundHeight(yx, yz);
+      const g = new THREE.Group();
+      g.position.set(yx, yy, yz);
+
+      const plaza = createMetricBox(22.0, 0.35, 22.0, flagstoneMat, 2.0);
+      plaza.position.y = -0.12;
+      g.add(plaza);
+
+      // Nishimura-tei &仁志むら亭 Traditional Chaya Tea Houses on East side (x = +6.8)
+      const norenMat = new THREE.MeshStandardMaterial({ map: chayaLanternTex, roughness: 0.65 });
+      for (const sideZ of [-6.4, 6.4]) {
+        const chaya = new THREE.Group();
+        chaya.position.set(6.8, 0, sideZ);
+
+        const wall = createMetricBox(5.4, 2.9, 4.6, plasterMat, 1.8);
+        wall.position.y = 1.45;
+        const timberFrame = createMetricBox(5.5, 0.25, 4.7, roofMat, 1.2);
+        timberFrame.position.y = 2.75;
+        const noren = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 1.15), norenMat);
+        noren.position.set(-2.74, 2.05, 0);
+        noren.rotation.y = -Math.PI / 2;
+        const roof = createMetricBox(6.6, 0.48, 5.6, roofMat, 1.6);
+        roof.position.y = 3.05;
+
+        const bench = createMetricBox(1.25, 0.48, 3.8, vermilionMat, 1.2);
+        bench.position.set(-3.65, 0.24, 0);
+
+        // Glowing Chochin paper lanterns on Chaya eaves
+        for (const lz of [-1.6, 1.6]) {
+          const chochin = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 0.54, 10), lanternGlowMat);
+          chochin.position.set(-3.1, 2.25, lz);
+          lanternEmissiveMeshes.push(chochin);
+          chaya.add(chochin);
+        }
+
+        chaya.add(wall, timberFrame, noren, roof, bench);
+        g.add(chaya);
+
+        collisionWorld.addBox(yx + 6.8, yz + sideZ, 2.7, 2.3, 0, yy, yy + 3.4, 'chaya');
+        collisionWorld.addBox(yx + 3.15, yz + sideZ, 0.6, 1.9, 0, yy, yy + 1.0, 'chaya_bench');
+
+        registerInteractable(
+          bench,
+          'Chaya de Yotsutsuji (四ツ辻・仁志むら亭) — Mirador Panorámico de Kyoto (120m)',
+          'En la encrucijada de Yotsutsuji (~120 m s.n.m.), las históricas casas de té ofrecen helado de matcha, Amazake y descanso en bancos cubiertos de fieltro rojo (Mōsen) frente a la vista panorámica del valle de Kyoto, el río Kamo y las montañas Nishiyama.'
+        );
+      }
+
+      // Panoramic Stone Balustrade & Orientation Viewfinder Table on West overlook (x = -9.8)
+      const rail = createMetricBox(0.36, 0.96, 19.2, stoneMat, 1.5);
+      rail.position.set(-9.8, 0.48, 0);
+      const viewfinderPillar = createMetricBox(0.95, 1.15, 0.75, steleMat, 1.0);
+      viewfinderPillar.position.set(-9.1, 0.58, 0);
+      g.add(rail, viewfinderPillar);
+      collisionWorld.addBox(yx - 9.8, yz, 0.40, 9.6, 0, yy, yy + 1.8, 'yotsutsuji_rail');
+      registerInteractable(
+        viewfinderPillar,
+        'Mirador del Valle de Kyoto (京都市街展望台 — 09_yotsutsuji_kyoto_view.jpg)',
+        'Hacia el oeste se extiende toda la cuenca de Kyoto: en primer plano los barrios de Fushimi y Tōfuku-ji, cruzados por el serpenteante río Kamo (鴨川), la silueta blanca y roja de la Torre de Kyoto (京都タワー) junto a la estación central, y al fondo la cordillera occidental de Nishiyama y Arashiyama.'
+      );
+
+      // Vast Kyoto City Basin, Kamo River Ribbon, Kyoto Tower & Distant Nishiyama Mountain Range
+      const vistaGroup = new THREE.Group();
+      vistaGroup.position.set(-105.0, -28.0, 0.0);
+
+      // Valley floor plane & reflective Kamo River ribbon
+      const basinFloor = new THREE.Mesh(
+        new THREE.PlaneGeometry(240, 380),
+        new THREE.MeshStandardMaterial({ color: 0x1e242b, roughness: 0.92 })
+      );
+      basinFloor.rotation.x = -Math.PI / 2;
+      basinFloor.position.set(-45, -0.5, 10);
+
+      const kamoRiver = new THREE.Mesh(
+        new THREE.PlaneGeometry(7.5, 360),
+        new THREE.MeshPhysicalMaterial({ color: 0x264e68, roughness: 0.12, metalness: 0.35, clearcoat: 0.9 })
+      );
+      kamoRiver.rotation.x = -Math.PI / 2;
+      kamoRiver.rotation.z = 0.08;
+      kamoRiver.position.set(-18, -0.25, 10);
+      vistaGroup.add(basinFloor, kamoRiver);
+
+      // 420 Instanced Kyoto City Buildings + Glowing Window Grids
+      const bldgGeo = new THREE.BoxGeometry(1, 1, 1);
+      const bldgMat = new THREE.MeshStandardMaterial({ color: 0x262934, roughness: 0.82 });
+      const CITY_CNT = 420;
+      const instCity = new THREE.InstancedMesh(bldgGeo, bldgMat, CITY_CNT);
+      const instWindows = new THREE.InstancedMesh(bldgGeo, cityLightsMat, CITY_CNT);
+      const d = new THREE.Object3D();
+      for (let i = 0; i < CITY_CNT; i++) {
+        const col = i % 20;
+        const row = Math.floor(i / 20);
+        const cx = 12 - col * 7.8 + Math.sin(i * 7.3) * 2.4;
+        const cz = -135 + row * 14.5 + Math.cos(i * 5.1) * 3.2;
+        const h = 2.2 + (i % 7) * 1.55;
+        const w = 3.0 + (i % 3) * 1.1;
+        d.position.set(cx, h * 0.5, cz);
+        d.scale.set(w, h, w * 1.1);
+        d.updateMatrix();
+        instCity.setMatrixAt(i, d.matrix);
+
+        d.position.set(cx + w * 0.51, h * 0.55, cz);
+        d.scale.set(0.14, h * 0.65, w * 0.72);
+        d.updateMatrix();
+        instWindows.setMatrixAt(i, d.matrix);
+      }
+      vistaGroup.add(instCity, instWindows);
+
+      // Iconic Kyoto Tower (京都タワー) rising above Kyoto Station in the North-West basin
+      const ktGroup = new THREE.Group();
+      ktGroup.position.set(-38, 0, 52);
+      const ktBaseBldg = new THREE.Mesh(new THREE.BoxGeometry(9.5, 6.2, 12.0), bldgMat);
+      ktBaseBldg.position.y = 3.1;
+      const ktWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf2f4f8, roughness: 0.35, emissive: 0xfff0d8, emissiveIntensity: 0.35 });
+      const ktRedMat = new THREE.MeshStandardMaterial({ color: 0xd92b1c, roughness: 0.4, emissive: 0xff3b1f, emissiveIntensity: 0.45 });
+      const ktShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.85, 14.0, 12), ktWhiteMat);
+      ktShaft.position.y = 13.0;
+      const ktDeck = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.15, 2.2, 16), ktRedMat);
+      ktDeck.position.y = 20.5;
+      const ktSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.32, 6.5, 8), ktRedMat);
+      ktSpire.position.y = 24.5;
+      ktGroup.add(ktBaseBldg, ktShaft, ktDeck, ktSpire);
+      vistaGroup.add(ktGroup);
+
+      // Distant Western & Northern Mountain Ranges (Nishiyama, Arashiyama, Atago-yama & Kitayama)
+      const distMtnMat = new THREE.MeshStandardMaterial({ color: 0x20303d, roughness: 0.95 });
+      for (let m = 0; m < 16; m++) {
+        const mw = 48 + (m % 4) * 18;
+        const mh = 28 + (m % 5) * 11;
+        const mCone = new THREE.Mesh(new THREE.ConeGeometry(mw, mh, 7), distMtnMat);
+        mCone.position.set(-145 - (m % 3) * 28, mh * 0.42, -165 + m * 24);
+        mCone.rotation.y = m * 0.8;
+        vistaGroup.add(mCone);
+      }
+
+      g.add(vistaGroup);
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+    }
+    buildYotsutsujiCrossroads();
+
+    // 7F. WAYSIDE TRAIL SANCTUARIES, OTSUKA VALLEYS (お塚群), GOZEN-DANI & MOUNTAIN CHAYA
+    //     Populates the rest of the mountain trail ("el resto del camino y los alrededores")
+    //     while strictly staying outside all walkways!
+    function buildWaysideTrailSanctuariesAndChaya() {
+      const bibMat = new THREE.MeshStandardMaterial({ map: kitsuneBibTex, roughness: 0.65 });
+
+      // 1. Six Wayside Otsuka Sacred Mound Terraces (お塚群) tucked along the mountain bends
+      const waysideOtsukaSpecs = [
+        { u: 0.335, side: -1, dist: 5.8, title: 'Kodama-ga-ike Otsuka (谺ヶ池お塚群)', kanji: '眼力大神' },
+        { u: 0.505, side: -1, dist: 5.6, title: 'Matsu-no-kura Otsuka (間の峰・荷田社)', kanji: '荷田大神' },
+        { u: 0.585, side:  1, dist: 5.8, title: 'Gozendani Approach Otsuka (御膳谷参道お塚)', kanji: '白狐大神' },
+        { u: 0.715, side:  1, dist: 5.6, title: 'Sannomine Ridge Otsuka (三ノ峰参道お塚)', kanji: '権太夫大神' },
+        { u: 0.825, side: -1, dist: 5.6, title: 'Ai-no-mine Otsuka (間ノ峰・おせき大神)', kanji: 'おせき大神' },
+        { u: 0.935, side:  1, dist: 5.8, title: 'Kami-no-sha Approach Otsuka (一ノ峰参道お塚)', kanji: '千代옥大神' }
+      ];
+
+      for (const spec of waysideOtsukaSpecs) {
+        const pt = trailCurve.getPointAt(spec.u);
+        const tan = trailCurve.getTangentAt(spec.u).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const yaw = Math.atan2(tan.x, tan.z) - spec.side * Math.PI * 0.5;
+        const pos = pt.clone().addScaledVector(right, spec.side * spec.dist);
+        if (minClearanceFromWalkableNetwork(pos.x, pos.z) < 2.2) continue;
+        pos.y = sampleGroundHeight(pos.x, pos.z);
+
+        const og = new THREE.Group();
+        og.position.copy(pos);
+        og.rotation.y = yaw;
+
+        // 2-tier mossy granite Ishigaki terrace
+        const tier1 = createMetricBox(4.6, 0.55, 3.2, stoneMat, 1.5);
+        tier1.position.set(0, 0.275, 0);
+        const tier2 = createMetricBox(3.8, 0.65, 1.8, stoneMat, 1.4);
+        tier2.position.set(0, 0.85, -0.55);
+        og.add(tier1, tier2);
+
+        // Miniature stone Torii at the front of the wayside Otsuka
+        const sColL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.85, 8), steleMat);
+        sColL.position.set(-0.72, 1.15, 1.15);
+        const sColR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.85, 8), steleMat);
+        sColR.position.set( 0.72, 1.15, 1.15);
+        const sKasagi = createMetricBox(1.95, 0.12, 0.18, steleMat, 1.0);
+        sKasagi.position.set(0, 2.08, 1.15);
+        const sNuki = createMetricBox(1.68, 0.09, 0.12, steleMat, 1.0);
+        sNuki.position.set(0, 1.78, 1.15);
+        og.add(sColL, sColR, sKasagi, sNuki);
+
+        // Cluster of 9 carved Otsuka steles + stone Kitsune in red bibs + Rosoku candle box
+        for (let k = 0; k < 9; k++) {
+          const kx = -1.4 + (k % 5) * 0.70;
+          const kz = -0.25 - Math.floor(k / 5) * 0.65;
+          const kh = 0.95 + (k % 3) * 0.35;
+          const st = createMetricBox(0.42, kh, 0.22, steleMat, 1.0);
+          st.position.set(kx, 0.85 + kh * 0.5, kz);
+          og.add(st);
+          if (k === 2) {
+            registerInteractable(
+              st,
+              spec.title,
+              `Terraza sagrada de altares Otsuka (${spec.kanji}) tallados en granito musgoso a la vera del sendero del Monte Inari, donde los devotos depositan mini-Torii bermellón y encienden velas.`,
+              () => playBellChime()
+            );
+          }
+        }
+        for (const fx of [-0.95, 0.95]) {
+          const fox = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.45, 6), stoneMat);
+          fox.position.set(fx, 0.76, 0.65);
+          const bib = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.12, 8), bibMat);
+          bib.position.set(fx, 0.70, 0.65);
+          og.add(fox, bib);
+        }
+        const cBox = createRosokuCandleHouse(0.85, 1.25, 0.45);
+        cBox.position.set(1.55, 0.45, 0.85);
+        og.add(cBox);
+
+        og.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+        scene.add(og);
+        collisionWorld.addBox(pos.x, pos.z, 2.2, 1.6, 0, pos.y, pos.y + 2.8, 'wayside_otsuka');
+      }
+
+      // 2. Three Wayside Mountain Chaya Rest Houses (山中茶屋: Take-ya, Matsunokura-chaya, Yakikoma-chaya)
+      const norenMat = new THREE.MeshStandardMaterial({ map: chayaLanternTex, roughness: 0.65 });
+      const trailChayas = [
+        { u: 0.380, side:  1, dist: 6.2, name: 'Take-ya Chaya (竹屋茶屋 — Descanso del Bosque de Bambú)', desc: 'Pequeña casa de té de montaña rodeada de bambú Moso antes de llegar al estanque Shin-ike.' },
+        { u: 0.545, side: -1, dist: 6.2, name: 'Matsunokura Chaya (間の峰茶屋)', desc: 'Puesto tradicional de descanso en la empinada cuesta hacia Yotsutsuji, famoso por su té verde tostado Hōjicha.' },
+        { u: 0.840, side:  1, dist: 6.2, name: 'Yakikoma Chaya (薬力亭・山中茶屋)', desc: 'Casa de té tradicional en el circuito superior de las cumbres entre Sannomine y Ninomine.' }
+      ];
+      for (const tc of trailChayas) {
+        const pt = trailCurve.getPointAt(tc.u);
+        const tan = trailCurve.getTangentAt(tc.u).normalize();
+        const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const yaw = Math.atan2(tan.x, tan.z) - tc.side * Math.PI * 0.5;
+        const pos = pt.clone().addScaledVector(right, tc.side * tc.dist);
+        if (minClearanceFromWalkableNetwork(pos.x, pos.z) < 2.5) continue;
+        pos.y = sampleGroundHeight(pos.x, pos.z);
+
+        const cg = new THREE.Group();
+        cg.position.copy(pos);
+        cg.rotation.y = yaw;
+
+        const floorDeck = createMetricBox(4.8, 0.32, 3.8, stoneMat, 1.5);
+        floorDeck.position.set(0, 0.16, 0);
+        const cabin = createMetricBox(4.2, 2.5, 2.6, plasterMat, 1.5);
+        cabin.position.set(0, 1.4, -0.4);
+        const roof = createMetricBox(5.2, 0.42, 4.2, roofMat, 1.5);
+        roof.position.set(0, 2.8, 0);
+        const noren = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.95), norenMat);
+        noren.position.set(0, 2.0, 0.95);
+        const bench = createMetricBox(3.4, 0.45, 0.90, vermilionMat, 1.2);
+        bench.position.set(0, 0.38, 1.45);
+        const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.18, 0.50, 10), lanternGlowMat);
+        lantern.position.set(-1.8, 2.1, 1.45);
+        lanternEmissiveMeshes.push(lantern);
+
+        cg.add(floorDeck, cabin, roof, noren, bench, lantern);
+        cg.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+        scene.add(cg);
+        collisionWorld.addBox(pos.x, pos.z, 2.2, 1.9, 0, pos.y, pos.y + 3.0, 'trail_chaya');
+        registerInteractable(bench, tc.name, tc.desc);
+      }
+
+      // 3. Gozen-dani Hohaisho (御膳谷奉拝所) on the East Loop (u = 0.18 of eastLoopCurve, x = 2.5, z = -222)
+      const gzPt = eastLoopCurve.getPointAt(0.18);
+      const gzTan = eastLoopCurve.getTangentAt(0.18).normalize();
+      const gzRight = new THREE.Vector3(-gzTan.z, 0, gzTan.x).normalize();
+      const gzPos = gzPt.clone().addScaledVector(gzRight, 6.2);
+      gzPos.y = sampleGroundHeight(gzPos.x, gzPos.z);
+
+      const gzGroup = new THREE.Group();
+      gzGroup.position.copy(gzPos);
+      gzGroup.rotation.y = Math.atan2(gzTan.x, gzTan.z) - Math.PI * 0.5;
+      const gzBase = createMetricBox(5.2, 0.55, 4.2, stoneMat, 1.5);
+      gzBase.position.set(0, 0.275, 0);
+      const gzHall = createMetricBox(4.4, 2.8, 3.2, vermilionMat, 1.5);
+      gzHall.position.set(0, 1.68, -0.3);
+      const gzRoof = createMetricBox(5.6, 0.55, 4.4, copperRoofMat, 1.5);
+      gzRoof.position.set(0, 3.25, -0.2);
+      const gzMaku = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.6, 0.95),
+        new THREE.MeshStandardMaterial({ map: createCalligraphyMakuTexture('御膳谷奉拝所', '祈祷殿'), roughness: 0.6, side: THREE.DoubleSide })
+      );
+      gzMaku.position.set(0, 2.35, 1.35);
+      const gzCandles = createRosokuCandleHouse(1.15, 1.45, 0.55);
+      gzCandles.position.set(1.85, 0.28, 1.45);
+      gzGroup.add(gzBase, gzHall, gzRoof, gzMaku, gzCandles);
+      gzGroup.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(gzGroup);
+      collisionWorld.addBox(gzPos.x, gzPos.z, 2.5, 2.2, 0, gzPos.y, gzPos.y + 3.6, 'gozendani');
+      registerInteractable(
+        gzHall,
+        'Gozen-dani Hōhaisho (御膳谷奉拝所) — Valle de las Ofrendas Sagradas',
+        'Antiguo recinto de oración en la quebrada norte del Monte Inari donde históricamente se preparaban las ofrendas diarias de arroz y sake (Shinsen) para las tres cumbres sagradas.'
+      );
+    }
+    buildWaysideTrailSanctuariesAndChaya();
+
+    // 7G. AUTHENTIC MOUNTAIN PEAK SANCTUARIES: SANNOMINE, NINOMINE, MITSURUGI-SHA & ICHINOMINE (233m SUMMIT)
+    //     Reconstructed directly from real Wikimedia Commons photographs:
+    //     - 12_ichinomine_233m_summit.jpg (上之社 / 末広大神 — 233m ASL)
+    //     - 11_ninomine_shrine.jpg        (中之社 / 青木大神)
+    //     - 10_sannomine_shrine.jpg       (下之社 / 白菊大神)
+    function createAuthenticPeakSanctuary(cfg) {
+      const {
+        x, z, rotY, isSummit,
+        plaqueKanji, makuKanji, makuSub,
+        title, loreDesc, includeSwordRock
+      } = cfg;
+
+      const py = sampleGroundHeight(x, z);
+      const g = new THREE.Group();
+      g.position.set(x, py, z);
+      g.rotation.y = rotY;
+
+      const weatheredWoodMat = new THREE.MeshStandardMaterial({
+        color: 0x3a281d, map: barkRootsColor, normalMap: vermilionWoodNorm,
+        normalScale: new THREE.Vector2(0.8, 0.8), roughness: 0.78
+      });
+      const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xe5b842, roughness: 0.22, metalness: 0.88
+      });
+      const greenLatticeMat = new THREE.MeshStandardMaterial({
+        color: 0x2e6e4c, roughness: 0.55
+      });
+      const bibMat = new THREE.MeshStandardMaterial({ map: kitsuneBibTex, roughness: 0.65 });
+
+      // 1. Broad Granite Flagstone Plaza Apron
+      const apronW = isSummit ? 21.0 : 12.5;
+      const apronD = isSummit ? 22.0 : 13.0;
+      const apron = createMetricBox(apronW, 0.40, apronD, flagstoneMat, 2.0);
+      apron.position.set(0, -0.15, 0);
+      g.add(apron);
+
+      // Sanctuary compound is offset along local -Z so the front plaza (z > 0) is 100% open for walking!
+      const compound = new THREE.Group();
+      compound.position.set(0, 0, isSummit ? -1.2 : -1.0);
+      g.add(compound);
+
+      // 2. Stepped Granite Approach Staircase (7 steps) + Cheek Walls (Mimigaki) + Carved Granite Tama Spheres (玉)
+      //    Exact match to 12_ichinomine_233m_summit.jpg!
+      const stairW = isSummit ? 4.8 : 3.6;
+      const numSteps = 6;
+      const stepH = 0.17;
+      const stepD = 0.36;
+      const platformH = numSteps * stepH; // 1.02m elevated worship terrace
+
+      for (let s = 0; s < numSteps; s++) {
+        const st = createMetricBox(stairW, stepH, stepD + 0.04, flagstoneMat, 1.5);
+        st.position.set(0, (s + 0.5) * stepH, 2.10 - s * stepD);
+        compound.add(st);
+      }
+
+      // Stepped granite cheek walls topped by square pedestals and carved round granite Tama orbs (玉)
+      for (const side of [-1, 1]) {
+        const cheekX = side * (stairW * 0.5 + 0.36);
+        const cheekWall = createMetricBox(0.68, platformH + 0.24, numSteps * stepD + 0.45, stoneMat, 1.4);
+        cheekWall.position.set(cheekX, (platformH + 0.24) * 0.5, 2.10 - (numSteps * stepD) * 0.5 + 0.15);
+
+        // Front pedestal & carved granite Tama sphere (visible in 12_ichinomine_233m_summit.jpg)
+        const tamaPedestal = createMetricBox(0.76, 0.52, 0.76, steleMat, 1.0);
+        tamaPedestal.position.set(cheekX, platformH + 0.12, 2.12);
+        const tamaRing = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.12, 14), stoneMat);
+        tamaRing.position.set(cheekX, platformH + 0.44, 2.12);
+        const tamaSphere = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 20), steleMat);
+        tamaSphere.position.set(cheekX, platformH + 0.76, 2.12);
+
+        compound.add(cheekWall, tamaPedestal, tamaRing, tamaSphere);
+      }
+
+      // 3. Elevated Stone Worship & Otsuka Terrace Platform
+      const terraceW = isSummit ? 13.6 : 9.2;
+      const terraceD = isSummit ? 11.5 : 8.2;
+      const mainTerrace = createMetricBox(terraceW, platformH, terraceD, stoneMat, 2.0);
+      mainTerrace.position.set(0, platformH * 0.5, -terraceD * 0.5 + 0.25);
+      compound.add(mainTerrace);
+
+      // 4. Pair of Tall Vermilion Wooden Post Lanterns (献燈 Tōrō) with green lattice fireboxes (10_sannomine & 11_ninomine)
+      for (const side of [-1, 1]) {
+        const lx = side * (stairW * 0.5 + 1.35);
+        const lz = 2.45;
+        const lGroup = new THREE.Group();
+        lGroup.position.set(lx, 0, lz);
+
+        const lBase = createMetricBox(0.62, 0.45, 0.62, stoneMat, 1.0);
+        lBase.position.y = 0.225;
+        const lPost = createMetricBox(0.22, 1.65, 0.22, vermilionMat, 1.0);
+        lPost.position.y = 1.25;
+        const lPlatform = createMetricBox(0.68, 0.14, 0.68, vermilionMat, 1.0);
+        lPlatform.position.y = 2.12;
+        const lBox = createMetricBox(0.48, 0.52, 0.48, greenLatticeMat, 1.0);
+        lBox.position.y = 2.45;
+        const lGlow = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.40, 0.36), lanternGlowMat);
+        lGlow.position.y = 2.45;
+        lanternEmissiveMeshes.push(lGlow);
+        const lRoof = createMetricBox(0.86, 0.24, 0.86, copperRoofMat, 1.0);
+        lRoof.position.y = 2.82;
+        const lFinial = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.22, 8), goldMat);
+        lFinial.position.y = 3.04;
+
+        lGroup.add(lBase, lPost, lPlatform, lBox, lGlow, lRoof, lFinial);
+        compound.add(lGroup);
+      }
+
+      // 5. Weathered Dark-Timber & Copper-Shingled Worship Canopy Pavilion (拝殿 / 拝所)
+      //    Exact match to 12_ichinomine_233m_summit.jpg, 11_ninomine_shrine.jpg & 10_sannomine_shrine.jpg!
+      const canopyW = isSummit ? 5.2 : 4.2;
+      const canopyD = isSummit ? 3.6 : 3.1;
+      const pillarH = isSummit ? 3.25 : 2.95;
+      const canopyZ = -1.35;
+
+      const canopyGroup = new THREE.Group();
+      canopyGroup.position.set(0, platformH, canopyZ);
+
+      // 4 Main Weathered Timber Pillars on Carved Stone Plinths + Tie Beams (Kōryō)
+      for (const px of [-canopyW * 0.44, canopyW * 0.44]) {
+        for (const pz of [-canopyD * 0.42, canopyD * 0.42]) {
+          const soseki = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.24, 12), stoneMat);
+          soseki.position.set(px, 0.12, pz);
+          const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, pillarH, 14), weatheredWoodMat);
+          pillar.position.set(px, 0.24 + pillarH * 0.5, pz);
+          const goldBand = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.12, 14), goldMat);
+          goldBand.position.set(px, pillarH - 0.18, pz);
+          canopyGroup.add(soseki, pillar, goldBand);
+        }
+      }
+
+      const frontBeam = createMetricBox(canopyW + 0.35, 0.26, 0.26, weatheredWoodMat, 1.5);
+      frontBeam.position.set(0, pillarH + 0.05, canopyD * 0.42);
+      const backBeam = createMetricBox(canopyW + 0.35, 0.26, 0.26, weatheredWoodMat, 1.5);
+      backBeam.position.set(0, pillarH + 0.05, -canopyD * 0.42);
+      canopyGroup.add(frontBeam, backBeam);
+
+      // Layered Copper-Shingled Irimoya / Karahafu Roof with Gable Bargeboards & Gold Ridge Ornaments
+      const mainRoof = createMetricBox(canopyW + 1.45, 0.42, canopyD + 1.35, copperRoofMat, 1.8);
+      mainRoof.position.set(0, pillarH + 0.42, 0);
+      const upperRoof = createMetricBox(canopyW + 0.65, 0.36, canopyD + 0.55, roofMat, 1.6);
+      upperRoof.position.set(0, pillarH + 0.78, 0);
+      const mainRidge = createMetricBox(canopyW + 0.90, 0.24, 0.34, weatheredWoodMat, 1.2);
+      mainRidge.position.set(0, pillarH + 1.05, 0);
+      const ridgeGoldCapL = createMetricBox(0.28, 0.32, 0.40, goldMat, 1.0);
+      ridgeGoldCapL.position.set(-(canopyW * 0.45), pillarH + 1.08, 0);
+      const ridgeGoldCapR = ridgeGoldCapL.clone();
+      ridgeGoldCapR.position.x = (canopyW * 0.45);
+
+      // Front Undulating Karahafu / Chidori Gable Projection over the steps
+      const frontGable = createMetricBox(2.35, 0.52, 1.15, copperRoofMat, 1.2);
+      frontGable.position.set(0, pillarH + 0.62, canopyD * 0.46);
+      const gableGoldOrnament = createMetricBox(0.55, 0.34, 0.12, goldMat, 1.0);
+      gableGoldOrnament.position.set(0, pillarH + 0.60, canopyD * 0.98);
+      canopyGroup.add(mainRoof, upperRoof, mainRidge, ridgeGoldCapL, ridgeGoldCapR, frontGable, gableGoldOrnament);
+
+      // Gold-Framed Vertical Calligraphic Plaque (扁額: 稲荷上之社 / 中之社 / 下之社)
+      const plaqueTex = createHengakuPlaqueTexture(plaqueKanji);
+      const plaqueMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.62, 1.12, 0.12),
+        new THREE.MeshStandardMaterial({ map: plaqueTex, roughness: 0.30 })
+      );
+      plaqueMesh.position.set(0, pillarH + 0.18, canopyD * 0.52);
+      plaqueMesh.rotation.x = 0.10;
+      canopyGroup.add(plaqueMesh);
+
+      // Vibrant Crimson-Red Maku Curtain with White Daki-ine Crests & Bold Deity Kanji (末広大神 / 青木大神 / 白菊大神)
+      const makuTex = createCalligraphyMakuTexture(makuKanji, makuSub);
+      const makuMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(canopyW * 0.86, 1.08),
+        new THREE.MeshStandardMaterial({ map: makuTex, roughness: 0.58, side: THREE.DoubleSide })
+      );
+      makuMesh.position.set(0, pillarH - 0.58, canopyD * 0.44);
+      canopyGroup.add(makuMesh);
+
+      // Central Braided Hemp Bell Rope (Suzu-o 鈴緒) + Brass Suzu Bell + Wooden Saisen-bako Coin Box
+      const suzuBell = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), brassMat);
+      suzuBell.position.set(0, pillarH - 0.65, canopyD * 0.36);
+      const suzuRope = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.055, 0.085, 1.65, 10),
+        new THREE.MeshStandardMaterial({ map: suzuRopeMakuTex, roughness: 0.65 })
+      );
+      suzuRope.position.set(0, pillarH - 1.52, canopyD * 0.36);
+      const saisenBox = createMetricBox(1.45, 0.68, 0.82, weatheredWoodMat, 1.2);
+      saisenBox.position.set(0, 0.34, canopyD * 0.32);
+      canopyGroup.add(suzuBell, suzuRope, saisenBox);
+
+      // Multi-tiered Wooden Offering Racks (献台 Ken-dai) with white Sake bottles inside the canopy
+      for (const ox of [-canopyW * 0.28, canopyW * 0.28]) {
+        const rack = createMetricBox(1.15, 0.88, 0.65, weatheredWoodMat, 1.0);
+        rack.position.set(ox, 0.44, -0.15);
+        for (const bx of [-0.32, 0, 0.32]) {
+          const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.26, 8), plasterMat);
+          bottle.position.set(ox + bx, 1.01, -0.15);
+          canopyGroup.add(bottle);
+        }
+        canopyGroup.add(rack);
+      }
+
+      // Twin Flickering Black-Iron Rosoku Candle Houses flanking the Worship Canopy
+      for (const side of [-1, 1]) {
+        const cHouse = createRosokuCandleHouse(1.25, 1.60, 0.62);
+        cHouse.position.set(side * (canopyW * 0.58), 0, canopyD * 0.25);
+        canopyGroup.add(cHouse);
+      }
+
+      compound.add(canopyGroup);
+
+      // 6. Stepped Stone Otsuka Mound Enclosure (玉垣 Tamagaki Fence + Sacred Stone Labyrinth) behind Canopy
+      const enclosureZ = -5.6;
+      const encW = isSummit ? 10.6 : 7.4;
+      const encD = isSummit ? 5.6 : 4.2;
+
+      // Carved granite Tamagaki fence posts around the sacred Otsuka mound
+      const numPostsW = isSummit ? 12 : 8;
+      for (let p = 0; p <= numPostsW; p++) {
+        const px = -encW * 0.5 + (p / numPostsW) * encW;
+        if (Math.abs(px) < 1.1) continue; // Center ritual opening behind Haiden
+        const postF = createMetricBox(0.22, 1.35, 0.22, steleMat, 1.0);
+        postF.position.set(px, platformH + 0.68, enclosureZ + encD * 0.5);
+        const postB = createMetricBox(0.22, 1.55, 0.22, steleMat, 1.0);
+        postB.position.set(px, platformH + 0.78, enclosureZ - encD * 0.5);
+        compound.add(postF, postB);
+      }
+
+      // 3 Stepped Granite Mound Tiers inside the Otsuka Sanctuary
+      for (let tier = 0; tier < 3; tier++) {
+        const tw = (encW - 0.8) - tier * (isSummit ? 1.8 : 1.2);
+        const td = (encD - 0.6) - tier * 1.0;
+        const tBox = createMetricBox(tw, 0.68, td, stoneMat, 1.6);
+        tBox.position.set(0, platformH + 0.34 + tier * 0.68, enclosureZ - tier * 0.35);
+        compound.add(tBox);
+      }
+
+      // Supreme Central Otsuka Stele + Stone Torii + Stone Kitsune Guardians in Red Bibs
+      const supremeStele = createMetricBox(isSummit ? 1.15 : 0.92, isSummit ? 2.65 : 2.15, 0.45, steleMat, 1.0);
+      supremeStele.position.set(0, platformH + 2.04 + (isSummit ? 1.2 : 0.95), enclosureZ - 0.65);
+      compound.add(supremeStele);
+
+      // Stone Myojin Torii standing Directly in front of the Central Otsuka Stele
+      const stColL = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 2.35, 10), steleMat);
+      stColL.position.set(-0.98, platformH + 1.85, enclosureZ + 1.15);
+      const stColR = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 2.35, 10), steleMat);
+      stColR.position.set( 0.98, platformH + 1.85, enclosureZ + 1.15);
+      const stKasagi = createMetricBox(2.65, 0.16, 0.24, steleMat, 1.0);
+      stKasagi.position.set(0, platformH + 3.05, enclosureZ + 1.15);
+      const stNuki = createMetricBox(2.30, 0.12, 0.16, steleMat, 1.0);
+      stNuki.position.set(0, platformH + 2.62, enclosureZ + 1.15);
+      compound.add(stColL, stColR, stKasagi, stNuki);
+
+      // Dense Labyrinth of Carved Stone Otsuka Steles, Kitsune Guardians & Stacked Miniature Vermilion Torii
+      const steleCount = isSummit ? 52 : 28;
+      for (let i = 0; i < steleCount; i++) {
+        const row = Math.floor(i / (isSummit ? 13 : 7));
+        const col = i % (isSummit ? 13 : 7);
+        const spanW = encW - 1.2;
+        const ox = -spanW * 0.5 + (col / ((isSummit ? 12 : 6))) * spanW + Math.sin(i * 3.7) * 0.18;
+        const oz = enclosureZ + 1.2 - row * 1.15 + Math.cos(i * 2.3) * 0.15;
+        if (Math.abs(ox) < 0.85 && row >= 1) continue; // Keep supreme center stele prominent
+
+        const tierY = platformH + Math.min(2, row) * 0.68;
+        const sh = 0.90 + (i % 4) * 0.34;
+        const sw = 0.44 + (i % 3) * 0.10;
+        const st = createMetricBox(sw, sh, 0.26, steleMat, 1.0);
+        st.position.set(ox, tierY + sh * 0.5, oz);
+        st.rotation.y = (Math.sin(i * 5.1) * 0.12);
+        compound.add(st);
+
+        // Stone Kitsune in red bibs & stacked miniature vermilion Torii offerings
+        if (i % 3 === 0) {
+          const fox = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.52, 6), stoneMat);
+          fox.position.set(ox, tierY + 0.32, oz + 0.30);
+          const bib = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.15, 8), bibMat);
+          bib.position.set(ox, tierY + 0.25, oz + 0.30);
+          compound.add(fox, bib);
+        }
+        if (i % 2 === 0) {
+          const miniT = createMetricBox(0.36, 0.42, 0.06, vermilionMat, 1.0);
+          miniT.position.set(ox + 0.18, tierY + 0.21, oz + 0.22);
+          miniT.rotation.x = -0.18;
+          compound.add(miniT);
+        }
+      }
+
+      // 7. Special Landmark Details:
+      //    - At Ichinomine (233m Summit): Official Wooden Summit Elevation Post (稲荷山最高峰 一ノ峰 標高233m)
+      //    - At Mitsurugi-sha: The Sacred Sword-Rock (劒石 Tsurugi-ishi) & Sacred Well (御膳水 Gozensui)
+      if (isSummit) {
+        const markerPost = createMetricBox(0.34, 2.85, 0.34, steleMat, 1.0);
+        markerPost.position.set(-4.2, platformH + 1.42, 1.65);
+        const markerCap = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.25, 4), copperRoofMat);
+        markerCap.position.set(-4.2, platformH + 2.95, 1.65);
+        markerCap.rotation.y = Math.PI / 4;
+        compound.add(markerPost, markerCap);
+      }
+      if (includeSwordRock) {
+        const swordRock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.45, 1), stoneMat);
+        swordRock.scale.set(0.95, 1.85, 0.72);
+        swordRock.position.set(3.2, platformH + 1.35, enclosureZ);
+        const wellRoof = createMetricBox(2.2, 0.35, 2.2, roofMat, 1.2);
+        wellRoof.position.set(-3.8, platformH + 2.15, 0.8);
+        const wellBasin = createMetricBox(1.4, 0.78, 1.4, steleMat, 1.0);
+        wellBasin.position.set(-3.8, platformH + 0.39, 0.8);
+        compound.add(swordRock, wellRoof, wellBasin);
+      }
+
+      g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      scene.add(g);
+
+      // Register clean collider for the elevated compound (leaving the front plaza 100% open!)
+      const worldOffset = new THREE.Vector3(0, 0, -2.8).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
+      collisionWorld.addBox(
+        x + worldOffset.x,
+        z + worldOffset.z,
+        terraceW * 0.48,
+        terraceD * 0.46,
+        rotY,
+        py,
+        py + 5.5,
+        'peak_sanctuary'
+      );
+
+      registerInteractable(
+        canopyGroup,
+        title,
+        loreDesc,
+        () => playBellChime()
+      );
+      registerInteractable(
+        supremeStele,
+        title,
+        loreDesc,
+        () => playBellChime()
+      );
+    }
+
+    function buildUpperPeaksAndIchinomine() {
+      // 1. SANNOMINE (三ノ峰 / 下之社・白菊大神 — 10_sannomine_shrine.jpg) at (-32, -238), compound on West side (-X) facing trail (+X)
+      createAuthenticPeakSanctuary({
+        x: -36.5, z: -238.0, rotY: Math.PI / 2, isSummit: false,
+        plaqueKanji: '下之社', makuKanji: '白菊大神', makuSub: '奉納',
+        title: 'Sannomine — Shimo-no-sha (三ノ峰・下之社 / 白菊大神)',
+        loreDesc: 'Tercera cumbre del Monte Inari (Sannomine / Shimo-no-sha), consagrada a la deidad Shiragiku-Ōkami (白菊大神). Su pabellón de madera oscura con techo de cobre, linternas bermellón con celosía verde, cortina ceremonial roja con el emblema de espigas de arroz (Daki-ine) y terraza escalonada de altares Otsuka replica fielmente el santuario real.',
+        includeSwordRock: false
+      });
+
+      // 2. NINOMINE (二ノ峰 / 中之社・青木大神 — 11_ninomine_shrine.jpg) at (-14, -272), compound on West side (-X) facing trail (+X)
+      createAuthenticPeakSanctuary({
+        x: -18.5, z: -272.0, rotY: Math.PI / 2, isSummit: false,
+        plaqueKanji: '中之社', makuKanji: '青木大神', makuSub: '奉納',
+        title: 'Ninomine — Naka-no-sha (二ノ峰・中之社 / 青木大神)',
+        loreDesc: 'Segunda cumbre del Monte Inari (Ninomine / Naka-no-sha), consagrada a Aoki-Ōkami (青木大神). Los peregrinos suben sus escalones de granito flanqueados por linternas de madera bermellón para hacer sonar la campana Suzu bajo la placa caligráfica dorada.',
+        includeSwordRock: false
+      });
+
+      // 3. MITSURUGI-SHA (御劔社 / 長者社・劒石) at (+6, -242) on East Summit Loop, compound on East side (+X) facing trail (-X)
+      createAuthenticPeakSanctuary({
+        x: 10.5, z: -242.0, rotY: -Math.PI / 2, isSummit: false,
+        plaqueKanji: '御劔社', makuKanji: '御劔大神', makuSub: '長者社',
+        title: 'Mitsurugi-sha / Chōja-sha (御劔社・長者社) & Roca Espada (劒石)',
+        loreDesc: 'Santuario de la Roca Espada Sagrada (Tsurugi-ishi 劒石) y del manantial Gozensui (御膳水). Según la tradición del teatro Noh ("Kokaji"), aquí el maestro armero Sanjō Munechika forjó la espada legendaria Kogitsune-maru con la ayuda del espíritu zorro de Inari.',
+        includeSwordRock: true
+      });
+
+      // 4. ICHINOMINE 233m SUMMIT SANCTUARY (一ノ峰 / 上之社・末広大神 — 12_ichinomine_233m_summit.jpg) at (0, -308)
+      createAuthenticPeakSanctuary({
+        x: 0.0, z: -308.0, rotY: 0.0, isSummit: true,
+        plaqueKanji: '稲荷上之社', makuKanji: '末広大神', makuSub: '奉納',
+        title: 'Cumbre Suprema Ichinomine — Kami-no-sha (一ノ峰・上之社 / 末広大神 — 233 m s.n.m.)',
+        loreDesc: '¡Has alcanzado la cumbre más alta del Monte Inari (233 metros s.n.m.)! Reconstruida fielmente a partir del santuario real (12_ichinomine_233m_summit.jpg): escalinata de granito flanqueada por esferas sagradas Tama (玉) sobre pedestales, pabellón de madera noble y cobre con la placa dorada "稲荷上之社" (Inari Kami-no-sha), cortina carmesí con el blasón de arroz Daki-ine y "末広大神" (Suehiro-Ōkami), cuerda de campana Suzu-o, vitrinas de velas encendidas y el laberinto escalonado de altares Otsuka.',
+        includeSwordRock: false
+      });
+    }
+    buildUpperPeaksAndIchinomine();
+
+    // Stone Lanterns placed strictly outside all walkways & twin tunnels!
+    for (const sideX of [-6.6, -11.8, 6.6, 11.8]) {
+      for (const lz of [-7.0, -18.0, -24.5, -35.5]) {
+        createStoneLantern(sideX, lz, 0.88, lz === -18.0 || lz === -35.5, true);
+      }
+    }
+    for (let i = 0; i < 42; i++) {
+      const u = 0.08 + (i / 41) * 0.90;
+      const pt = trailCurve.getPointAt(u);
+      const tan = trailCurve.getTangentAt(u).normalize();
+      const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      const side = (i % 2 === 0) ? 1 : -1;
+      // Push lanterns wider in the Twin Senbon Torii zone so they flank the outer edges of both tunnels!
+      const env = getTwinTunnelEnvelopeFactor(u);
+      const latDist = 2.85 + env * 2.15;
+      const lPos = pt.clone().addScaledVector(right, side * latDist);
+      if (minClearanceFromWalkableNetwork(lPos.x, lPos.z) > 0.3) {
+        createStoneLantern(lPos.x, lPos.z, 0.92, i % 3 === 0, true);
+      }
+    }
+
+    // =========================================================================
+    // 8. VOLUMETRIC 3D FOLIAGE WITH STRICT WALKABLE CORRIDOR EXCLUSION!
+    // =========================================================================
+    loaderStatus.textContent = 'Plantando bosque volumétrico 3D con exclusión total de caminos y bifurcaciones...';
+    loaderBar.style.width = '78%';
+
+    function buildVolumetricCrownGeometry(radiusW, heightH, numBoughs = 26, dishCurve = 0.22) {
+      const geos = [];
+      const goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0));
+
+      for (let i = 0; i < numBoughs; i++) {
+        const t = i / Math.max(1, numBoughs - 1);
+        const theta = i * goldenAngle;
+        const layerRadius = radiusW * (0.35 + 0.65 * Math.sin(t * Math.PI * 0.82));
+        const yOff = (t - 0.42) * heightH;
+
+        const cardW = radiusW * (0.78 - 0.22 * t);
+        const cardH = heightH * (0.56 - 0.12 * t);
+
+        const pGeo = new THREE.PlaneGeometry(cardW, cardH, 3, 3);
+        const pos = pGeo.attributes.position;
+        for (let v = 0; v < pos.count; v++) {
+          const lx = pos.getX(v);
+          const ly = pos.getY(v);
+          const uNorm = lx / (cardW * 0.5);
+          const vNorm = (ly + cardH * 0.5) / cardH;
+          const archZ = Math.sin(vNorm * Math.PI) * dishCurve * cardW - (uNorm * uNorm) * 0.14 * cardW;
+          pos.setXYZ(v, lx, ly + cardH * 0.15, archZ);
+        }
+
+        const pitchTilt = 0.32 + (1.0 - t) * 0.48;
+        pGeo.rotateX(pitchTilt);
+        pGeo.rotateY(theta);
+        pGeo.translate(
+          Math.sin(theta) * layerRadius * 0.42,
+          yOff,
+          Math.cos(theta) * layerRadius * 0.42
+        );
+        geos.push(pGeo);
+      }
+
+      const merged = mergeBufferGeometries(geos);
+      const mPos = merged.attributes.position;
+      const mNorm = merged.attributes.normal;
+      const vTmp = new THREE.Vector3();
+      for (let i = 0; i < mPos.count; i++) {
+        vTmp.set(mPos.getX(i), mPos.getY(i) + heightH * 0.25, mPos.getZ(i)).normalize();
+        mNorm.setXYZ(i, vTmp.x, vTmp.y, vTmp.z);
+      }
+      mNorm.needsUpdate = true;
+      return merged;
+    }
+
+    function buildFlaredSugiTrunkGeometry() {
+      const geo = new THREE.CylinderGeometry(0.22, 0.52, 9.8, 12, 8);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i) + 4.9;
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const ang = Math.atan2(z, x);
+        if (y < 2.2) {
+          const t = 1.0 - (y / 2.2);
+          const rib = 1.0 + t * t * (0.55 + 0.38 * Math.sin(ang * 5.0));
+          pos.setX(i, x * rib);
+          pos.setZ(i, z * rib);
+        }
+        pos.setY(i, y);
+      }
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    const sugiCrownMat = new THREE.MeshStandardMaterial({
+      map: sugiFoliageTex, normalMap: sugiFoliageNorm, normalScale: new THREE.Vector2(0.8, 0.8),
+      alphaTest: 0.28, side: THREE.DoubleSide, roughness: 0.58
+    });
+
+    const momijiCrownMat = new THREE.MeshStandardMaterial({
+      map: momijiFoliageTex, normalMap: momijiFoliageNorm, normalScale: new THREE.Vector2(0.8, 0.8),
+      alphaTest: 0.28, side: THREE.DoubleSide, roughness: 0.50
+    });
+
+    const bambooCrownMat = new THREE.MeshStandardMaterial({
+      map: bambooFoliageTex, normalMap: bambooFoliageNorm, normalScale: new THREE.Vector2(0.7, 0.7),
+      alphaTest: 0.28, side: THREE.DoubleSide, roughness: 0.52
+    });
+
+    const understoryMat = new THREE.MeshStandardMaterial({
+      map: understoryFoliageTex, normalMap: understoryFoliageNorm, normalScale: new THREE.Vector2(0.85, 0.85),
+      alphaTest: 0.26, side: THREE.DoubleSide, roughness: 0.54
+    });
+
+    const trunkGeo = buildFlaredSugiTrunkGeometry();
+    const sugiCrownGeo = buildVolumetricCrownGeometry(3.2, 4.2, 28, 0.24);
+    const momijiCrownGeo = buildVolumetricCrownGeometry(3.0, 3.2, 26, 0.20);
+    const understoryRosetteGeo = buildVolumetricCrownGeometry(1.10, 1.0, 12, 0.18);
+
+    const SUGI_COUNT = 260;
+    const MOMIJI_COUNT = 110;
+    const BAMBOO_COUNT = 160;
+    const UNDERSTORY_COUNT = 420;
+
+    const instSugiTrunks = new THREE.InstancedMesh(trunkGeo, trunkMat, SUGI_COUNT + MOMIJI_COUNT);
+    const instSugiCrowns = new THREE.InstancedMesh(sugiCrownGeo, sugiCrownMat, SUGI_COUNT * 2);
+    const instMomijiCrowns = new THREE.InstancedMesh(momijiCrownGeo, momijiCrownMat, MOMIJI_COUNT);
+    const instUnderstory = new THREE.InstancedMesh(understoryRosetteGeo, understoryMat, UNDERSTORY_COUNT);
+
+    instSugiTrunks.castShadow = true; instSugiTrunks.receiveShadow = true;
+    instSugiCrowns.castShadow = true; instSugiCrowns.receiveShadow = true;
+    instMomijiCrowns.castShadow = true; instMomijiCrowns.receiveShadow = true;
+    instUnderstory.castShadow = true; instUnderstory.receiveShadow = true;
+
+    const dTree = new THREE.Object3D();
+    let trunkIdx = 0, sugiCIdx = 0, momijiCIdx = 0;
+
+    // Place Sugi & Momiji trees ONLY where minClearanceFromWalkableNetwork(tx, tz) >= 4.2m!
+    // This guarantees ZERO tree trunks and ZERO tree crowns ever enter any path, tunnel, or plaza!
+    for (let i = 0; i < SUGI_COUNT + MOMIJI_COUNT; i++) {
+      let tx = 0, tz = 0;
+      let valid = false;
+      for (let attempt = 0; attempt < 60; attempt++) {
+        if (attempt < 35) {
+          // Sample along the trail flanks at safe distance (6.8m to 26.0m from trail centerline)
+          const u = rand();
+          const useEast = (u > 0.62 && rand() < 0.35);
+          const s = useEast
+            ? eastLoopLookup[Math.floor(rand() * eastLoopLookup.length)]
+            : trailLookup[Math.floor(u * trailLookup.length)];
+          const side = rand() < 0.5 ? -1 : 1;
+          const latDist = 6.8 + rand() * 22.0;
+          tx = s.pt.x + s.right.x * side * latDist + (rand() - 0.5) * 3.0;
+          tz = s.pt.z + s.right.z * side * latDist + (rand() - 0.5) * 3.0;
+        } else {
+          tx = (rand() - 0.5) * 200.0;
+          tz = 24.0 - rand() * 345.0;
+        }
+        // Keep Kyoto panorama vista at Yotsutsuji open
+        if (tz < -182 && tz > -228 && tx < -16) continue;
+        // Strict clearance check against ALL paths, bifurcations, and plazas!
+        if (minClearanceFromWalkableNetwork(tx, tz) >= 4.2) {
+          valid = true;
+          break;
+        }
+      }
+      if (!valid) {
+        tx = (i % 2 === 0 ? -1 : 1) * (42.0 + rand() * 25.0);
+        tz = -50.0 - rand() * 240.0;
+      }
+
+      const ty = sampleGroundHeight(tx, tz);
+      const scale = 0.85 + rand() * 0.72;
+      const yaw = rand() * Math.PI * 2;
+
+      dTree.position.set(tx, ty - 0.25, tz);
+      dTree.rotation.set((rand() - 0.5) * 0.05, yaw, (rand() - 0.5) * 0.05);
+      dTree.scale.set(scale, scale, scale);
+      dTree.updateMatrix();
+      instSugiTrunks.setMatrixAt(trunkIdx++, dTree.matrix);
+
+      collisionWorld.addCylinder(tx, tz, 0.38 * scale, ty, ty + 8.0 * scale, 'tree');
+
+      if (i < SUGI_COUNT) {
+        for (let layer = 0; layer < 2; layer++) {
+          const ly = ty + (7.0 + layer * 2.8) * scale;
+          const ls = scale * (1.28 - layer * 0.24);
+          dTree.position.set(tx, ly, tz);
+          dTree.rotation.set(0, yaw + layer * 1.1, 0);
+          dTree.scale.set(ls, ls, ls);
+          dTree.updateMatrix();
+          instSugiCrowns.setMatrixAt(sugiCIdx, dTree.matrix);
+          instSugiCrowns.setColorAt(sugiCIdx, new THREE.Color().setHSL(0.30 + (rand() - 0.5) * 0.04, 0.65, 0.78 + rand() * 0.20));
+          sugiCIdx++;
+        }
+      } else {
+        dTree.position.set(tx, ty + 6.8 * scale, tz);
+        dTree.rotation.set(0, yaw, 0);
+        dTree.scale.set(scale * 1.32, scale * 1.18, scale * 1.32);
+        dTree.updateMatrix();
+        instMomijiCrowns.setMatrixAt(momijiCIdx, dTree.matrix);
+        instMomijiCrowns.setColorAt(momijiCIdx, new THREE.Color().setHSL(0.02 + rand() * 0.04, 0.90, 0.82 + rand() * 0.16));
+        momijiCIdx++;
+      }
+    }
+    instSugiTrunks.instanceMatrix.needsUpdate = true;
+    instSugiCrowns.instanceMatrix.needsUpdate = true;
+    if (instSugiCrowns.instanceColor) instSugiCrowns.instanceColor.needsUpdate = true;
+    instMomijiCrowns.instanceMatrix.needsUpdate = true;
+    if (instMomijiCrowns.instanceColor) instMomijiCrowns.instanceColor.needsUpdate = true;
+    scene.add(instSugiTrunks, instSugiCrowns, instMomijiCrowns);
+
+    // Moso Bamboo Groves — Strictly verified with minClearanceFromWalkableNetwork >= 2.6m!
+    function buildBambooCulmsGeometry() {
+      const geos = [];
+      const offsets = [[-0.26, -0.18], [0.24, -0.14], [0.0, 0.24], [-0.18, 0.20]];
+      for (const [ox, oz] of offsets) {
+        const culm = new THREE.CylinderGeometry(0.045, 0.062, 7.6, 8);
+        culm.translate(ox, 3.8, oz);
+        geos.push(culm);
+      }
+      return mergeBufferGeometries(geos);
+    }
+    const bambooCulmGeo = buildBambooCulmsGeometry();
+    const bambooCulmMat = new THREE.MeshStandardMaterial({ color: 0x3b6e28, roughness: 0.34 });
+    const bambooTopCrownGeo = buildVolumetricCrownGeometry(1.9, 2.2, 14, 0.18);
+
+    const instBambooCulms = new THREE.InstancedMesh(bambooCulmGeo, bambooCulmMat, BAMBOO_COUNT);
+    const instBambooTops = new THREE.InstancedMesh(bambooTopCrownGeo, bambooCrownMat, BAMBOO_COUNT);
+    instBambooTops.castShadow = true; instBambooTops.receiveShadow = true;
+    instBambooCulms.castShadow = true; instBambooCulms.receiveShadow = true;
+
+    for (let i = 0; i < BAMBOO_COUNT; i++) {
+      let bx = 0, bz = 0;
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const u = 0.13 + rand() * 0.82;
+        const s = trailLookup[Math.floor(u * trailLookup.length)];
+        const side = (attempt % 2 === 0) ? 1 : -1;
+        const env = getTwinTunnelEnvelopeFactor(s.u);
+        const distOut = 4.6 + env * 2.4 + rand() * 5.5;
+        bx = s.pt.x + s.right.x * side * distOut;
+        bz = s.pt.z + s.right.z * side * distOut;
+        if (minClearanceFromWalkableNetwork(bx, bz) >= 2.6) break;
+      }
+      const by = sampleGroundHeight(bx, bz);
+      const s = 0.85 + (i % 4) * 0.16;
+
+      dTree.position.set(bx, by - 0.15, bz);
+      dTree.rotation.set(((i % 3) - 1) * 0.05, i * 1.1, ((i % 2) - 0.5) * 0.05);
+      dTree.scale.set(s, s, s);
+      dTree.updateMatrix();
+      instBambooCulms.setMatrixAt(i, dTree.matrix);
+
+      dTree.position.set(bx, by + 6.8 * s, bz);
+      dTree.rotation.set(0, i * 1.7, 0);
+      dTree.scale.set(s, s, s);
+      dTree.updateMatrix();
+      instBambooTops.setMatrixAt(i, dTree.matrix);
+    }
+    instBambooCulms.instanceMatrix.needsUpdate = true;
+    instBambooTops.instanceMatrix.needsUpdate = true;
+    scene.add(instBambooCulms, instBambooTops);
+
+    // Shady Forest Floor Understory (Yatsude, Aoki & Sword Ferns) — Strictly outside all paths & twin tunnels!
+    for (let i = 0; i < UNDERSTORY_COUNT; i++) {
+      let fx = 0, fz = 0;
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const u = 0.12 + rand() * 0.86;
+        const s = trailLookup[Math.floor(u * trailLookup.length)];
+        const side = (attempt % 2 === 0) ? 1 : -1;
+        const env = getTwinTunnelEnvelopeFactor(s.u);
+        const lat = 3.15 + env * 2.25 + rand() * 4.2;
+        fx = s.pt.x + s.right.x * side * lat + (rand() - 0.5) * 0.6;
+        fz = s.pt.z + s.right.z * side * lat + (rand() - 0.5) * 0.6;
+        if (minClearanceFromWalkableNetwork(fx, fz) >= 0.85) break;
+      }
+      const fy = sampleGroundHeight(fx, fz);
+      const s = 0.62 + rand() * 0.60;
+
+      dTree.position.set(fx, fy + 0.30 * s, fz);
+      dTree.rotation.set((rand() - 0.5) * 0.15, rand() * Math.PI * 2, (rand() - 0.5) * 0.15);
+      dTree.scale.set(s, s, s);
+      dTree.updateMatrix();
+      instUnderstory.setMatrixAt(i, dTree.matrix);
+      instUnderstory.setColorAt(i, new THREE.Color().setHSL(0.28 + (rand() - 0.5) * 0.05, 0.70, 0.74 + rand() * 0.22));
+    }
+    instUnderstory.instanceMatrix.needsUpdate = true;
+    if (instUnderstory.instanceColor) instUnderstory.instanceColor.needsUpdate = true;
+    scene.add(instUnderstory);
+
+    // =========================================================================
+    // 9. LOAD ALIGNED LOWER PRECINCT GLB & APPLY SEAMLESS PBR TEXTURES
+    // =========================================================================
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      'assets/models/Fushimi_Inari_Interactive_Fast.glb',
+      (gltf) => {
+        const glbScene = gltf.scene;
+        const glbRoofColor = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_color.png', true, 1, 1);
+        const glbRoofNorm  = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_normal.png', false, 1, 1);
+        const glbRoofRough = loadTex('assets/textures/nanobanana/roof_hiwadabuki_bark_roughness.png', false, 1, 1);
+
+        glbScene.traverse((child) => {
+          if (!child.isMesh) return;
+          const mName = child.material ? child.material.name : '';
+          const nName = child.name || '';
+          const tag = `${mName} ${nName}`;
+
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          if (tag.includes('Vermilion_ShuIro')) {
+            child.material = vermilionMat;
+          } else if (tag.includes('Black_Lacquer_Nemaki')) {
+            child.material = blackNemakiMat;
+          } else if (tag.includes('Hiwadabuki_Bark_Roof')) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xd8cec4, map: glbRoofColor, normalMap: glbRoofNorm,
+              normalScale: new THREE.Vector2(1.45, 1.45), roughnessMap: glbRoofRough, roughness: 0.82
+            });
+          } else if (tag.includes('Copper_Patina_Green')) {
+            child.material = copperRoofMat;
+          } else if (tag.includes('Gold_Kanagu_Leaf')) {
+            child.material = goldMat;
+          } else if (tag.includes('Flagstone_Walkway')) {
+            child.material = flagstoneMat;
+          } else if (tag.includes('Granite_Stone_Moss')) {
+            child.material = stoneMat;
+          } else if (tag.includes('Courtyard_Gravel_Dark') || tag.includes('Pebble_Jari_Dark')) {
+            child.material = gravelMat;
+          } else if (tag.includes('White_Shikku_Plaster')) {
+            child.material = plasterMat;
+          } else if (tag.includes('Sudare_Bamboo_Blind')) {
+            child.material = new THREE.MeshStandardMaterial({
+              map: sudareBlindTex, normalMap: sudareBlindNorm,
+              normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.68
+            });
+          } else if (tag.includes('Straw_Shimenawa')) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xd8b46c, map: suzuRopeMakuTex, roughness: 0.82
+            });
+          } else if (tag.includes('Dark_Bronze_Kitsune')) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x222624, roughness: 0.32, metalness: 0.78,
+              normalMap: flagstoneNorm, normalScale: new THREE.Vector2(0.35, 0.35)
+            });
+          } else if (tag.includes('Kitsune_Red_Bib')) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xe02412, map: kitsuneBibTex, roughness: 0.58
+            });
+          } else if (tag.includes('Blue_Hengaku_Plaque')) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x0c1e4a, roughness: 0.30, metalness: 0.25
+            });
+          } else if (tag.includes('Lantern_Warm_Glow')) {
+            child.material = lanternGlowMat;
+            lanternEmissiveMeshes.push(child);
+          }
+        });
+
+        scene.add(glbScene);
+        loaderBar.style.width = '100%';
+        setTimeout(() => loaderOverlay.classList.add('hidden'), 350);
+      },
+      undefined,
+      () => {
+        loaderBar.style.width = '100%';
+        setTimeout(() => loaderOverlay.classList.add('hidden'), 350);
+      }
+    );
+
+    // =========================================================================
+    // 10. LIGHTING, SHADOWS, SKY DOME & KOMOREBI VOLUMETRIC SHAFTS
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xffe0b2, 0x243022, 0.85);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffb46b, 4.2);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(4096, 4096);
+    sunLight.shadow.camera.near = 2.0;
+    sunLight.shadow.camera.far = 140.0;
+    const shD = 32;
+    sunLight.shadow.camera.left = -shD;
+    sunLight.shadow.camera.right = shD;
+    sunLight.shadow.camera.top = shD;
+    sunLight.shadow.camera.bottom = -shD;
+    sunLight.shadow.bias = -0.00025;
+    sunLight.shadow.normalBias = 0.018;
+    scene.add(sunLight);
+    scene.add(sunLight.target);
+
+    const skyFillLight = new THREE.DirectionalLight(0x90b4e8, 0.95);
+    skyFillLight.position.set(-40, 65, 35);
+    scene.add(skyFillLight);
+
+    const currentSunOffset = new THREE.Vector3(48, 38, 24);
+
+    const skyGeo = new THREE.SphereGeometry(520, 36, 24);
+    const skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      uniforms: {
+        uTopColor: { value: new THREE.Color(0x1b2c4e) },
+        uBottomColor: { value: new THREE.Color(0xe87a3e) },
+        uSunDir: { value: currentSunOffset.clone().normalize() },
+        uSunColor: { value: new THREE.Color(0xffd28a) }
+      },
+      vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uTopColor;
+        uniform vec3 uBottomColor;
+        uniform vec3 uSunDir;
+        uniform vec3 uSunColor;
+        varying vec3 vWorldPos;
+        void main() {
+          vec3 d = normalize(vWorldPos);
+          float h = clamp(d.y * 0.85 + 0.15, 0.0, 1.0);
+          vec3 col = mix(uBottomColor, uTopColor, pow(h, 0.58));
+          float sunAmt = max(dot(d, uSunDir), 0.0);
+          col += uSunColor * pow(sunAmt, 14.0) * 0.48;
+          col += uSunColor * pow(sunAmt, 240.0) * 1.95;
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyDome);
+
+    const komorebiGroup = new THREE.Group();
+    const shaftGeo = new THREE.ConeGeometry(1.9, 14.5, 16, 1, true);
+    const shaftMat = new THREE.MeshBasicMaterial({
+      color: 0xffb86c, transparent: true, opacity: 0.068,
+      side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    const shaftAnchors = [];
+    for (let i = 0; i < 32; i++) {
+      const u = 0.14 + (i / 31) * 0.82;
+      const pt = trailCurve.getPointAt(u);
+      const s = new THREE.Mesh(shaftGeo, shaftMat);
+      komorebiGroup.add(s);
+      shaftAnchors.push({ mesh: s, basePt: pt.clone() });
+    }
+    scene.add(komorebiGroup);
+
+    function alignKomorebiShafts(sunVec) {
+      const dir = sunVec.clone().normalize();
+      const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      for (let i = 0; i < shaftAnchors.length; i++) {
+        const { mesh, basePt } = shaftAnchors[i];
+        mesh.position.copy(basePt).addScaledVector(dir, 5.2);
+        mesh.quaternion.copy(quat);
+      }
+    }
+
+    const P_COUNT = 650;
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(P_COUNT * 3);
+    for (let i = 0; i < P_COUNT; i++) {
+      const u = Math.random();
+      const pt = trailCurve.getPointAt(u);
+      pPos[i * 3 + 0] = pt.x + (Math.random() - 0.5) * 28.0;
+      pPos[i * 3 + 1] = pt.y + 0.8 + Math.random() * 8.5;
+      pPos[i * 3 + 2] = pt.z + (Math.random() - 0.5) * 28.0;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: 0xffbe6b, size: 0.14, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending
+    });
+    const particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
+
+    const LIGHTING_PRESETS = {
+      komorebi: {
+        sunOffset: new THREE.Vector3(48, 34, 22),
+        sunColor: 0xff9e44, sunInt: 4.8,
+        skyFillColor: 0x8cb2e8, skyFillInt: 1.05,
+        hemiSky: 0xffd8a8, hemiGround: 0x261d18, hemiInt: 0.85,
+        fogColor: 0x221619, fogDensity: 0.0040,
+        skyTop: 0x1a2c54, skyBottom: 0xeb7838,
+        envGround: 0x2a1e17, envSunStrength: 1.25,
+        exposure: 1.12, bloom: 0.30, shaftOpacity: 0.075, lanternInt: 1.6,
+        contrast: 1.09, saturation: 1.15, tint: new THREE.Vector3(1.04, 0.99, 0.94)
+      },
+      noon: {
+        sunOffset: new THREE.Vector3(24, 88, 28),
+        sunColor: 0xfff7e8, sunInt: 5.2,
+        skyFillColor: 0x9ec8ff, skyFillInt: 1.45,
+        hemiSky: 0xe6f2ff, hemiGround: 0x34422c, hemiInt: 1.15,
+        fogColor: 0x9ab4c8, fogDensity: 0.0022,
+        skyTop: 0x2264b8, skyBottom: 0xb8d8f0,
+        envGround: 0x35422e, envSunStrength: 1.0,
+        exposure: 1.05, bloom: 0.16, shaftOpacity: 0.032, lanternInt: 0.4,
+        contrast: 1.06, saturation: 1.08, tint: new THREE.Vector3(1.0, 1.0, 1.01)
+      },
+      twilight: {
+        sunOffset: new THREE.Vector3(-52, 16, -24),
+        sunColor: 0xff5e36, sunInt: 2.6,
+        skyFillColor: 0x5c68b8, skyFillInt: 0.90,
+        hemiSky: 0x7a5c9e, hemiGround: 0x16131c, hemiInt: 0.72,
+        fogColor: 0x161124, fogDensity: 0.0052,
+        skyTop: 0x0d102b, skyBottom: 0xb8465c,
+        envGround: 0x181322, envSunStrength: 0.85,
+        exposure: 1.04, bloom: 0.44, shaftOpacity: 0.025, lanternInt: 3.4,
+        contrast: 1.10, saturation: 1.16, tint: new THREE.Vector3(1.02, 0.96, 1.04)
+      },
+      night: {
+        sunOffset: new THREE.Vector3(-28, 62, -40),
+        sunColor: 0x6c8fd8, sunInt: 0.85,
+        skyFillColor: 0x283868, skyFillInt: 0.45,
+        hemiSky: 0x243258, hemiGround: 0x090a10, hemiInt: 0.42,
+        fogColor: 0x070910, fogDensity: 0.0062,
+        skyTop: 0x03050a, skyBottom: 0x10182c,
+        envGround: 0x0a0c14, envSunStrength: 0.25,
+        exposure: 0.98, bloom: 0.65, shaftOpacity: 0.0, lanternInt: 5.2,
+        contrast: 1.12, saturation: 1.08, tint: new THREE.Vector3(0.95, 0.98, 1.06)
+      }
+    };
+
+    function applyLightingPreset(key) {
+      const p = LIGHTING_PRESETS[key];
+      if (!p) return;
+      currentSunOffset.copy(p.sunOffset);
+      sunLight.color.setHex(p.sunColor);
+      sunLight.intensity = p.sunInt;
+      skyFillLight.color.setHex(p.skyFillColor);
+      skyFillLight.intensity = p.skyFillInt;
+      hemiLight.color.setHex(p.hemiSky);
+      hemiLight.groundColor.setHex(p.hemiGround);
+      hemiLight.intensity = p.hemiInt;
+      scene.fog.color.setHex(p.fogColor);
+      scene.fog.density = p.fogDensity;
+      skyMat.uniforms.uTopColor.value.setHex(p.skyTop);
+      skyMat.uniforms.uBottomColor.value.setHex(p.skyBottom);
+      skyMat.uniforms.uSunDir.value.copy(p.sunOffset).normalize();
+      skyMat.uniforms.uSunColor.value.setHex(p.sunColor);
+
+      if (currentEnvRT) currentEnvRT.dispose();
+      currentEnvRT = buildDynamicEnvironmentMap(
+        p.skyTop, p.skyBottom, p.envGround,
+        p.sunOffset, p.sunColor, p.envSunStrength
+      );
+      scene.environment = currentEnvRT.texture;
+      scene.environmentIntensity = (key === 'night') ? 0.42 : 0.88;
+
+      renderer.toneMappingExposure = p.exposure;
+      bloomPass.strength = p.bloom;
+      shaftMat.opacity = p.shaftOpacity;
+      shaftMat.color.setHex(p.sunColor);
+      alignKomorebiShafts(p.sunOffset);
+
+      gradePass.uniforms.uContrast.value = p.contrast;
+      gradePass.uniforms.uSaturation.value = p.saturation;
+      gradePass.uniforms.uTint.value.copy(p.tint);
+
+      for (const pl of lanternPointLights) pl.intensity = p.lanternInt;
+      for (const em of lanternEmissiveMeshes) {
+        if (em.material && em.material.emissiveIntensity !== undefined) {
+          em.material.emissiveIntensity = p.lanternInt * 0.95;
+        }
+      }
+
+      document.querySelectorAll('#lighting-buttons .hud-btn[data-light]').forEach(b => {
+        b.classList.toggle('active', b.dataset.light === key);
+      });
+    }
+    applyLightingPreset('komorebi');
+
+    // =========================================================================
+    // 11. WAYPOINT TELEPORTATION & MULTI-BRANCH LIVE MINIMAP (境内・稲荷山案内図)
+    // =========================================================================
+    const WAYPOINTS = [
+      { name: 'Zona 01 — Omotesandō, Monzen-machi & Gran Torii (32m)', pos: new THREE.Vector3(0.0, 1.72, 18.5), look: new THREE.Vector3(0.0, 3.2, 0.0), alt: 32 },
+      { name: 'Zona 01 — Pabellón Temizuya & Escalinata del Rōmon (35m)', pos: new THREE.Vector3(-4.2, 1.72, 9.5), look: new THREE.Vector3(0.0, 4.0, 0.0), alt: 35 },
+      { name: 'Zona 02 — Patio Principal, Ge-haiden & Ruta Lateral (順路) al Honden (39m)', pos: new THREE.Vector3(-8.8, 3.32, -5.2), look: new THREE.Vector3(-9.2, 4.2, -22.0), alt: 39 },
+      { name: 'Zona 03 — Plaza de la Bifurcación Senbon Torii (千本鳥居分岐 47m)', pos: new THREE.Vector3(-1.4, 5.9, -46.5), look: new THREE.Vector3(-2.0, 6.2, -54.0), alt: 47 },
+      { name: 'Zona 04 — Interior del Doble Túnel Senbon Torii (58m)', pos: new THREE.Vector3(-1.6, 7.6, -63.0), look: new THREE.Vector3(-1.4, 8.2, -74.0), alt: 58 },
+      { name: 'Zona 05 — Okusha Hōhaisho, Kitsune Ema & Omokaru-ishi (74m)', pos: new THREE.Vector3(-2.0, 10.2, -81.0), look: new THREE.Vector3(-4.5, 11.2, -86.0), alt: 74 },
+      { name: 'Zona 06 — Santuario Kumataka-sha & Estanque Sagrado Shin-ike (102m)', pos: new THREE.Vector3(21.0, 21.2, -135.0), look: new THREE.Vector3(20.0, 21.0, -143.0), alt: 102 },
+      { name: 'Zona 07 — Encrucijada Yotsutsuji, Casas de Té Chaya & Vista de Kyoto (128m)', pos: new THREE.Vector3(-18.0, 35.7, -198.0), look: new THREE.Vector3(-24.0, 34.5, -206.0), alt: 128 },
+      { name: 'Zona 08A — Tercera Cumbre: Sannomine / Shimo-no-sha (三ノ峰・白菊大神 168m)', pos: new THREE.Vector3(-31.2, 44.8, -238.0), look: new THREE.Vector3(-38.0, 46.2, -238.0), alt: 168 },
+      { name: 'Zona 08B — Segunda Cumbre: Ninomine / Naka-no-sha (二ノ峰・青木大神 202m)', pos: new THREE.Vector3(-13.2, 52.8, -272.0), look: new THREE.Vector3(-20.0, 54.2, -272.0), alt: 202 },
+      { name: 'Zona 08C — Santuario Mitsurugi-sha & Roca Espada (御劔社・劒石 185m)', pos: new THREE.Vector3(5.2, 47.8, -242.0), look: new THREE.Vector3(12.0, 49.2, -242.0), alt: 185 },
+      { name: 'Zona 09 — Cumbre Suprema: Ichinomine / Kami-no-sha (一ノ峰・末広大神 233m s.n.m.)', pos: new THREE.Vector3(0.0, 59.7, -301.8), look: new THREE.Vector3(0.0, 61.5, -310.5), alt: 233 }
+    ];
+
+    let flyMode = false;
+    const velocity = new THREE.Vector3();
+    const moveState = { f: false, b: false, l: false, r: false, sprint: false, up: false, down: false };
+    let canJump = true;
+
+    function teleportToWaypoint(idx) {
+      const wp = WAYPOINTS[idx];
+      if (!wp) return;
+      const gY = sampleGroundHeight(wp.pos.x, wp.pos.z);
+      camera.position.set(wp.pos.x, Math.max(wp.pos.y, gY + 1.70), wp.pos.z);
+      camera.lookAt(wp.look);
+      velocity.set(0, 0, 0);
+      document.getElementById('zone-subtitle').textContent = wp.name;
+      document.getElementById('elev-readout').textContent = `Altitud: ${wp.alt} m s.n.m.`;
+      document.querySelectorAll('#waypoint-buttons .hud-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === idx);
+      });
+    }
+    teleportToWaypoint(0);
+
+    document.querySelectorAll('#waypoint-buttons .hud-btn').forEach(btn => {
+      btn.addEventListener('click', () => teleportToWaypoint(parseInt(btn.dataset.wp, 10)));
+    });
+    document.querySelectorAll('#lighting-buttons .hud-btn[data-light]').forEach(btn => {
+      btn.addEventListener('click', () => applyLightingPreset(btn.dataset.light));
+    });
+
+    const btnFly = document.getElementById('btn-fly');
+    function toggleFlyMode() {
+      flyMode = !flyMode;
+      btnFly.textContent = `🕊️ Modo Vuelo: ${flyMode ? 'ON' : 'OFF'}`;
+      btnFly.classList.toggle('active', flyMode);
+    }
+    btnFly.addEventListener('click', toggleFlyMode);
+
+    const btnToggleMap = document.getElementById('btn-toggle-map');
+    function toggleMinimapSize() {
+      minimapPanel.classList.toggle('expanded');
+      btnToggleMap.textContent = minimapPanel.classList.contains('expanded') ? '[M] Vista Local' : '[M] Vista Total';
+    }
+    btnToggleMap.addEventListener('click', toggleMinimapSize);
+
+    function renderMinimap() {
+      const w = minimapCanvas.width;
+      const h = minimapCanvas.height;
+      minimapCtx.clearRect(0, 0, w, h);
+
+      const grad = minimapCtx.createLinearGradient(0, h, 0, 0);
+      grad.addColorStop(0, '#0a100c');
+      grad.addColorStop(0.4, '#101b14');
+      grad.addColorStop(1, '#18261c');
+      minimapCtx.fillStyle = grad;
+      minimapCtx.fillRect(0, 0, w, h);
+
+      const pz = camera.position.z;
+      const px = camera.position.x;
+      const isLowerZoom = (pz > -65.0 && !minimapPanel.classList.contains('expanded'));
+
+      function toMapXY(wx, wz) {
+        if (isLowerZoom) {
+          // Detailed view of Lower Shrine + Senbon Torii Bifurcation (wx in [-22, +22], wz in [+26, -88])
+          const mx = w * 0.50 + (wx / 44.0) * (w * 0.86);
+          const my = h * 0.90 - ((26.0 - wz) / 114.0) * (h * 0.82);
+          return [mx, my];
+        } else {
+          // Full Mountain Loop (wx in [-48, +48], wz in [+28, -322])
+          const mx = w * 0.52 + (wx / 96.0) * (w * 0.82);
+          const my = h * 0.92 - ((28.0 - wz) / 352.0) * (h * 0.84);
+          return [mx, my];
+        }
+      }
+
+      // 1. Draw Lower Precinct Bypass Routes (順路) around Ge-haiden & Honden
+      minimapCtx.strokeStyle = 'rgba(242, 193, 78, 0.82)';
+      minimapCtx.lineWidth = isLowerZoom ? 3.2 : 2.0;
+      minimapCtx.setLineDash([4, 3]);
+      for (const sideX of [-9.2, 9.2]) {
+        minimapCtx.beginPath();
+        const pts = [[0, 22], [0, -3], [sideX, -5], [sideX, -38], [-0.5, -42.5]];
+        pts.forEach(([bx, bz], idx) => {
+          const [mx, my] = toMapXY(bx, bz);
+          if (idx === 0) minimapCtx.moveTo(mx, my);
+          else minimapCtx.lineTo(mx, my);
+        });
+        minimapCtx.stroke();
+      }
+      minimapCtx.setLineDash([]);
+
+      // 2. Draw Twin Senbon Torii Bifurcation Tunnels clearly as TWO parallel vermilion lines!
+      minimapCtx.strokeStyle = '#ff441c';
+      minimapCtx.lineWidth = isLowerZoom ? 2.6 : 2.0;
+      for (const side of [-1, 1]) {
+        minimapCtx.beginPath();
+        for (let i = 0; i <= 30; i++) {
+          const u = 0.144 + (i / 30) * (0.256 - 0.144);
+          const pt = trailCurve.getPointAt(u);
+          const tan = trailCurve.getTangentAt(u).normalize();
+          const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+          const env = getTwinTunnelEnvelopeFactor(u);
+          const bPt = pt.clone().addScaledVector(right, side * SENBON_TUNNEL_OFFSET * env);
+          const [mx, my] = toMapXY(bPt.x, bPt.z);
+          if (i === 0) minimapCtx.moveTo(mx, my);
+          else minimapCtx.lineTo(mx, my);
+        }
+        minimapCtx.stroke();
+      }
+
+      // 3. Draw Upper Mountain Spine & East Summit Return Loop
+      minimapCtx.strokeStyle = '#ff441c';
+      minimapCtx.lineWidth = isLowerZoom ? 3.5 : 2.6;
+      minimapCtx.beginPath();
+      for (let i = 0; i <= 75; i++) {
+        const u = 0.254 + (i / 75) * 0.746;
+        const pt = trailCurve.getPointAt(u);
+        const [mx, my] = toMapXY(pt.x, pt.z);
+        if (i === 0) minimapCtx.moveTo(mx, my);
+        else minimapCtx.lineTo(mx, my);
+      }
+      minimapCtx.stroke();
+
+      if (!isLowerZoom) {
+        minimapCtx.strokeStyle = '#ff7b38';
+        minimapCtx.lineWidth = 2.2;
+        minimapCtx.beginPath();
+        for (let i = 0; i <= 45; i++) {
+          const pt = eastLoopCurve.getPointAt(i / 45);
+          const [mx, my] = toMapXY(pt.x, pt.z);
+          if (i === 0) minimapCtx.moveTo(mx, my);
+          else minimapCtx.lineTo(mx, my);
+        }
+        minimapCtx.stroke();
+      }
+
+      // 4. Draw Shrine Landmarks
+      const buildings = [
+        { x: 0, z: 21.5, w: 7, d: 2, label: '大鳥居 Dai-ichi Torii', color: '#e03814' },
+        { x: -10.5, z: 11.5, w: 5, d: 4, label: '手水舎 Temizuya', color: '#48a898' },
+        { x: 0, z: 0, w: 10, d: 5, label: '楼門 Rōmon', color: '#e03814' },
+        { x: 0, z: -12.5, w: 11, d: 8, label: '外拝殿 Ge-haiden', color: '#c83212' },
+        { x: -15.8, z: -12.5, w: 5, d: 7, label: '授与所 Juyosho', color: '#b8863c' },
+        { x: 15.8, z: -12.5, w: 5, d: 7, label: '神楽殿 Kagura-den', color: '#3b8c6e' },
+        { x: 0, z: -31.0, w: 11, d: 12, label: '本殿 Honden (1499)', color: '#d83210' },
+        { x: -1.8, z: -48.5, w: 6, d: 5, label: '千本鳥居分岐 Bifurcación', color: '#ff5226' },
+        { x: -2.0, z: -85.0, w: 8, d: 6, label: '奥社 Okusha', color: '#f2c14e' },
+      ];
+      if (!isLowerZoom) {
+        buildings.push(
+          { x: 22.0, z: -142.0, w: 10, d: 10, label: '新池 Shin-ike', color: '#2b8cb8' },
+          { x: -18.0, z: -205.0, w: 10, d: 10, label: '四ツ辻 Yotsutsuji (120m)', color: '#f2c14e' },
+          { x: -32.0, z: -238.0, w: 8, d: 8, label: '三ノ峰 Sannomine', color: '#e89846' },
+          { x: -14.0, z: -272.0, w: 8, d: 8, label: '二ノ峰 Ninomine', color: '#e89846' },
+          { x: 6.0, z: -242.0, w: 8, d: 8, label: '御劔社 Mitsurugi', color: '#e89846' },
+          { x: 0.0, z: -308.0, w: 11, d: 11, label: '一ノ峰 Ichinomine (233m)', color: '#ffdf6b' }
+        );
+      }
+
+      minimapCtx.font = isLowerZoom ? 'bold 10px sans-serif' : '9px sans-serif';
+      minimapCtx.textAlign = 'center';
+      for (const b of buildings) {
+        const [mx, my] = toMapXY(b.x, b.z);
+        const bw = isLowerZoom ? Math.max(7, b.w * 1.6) : 6;
+        const bd = isLowerZoom ? Math.max(5, b.d * 1.2) : 5;
+        minimapCtx.fillStyle = b.color;
+        minimapCtx.fillRect(mx - bw * 0.5, my - bd * 0.5, bw, bd);
+        minimapCtx.fillStyle = '#f5efe2';
+        minimapCtx.fillText(b.label, mx, my - bd * 0.5 - 3);
+      }
+
+      // 5. Draw Player Position & View Cone
+      const [pmx, pmy] = toMapXY(px, pz);
+      const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const mapAng = Math.atan2(lookDir.x, -lookDir.z);
+
+      minimapCtx.save();
+      minimapCtx.translate(pmx, pmy);
+      minimapCtx.rotate(mapAng);
+      minimapCtx.fillStyle = 'rgba(66, 245, 141, 0.28)';
+      minimapCtx.beginPath();
+      minimapCtx.moveTo(0, 0);
+      minimapCtx.lineTo(-14, -26);
+      minimapCtx.lineTo(14, -26);
+      minimapCtx.closePath();
+      minimapCtx.fill();
+
+      minimapCtx.fillStyle = '#42f58d';
+      minimapCtx.beginPath();
+      minimapCtx.arc(0, 0, 5, 0, Math.PI * 2);
+      minimapCtx.fill();
+      minimapCtx.strokeStyle = '#000';
+      minimapCtx.lineWidth = 1.5;
+      minimapCtx.stroke();
+      minimapCtx.restore();
+    }
+
+    // =========================================================================
+    // 12. WEB AUDIO SHINTO SOUNDSCAPE
+    // =========================================================================
+    let audioCtx = null;
+    let audioEnabled = false;
+    const btnAudio = document.getElementById('btn-audio');
+
+    function initAmbientAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const bufferSize = audioCtx.sampleRate * 3;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      whiteNoise.loop = true;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 360;
+      filter.Q.value = 2.0;
+
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.045;
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      whiteNoise.start();
+    }
+
+    function playBellChime() {
+      if (!audioCtx) initAmbientAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      for (const freq of [1046.5, 1318.5, 1567.98, 2093.0]) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        g.gain.setValueAtTime(0.06, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 2.25);
+      }
+    }
+
+    function playWaterSplashSound() {
+      if (!audioCtx) initAmbientAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(420, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.45);
+      g.gain.setValueAtTime(0.08, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.5);
+    }
+
+    function playFootstepTick(isStone) {
+      if (!audioEnabled || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(isStone ? 135 : 92, now);
+      osc.frequency.exponentialRampToValueAtTime(42, now + 0.065);
+      g.gain.setValueAtTime(0.032, now);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + 0.07);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.075);
+    }
+
+    btnAudio.addEventListener('click', () => {
+      initAmbientAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioEnabled = !audioEnabled;
+      btnAudio.classList.toggle('active', audioEnabled);
+      btnAudio.textContent = audioEnabled ? '🔊 Audio: ON' : '🔈 Audio: OFF';
+      if (audioEnabled) playBellChime();
+    });
+
+    // =========================================================================
+    // 13. FIRST-PERSON CONTROLS, PHYSICAL COLLISIONS & INTERACTION RAYCASTER
+    // =========================================================================
+    renderer.domElement.addEventListener('click', () => {
+      if (!controls.isLocked) {
+        controls.lock();
+      } else if (hoveredInteractable) {
+        triggerInteractable(hoveredInteractable);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp':    moveState.f = true; break;
+        case 'KeyS': case 'ArrowDown':  moveState.b = true; break;
+        case 'KeyA': case 'ArrowLeft':  moveState.l = true; break;
+        case 'KeyD': case 'ArrowRight': moveState.r = true; break;
+        case 'ShiftLeft': case 'ShiftRight': moveState.sprint = true; break;
+        case 'Space':
+          if (flyMode) moveState.up = true;
+          else if (canJump) { velocity.y = 6.2; canJump = false; }
+          break;
+        case 'KeyC': moveState.down = true; break;
+        case 'KeyF': toggleFlyMode(); break;
+        case 'KeyM': toggleMinimapSize(); break;
+        case 'KeyE':
+          if (hoveredInteractable) triggerInteractable(hoveredInteractable);
+          break;
+        case 'Digit1': applyLightingPreset('komorebi'); break;
+        case 'Digit2': applyLightingPreset('noon'); break;
+        case 'Digit3': applyLightingPreset('twilight'); break;
+        case 'Digit4': applyLightingPreset('night'); break;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp':    moveState.f = false; break;
+        case 'KeyS': case 'ArrowDown':  moveState.b = false; break;
+        case 'KeyA': case 'ArrowLeft':  moveState.l = false; break;
+        case 'KeyD': case 'ArrowRight': moveState.r = false; break;
+        case 'ShiftLeft': case 'ShiftRight': moveState.sprint = false; break;
+        case 'Space': moveState.up = false; break;
+        case 'KeyC': moveState.down = false; break;
+      }
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const screenCenter = new THREE.Vector2(0, 0);
+    let hoveredInteractable = null;
+    const promptEl = document.getElementById('interaction-prompt');
+    const crosshairEl = document.getElementById('crosshair');
+    const loreModal = document.getElementById('lore-modal');
+    const loreTitle = document.getElementById('lore-title');
+    const loreBody = document.getElementById('lore-body');
+
+    function triggerInteractable(obj) {
+      const data = obj.userData.interactable;
+      if (!data) return;
+      loreTitle.textContent = data.title;
+      loreBody.textContent = data.description;
+      loreModal.classList.add('visible');
+      if (data.onTrigger) data.onTrigger();
+    }
+
+    // =========================================================================
+    // 14. MAIN ANIMATION LOOP (With Dynamic Route Guidance & Live Minimap)
+    // =========================================================================
+    const clock = new THREE.Clock();
+    let stepAccumulator = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      if (controls.isLocked) {
+        const baseSpeed = flyMode ? 24.0 : (moveState.sprint ? 9.8 : 5.4);
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        if (!flyMode) forward.y = 0;
+        forward.normalize();
+
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        const moveVec = new THREE.Vector3();
+        if (moveState.f) moveVec.add(forward);
+        if (moveState.b) moveVec.sub(forward);
+        if (moveState.r) moveVec.add(right);
+        if (moveState.l) moveVec.sub(right);
+        if (moveVec.lengthSq() > 0) moveVec.normalize();
+
+        camera.position.addScaledVector(moveVec, baseSpeed * dt);
+
+        if (flyMode) {
+          if (moveState.up) camera.position.y += 14.0 * dt;
+          if (moveState.down) camera.position.y -= 14.0 * dt;
+        } else {
+          const resolved = collisionWorld.resolvePlayer(camera.position.x, camera.position.y, camera.position.z, 0.28);
+          camera.position.x = resolved.x;
+          camera.position.z = resolved.z;
+
+          velocity.y -= 18.0 * dt;
+          camera.position.y += velocity.y * dt;
+
+          const groundY = sampleGroundHeight(camera.position.x, camera.position.z);
+          const eyeHeight = 1.68;
+          if (camera.position.y <= groundY + eyeHeight) {
+            camera.position.y = groundY + eyeHeight;
+            velocity.y = 0;
+            canJump = true;
+
+            if (moveVec.lengthSq() > 0.1) {
+              const stepDist = baseSpeed * dt;
+              stepAccumulator += stepDist;
+              camera.position.y += Math.sin(elapsed * (moveState.sprint ? 14.0 : 9.5)) * 0.032;
+              if (stepAccumulator > 1.85) {
+                stepAccumulator = 0;
+                playFootstepTick(true);
+              }
+            }
+          }
+        }
+
+        const realAlt = Math.round(32 + (camera.position.y / 58.0) * 201);
+        document.getElementById('elev-readout').textContent = `Altitud: ${Math.max(32, Math.min(235, realAlt))} m s.n.m.`;
+
+        // Dynamic Contextual Route Guidance Banner across the Entire Map!
+        const pz = camera.position.z;
+        routeGuideBanner.style.opacity = '1';
+        if (pz > 1.0) {
+          routeGuideText.textContent = 'Subí la escalinata de piedra y cruzá el arco central de la puerta Rōmon ⛩️';
+        } else if (pz > -19.0) {
+          routeGuideText.textContent = 'Rodeá el salón central (Ge-haiden) por las calzadas de piedra a Izquierda (x=-9m) o Derecha (x=+9m) →';
+        } else if (pz > -42.0) {
+          routeGuideText.textContent = 'Avanzá por los corredores laterales junto al Honden hacia las rampas diagonales de Senbon Torii ⛩️';
+        } else if (pz > -54.0) {
+          routeGuideText.textContent = 'Bifurcación Senbon Torii: tomá cualquiera de los dos túneles paralelos (Derecho: Ascenso | Izquierdo: Retorno) →';
+        } else if (pz > -80.0) {
+          routeGuideText.textContent = 'Recorriendo el Doble Túnel Senbon Torii hacia la explanada de Okusha Hōhaisho ⛩️';
+        } else if (pz > -94.0) {
+          routeGuideText.textContent = 'Explanada de Okusha Hōhaisho (Kitsune Ema y Omokaru-ishi): el sendero a la montaña continúa por el centro →';
+        } else if (pz > -190.0) {
+          routeGuideText.textContent = 'Ascenso por el Monte Inari pasando por el estanque Shin-ike y Kumataka-sha hacia el mirador Yotsutsuji ⛩️';
+        } else if (pz > -220.0) {
+          routeGuideText.textContent = 'Encrucijada Yotsutsuji (120m): tomá el ramal Izquierdo (Sannomine/Ninomine) o el ramal Derecho (Mitsurugi-sha) hacia la cumbre →';
+        } else {
+          routeGuideText.textContent = 'Circuito de las Tres Cumbres (O-yama-meguri) rumbo al altar supremo Ichinomine (233m s.n.m.) ⛩️';
+        }
+      }
+
+      sunLight.target.position.set(camera.position.x, camera.position.y - 1.0, camera.position.z);
+      sunLight.target.updateMatrixWorld();
+      sunLight.position.copy(sunLight.target.position).add(currentSunOffset);
+
+      renderMinimap();
+
+      const pArr = particles.geometry.attributes.position.array;
+      for (let i = 0; i < P_COUNT; i++) {
+        pArr[i * 3 + 1] -= 0.16 * dt;
+        pArr[i * 3 + 0] += Math.sin(elapsed * 0.7 + i) * 0.008;
+        if (pArr[i * 3 + 1] < 0) pArr[i * 3 + 1] += 12.0;
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Animate flickering votive candle flames in all Rōsoku-tate candle houses across the mountain
+      for (let i = 0; i < flickeringCandleMeshes.length; i++) {
+        const fl = flickeringCandleMeshes[i];
+        const s = 0.85 + 0.25 * Math.sin(elapsed * 11.0 + fl.userData.phase) + 0.12 * Math.cos(elapsed * 19.0 + i);
+        fl.scale.set(1.0, s, 1.0);
+      }
+
+      raycaster.setFromCamera(screenCenter, camera);
+      raycaster.far = 6.5;
+      const hits = raycaster.intersectObjects(interactables, true);
+      if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !obj.userData.interactable) obj = obj.parent;
+        if (obj && obj.userData.interactable) {
+          hoveredInteractable = obj;
+          promptEl.textContent = `[E / Click] ${obj.userData.interactable.title}`;
+          promptEl.classList.add('visible');
+          crosshairEl.classList.add('active');
+        }
+      } else {
+        hoveredInteractable = null;
+        promptEl.classList.remove('visible');
+        crosshairEl.classList.remove('active');
+      }
+
+      composer.render();
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

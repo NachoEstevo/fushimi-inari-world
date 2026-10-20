@@ -1,0 +1,9 @@
+{
+  "source": "../fushimi_inari_master.blend",
+  "zone": "Z01 + original approach and stairs",
+  "anchor": {"osmId":"way/105449733","x":-1.8,"z":0.6},
+  "yawRadians": 0.06,
+  "scale": 1,
+  "gateTerraceAboveSourceDatum": 1.6,
+  "provenance": "Anchor and approximate orientation inferred from the OSM Romon footprint. Dimensions, relative asset positions and 1.6 m terrace retained from the existing interpretive model, not surveyed. Datum derived from GSI terrain at anchor. Local ground grading is inferred, confined to the entrance demo. Other buildings and Senbon are not yet integrated."
+}

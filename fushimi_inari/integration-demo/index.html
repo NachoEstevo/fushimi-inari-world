@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fushimi Inari · Primera integración</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#a9b7ac;color:#fcf5e8;font-family:system-ui,sans-serif}canvas{display:block}header{position:absolute;top:28px;left:32px;pointer-events:none;text-shadow:0 2px 18px #14251a}small{letter-spacing:.2em;font-size:10px}h1{font-family:Georgia,serif;font-size:38px;font-weight:400;margin:9px 0}header p{font-size:13px;margin:0}nav{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:#172a24dc;padding:8px;border:1px solid #fff3;border-radius:12px;white-space:nowrap}button,a{font:inherit;color:inherit}button{border:0;background:transparent;padding:11px 16px;border-radius:6px;cursor:pointer;font-size:12px}button:hover,button[aria-pressed=true]{background:#e9d5ae;color:#1b3028}details{position:absolute;right:24px;top:28px;max-width:300px;background:#172a24de;border:1px solid #fff2;padding:14px;border-radius:9px;font-size:12px;line-height:1.6}details p{color:#d5ded4}summary{cursor:pointer}footer{position:absolute;bottom:10px;left:20px;right:20px;text-align:center;font-size:10px;color:#e4eadf;text-shadow:0 1px 4px #000}#status{position:absolute;inset:0;display:grid;place-items:center;background:#172a24;font-size:17px}#hint{position:absolute;bottom:112px;width:100%;text-align:center;font-size:11px;pointer-events:none;text-shadow:0 1px 5px #000}@media(max-width:700px){header{left:18px;top:18px}h1{font-size:28px}details{top:130px;right:18px;max-width:240px}nav{bottom:60px;gap:0}button{padding:10px}#hint{bottom:124px}footer{font-size:9px}}
+</style>
+</head>
+<body>
+<header><small>伏見稲荷大社 · DEMO 01</small><h1>Volver al Rōmon.</h1><p>La arquitectura que teníamos, sobre el territorio.</p></header>
+<details><summary>Qué estamos integrando</summary><p>Modelos originales del acceso: torii, Rōmon, galerías, kitsune, faroles, escalinata y detalles. Texturas existentes, sin cambiar su escala.</p><p>Terreno GSI y ubicación OSM. La terraza y la posición relativa de los elementos conservan la interpretación anterior; todavía requieren contraste con referencias. El resto del recinto está pendiente.</p><a href="../interactive_viewer/index.html">Abrir experiencia anterior</a><br><a href="../geography/index.html">Explorar geografía completa</a><br><a href="placement.json">Ver procedencia y ajuste</a></details>
+<nav aria-label="Puntos de vista"><button data-view="entry" aria-pressed="true">Acceso</button><button data-view="gate">Rōmon</button><button data-view="side">Detalles</button><button data-view="aerial">Territorio</button></nav>
+<p id="hint">Arrastrá para orbitar · rueda para acercarte</p>
+<footer>Demo parcial · Terreno: GSI Japan · © OpenStreetMap contributors · Dimensiones arquitectónicas y terraza: modelo previo, sin verificación de levantamiento</footer>
+<div id="status" role="status">Integrando la arquitectura original…</div>
+<script type="module" src="demo.mjs"></script>
+</body>
+</html>

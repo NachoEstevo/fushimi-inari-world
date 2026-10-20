@@ -1,0 +1,29 @@
+{
+  "revision": 2,
+  "units": "meters",
+  "provenance": "OSM IDs locate named buildings; original architectural dimensions and local layouts are retained, not surveyed. Main-precinct orientation follows the Romon axis approximately. Upper compounds retain their original orientation relative to the trail. Local terrace grading, vegetation and minor props remain interpretive.",
+  "anchors": [
+    {"id":"entrance","source":[0,0,28],"target":[-85,0,6],"radius":23,"label":"Omotesando"},
+    {"id":"romon","osm":"way/105449733","source":[0,1.6,0],"radius":28,"label":"Rōmon"},
+    {"id":"temizuya","osm":"node/10564318622","source":[-10.5,0,11.5],"radius":5,"label":"Temizuya"},
+    {"id":"gehaiden","osm":"way/105449674","source":[0,1.6,-12.5],"radius":12,"label":"Gehaiden"},
+    {"id":"naihaiden","osm":"way/105449716","source":[0,3.2,-26.2],"radius":9,"label":"Naihaiden"},
+    {"id":"honden","osm":"way/899425893","source":[0,3.2,-34],"radius":12,"label":"Honden"},
+    {"id":"gonden","osm":"way/305214371","source":[-15.6,3.2,-31.5],"radius":6,"label":"Gonden"},
+    {"id":"tamayama","osm":"way/305214602","source":[-11.8,3.2,-39.8],"radius":5,"label":"Tamayama Inari"},
+    {"id":"byakko","osm":"way/301527731","source":[-8.6,4.4,-53.2],"radius":4,"label":"Byakko-sha"},
+    {"id":"okumiya","osm":"node/11017955705","source":[-8.6,4.4,-47.2],"radius":7,"label":"Okumiya"},
+    {"id":"senbon","osm":"node/6865347485","source":[-1.8,4.4,-48.5],"radius":0,"label":"Senbon Torii"},
+    {"id":"okusha","osm":"way/301527734","source":[-7.8,8.5,-86.2],"radius":13,"label":"Okusha"},
+    {"id":"kumataka","osm":"way/301527741","source":[16.2,19.5,-142],"radius":15,"label":"Kumataka-sha"},
+    {"id":"mitsu","osm":"node/9667109064","source":[4,26.5,-172],"radius":7,"label":"Mitsu-tsuji"},
+    {"id":"yotsu","osm":"node/749327219","source":[-18,34,-205],"radius":15,"label":"Yotsutsuji"},
+    {"id":"chaya_n","target":[817.1,0,-243.7],"source":[-11.2,34,-211.4],"radius":5,"label":"Chaya norte"},
+    {"id":"chaya_s","target":[813.5,0,-200.9],"source":[-11.2,34,-198.6],"radius":5,"label":"Chaya sur"},
+    {"id":"sannomine","osm":"way/626313751","source":[-36.5,42.5,-238],"radius":12,"label":"Sannomine"},
+    {"id":"ninomine","osm":"way/626313736","source":[-18.5,50,-272],"radius":12,"label":"Ninomine"},
+    {"id":"mitsurugi","osm":"way/626313725","source":[15.5,41,-242],"radius":12,"label":"Mitsurugi-sha"},
+    {"id":"gozendani","osm":"way/301554315","source":[22,45,-258],"radius":12,"label":"Gozendani"},
+    {"id":"summit","osm":"way/626313728","source":[0,58,-308],"radius":15,"label":"Ichinomine"}
+  ]
+}

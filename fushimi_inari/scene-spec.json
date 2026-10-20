@@ -1,0 +1,274 @@
+{
+  "scene_id": "fushimi_inari_taisha_kyoto",
+  "revision": "1.0.0",
+  "title": "Fushimi Inari Taisha (伏見稲荷大社) — Main Precinct & Senbon Torii",
+  "units": "meters",
+  "coordinate_system": {
+    "right_handed": true,
+    "up_axis": "+Z",
+    "processional_axis": "+X (West to East ascending toward Mount Inari)",
+    "transverse_axis": "+Y (South to North)",
+    "origin_description": "Center of the Romon Gate ground-level stone approach plinth (X=0.0, Y=0.0, Z=0.0)"
+  },
+  "historical_provenance": {
+    "period": "Late Muromachi (Honden, 1499) & Azuchi-Momoyama (Romon, 1589) to Present",
+    "sourced_dimensions": [
+      "Honden height ~10.6m-11.2m (5-bay Uchikoshi Nagare-zukuri / Inari-zukuri, Important Cultural Property, 1499)",
+      "Romon two-story 3x2 bay gate (Important Cultural Property, donated by Toyotomi Hideyoshi in 1589, height ~12.6m)",
+      "Gehaiden 5x3 bay open Irimoya-zukuri outer worship hall on central court",
+      "Senbon Torii twin parallel dense Myojin Torii tunnels with black nemaki base sleeves and paved stone walkway"
+    ],
+    "inferred_or_compressed_dimensions": [
+      "Axial distances between Romon, Gehaiden, Naihaiden/Honden, and Senbon Torii fork are compressed into a cohesive 96m x 56m architectural precinct so all four zones are legible in blueprint and overview renders while preserving individual building proportions."
+    ]
+  },
+  "site_bounds": {
+    "x_min": -22.0,
+    "x_max": 74.0,
+    "y_min": -28.0,
+    "y_max": 28.0,
+    "z_min": -0.5,
+    "z_max": 18.0
+  },
+  "terraces": [
+    {
+      "id": "T00_Approach_Plaza",
+      "x_range": [-22.0, -2.5],
+      "y_range": [-26.0, 26.0],
+      "z_top": 0.0,
+      "description": "West stone approach avenue with Outer Myojin Torii, stone lanterns, and Romon approach stairs"
+    },
+    {
+      "id": "T01_Main_Precinct_Court",
+      "x_range": [-2.5, 22.0],
+      "y_range": [-26.0, 26.0],
+      "z_top": 1.6,
+      "description": "Main courtyard terrace supporting Romon Gate, Kairo side wings, and Gehaiden (Outer Worship Hall)"
+    },
+    {
+      "id": "T02_Sanctuary_Terrace",
+      "x_range": [22.0, 44.0],
+      "y_range": [-26.0, 26.0],
+      "z_top": 3.2,
+      "description": "Elevated inner sanctuary terrace supporting Nai-haiden, Honden (1499), and Tamagaki sacred fence"
+    },
+    {
+      "id": "T03_Senbon_Torii_Slope",
+      "x_range": [44.0, 74.0],
+      "y_range": [-26.0, 26.0],
+      "z_start": 3.2,
+      "z_end": 7.6,
+      "description": "Stepped hillside terrace ascending Mount Inari with approach Myojin Torii, stone fork plaza, and Twin Parallel Senbon Torii Tunnels"
+    }
+  ],
+  "zones": [
+    {
+      "id": "Z01_Romon_Gate",
+      "name": "Rōmon (Tower Gate, 1589) & Approach",
+      "terrace": "T01_Main_Precinct_Court",
+      "center": [0.0, 0.0, 1.6],
+      "footprint_m": [11.6, 6.8],
+      "height_m": 12.6,
+      "bays": [3, 2],
+      "roof_style": "Irimoya-zukuri (two-story hip-and-gable, hiwada-buki cypress bark, 5 gold ridge kamon)",
+      "key_elements": [
+        "Outer_Grand_Torii at X=-13.5, Y=0.0, Z=0.0 (Span=7.6m, Height=8.8m)",
+        "Romon_Stairs at X=[-6.5, -2.5], Y=[-4.8, 4.8], Z=[0.0, 1.6] (11 granite steps)",
+        "Kitsune_Left_Key at X=-3.2, Y=5.4, Z=1.6 (3-tier stone pedestal + bronze fox holding key with red/white bib)",
+        "Kitsune_Right_Jewel at X=-3.2, Y=-5.4, Z=1.6 (3-tier stone pedestal + bronze fox holding jewel with red/white bib)",
+        "Vermilion_Standing_Lanterns at X=-6.8, Y=+-4.6, Z=0.0 (with copper-green roofs)",
+        "Kairo_Wing_North and Kairo_Wing_South at X=0.0, Y=+-12.5, Z=1.6 (green renji-mado lattice windows, white shikku walls, sake barrel stacks)",
+        "Second-floor vermilion Koran balcony with gold giboshi finials, multi-tier tokyo brackets, blue-gold Hengaku plaque"
+      ]
+    },
+    {
+      "id": "Z02_Gehaiden",
+      "name": "Ge-haiden (Outer Worship Hall)",
+      "terrace": "T01_Main_Precinct_Court",
+      "center": [12.5, 0.0, 1.6],
+      "footprint_m": [11.2, 7.6],
+      "height_m": 8.6,
+      "bays": [5, 3],
+      "roof_style": "Irimoya-zukuri (hiwada-buki cypress bark with gold bargeboard kanagu)",
+      "key_elements": [
+        "Perimeter vermilion Tamagaki picket fence with black caps (13.4m x 9.6m)",
+        "Open timber pavilion with 16 vermilion columns and black bronze base collars",
+        "Bamboo sudare blinds with vertical white brocade bands and white shide paper zigzags",
+        "12 dark iron Zodiac hanging lanterns (tsuri-doro) along the eaves"
+      ]
+    },
+    {
+      "id": "Z03_Honden_Complex",
+      "name": "Nai-haiden & Honden (Main Sanctuary, 1499)",
+      "terrace": "T02_Sanctuary_Terrace",
+      "center": [32.5, 0.0, 3.2],
+      "footprint_m": [14.4, 10.8],
+      "height_m": 11.2,
+      "bays": [5, 3],
+      "roof_style": "Uchikoshi Nagare-zukuri / Inari-zukuri (sweeping asymmetrical front eaves + Karahafu undulating front gable on Nai-haiden)",
+      "key_elements": [
+        "Sanctuary_Stairs at X=[20.0, 23.0], Y=[-4.5, 4.5], Z=[1.6, 3.2]",
+        "Naihaiden_Hall at X=26.2, Y=0.0, Z=3.2 (Karahafu cusp gable, red-white striped rafters, gold chrysanthemum kanagu, giant shimenawa rope with shide)",
+        "Honden_Sanctuary at X=34.0, Y=0.0, Z=3.2 (10.8m tall Inari-zukuri roof, white shikku walls, green renji grilles, gold doors and fittings, chigi and katsuogi ridge ornaments)",
+        "Sanctuary_Tamagaki_Fence enclosing X=[24.0, 41.5], Y=[-10.5, 10.5]"
+      ]
+    },
+    {
+      "id": "Z04_Senbon_Torii",
+      "name": "Senbon Torii (Approach & Twin Parallel Torii Tunnels)",
+      "terrace": "T03_Senbon_Torii_Slope",
+      "center": [58.0, 4.0, 5.4],
+      "footprint_m": [30.0, 18.0],
+      "height_m": 5.5,
+      "bays": [48, 2],
+      "roof_style": "Myojin Torii continuous rhythmic colonnade",
+      "key_elements": [
+        "Upper_Approach_Torii (7 large Myojin Torii, H=4.6m, Span=3.8m) ascending from X=42.5 to X=51.5",
+        "Senbon_Fork_Plaza at X=52.5, Y=3.5, Z=4.6 with central stone inscription pillar, mossy fox guardian statues, and stone lanterns",
+        "Senbon_Tunnel_North (Right-hand ascending tunnel, 26 tightly spaced Myojin Torii, H=2.95m, Span=2.1m, pitch=0.68m, X=53.5..71.5, Y=+6.2, Z=4.6..7.4)",
+        "Senbon_Tunnel_South (Left-hand return tunnel, 26 tightly spaced Myojin Torii, H=2.95m, Span=2.1m, pitch=0.68m, X=53.5..71.5, Y=+1.8, Z=4.6..7.4)",
+        "Paved grey flagstone center walkway with black river pebble borders, black nemaki column bases, vertical black kanji donor inscriptions, and hanging bronze tunnel lantern",
+        "Mount Inari cedar (sugi) and bamboo forest canopy framing the shrine and casting dappled komorebi shadows"
+      ]
+    }
+  ],
+  "materials": {
+    "MAT_Vermilion_ShuIro": {
+      "description": "Traditional Fushimi Inari mercury-iron vermilion lacquer (shu-iro) on hinoki wood with subtle grain, pointiness edge wear, and 0.28 linear-light micro-roughness variation",
+      "base_color_srgb": [0.86, 0.19, 0.06],
+      "roughness_base": 0.32,
+      "metallic": 0.0,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Black_Lacquer_Nemaki": {
+      "description": "Matte-satin black lacquer/iron base sleeves on Torii columns, kasagi top caps, and tamagaki fence tops",
+      "base_color_srgb": [0.05, 0.05, 0.06],
+      "roughness_base": 0.38,
+      "metallic": 0.15,
+      "uv_scale_m": 1.0
+    },
+    "MAT_White_Shikku_Plaster": {
+      "description": "Traditional Japanese lime plaster (shikku) infill panels on Romon, Gehaiden, Honden, and Kairo",
+      "base_color_srgb": [0.93, 0.91, 0.87],
+      "roughness_base": 0.78,
+      "metallic": 0.0,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Hiwadabuki_Bark_Roof": {
+      "description": "Layered Japanese cypress bark roofing (hiwada-buki) in deep weathered umber-charcoal with fine horizontal lamination",
+      "base_color_srgb": [0.14, 0.11, 0.09],
+      "roughness_base": 0.82,
+      "metallic": 0.0,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Gold_Kanagu_Leaf": {
+      "description": "Gilded bronze ornamental hardware (kanagu, tarukibana rafter tips, giboshi finials, kamon crests)",
+      "base_color_srgb": [0.94, 0.74, 0.26],
+      "roughness_base": 0.22,
+      "metallic": 0.92,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Copper_Patina_Green": {
+      "description": "Oxidized verdigris copper-green (rokusho) on lantern roofs, renji-mado lattices, and eaves gutters",
+      "base_color_srgb": [0.16, 0.46, 0.34],
+      "roughness_base": 0.52,
+      "metallic": 0.25,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Granite_Stone_Moss": {
+      "description": "Kyoto carved granite podiums, steps, flagstone paths, and pedestals with crevice AO moss and weathering",
+      "base_color_srgb": [0.52, 0.51, 0.49],
+      "roughness_base": 0.84,
+      "metallic": 0.0,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Dark_Bronze_Kitsune": {
+      "description": "Dark patinated bronze/basalt for Kitsune guardian statues and hanging zodiac lanterns",
+      "base_color_srgb": [0.14, 0.15, 0.14],
+      "roughness_base": 0.42,
+      "metallic": 0.65,
+      "uv_scale_m": 1.0
+    },
+    "MAT_Foliage_Cedar_Bamboo": {
+      "description": "Mount Inari sugi cedar and bamboo foliage canopy",
+      "base_color_srgb": [0.12, 0.28, 0.11],
+      "roughness_base": 0.65,
+      "metallic": 0.0,
+      "uv_scale_m": 1.0
+    }
+  },
+  "section_planes": {
+    "Plan_01_Ground": {
+      "type": "horizontal_cut",
+      "z_m": 2.8,
+      "description": "Lower precinct plan cutting through Romon ground floor, Gehaiden columns, and approach stairs"
+    },
+    "Plan_02_Upper_Roof": {
+      "type": "horizontal_cut",
+      "z_m": 6.2,
+      "description": "Upper level plan cutting through Romon 2nd floor, Honden sanctuary walls, and Senbon Torii tunnels"
+    },
+    "Section_AA_Longitudinal": {
+      "type": "vertical_cut",
+      "plane_point": [0.0, 0.0, 0.0],
+      "plane_normal": [0.0, -1.0, 0.0],
+      "description": "Longitudinal West-to-East axial section along Y=0.0m through Outer Torii, Romon, Gehaiden, Nai-haiden, Honden, and Senbon Torii slope"
+    },
+    "Section_BB_Transverse": {
+      "type": "vertical_cut",
+      "plane_point": [34.0, 0.0, 0.0],
+      "plane_normal": [-1.0, 0.0, 0.0],
+      "description": "Transverse South-to-North section at X=34.0m cutting through the Honden, Tamagaki fence, and flanking precinct"
+    }
+  },
+  "cameras": {
+    "Cam_01_Romon_Approach": {
+      "location": [-19.2, -0.15, 2.05],
+      "target": [0.0, 0.0, 6.15],
+      "focal_length_mm": 24.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 5.6,
+      "description": "Hero frontal view from the approach plaza looking up the 11 granite steps toward the two-story Romon Gate, flanked by Kitsune guardians, vermilion standing lanterns, and Kairo wings"
+    },
+    "Cam_02_Gehaiden_Honden_Court": {
+      "location": [2.4, -13.2, 2.85],
+      "target": [18.5, 0.5, 5.75],
+      "focal_length_mm": 24.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 5.6,
+      "description": "Courtyard view framing the full Irimoya roof of the Ge-haiden (with vermilion tamagaki fence, sudare blinds, and zodiac lanterns) and looking up the steps toward the copper-roofed Nai-haiden Karahafu gable and 1499 Honden"
+    },
+    "Cam_03_Senbon_Torii_Tunnel": {
+      "location": [54.0, 6.18, 5.95],
+      "target": [66.5, 5.25, 6.45],
+      "focal_length_mm": 35.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 2.8,
+      "description": "Immersive interior view inside the curving Senbon Torii tunnel showing dense vermilion columns, black nemaki bases, vertical kanji inscriptions, sloped flagstone ramp, pebble borders, hanging bronze lantern, and diagonal komorebi sunbeams"
+    },
+    "Cam_04_Senbon_Fork_And_Sanctuary": {
+      "location": [45.8, 4.0, 5.85],
+      "target": [56.5, 4.0, 5.65],
+      "focal_length_mm": 22.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 5.6,
+      "description": "Axial perspective down the Senbon Torii fork plaza where the stone path splits symmetrically into the twin parallel Senbon Torii tunnels amidst mossy stone lanterns, vermilion post lanterns, wayside hokora fox shrines, and cedar/bamboo canopy"
+    },
+    "Cam_05_Master_Overview": {
+      "location": [-24.0, -34.0, 26.0],
+      "target": [24.0, 1.5, 4.0],
+      "focal_length_mm": 30.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 8.0,
+      "description": "Elevated architectural bird's-eye overview of the entire Fushimi Inari precinct from West-Southwest showing all four zones in sequence"
+    },
+    "Cam_06_Section_AA_Cutaway": {
+      "location": [24.0, -48.0, 12.5],
+      "target": [24.0, 0.0, 5.2],
+      "focal_length_mm": 35.0,
+      "sensor_width_mm": 36.0,
+      "f_stop": 8.0,
+      "description": "World-space longitudinal Section A-A cutaway view showing the stepped elevation profile from Outer Torii and Romon through Gehaiden and Honden up to Senbon Torii"
+    }
+  }
+}

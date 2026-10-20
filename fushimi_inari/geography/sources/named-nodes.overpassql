@@ -1,0 +1,1 @@
+[out:json][timeout:40];node["name"](34.959,135.765,34.981,135.793);out body;

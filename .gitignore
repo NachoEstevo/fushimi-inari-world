@@ -1,0 +1,13 @@
+# Local generated captures, downloads and duplicate Blender backups.
+fushimi_inari/outputs/
+fushimi_inari/references/
+*.blend1
+__pycache__/
+*.pyc
+node_modules/
+.env
+.env.*
+*.pem
+*.key
+.agents/
+investigacion-skill-3d.md
