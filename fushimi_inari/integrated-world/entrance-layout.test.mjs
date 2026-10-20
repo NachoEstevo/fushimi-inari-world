@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {separatedTemizuya,entryWallRuns,westStairHeight} from './entrance-layout.mjs';
+import {separatedTemizuya,entryWallRuns,entryGardenTiers,westStairHeight} from './entrance-layout.mjs';
 import {rotateXZ} from './spatial.mjs';
 
 test('pavilion clears inherited corridor roof and retains mapped lateral offset',()=>{
@@ -20,4 +20,16 @@ test('west stairs meet forecourt and upper terrace without a podium-height jump'
   assert.equal(westStairHeight(-22,13.8),0);assert.equal(westStairHeight(-22,1.89),1.6);
   assert.equal(westStairHeight(-10,6),null);
   let previous=0;for(let z=13.8;z>=1.89;z-=.1){const y=westStairHeight(-22,z);assert.ok(y-previous<.014);previous=y;}
+});
+
+test('upper landing remains level beyond the mapped stair endpoint',()=>{
+  for(let z=1.89;z>=-3.4;z-=.1)assert.equal(westStairHeight(-22,z),1.6);
+  assert.equal(westStairHeight(-22,-3.41),null);
+});
+
+test('planted tiers are set back with a continuous retaining level',()=>{
+  const [lower,upper]=entryGardenTiers;
+  assert.equal(upper.base,lower.top);
+  assert.ok(upper.front<lower.back);
+  for(const tier of entryGardenTiers){assert.ok(tier.front>tier.back);assert.ok(tier.top>tier.base);}
 });

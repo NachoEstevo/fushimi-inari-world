@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {entryWallRuns} from './entrance-layout.mjs';
+import {entryWallRuns,entryGardenTiers} from './entrance-layout.mjs';
+import {buildTerraceHedges} from './terrace-vegetation.mjs';
 import {rigidPoint} from './spatial.mjs';
 
 export function buildEntranceBoundaries(root,romon,features,surfaces,materials,colliders){
@@ -8,15 +9,23 @@ export function buildEntranceBoundaries(root,romon,features,surfaces,materials,c
   const rail=new THREE.MeshStandardMaterial({color:'#655b4b',metalness:.45,roughness:.55});
   const box=(w,h,d,x,y,z,mat,parent=group)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.receiveShadow=true;parent.add(mesh);};
   // Course joints are geometry gaps. Both runs stop outside the central stairs.
-  for(const [start,end] of entryWallRuns){
+  const soil=new THREE.MeshStandardMaterial({color:'#34372a',roughness:1});
+  for(const [start,end] of entryWallRuns)for(const tier of entryGardenTiers){
+    const {front,back,base,top}=tier,height=top-base-.10,rows=2;
     const count=Math.ceil((end-start)/1.15),width=(end-start)/count;
-    for(let row=0;row<3;row++)for(let i=0;i<count;i++){
-      box(width-.014,.45-.014,.34,start+(i+.5)*width,.225+row*.45,5.18,stone);
+    for(let row=0;row<rows;row++)for(let i=0;i<count;i++){
+      box(width-.014,height/rows-.012,.34,start+(i+.5)*width,base+(row+.5)*height/rows,front,stone);
     }
-    box(end-start+.08,.12,.46,(start+end)/2,1.41,5.18,cap);
-    const p=rigidPoint([(start+end)/2,.7,5.18],romon.source,romon.target,romon.yaw);
-    colliders.push({type:'box',args:[p[0],p[2],(end-start)/2,.23,romon.yaw,p[1]-.7,p[1]+.77,'romon_terrace_wall']});
+    box(end-start+.08,.10,.46,(start+end)/2,top-.05,front,cap);
+    box(end-start,.08,front-back,(start+end)/2,top-.12,(front+back)/2,soil);
+    for(const x of [start,end])box(.22,top-base,front-back,x,(top+base)/2,(front+back)/2,stone);
+    const p=rigidPoint([(start+end)/2,0,(front+back)/2],romon.source,romon.target,romon.yaw);
+    colliders.push({type:'box',args:[p[0],p[2],(end-start)/2+.11,(front-back)/2+.23,romon.yaw,p[1]+base,p[1]+top+.45,'romon_terrace_wall']});
   }
+  buildTerraceHedges(group);
+  // Level landing at the mapped path endpoint; tile dimensions remain inferred.
+  for(let ix=0;ix<5;ix++)for(let iz=0;iz<5;iz++)
+    box(1.006,.12,1.044,-24.8+(ix+.5)*1.02,1.54,-3.4+(iz+.5)*1.058,stone);
   group.position.fromArray(romon.target);group.rotation.y=romon.yaw;
   group.translateX(-romon.source[0]);group.translateY(-romon.source[1]);group.translateZ(-romon.source[2]);root.add(group);
   const path=features.paths.find(p=>p.id==='way/626313854');

@@ -9,8 +9,13 @@ export function separatedTemizuya(romon,temizuya){
 }
 
 export const entryWallRuns=[[-19.1,-5.4],[5.4,18.6]];
+// Setbacks and levels inferred from the two planted terraces visible at 00:35.
+export const entryGardenTiers=[
+  {front:5.18,back:3.85,base:0,top:.96},
+  {front:3.72,back:2.75,base:.96,top:1.62},
+];
 
 export function westStairHeight(x,z){
-  if(x< -24.8||x> -19.7||z< -1||z>14.5)return null;
+  if(x< -24.8||x> -19.7||z< -3.4||z>14.5)return null;
   return 1.6*Math.max(0,Math.min(1,(13.8-z)/(13.8-1.89)));
 }
