@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 04")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 05")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -24,7 +24,7 @@ html=html.replace('<script type="module"', '<div id="interaction" hidden></div><
 (out/"index.html").write_text(html,encoding="utf-8")
 js=(root/"geography/viewer.mjs").read_text(encoding="utf-8")
 js=js.replace("from './geo-core.mjs'","from '../geography/geo-core.mjs'")
-js="import {integrate} from './integration.mjs';\nimport {installWalking} from './walking.mjs';\nimport {createAudio} from './audio.mjs';\n"+js
+js="import {installExplorationHUD} from './exploration-hud.mjs';\nimport {integrate} from './integration.mjs';\nimport {installWalking} from './walking.mjs';\nimport {createAudio} from './audio.mjs';\n"+js
 js=js.replace("fetch(`${name}.json`)","fetch(`../geography/${name}.json`)")
 js=js.replace("const ground=(x,z)=>heightAt(terrain,x,z);","let assembly=null;\n  const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);")
 js=js.replace("renderer.outputColorSpace=", "renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;\n  renderer.outputColorSpace=")
@@ -84,6 +84,19 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m s.n.m.`;
   }
   $('visit').onclick=visit;$('place').value='romon';visit();
+  const hud=installExplorationHUD({camera,features,assembly,teleport:id=>{
+    const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
+    if(!node)return;
+    const main=assembly.spatial.main;
+    let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
+    const point=id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
+    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    if(walker.teleport(point,target)){
+      $('place').value=id;$('position').textContent=`${anchor.label} · Listo para caminar`;
+      document.body.dataset.checkpoint=id;
+    }else $('position').textContent='No se encontró un acceso libre en este checkpoint.';
+  }});
+  const startGuided=$('walk').onclick;$('walk').onclick=()=>{walker.stop();startGuided();};
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Mostrar paneles':'Ocultar paneles';};
   $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';};
   $('light').onchange=()=>{
@@ -111,6 +124,7 @@ js=js.replace("y=ground(x,z);","y=assembly.walkHeight(x,z,camera.position.y-1.7)
 js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,camera);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
+    hud.update(time);
 """)
 js="import {buildPathMeshes} from './path-meshes.mjs';\n"+js
 start=js.index("  const pathGroup=new THREE.Group();")

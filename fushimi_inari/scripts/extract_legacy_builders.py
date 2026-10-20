@@ -88,7 +88,7 @@ footer = """
   return {scene,colliders,interactables,flickeringCandleMeshes,lanternPointLights,report,
     trailLookup,eastLoopLookup,sampleGroundHeight,
     materials:{vermilionMat,blackNemakiMat,stoneMat,flagstoneMat,gravelMat,plasterMat,
-      copperRoofMat,goldMat,lanternGlowMat},
+      copperRoofMat,goldMat,lanternGlowMat,roofMat},
     torii:{geometry:toriiVermGeo,blackGeometry:toriiBlackGeo,fresh:toriiFreshMat,weathered:toriiWeatheredMat},
     toriiMeshes:[instToriiFresh,instToriiWeathered,instToriiBlack],
     foliage:[instSugiTrunks,instSugiCrowns,instMomijiCrowns,instUnderstory,instBambooCulms,instBambooTops]};

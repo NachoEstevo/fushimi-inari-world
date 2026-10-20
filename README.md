@@ -15,7 +15,7 @@ Run tests with `node --test fushimi_inari/geography/*.test.mjs fushimi_inari/int
 
 Geographic data attribution and reconstruction limits are in
 `fushimi_inari/geography/manifest.json` and
-`fushimi_inari/integrated-world/REFERENCES-R04.md`. OSM-derived data is ODbL;
+`fushimi_inari/integrated-world/REFERENCES-R05.md` (and the preceding r04 notes). OSM-derived data is ODbL;
 terrain is derived from GSI Japan. Placement, vegetation, individual torii,
 terraces and unresolved stair profiles are not a measured replica.
 

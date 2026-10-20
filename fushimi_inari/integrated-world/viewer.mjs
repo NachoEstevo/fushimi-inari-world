@@ -1,4 +1,5 @@
 import {buildPathMeshes} from './path-meshes.mjs';
+import {installExplorationHUD} from './exploration-hud.mjs';
 import {integrate} from './integration.mjs';
 import {installWalking} from './walking.mjs';
 import {createAudio} from './audio.mjs';
@@ -261,6 +262,19 @@ try {
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m s.n.m.`;
   }
   $('visit').onclick=visit;$('place').value='romon';visit();
+  const hud=installExplorationHUD({camera,features,assembly,teleport:id=>{
+    const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
+    if(!node)return;
+    const main=assembly.spatial.main;
+    let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
+    const point=id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
+    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    if(walker.teleport(point,target)){
+      $('place').value=id;$('position').textContent=`${anchor.label} · Listo para caminar`;
+      document.body.dataset.checkpoint=id;
+    }else $('position').textContent='No se encontró un acceso libre en este checkpoint.';
+  }});
+  const startGuided=$('walk').onclick;$('walk').onclick=()=>{walker.stop();startGuided();};
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Mostrar paneles':'Ocultar paneles';};
   $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sonido: encendido':'Sonido: apagado';};
   $('light').onchange=()=>{
@@ -304,6 +318,7 @@ try {
     renderer.render(scene,camera);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
+    hud.update(time);
 
   }
   requestAnimationFrame(animate);

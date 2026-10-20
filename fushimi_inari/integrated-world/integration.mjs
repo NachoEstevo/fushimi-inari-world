@@ -9,6 +9,8 @@ import {makePathSurfaces} from './path-surfaces.mjs';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
+import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
+import {yotsuGrade} from './site-grading.mjs';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spec=await fetch('anchors.json').then(r=>r.json());
@@ -17,6 +19,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
+  // Keep the original benches, lanterns and noren beside the mapped storefronts.
+  Object.assign(byId.chaya_s,{target:[806.8,164.35,-207.5],yaw:0,label:'Nishimura-tei'});
+  Object.assign(byId.chaya_n,{target:[815,171.7,-243.5],yaw:0,label:'Okumura-tei'});
   byId.senbon.yaw=spatial.twins[0].at(.01).yaw-Math.PI;
   // Large original authoring containers are organizational, not single buildings.
   // Detach their independent compounds before applying geographic transforms.
@@ -34,6 +39,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(gozendani)byId.gozendani.source=gozendani.position.toArray();
   // Keep local floor datums exactly consistent with the original builders.
   for(const a of anchors)a.source[1]=legacy.sampleGroundHeight(a.source[0],a.source[2]);
+  for(const id of ['chaya_n','chaya_s']){
+    const original=legacy.scene.children.find(o=>o.userData.zone===id&&o.isGroup);
+    if(original)byId[id].source[1]=original.position.y;
+  }
   const nearest=(lookup,x,z)=>lookup.reduce((best,s)=>{
     const d=(x-s.pt.x)**2+(z-s.pt.z)**2;return d<best.d?{s,d}:best;
   },{s:lookup[0],d:Infinity}).s;
@@ -121,9 +130,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       .multiply(new THREE.Matrix4().makeTranslation(...f.source.map(n=>-n)));
   }
   function ground(x,z){
-    const original=heightAt(terrain,x,z);
+    const raw=heightAt(terrain,x,z);
+    const original=x>790&&x<808&&z>-226&&z<-207?yotsuGrade(x,z,raw):raw;
     let weight=0,weightedHeight=0;
     for(const a of anchors){
+      if(['yotsu','chaya_n','chaya_s'].includes(a.id))continue;
       if(!a.radius)continue;
       if(Math.hypot(x-a.target[0],z-a.target[2])>a.radius*1.5+8)continue;
       const [lx,lz]=rotateXZ(x-a.target[0],z-a.target[2],-a.yaw);
@@ -141,6 +152,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
   }
   function moveObject(object){
+    // Replace only generic slabs/shells; original source files and detailed
+    // fittings remain intact. No square plaza is laid across mapped stairways.
+    if(object.userData.zone==='yotsu'&&object.isMesh&&object.geometry.type==='BoxGeometry'&&
+      (object.geometry.parameters.width>15||object.geometry.parameters.depth>15))return;
+    if(['chaya_n','chaya_s'].includes(object.userData.zone)){
+      for(const child of [...object.children]){
+        if(child.geometry?.type==='BoxGeometry'&&child.geometry.parameters.width>4)child.removeFromParent();
+      }
+    }
     if(object.isInstancedMesh){
       const m=new THREE.Matrix4(),position=new THREE.Vector3();
       for(let i=0;i<object.count;i++){
@@ -194,6 +214,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   // Transform original physical obstacles with the same zone/route rules as their meshes.
   const colliders=legacy.colliders.map(c=>{
+    if(['yotsutsuji_rail','chaya'].includes(c.args.at(-1)))return null;
     const args=[...c.args],x=args[0],z=args[1];
     if(args.at(-1)==='torii'){
       if(z<-43)return null;
@@ -213,6 +234,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return {type:c.type,args};
   }).filter(Boolean);
   colliders.push(...twinColliders);
+  const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const terraces=supportTerraces(root,legacy,ground);
@@ -259,7 +281,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     objects.forEach(o=>o.removeFromParent());
   }
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
-    forest,terraces,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    forest,terraces,yotsutsuji,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
