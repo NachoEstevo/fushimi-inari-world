@@ -41,3 +41,11 @@ test('long inferred stairs follow interior terrain without discarding mapped ben
   assert.ok(treads.every(s=>s.rise<=.16));
   assert.throws(()=>sampledStairAlignment(points,0));
 });
+test('mapped count cannot hide an intermediate hill on a long single edge',()=>{
+  const points=[[0,0,0],[20,0,0]],ground=x=>Math.min(x,20-x)*.1;
+  const treads=mappedTreads(points,ground,12);
+  assert.equal(treads.length,12);
+  assert.equal(Math.max(...treads.map(t=>t.level)),1);
+  assert.ok(treads.every(t=>t.rise<=.24));
+  assert.equal(mappedTreads(points,ground,4),null);
+});

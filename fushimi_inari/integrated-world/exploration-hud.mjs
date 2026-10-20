@@ -1,8 +1,11 @@
+import {isRestricted} from '../geography/geo-core.mjs';
+
 export function installExplorationHUD({camera,features,assembly,teleport}){
   const panel=document.createElement('section');panel.id='navigation';panel.setAttribute('aria-label','Navegación a pie');
   panel.innerHTML=`<div class="row"><strong>INARIYAMA</strong><button id="nav-collapse" aria-label="Contraer minimapa">−</button></div>
     <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimapa con posición y caminos"></canvas>
     <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Escala del minimapa"><option value="320">Cerca · 320 m</option><option value="1000">Sector · 1 km</option><option value="2700">Todo el predio</option></select></div>
+    <small>Verde: caminos · ámbar: escaleras · azul: agua · punteado: acceso restringido o paso elevado/subterráneo</small>
     <label for="walk-speed">Velocidad a pie</label><select id="walk-speed"><option value="1.6">Paseo · 1,6 m/s</option><option value="3" selected>Ágil · 3 m/s</option><option value="6">Rápido · 6 m/s</option><option value="10">Explorar · 10 m/s</option></select>
     <label>Ir a un checkpoint</label><div id="checkpoint-buttons"></div>
     <label for="checkpoint-select">Todos los lugares</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Ir</button></div>
@@ -35,21 +38,44 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     e.currentTarget.setAttribute('aria-label',content.hidden?'Expandir minimapa':'Contraer minimapa');
   };
   let last=0;
+  const secondary=features.pois.filter(p=>p.tags.name&&(p.tags.religion==='shinto'||p.tags.natural==='peak'||p.tags.tourism==='viewpoint')
+    &&!assembly.spatial.anchors.some(a=>a.osm===p.id||Math.hypot(a.target[0]-p.point[0],a.target[2]-p.point[2])<10));
   return {update(time){
     if(time-last<150)return;last=time;
     const range=Number(panel.querySelector('#map-range').value),all=range>2000;
     const cx=all?660:camera.position.x,cz=all?-220:camera.position.z;
     const scale=(all?240:canvas.width)/range,px=x=>200+(x-cx)*scale,pz=z=>120+(z-cz)*scale;
     ctx.fillStyle='#162c25';ctx.fillRect(0,0,400,240);
+    for(const water of features.water){
+      if(!water.points.some(p=>Math.abs(p[0]-cx)<range&&Math.abs(p[2]-cz)<range))continue;
+      ctx.beginPath();water.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));
+      ctx.fillStyle='#4d8d99';ctx.strokeStyle='#4d8d99';
+      if(water.tags.natural==='water')ctx.fill();else ctx.stroke();
+    }
     for(const b of features.buildings){
       if(!b.points.some(p=>Math.abs(p[0]-cx)<range*.6&&Math.abs(p[2]-cz)<range*.5))continue;
       ctx.fillStyle='#72857188';ctx.beginPath();b.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.fill();
     }
     for(const p of features.paths){
       if(!p.points.some(p=>Math.abs(p[0]-cx)<range&&Math.abs(p[2]-cz)<range))continue;
-      ctx.strokeStyle=p.tags.access==='private'?'#806360':p.tags.highway==='steps'?'#edb06c':'#9bb39a';
+      ctx.strokeStyle=isRestricted(p.tags)?'#c98780':p.tags.highway==='steps'?'#edb06c':'#9bb39a';
+      ctx.setLineDash(isRestricted(p.tags)||p.tags.tunnel==='yes'||p.tags.bridge==='yes'?[3,3]:[]);
       ctx.lineWidth=p.tags.highway==='steps'?2:1.2;ctx.beginPath();
       p.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    const labels=assembly.spatial.anchors.map(a=>{
+      const x=Math.min(px(a.target[0])+6,310),y=pz(a.target[2])-5;
+      return {x,y,w:a.label.length*7,h:14};
+    });
+    for(const p of secondary){
+      const x=px(p.point[0]),z=pz(p.point[2]);if(x<0||x>400||z<0||z>240)continue;
+      ctx.fillStyle='#b8cbb0';ctx.fillRect(x-2,z-2,4,4);
+      ctx.font='11px system-ui';const name=p.tags['name:en']??p.tags.name;
+      const label={x:Math.min(x+5,300),y:z-5,w:ctx.measureText(name).width,h:13};
+      if(!all&&z>35&&!labels.some(b=>label.x<b.x+b.w+5&&label.x+label.w+5>b.x&&label.y<b.y+b.h+3&&label.y+label.h+3>b.y)){
+        labels.push(label);ctx.fillText(name,label.x,label.y);
+      }
     }
     for(const a of assembly.spatial.anchors){
       const x=px(a.target[0]),z=pz(a.target[2]);if(x<0||x>400||z<0||z>240)continue;

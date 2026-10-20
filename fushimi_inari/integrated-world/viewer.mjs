@@ -1,9 +1,10 @@
+import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs?v=10b';
-import {installExplorationHUD} from './exploration-hud.mjs';
-import {integrate} from './integration.mjs?v=11';
+import {installExplorationHUD} from './exploration-hud.mjs?v=12';
+import {integrate} from './integration.mjs?v=12';
 import {installWalking} from './walking.mjs';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -325,7 +326,11 @@ try {
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
       $('position').textContent=arrived?`Llegada · ${y.toFixed(1)} m s.n.m.`:`${y.toFixed(1)} m s.n.m. · ${$('speed').value} m/s · altura de ojos 1,70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!walker.update(dt))controls.update();
+    }else if(!walker.update(dt)){
+      controls.update();
+      const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
+      document.body.dataset.orbitClearance=JSON.stringify(guard);
+    }
     sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));

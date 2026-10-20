@@ -45,6 +45,9 @@ export function sampledStairAlignment(points,spacing=5){
 // The DEM cannot certify tread heights; infeasible allocations stay unresolved.
 export function mappedTreads(points,ground,count){
   if(!Number.isInteger(count)||count<1)return null;
+  // A credible total must also fit terrain between OSM vertices, not only
+  // endpoint elevations. Keep the total or explicitly reject the conflict.
+  points=sampledStairAlignment(points);
   const flights=points.slice(1).map((b,i)=>{
     const a=points[i],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
     const rise=Math.abs(ground(b[0],b[2])-ground(a[0],a[2]));

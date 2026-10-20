@@ -38,7 +38,9 @@ export function refineShrineRoofs(object){
     const p=roof.geometry.parameters,parent=roof.parent,base=roof.position.y-.18,rise=object.userData.zone==='summit'?.76:.94;
     roof.geometry=curvedRoof(p.width,p.depth,rise);roof.position.y=base;
     const authoredUpper=parent.children.find(m=>m.geometry?.type==='BoxGeometry'&&Math.abs(m.geometry.parameters.height-.36)<.001&&m.geometry.parameters.width>4.8);
-    roof.material=(authoredUpper?.material??roof.material).clone();roof.material.color.set('#96918a');roof.material.roughness=.92;
+    roof.material=(authoredUpper?.material??roof.material).clone();
+    // Mitsurugi panorama shows a dark curved roof, not the green box canopy.
+    roof.material.color.set(object.userData.zone==='mitsurugi'?'#555a59':'#96918a');roof.material.roughness=.92;
     const edgeMaterial=new THREE.MeshStandardMaterial({color:'#66584a',roughness:.94});
     for(const sibling of [...parent.children]){
       if(sibling===roof||sibling.geometry?.type!=='BoxGeometry')continue;

@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 11")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 12")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -24,7 +24,7 @@ html=html.replace('<script type="module"', '<div id="interaction" hidden></div><
 (out/"index.html").write_text(html,encoding="utf-8")
 js=(root/"geography/viewer.mjs").read_text(encoding="utf-8")
 js=js.replace("from './geo-core.mjs'","from '../geography/geo-core.mjs'")
-js="import {installExplorationHUD} from './exploration-hud.mjs';\nimport {integrate} from './integration.mjs?v=11';\nimport {installWalking} from './walking.mjs';\nimport {createAudio} from './audio.mjs';\n"+js
+js="import {installExplorationHUD} from './exploration-hud.mjs?v=12';\nimport {integrate} from './integration.mjs?v=12';\nimport {installWalking} from './walking.mjs';\nimport {createAudio} from './audio.mjs';\n"+js
 js=js.replace("fetch(`${name}.json`)","fetch(`../geography/${name}.json`)")
 js=js.replace("const ground=(x,z)=>heightAt(terrain,x,z);","let assembly=null;\n  const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);")
 js=js.replace("renderer.outputColorSpace=", "renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;\n  renderer.outputColorSpace=")
@@ -119,7 +119,11 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
 """)
-js=js.replace("    }else controls.update();","""    }else if(!walker.update(dt))controls.update();
+js=js.replace("    }else controls.update();","""    }else if(!walker.update(dt)){
+      controls.update();
+      const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
+      document.body.dataset.orbitClearance=JSON.stringify(guard);
+    }
     sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
@@ -136,7 +140,7 @@ js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     hud.update(time);audio.update(camera,$('light').value==='night');
 """)
-js="import {installSky} from './sky.mjs';\nimport {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs?v=10b';\n"+js
+js="import {protectOrbit} from './orbit-clearance.mjs';\nimport {installSky} from './sky.mjs';\nimport {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs?v=10b';\n"+js
 js=js.replace("  const controls=new OrbitControls", "  const sky=installSky(scene,camera);\n  const controls=new OrbitControls")
 js=js.replace("    renderer.render(scene,camera);", "    sky.update();renderer.render(scene,camera);")
 js=js.replace("  let mapTimer=0;","  const recordRender=renderStats(renderer);\n  let mapTimer=0;")
