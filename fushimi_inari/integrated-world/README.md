@@ -1,22 +1,23 @@
-# Mundo integrado · revisión 13
+# Integrated world · revision 14
 
-Últimos cambios, fuentes y validación: [REFERENCES-R13.md](REFERENCES-R13.md).
+Latest changes, evidence and limitations: [REFERENCES-R14.md](REFERENCES-R14.md).
 
-Abrir `http://127.0.0.1:8420/integrated-world/index.html` o ejecutar
-`../iniciar_experiencia_3d.bat`. La demo inicial y ambas experiencias anteriores
-siguen disponibles en sus ubicaciones originales.
+Open `http://127.0.0.1:8420/integrated-world/index.html` or run
+`../iniciar_experiencia_3d.bat`. Previous scenes remain available and unchanged.
 
-## Recorrido
+## Controls
 
-- **Visitar sector integrado:** 22 accesos a los pabellones y sectores trasladados.
-- **Caminar:** WASD/flechas, arrastrar para mirar, Shift para correr, E para
-  interactuar y Esc para abrir el menú. No depende de Pointer Lock, que el navegador
-  integrado rechazó durante la prueba.
-- **Recorrer:** avance guiado sobre la red OSM, con pausa y velocidad seleccionable.
-- **Túnel de Senbon:** elegir cualquiera de las dos vías cartografiadas.
-- **Circuito:** ascenso y regreso por Mitsurugi/Gozendani, aproximadamente 3,9 km.
-  También permite origen, destino y parada intermedia a elección.
-- Luz de día/atardecer/noche, audio opcional, mapa y perfil de elevaciones.
+- **Esc:** pause and open Movement, Checkpoints, Routes or Environment.
+- **Walk:** WASD/arrows, drag to look, Shift to boost, E to interact.
+- **Free flight:** WASD follows the viewing direction; R/Space ascends,
+  F/Ctrl descends. Flight speed is separate from walking speed. No ground snap.
+- **Orbit view:** drag to orbit and scroll to zoom around a target.
+- **Checkpoints:** 22 destinations and ten quick buttons, entering walking mode.
+- **Routes:** mapped ascent, return loop, custom stops and Senbon branches.
+- **Environment:** sound, volume, birds, breeze, chimes and lighting.
+
+The menus and interaction summaries are in English. Original scene content is
+retained in the source builders. Historical notes below document earlier work.
 
 ## Qué se conserva
 

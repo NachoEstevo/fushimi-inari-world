@@ -1,0 +1,366 @@
+[
+  {
+    "id": "way/127324423",
+    "samples": 26,
+    "maxJump": 0,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/223276652",
+    "samples": 66,
+    "maxJump": 0.016288499999987494,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/223276653",
+    "samples": 62,
+    "maxJump": 0.019408499999997275,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/223276686",
+    "samples": 62,
+    "maxJump": 0.004779499999997938,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/260121349",
+    "samples": 14,
+    "maxJump": 0.0166460000000086,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/301527765",
+    "samples": 114,
+    "maxJump": 0.1528741666666633,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/335685443",
+    "samples": 66,
+    "maxJump": 0.0020924999999998306,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/335685459",
+    "samples": 54,
+    "maxJump": 0.02050299999999794,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/439990443",
+    "samples": 190,
+    "maxJump": 0.15735813333334647,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/439990444",
+    "samples": 262,
+    "maxJump": 0.15599538888889697,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/439990449",
+    "samples": 362,
+    "maxJump": 0.21607381096653455,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/439990450",
+    "samples": 352,
+    "maxJump": 0.15901681250001332,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/439990452",
+    "samples": 266,
+    "maxJump": 0.15926050000000203,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/464711672",
+    "samples": 66,
+    "maxJump": 0.012451499999997395,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/649037624",
+    "samples": 654,
+    "maxJump": 0.15995922222222703,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775459047",
+    "samples": 16,
+    "maxJump": 0,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775463560",
+    "samples": 26,
+    "maxJump": 0.002291666666671688,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775644599",
+    "samples": 26,
+    "maxJump": 0.002485166666673422,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775661613",
+    "samples": 38,
+    "maxJump": 0.015891166666669676,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775678667",
+    "samples": 104,
+    "maxJump": 0.019616333333338787,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/775831327",
+    "samples": 10,
+    "maxJump": 0.07701699999999079,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/780206288",
+    "samples": 24,
+    "maxJump": 0,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920584",
+    "samples": 62,
+    "maxJump": 0.0020549999999985857,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920586",
+    "samples": 110,
+    "maxJump": 0.007646666666669688,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920589",
+    "samples": 74,
+    "maxJump": 0.09871400000000108,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920590",
+    "samples": 78,
+    "maxJump": 0.09531949999999867,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920592",
+    "samples": 104,
+    "maxJump": 0.007839666666669132,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920593",
+    "samples": 306,
+    "maxJump": 0.00612862500000233,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/790920595",
+    "samples": 104,
+    "maxJump": 0.0033139999999960423,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/881505933",
+    "samples": 14,
+    "maxJump": 0.014921000000001072,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/891328518",
+    "samples": 38,
+    "maxJump": 0.02660800000001018,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/901989776",
+    "samples": 58,
+    "maxJump": 0.02461599999998043,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/901989782",
+    "samples": 34,
+    "maxJump": 0.0045172500000063565,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/901989787",
+    "samples": 26,
+    "maxJump": 0.011577333333335105,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/902014341",
+    "samples": 12,
+    "maxJump": 0.10577574999999939,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/902014342",
+    "samples": 42,
+    "maxJump": 0.13180974999999506,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1010380145",
+    "samples": 18,
+    "maxJump": 0.010057500000002051,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1010380146",
+    "samples": 32,
+    "maxJump": 0.018303200000005404,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1157645025",
+    "samples": 16,
+    "maxJump": 0.016109000000007256,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1160074503",
+    "samples": 42,
+    "maxJump": 0.0026081500000003643,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1270763270",
+    "samples": 60,
+    "maxJump": 0,
+    "blocked": 30,
+    "status": "inspect-access"
+  },
+  {
+    "id": "way/1270763271",
+    "samples": 14,
+    "maxJump": 0.014900125000082198,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1271062689",
+    "samples": 86,
+    "maxJump": 0.00007910510905162482,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1274410498",
+    "samples": 6,
+    "maxJump": 0.029535999999993123,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1275931671",
+    "samples": 92,
+    "maxJump": 0.15871358333333774,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1327852998",
+    "samples": 86,
+    "maxJump": 0.0017191428571443623,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1387673527",
+    "samples": 30,
+    "maxJump": 0,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1396734933",
+    "samples": 50,
+    "maxJump": 0.004407916666679057,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1402555559",
+    "samples": 166,
+    "maxJump": 0.20435585714287186,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1496838898",
+    "samples": 28,
+    "maxJump": 0,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1496839986",
+    "samples": 46,
+    "maxJump": 0.025932500000003245,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  },
+  {
+    "id": "way/1543930363",
+    "samples": 14,
+    "maxJump": 0.06255000000000877,
+    "blocked": 0,
+    "status": "centerline-check-passed; fidelity-unverified"
+  }
+]

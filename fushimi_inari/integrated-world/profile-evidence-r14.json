@@ -1,0 +1,2326 @@
+{
+  "revision": 14,
+  "source": "GSI DEM5A PNG, zoom 15, retrieved 2026-10-20",
+  "specification": "https://maps.gsi.go.jp/development/demtile.html",
+  "warning": "5 m elevation model, not measured stair geometry. No automatic scene replacement. Original geographic source preserved.",
+  "tileHashes": {
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28742/12983.png": "f2e759123391f76cd9c4e28526708b8cfed83c6d9ebe13c99a8941ebba36f8f9",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28742/12982.png": "e81a9fc0682debba2c94e251f9558ca7a1ad0c5881c2c01548a0804602690ac7",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28742/12981.png": "2a32ebc88d8e3fa30324d4b2157ba8e656dbc27ef4081756bc5a1b0a7195c7a7",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28743/12982.png": "1c31ad1912743fcab007eec609d31661b80b2cbdba1e4d21aea6ba454871cc1b",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28743/12983.png": "9eb8c6fce561bde3e4c0e1e36f13bead81621fda85f30aafdb1a1ea5b8d2873e",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28741/12982.png": "9802702c8e52733460925cbee80cf3a412af5fa6d37cc464779a726e0ec647b3",
+    "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/15/28741/12981.png": "edd8e5574b3bc06977dd113540e7af11852abd7a476278e84fb14d4109a8b2ef"
+  },
+  "profiles": [
+    {
+      "id": "way/127324423",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 671.8760896478605
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.099,
+      "dem5aRise": 0.068,
+      "dem5aRange": 0.068,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -188.387,
+          29.422,
+          670.132
+        ],
+        [
+          -186.895,
+          29.466,
+          670.104
+        ],
+        [
+          -185.404,
+          29.49,
+          670.077
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/223276652",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 377.82605474113353
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.03,
+      "dem5aRise": 0.264,
+      "dem5aRange": 0.265,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -227.978,
+          30.83,
+          -347.762
+        ],
+        [
+          -227.803,
+          30.96,
+          -345.817
+        ],
+        [
+          -227.627,
+          31.058,
+          -343.871
+        ],
+        [
+          -227.452,
+          31.095,
+          -341.926
+        ],
+        [
+          -227.276,
+          31.094,
+          -339.981
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/223276653",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 544.1888896506891
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.039,
+      "dem5aRise": 0.624,
+      "dem5aRange": 0.624,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -245.959,
+          30.265,
+          -517.747
+        ],
+        [
+          -245.202,
+          30.449,
+          -515.376
+        ],
+        [
+          -244.444,
+          30.656,
+          -513.005
+        ],
+        [
+          -243.687,
+          30.889,
+          -510.634
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/223276686",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 534.2205977798403
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.011,
+      "dem5aRise": -0.711,
+      "dem5aRange": 0.711,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -243.176,
+          30.911,
+          -508.118
+        ],
+        [
+          -242.829,
+          30.569,
+          -505.658
+        ],
+        [
+          -242.483,
+          30.347,
+          -503.197
+        ],
+        [
+          -242.136,
+          30.2,
+          -500.737
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/260121349",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1135.395039099718
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.05,
+      "dem5aRise": -0.107,
+      "dem5aRange": 0.107,
+      "mappedCount": 3,
+      "localGrading": false,
+      "samples": [
+        [
+          299.617,
+          54.437,
+          -1442.578
+        ],
+        [
+          298.34,
+          54.33,
+          -1442.534
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/301527765",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 43.191587867315064
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 1.343,
+      "dem5aRise": -0.928,
+      "dem5aRange": 0.928,
+      "mappedCount": 1,
+      "localGrading": false,
+      "samples": [
+        [
+          541.817,
+          91.401,
+          -289.898
+        ],
+        [
+          541.604,
+          91.175,
+          -292.086
+        ],
+        [
+          541.391,
+          90.974,
+          -294.273
+        ],
+        [
+          541.178,
+          90.809,
+          -296.461
+        ],
+        [
+          540.966,
+          90.67,
+          -298.648
+        ],
+        [
+          540.753,
+          90.552,
+          -300.836
+        ],
+        [
+          540.54,
+          90.473,
+          -303.023
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/335685443",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 785.4653457099492
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.004,
+      "dem5aRise": -0.34,
+      "dem5aRange": 0.34,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -187.648,
+          28.842,
+          780.962
+        ],
+        [
+          -187.687,
+          28.662,
+          782.841
+        ],
+        [
+          -187.726,
+          28.586,
+          784.719
+        ],
+        [
+          -187.764,
+          28.524,
+          786.597
+        ],
+        [
+          -187.803,
+          28.502,
+          788.476
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/335685459",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 669.1919937865366
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.041,
+      "dem5aRise": 0.052,
+      "dem5aRange": 0.07,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -208.055,
+          29.207,
+          660.726
+        ],
+        [
+          -208.526,
+          29.241,
+          662.674
+        ],
+        [
+          -208.998,
+          29.277,
+          664.622
+        ],
+        [
+          -209.469,
+          29.259,
+          666.57
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/439990443",
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 22.068766532137673
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 3.829,
+      "dem5aRise": 4.408,
+      "dem5aRange": 4.408,
+      "mappedCount": 10,
+      "localGrading": true,
+      "samples": [
+        [
+          545.229,
+          68.712,
+          -145.584
+        ],
+        [
+          545.013,
+          69.135,
+          -148.014
+        ],
+        [
+          544.797,
+          69.574,
+          -150.445
+        ],
+        [
+          544.581,
+          70.012,
+          -152.875
+        ],
+        [
+          544.365,
+          70.446,
+          -155.306
+        ],
+        [
+          544.15,
+          70.832,
+          -157.736
+        ],
+        [
+          543.934,
+          71.197,
+          -160.167
+        ],
+        [
+          543.718,
+          71.738,
+          -162.597
+        ],
+        [
+          543.502,
+          72.36,
+          -165.028
+        ],
+        [
+          543.286,
+          73.12,
+          -167.458
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/439990444",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 91.4504134832096
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 3.7,
+      "dem5aRise": 3.112,
+      "dem5aRange": 3.112,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          549.516,
+          86.927,
+          -230.932
+        ],
+        [
+          549.538,
+          87.184,
+          -233.377
+        ],
+        [
+          549.56,
+          87.432,
+          -235.823
+        ],
+        [
+          549.582,
+          87.664,
+          -238.268
+        ],
+        [
+          549.604,
+          87.885,
+          -240.713
+        ],
+        [
+          549.626,
+          88.108,
+          -243.159
+        ],
+        [
+          549.649,
+          88.348,
+          -245.604
+        ],
+        [
+          549.671,
+          88.615,
+          -248.049
+        ],
+        [
+          549.693,
+          88.901,
+          -250.495
+        ],
+        [
+          549.715,
+          89.28,
+          -252.94
+        ],
+        [
+          549.737,
+          89.605,
+          -255.385
+        ],
+        [
+          549.759,
+          89.847,
+          -257.831
+        ],
+        [
+          549.781,
+          90.039,
+          -260.276
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/439990449",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 19.554347676140846
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 8.687,
+      "dem5aRise": 7.223,
+      "dem5aRange": 7.499,
+      "mappedCount": 24,
+      "localGrading": true,
+      "samples": [
+        [
+          540.54,
+          90.473,
+          -303.023
+        ],
+        [
+          541.031,
+          90.225,
+          -304.964
+        ],
+        [
+          541.522,
+          90.197,
+          -306.906
+        ],
+        [
+          542.012,
+          90.24,
+          -308.847
+        ],
+        [
+          542.503,
+          90.364,
+          -310.789
+        ],
+        [
+          542.994,
+          90.528,
+          -312.73
+        ],
+        [
+          543.553,
+          90.774,
+          -314.941
+        ],
+        [
+          544.113,
+          91.064,
+          -317.153
+        ],
+        [
+          544.672,
+          91.496,
+          -319.364
+        ],
+        [
+          545.689,
+          91.906,
+          -321.256
+        ],
+        [
+          546.707,
+          92.367,
+          -323.149
+        ],
+        [
+          547.724,
+          92.875,
+          -325.042
+        ],
+        [
+          548.741,
+          93.394,
+          -326.934
+        ],
+        [
+          550.259,
+          94.013,
+          -328.651
+        ],
+        [
+          551.777,
+          94.927,
+          -330.367
+        ],
+        [
+          553.295,
+          95.881,
+          -332.084
+        ],
+        [
+          554.813,
+          96.819,
+          -333.8
+        ],
+        [
+          556.331,
+          97.696,
+          -335.517
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/439990450",
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 50.80387927898949
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 11.569,
+      "dem5aRise": 9.05,
+      "dem5aRange": 9.05,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          543.286,
+          73.12,
+          -167.458
+        ],
+        [
+          543.596,
+          73.804,
+          -169.85
+        ],
+        [
+          543.906,
+          74.462,
+          -172.241
+        ],
+        [
+          544.216,
+          75.044,
+          -174.633
+        ],
+        [
+          544.527,
+          75.565,
+          -177.025
+        ],
+        [
+          544.837,
+          76.0,
+          -179.417
+        ],
+        [
+          545.147,
+          76.425,
+          -181.808
+        ],
+        [
+          545.457,
+          76.845,
+          -184.2
+        ],
+        [
+          545.17,
+          77.415,
+          -186.554
+        ],
+        [
+          544.882,
+          77.995,
+          -188.909
+        ],
+        [
+          544.595,
+          78.587,
+          -191.263
+        ],
+        [
+          544.308,
+          79.225,
+          -193.618
+        ],
+        [
+          544.02,
+          79.875,
+          -195.972
+        ],
+        [
+          543.733,
+          80.562,
+          -198.327
+        ],
+        [
+          543.445,
+          81.317,
+          -200.681
+        ],
+        [
+          543.158,
+          82.17,
+          -203.036
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/439990452",
+      "nearestAnchor": {
+        "id": "kumataka",
+        "label": "Kumataka-sha",
+        "distance": 82.56250249356542
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 5.981,
+      "dem5aRise": 4.757,
+      "dem5aRange": 4.757,
+      "mappedCount": 20,
+      "localGrading": false,
+      "samples": [
+        [
+          543.158,
+          82.17,
+          -203.036
+        ],
+        [
+          543.688,
+          82.833,
+          -205.361
+        ],
+        [
+          544.218,
+          83.522,
+          -207.685
+        ],
+        [
+          544.747,
+          84.301,
+          -210.01
+        ],
+        [
+          545.277,
+          84.968,
+          -212.335
+        ],
+        [
+          545.807,
+          85.421,
+          -214.659
+        ],
+        [
+          546.337,
+          85.719,
+          -216.984
+        ],
+        [
+          546.867,
+          85.923,
+          -219.309
+        ],
+        [
+          547.397,
+          86.048,
+          -221.633
+        ],
+        [
+          547.927,
+          86.217,
+          -223.958
+        ],
+        [
+          548.456,
+          86.416,
+          -226.283
+        ],
+        [
+          548.986,
+          86.651,
+          -228.607
+        ],
+        [
+          549.516,
+          86.927,
+          -230.932
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/464711672",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1353.0432624068235
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.017,
+      "dem5aRise": -0.163,
+      "dem5aRange": 0.854,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -150.465,
+          34.735,
+          -1486.238
+        ],
+        [
+          -150.638,
+          34.446,
+          -1488.189
+        ],
+        [
+          -150.811,
+          33.962,
+          -1490.139
+        ],
+        [
+          -150.985,
+          33.881,
+          -1492.09
+        ],
+        [
+          -151.158,
+          34.572,
+          -1494.041
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/649037624",
+      "nearestAnchor": {
+        "id": "chaya_s",
+        "label": "Nishimura-tei",
+        "distance": 69.09854201763461
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 10.303,
+      "dem5aRise": 7.516,
+      "dem5aRange": 7.516,
+      "mappedCount": 10,
+      "localGrading": false,
+      "samples": [
+        [
+          810.965,
+          170.648,
+          -174.894
+        ],
+        [
+          811.707,
+          170.998,
+          -172.575
+        ],
+        [
+          812.45,
+          171.305,
+          -170.256
+        ],
+        [
+          813.192,
+          171.599,
+          -167.936
+        ],
+        [
+          813.935,
+          171.859,
+          -165.617
+        ],
+        [
+          814.677,
+          172.073,
+          -163.298
+        ],
+        [
+          815.42,
+          172.274,
+          -160.979
+        ],
+        [
+          816.162,
+          172.504,
+          -158.66
+        ],
+        [
+          816.905,
+          172.747,
+          -156.341
+        ],
+        [
+          817.647,
+          172.879,
+          -154.022
+        ],
+        [
+          818.389,
+          173.007,
+          -151.702
+        ],
+        [
+          819.132,
+          173.134,
+          -149.383
+        ],
+        [
+          819.874,
+          173.262,
+          -147.064
+        ],
+        [
+          820.617,
+          173.347,
+          -144.745
+        ],
+        [
+          821.359,
+          173.426,
+          -142.426
+        ],
+        [
+          822.102,
+          173.535,
+          -140.106
+        ],
+        [
+          822.844,
+          173.679,
+          -137.787
+        ],
+        [
+          823.587,
+          173.878,
+          -135.468
+        ],
+        [
+          824.329,
+          174.075,
+          -133.149
+        ],
+        [
+          825.521,
+          174.163,
+          -131.117
+        ],
+        [
+          826.714,
+          174.291,
+          -129.084
+        ],
+        [
+          827.906,
+          174.482,
+          -127.052
+        ],
+        [
+          829.099,
+          174.679,
+          -125.02
+        ],
+        [
+          830.291,
+          174.958,
+          -122.988
+        ],
+        [
+          831.484,
+          175.291,
+          -120.955
+        ],
+        [
+          832.676,
+          175.651,
+          -118.923
+        ],
+        [
+          833.959,
+          175.927,
+          -117.238
+        ],
+        [
+          835.243,
+          176.143,
+          -115.554
+        ],
+        [
+          836.526,
+          176.459,
+          -113.869
+        ],
+        [
+          837.809,
+          177.027,
+          -112.184
+        ],
+        [
+          839.093,
+          177.597,
+          -110.5
+        ],
+        [
+          840.376,
+          178.164,
+          -108.815
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775459047",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 858.8512203757995
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.0,
+      "dem5aRise": 0.154,
+      "dem5aRange": 0.154,
+      "mappedCount": 9,
+      "localGrading": false,
+      "samples": [
+        [
+          195.84,
+          48.448,
+          -1115.444
+        ],
+        [
+          195.968,
+          48.602,
+          -1116.958
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775463560",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 831.3471357665521
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.007,
+      "dem5aRise": 0.255,
+      "dem5aRange": 0.255,
+      "mappedCount": 3,
+      "localGrading": false,
+      "samples": [
+        [
+          -38.597,
+          41.107,
+          -915.881
+        ],
+        [
+          -38.584,
+          41.228,
+          -917.161
+        ],
+        [
+          -38.57,
+          41.362,
+          -918.441
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775644599",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 864.2019096844498
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.015,
+      "dem5aRise": 0.112,
+      "dem5aRange": 0.112,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          60.646,
+          47.883,
+          -1043.253
+        ],
+        [
+          60.682,
+          47.995,
+          -1045.724
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775661613",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 986.9051234776824
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.095,
+      "dem5aRise": 0.471,
+      "dem5aRange": 0.471,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          30.779,
+          43.415,
+          -1172.985
+        ],
+        [
+          32.508,
+          43.664,
+          -1173.001
+        ],
+        [
+          34.236,
+          43.886,
+          -1173.018
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775678667",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1052.4900107338312
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.048,
+      "dem5aRise": 1.232,
+      "dem5aRange": 1.232,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          24.402,
+          44.937,
+          -1238.663
+        ],
+        [
+          24.488,
+          45.177,
+          -1241.159
+        ],
+        [
+          24.574,
+          45.426,
+          -1243.655
+        ],
+        [
+          24.659,
+          45.685,
+          -1246.15
+        ],
+        [
+          24.745,
+          45.952,
+          -1248.646
+        ],
+        [
+          24.831,
+          46.169,
+          -1251.142
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/775831327",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 737.4945640384409
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.077,
+      "dem5aRise": 0.009,
+      "dem5aRange": 0.009,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          127.002,
+          48.833,
+          -936.531
+        ],
+        [
+          127.887,
+          48.842,
+          -936.509
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/780206288",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 1256.2307769231734
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.041,
+      "dem5aRise": 0.267,
+      "dem5aRange": 0.267,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -87.174,
+          36.892,
+          -1416.797
+        ],
+        [
+          -87.142,
+          37.026,
+          -1415.511
+        ],
+        [
+          -87.11,
+          37.159,
+          -1414.225
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920584",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 562.7777419445887
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.004,
+      "dem5aRise": 0.027,
+      "dem5aRange": 0.029,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -189.92,
+          29.125,
+          555.306
+        ],
+        [
+          -189.874,
+          29.125,
+          557.718
+        ],
+        [
+          -189.829,
+          29.123,
+          560.13
+        ],
+        [
+          -189.783,
+          29.152,
+          562.542
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920586",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 572.7507122223856
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.021,
+      "dem5aRise": 0.017,
+      "dem5aRange": 0.067,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -189.783,
+          29.152,
+          562.542
+        ],
+        [
+          -189.886,
+          29.183,
+          564.704
+        ],
+        [
+          -189.99,
+          29.219,
+          566.865
+        ],
+        [
+          -190.093,
+          29.218,
+          569.026
+        ],
+        [
+          -190.196,
+          29.188,
+          571.188
+        ],
+        [
+          -190.3,
+          29.176,
+          573.35
+        ],
+        [
+          -190.403,
+          29.169,
+          575.511
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920589",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 676.4316335050054
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.038,
+      "dem5aRise": -0.092,
+      "dem5aRange": 0.092,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -188.387,
+          29.422,
+          670.132
+        ],
+        [
+          -188.348,
+          29.403,
+          672.314
+        ],
+        [
+          -188.31,
+          29.385,
+          674.496
+        ],
+        [
+          -188.271,
+          29.368,
+          676.678
+        ],
+        [
+          -188.232,
+          29.33,
+          678.86
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920590",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 667.6169545633934
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.001,
+      "dem5aRise": 0.073,
+      "dem5aRange": 0.102,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -188.752,
+          29.349,
+          660.937
+        ],
+        [
+          -188.661,
+          29.393,
+          663.236
+        ],
+        [
+          -188.57,
+          29.451,
+          665.534
+        ],
+        [
+          -188.478,
+          29.438,
+          667.833
+        ],
+        [
+          -188.387,
+          29.422,
+          670.132
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920592",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 669.1413852626738
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.024,
+      "dem5aRise": null,
+      "dem5aRange": null,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -206.075,
+          29.361,
+          657.965
+        ],
+        [
+          -205.913,
+          29.551,
+          660.447
+        ],
+        [
+          -205.751,
+          29.781,
+          662.93
+        ],
+        [
+          -205.588,
+          null,
+          665.412
+        ],
+        [
+          -205.426,
+          null,
+          667.895
+        ],
+        [
+          -205.264,
+          null,
+          670.377
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920593",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 693.1570601909065
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.026,
+      "dem5aRise": null,
+      "dem5aRange": null,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -205.264,
+          null,
+          670.377
+        ],
+        [
+          -205.302,
+          null,
+          672.806
+        ],
+        [
+          -205.339,
+          null,
+          675.235
+        ],
+        [
+          -205.377,
+          null,
+          677.664
+        ],
+        [
+          -205.415,
+          null,
+          680.093
+        ],
+        [
+          -205.452,
+          null,
+          682.522
+        ],
+        [
+          -205.49,
+          null,
+          684.951
+        ],
+        [
+          -205.528,
+          null,
+          687.38
+        ],
+        [
+          -205.565,
+          null,
+          689.809
+        ],
+        [
+          -205.603,
+          29.181,
+          692.238
+        ],
+        [
+          -205.641,
+          29.149,
+          694.667
+        ],
+        [
+          -205.678,
+          29.113,
+          697.096
+        ],
+        [
+          -205.716,
+          29.142,
+          699.525
+        ],
+        [
+          -205.754,
+          29.157,
+          701.954
+        ],
+        [
+          -205.791,
+          29.155,
+          704.383
+        ],
+        [
+          -205.829,
+          29.121,
+          706.812
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/790920595",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 773.7199385992324
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.003,
+      "dem5aRise": 0.464,
+      "dem5aRange": 0.471,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -187.767,
+          28.538,
+          766.524
+        ],
+        [
+          -187.756,
+          28.61,
+          768.639
+        ],
+        [
+          -187.746,
+          28.7,
+          770.754
+        ],
+        [
+          -187.735,
+          28.837,
+          772.869
+        ],
+        [
+          -187.724,
+          28.992,
+          774.984
+        ],
+        [
+          -187.714,
+          29.009,
+          777.099
+        ],
+        [
+          -187.703,
+          29.002,
+          779.214
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/881505933",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 674.9992666077496
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.045,
+      "dem5aRise": 0.132,
+      "dem5aRange": 0.132,
+      "mappedCount": 3,
+      "localGrading": false,
+      "samples": [
+        [
+          349.471,
+          61.38,
+          -979.467
+        ],
+        [
+          350.757,
+          61.512,
+          -979.355
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/891328518",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 837.692692827895
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.027,
+      "dem5aRise": -0.044,
+      "dem5aRange": 0.044,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          146.378,
+          50.018,
+          -1065.784
+        ],
+        [
+          144.193,
+          50.008,
+          -1065.901
+        ],
+        [
+          142.009,
+          49.974,
+          -1066.018
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/901989776",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 953.1318533563444
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.037,
+      "dem5aRise": 0.338,
+      "dem5aRange": 0.338,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          70.899,
+          45.082,
+          -1160.728
+        ],
+        [
+          72.304,
+          45.209,
+          -1158.973
+        ],
+        [
+          73.709,
+          45.234,
+          -1157.218
+        ],
+        [
+          75.114,
+          45.42,
+          -1155.463
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/901989782",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 969.794648966084
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.036,
+      "dem5aRise": 0.101,
+      "dem5aRange": 0.101,
+      "mappedCount": 8,
+      "localGrading": false,
+      "samples": [
+        [
+          64.66,
+          45.626,
+          -1170.714
+        ],
+        [
+          64.536,
+          45.677,
+          -1172.445
+        ],
+        [
+          64.413,
+          45.727,
+          -1174.176
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/901989787",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 982.6133150054502
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.069,
+      "dem5aRise": 0.257,
+      "dem5aRange": 0.257,
+      "mappedCount": 6,
+      "localGrading": false,
+      "samples": [
+        [
+          60.39,
+          45.952,
+          -1183.849
+        ],
+        [
+          60.308,
+          46.209,
+          -1185.853
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/902014341",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 949.278483146542
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.026,
+      "dem5aRise": 0.144,
+      "dem5aRange": 0.144,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          45.566,
+          41.923,
+          -1136.527
+        ],
+        [
+          44.472,
+          42.067,
+          -1136.249
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/902014342",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 948.335883492368
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.093,
+      "dem5aRise": 0.841,
+      "dem5aRange": 0.841,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          50.283,
+          41.082,
+          -1137.719
+        ],
+        [
+          47.925,
+          41.483,
+          -1137.123
+        ],
+        [
+          45.566,
+          41.923,
+          -1136.527
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1010380145",
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 838.4753658730828
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.04,
+      "dem5aRise": 0.208,
+      "dem5aRange": 0.208,
+      "mappedCount": 4,
+      "localGrading": false,
+      "samples": [
+        [
+          448.932,
+          47.038,
+          885.146
+        ],
+        [
+          450.766,
+          47.246,
+          885.146
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1010380146",
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 836.8577925168947
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.092,
+      "dem5aRise": 0.114,
+      "dem5aRange": 0.114,
+      "mappedCount": 5,
+      "localGrading": false,
+      "samples": [
+        [
+          440.887,
+          46.494,
+          885.19
+        ],
+        [
+          442.155,
+          46.551,
+          885.185
+        ],
+        [
+          443.423,
+          46.608,
+          885.179
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1157645025",
+      "nearestAnchor": {
+        "id": "gehaiden",
+        "label": "Gehaiden",
+        "distance": 160.1056843751964
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.016,
+      "dem5aRise": 0.064,
+      "dem5aRange": 0.064,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          38.287,
+          40.667,
+          159.02
+        ],
+        [
+          38.615,
+          40.731,
+          157.417
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1160074503",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 783.2477677762638
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.052,
+      "dem5aRise": 0.093,
+      "dem5aRange": 0.093,
+      "mappedCount": 20,
+      "localGrading": false,
+      "samples": [
+        [
+          -247.929,
+          32.471,
+          -760.579
+        ],
+        [
+          -246.046,
+          32.519,
+          -760.513
+        ],
+        [
+          -244.162,
+          32.564,
+          -760.446
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1270763270",
+      "nearestAnchor": {
+        "id": "mitsurugi",
+        "label": "Mitsurugi-sha",
+        "distance": 2.3681271038995657
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 0.0,
+      "dem5aRise": -0.432,
+      "dem5aRange": 0.432,
+      "mappedCount": null,
+      "localGrading": true,
+      "samples": [
+        [
+          1205.09,
+          180.412,
+          -173.146
+        ],
+        [
+          1205.199,
+          180.252,
+          -171.521
+        ],
+        [
+          1204.84,
+          180.095,
+          -169.732
+        ],
+        [
+          1204.482,
+          179.985,
+          -167.944
+        ],
+        [
+          1204.123,
+          179.98,
+          -166.155
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1270763271",
+      "nearestAnchor": {
+        "id": "mitsurugi",
+        "label": "Mitsurugi-sha",
+        "distance": 5.64287375811296
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 0.0,
+      "dem5aRise": 0.261,
+      "dem5aRange": 0.261,
+      "mappedCount": 3,
+      "localGrading": true,
+      "samples": [
+        [
+          1201.477,
+          179.612,
+          -175.907
+        ],
+        [
+          1202.463,
+          179.873,
+          -175.206
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1271062689",
+      "nearestAnchor": {
+        "id": "summit",
+        "label": "Ichinomine",
+        "distance": 9.43392961601898
+      },
+      "nearPilgrimage": true,
+      "sceneRise": 0.001,
+      "dem5aRise": 2.069,
+      "dem5aRange": 2.069,
+      "mappedCount": 14,
+      "localGrading": true,
+      "samples": [
+        [
+          1171.109,
+          229.877,
+          19.058
+        ],
+        [
+          1171.13,
+          230.476,
+          16.657
+        ],
+        [
+          1171.152,
+          231.177,
+          14.257
+        ],
+        [
+          1171.173,
+          231.946,
+          11.856
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1274410498",
+      "nearestAnchor": {
+        "id": "tamayama",
+        "label": "Tamayama Inari",
+        "distance": 8.970941979524776
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.03,
+      "dem5aRise": 0.048,
+      "dem5aRange": 0.048,
+      "mappedCount": 5,
+      "localGrading": false,
+      "samples": [
+        [
+          105.419,
+          47.446,
+          -42.613
+        ],
+        [
+          105.911,
+          47.494,
+          -42.669
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1275931671",
+      "nearestAnchor": {
+        "id": "mitsu",
+        "label": "Mitsu-tsuji",
+        "distance": 508.7102533235398
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 1.978,
+      "dem5aRise": 1.017,
+      "dem5aRange": 1.017,
+      "mappedCount": 5,
+      "localGrading": false,
+      "samples": [
+        [
+          359.341,
+          87.874,
+          -809.359
+        ],
+        [
+          361.398,
+          88.291,
+          -808.371
+        ],
+        [
+          363.456,
+          88.558,
+          -807.384
+        ],
+        [
+          365.513,
+          88.717,
+          -806.396
+        ],
+        [
+          367.57,
+          88.891,
+          -805.408
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1327852998",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 936.0905047025368
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.024,
+      "dem5aRise": -0.255,
+      "dem5aRange": 0.274,
+      "mappedCount": 14,
+      "localGrading": false,
+      "samples": [
+        [
+          -571.912,
+          26.276,
+          -789.689
+        ],
+        [
+          -571.691,
+          26.295,
+          -791.723
+        ],
+        [
+          -571.47,
+          26.276,
+          -793.758
+        ],
+        [
+          -571.248,
+          26.178,
+          -795.793
+        ],
+        [
+          -571.027,
+          26.021,
+          -797.827
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1387673527",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 873.2350670949088
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.065,
+      "dem5aRise": 0.047,
+      "dem5aRange": 0.047,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -504.625,
+          26.067,
+          -758.164
+        ],
+        [
+          -504.579,
+          26.08,
+          -759.828
+        ],
+        [
+          -504.534,
+          26.114,
+          -761.492
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1396734933",
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 397.11665234065674
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.053,
+      "dem5aRise": 0.803,
+      "dem5aRange": 0.803,
+      "mappedCount": 12,
+      "localGrading": false,
+      "samples": [
+        [
+          385.313,
+          72.581,
+          445.99
+        ],
+        [
+          387.52,
+          73.074,
+          445.122
+        ],
+        [
+          389.728,
+          73.384,
+          444.254
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1402555559",
+      "nearestAnchor": {
+        "id": "okusha",
+        "label": "Okusha",
+        "distance": 152.45128414021315
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 7.591,
+      "dem5aRise": 5.276,
+      "dem5aRange": 5.276,
+      "mappedCount": 30,
+      "localGrading": false,
+      "samples": [
+        [
+          395.284,
+          59.704,
+          153.665
+        ],
+        [
+          395.262,
+          60.738,
+          151.269
+        ],
+        [
+          395.24,
+          61.776,
+          148.874
+        ],
+        [
+          395.218,
+          62.836,
+          146.478
+        ],
+        [
+          395.196,
+          63.903,
+          144.083
+        ],
+        [
+          395.174,
+          64.98,
+          141.687
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1496838898",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 1286.857680149693
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.026,
+      "dem5aRise": -0.38,
+      "dem5aRange": 0.38,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -404.16,
+          26.673,
+          -1242.125
+        ],
+        [
+          -404.361,
+          26.452,
+          -1240.6
+        ],
+        [
+          -404.561,
+          26.293,
+          -1239.075
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1496839986",
+      "nearestAnchor": {
+        "id": "entrance",
+        "label": "Omotesando",
+        "distance": 948.502648375981
+      },
+      "nearPilgrimage": false,
+      "sceneRise": 0.051,
+      "dem5aRise": 1.09,
+      "dem5aRange": 1.09,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          -583.598,
+          24.706,
+          -803.704
+        ],
+        [
+          -582.254,
+          25.363,
+          -802.65
+        ],
+        [
+          -580.91,
+          25.754,
+          -801.597
+        ],
+        [
+          -579.566,
+          25.796,
+          -800.543
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    },
+    {
+      "id": "way/1543930363",
+      "nearestAnchor": {
+        "id": "byakko",
+        "label": "Byakko-sha",
+        "distance": 143.58960009781347
+      },
+      "nearPilgrimage": false,
+      "sceneRise": -0.063,
+      "dem5aRise": -0.194,
+      "dem5aRange": 0.194,
+      "mappedCount": null,
+      "localGrading": false,
+      "samples": [
+        [
+          196.734,
+          43.743,
+          -151.895
+        ],
+        [
+          197.354,
+          43.549,
+          -150.582
+        ]
+      ],
+      "status": "elevation-evidence-only; step heights and landing positions unverified"
+    }
+  ]
+}

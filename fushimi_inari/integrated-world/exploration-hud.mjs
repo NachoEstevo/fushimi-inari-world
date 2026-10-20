@@ -1,22 +1,22 @@
 import {isRestricted} from '../geography/geo-core.mjs';
 
 export function installExplorationHUD({camera,features,assembly,teleport}){
-  const panel=document.createElement('section');panel.id='navigation';panel.setAttribute('aria-label','Navegación a pie');
-  panel.innerHTML=`<div class="row"><strong>INARIYAMA</strong><button id="nav-collapse" aria-label="Contraer minimapa">−</button></div>
-    <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimapa con posición y caminos"></canvas>
-    <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Escala del minimapa"><option value="320">Cerca · 320 m</option><option value="1000">Sector · 1 km</option><option value="2700">Todo el predio</option></select></div>
-    <small>Verde: caminos · ámbar: escaleras · azul: agua · punteado: acceso restringido o paso elevado/subterráneo</small>
-    <label for="walk-speed">Velocidad a pie</label><select id="walk-speed"><option value="1.6">Paseo · 1,6 m/s</option><option value="3" selected>Ágil · 3 m/s</option><option value="6">Rápido · 6 m/s</option><option value="10">Explorar · 10 m/s</option></select>
-    <label>Ir a un checkpoint</label><div id="checkpoint-buttons"></div>
-    <label for="checkpoint-select">Todos los lugares</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Ir</button></div>
-    <details><summary>Ambiente · primavera</summary>
-    <button id="ambient-toggle">Sonido: apagado</button>
-    <label for="ambient-volume">Volumen del ambiente</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
-    <label><input id="ambient-birds" type="checkbox" checked> Uguisu · grabación real</label>
-    <label><input id="ambient-wind" type="checkbox" checked> Brisa y hojas</label>
-    <label><input id="ambient-chimes" type="checkbox"> Campanillas junto a las casas de té</label>
-    <small>Campanillas interpretativas. <a href="../assets/audio/CREDITS.md" target="_blank" rel="noopener">Créditos de audio</a></small></details>
-    <p>WASD · arrastrar para mirar · Shift acelera · Esc salir</p></div>`;
+  const panel=document.createElement('section');panel.id='navigation';panel.setAttribute('aria-label','Navigation');
+  panel.innerHTML=`<div class="row"><strong>INARIYAMA</strong><button id="nav-collapse" aria-label="Collapse minimap">−</button></div>
+    <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimap with position and trails"></canvas>
+    <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Minimap scale"><option value="320">Nearby · 320 m</option><option value="1000">Area · 1 km</option><option value="2700">Entire area</option></select></div>
+    <small>Green: trails · amber: stairs · blue: water · dashed: restricted or grade-separated</small>
+    <label for="walk-speed">Walking speed</label><select id="walk-speed"><option value="1.6">Stroll · 1.6 m/s</option><option value="3" selected>Brisk · 3 m/s</option><option value="6">Fast · 6 m/s</option><option value="10">Explore · 10 m/s</option></select>
+    <label>Quick checkpoints</label><div id="checkpoint-buttons"></div>
+    <label for="checkpoint-select">Destination</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Teleport</button></div>
+    <details><summary>Spring ambience</summary>
+    <button id="ambient-toggle">Sound: off</button>
+    <label for="ambient-volume">Ambient volume</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
+    <label><input id="ambient-birds" type="checkbox" checked> Uguisu · field recording</label>
+    <label><input id="ambient-wind" type="checkbox" checked> Breeze and leaves</label>
+    <label><input id="ambient-chimes" type="checkbox"> Chimes near tea houses</label>
+    <small>Interpretive chimes. <a href="../assets/audio/CREDITS.md" target="_blank" rel="noopener">Audio credits</a></small></details>
+    <p>WASD · drag to look · Shift to boost · Esc menu</p></div>`;
   document.body.append(panel);
   panel.querySelector('#ambient-toggle').onclick=()=>{document.getElementById('audio').click();document.getElementById('ambient-toggle').textContent=document.getElementById('audio').textContent;};
   for(const input of panel.querySelectorAll('select'))input.onchange=()=>input.blur();
@@ -35,7 +35,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
   panel.querySelector('#nav-collapse').onclick=e=>{
     const content=panel.querySelector('#nav-content');content.hidden=!content.hidden;
     e.currentTarget.textContent=content.hidden?'+':'−';
-    e.currentTarget.setAttribute('aria-label',content.hidden?'Expandir minimapa':'Contraer minimapa');
+    e.currentTarget.setAttribute('aria-label',content.hidden?'Expand minimap':'Collapse minimap');
   };
   let last=0;
   const secondary=features.pois.filter(p=>p.tags.name&&(p.tags.religion==='shinto'||p.tags.natural==='peak'||p.tags.tourism==='viewpoint')
@@ -77,10 +77,18 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
         labels.push(label);ctx.fillText(name,label.x,label.y);
       }
     }
-    for(const a of assembly.spatial.anchors){
+    const anchorLabels=[];
+    const sortedAnchors=[...assembly.spatial.anchors].sort((a,b)=>Math.hypot(a.target[0]-camera.position.x,a.target[2]-camera.position.z)-Math.hypot(b.target[0]-camera.position.x,b.target[2]-camera.position.z));
+    for(const a of sortedAnchors){
       const x=px(a.target[0]),z=pz(a.target[2]);if(x<0||x>400||z<0||z>240)continue;
       ctx.fillStyle='#efc581';ctx.beginPath();ctx.arc(x,z,3,0,Math.PI*2);ctx.fill();
-      if(!all){ctx.font='12px system-ui';ctx.fillText(a.label,Math.min(x+6,310),z-5);}
+      if(!all&&z>35&&z<190){
+        ctx.font='12px system-ui';const w=ctx.measureText(a.label).width;
+        const label={x:Math.max(4,Math.min(x+6,396-w)),y:z-5,w,h:14};
+        if(!anchorLabels.some(b=>label.x<b.x+b.w+5&&label.x+label.w+5>b.x&&label.y<b.y+b.h+3&&label.y+label.h+3>b.y)){
+          anchorLabels.push(label);ctx.fillText(a.label,label.x,label.y);
+        }
+      }
     }
     // Camera's local -Z transformed by its quaternion, without importing Three.
     const q=camera.quaternion,dx=-2*(q.x*q.z+q.w*q.y),dz=-(1-2*(q.x*q.x+q.y*q.y));
@@ -89,7 +97,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     ctx.fillStyle='#e3e6d7';ctx.font='14px system-ui';ctx.fillText('N ↑',12,22);
     const meters=all?500:range===1000?100:50;
     ctx.fillRect(12,217,meters*scale,2);ctx.fillText(`${meters} m`,12,208);
-    panel.querySelector('#nav-location').textContent=`${Math.round(camera.position.y-1.7)} m s.n.m.`;
+    panel.querySelector('#nav-location').textContent=`${Math.round(camera.position.y-1.7)} m ASL`;
     canvas.dataset.position=`${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)}`;
   }};
 }

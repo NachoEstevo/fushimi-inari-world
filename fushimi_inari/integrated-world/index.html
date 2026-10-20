@@ -1,47 +1,47 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fushimi Inari · Mundo integrado</title>
+  <title>Fushimi Inari · Integrated world</title>
   <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
 </head>
 <body>
-  <main id="world" aria-label="Modelo geográfico tridimensional de Inariyama"></main>
-  <header><div><span class="eyebrow">伏見稲荷大社 · MUNDO INTEGRADO · REVISIÓN 13</span><h1>El recinto y la montaña.</h1><p id="summary">Cargando cartografía y elevaciones…</p></div><button id="overview">Vista general</button></header>
-  <button id="panels">Ocultar paneles</button><aside>
-    <label for="place">Visitar sector integrado</label><select id="place"></select>
-    <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
-    <label for="light">Iluminación</label><select id="light"><option value="day">Día</option><option value="gold">Atardecer</option><option value="night">Noche</option></select>
-    <button id="audio">Sonido: apagado</button>
+  <main id="world" aria-label="3D geographic model of Inariyama"></main>
+  <header><div><span class="eyebrow">伏見稲荷大社 · MUNDO INTEGRADO · REVISION 14</span><h1>The shrine and mountain.</h1><p id="summary">Loading maps and elevations…</p></div><button id="overview">Overview</button></header>
+  <button id="panels">Hide panels</button><aside>
+    <label for="place">View a location</label><select id="place"></select>
+    <div class="row"><button id="visit">View</button><button id="freewalk">Walk · WASD</button></div>
+    <label for="light">Lighting</label><select id="light"><option value="day">Day</option><option value="gold">Sunset</option><option value="night">Night</option></select>
+    <button id="audio">Sound: off</button>
 
-    <span class="eyebrow">EXPLORAR EL RECORRIDO</span>
-    <label for="itinerary">Itinerario sobre la red cartográfica</label><select id="itinerary"><option value="ascent">Ascenso por Senbon y las tres cumbres</option><option value="loop">Circuito de cumbres y regreso por Gozendani</option><option value="custom">Origen, destino y ramal a elección</option></select>
+    <span class="eyebrow">EXPLORE THE TRAIL</span>
+    <label for="itinerary">Itinerary</label><select id="itinerary"><option value="ascent">Senbon and the three summits</option><option value="loop">Summit loop via Gozendani</option><option value="custom">Custom route</option></select>
     <div id="custom-fields" hidden>
-      <label for="start">Desde</label><select id="start"></select>
-      <label for="destination">Hasta</label><select id="destination"></select>
-      <label for="via">Pasar por · ramal alternativo</label><select id="via"><option value="">Sin parada intermedia</option></select>
+      <label for="start">From</label><select id="start"></select>
+      <label for="destination">To</label><select id="destination"></select>
+      <label for="via">Via · alternative trail</label><select id="via"><option value="">No intermediate stop</option></select>
     </div>
-    <label for="branch">Túnel de Senbon</label><select id="branch"><option value="">Automático</option><option value="way/260121328">Primera rama cartografiada</option><option value="way/377968455">Segunda rama cartografiada</option></select><button id="route" class="primary">Trazar camino</button>
-    <div id="route-info" role="status">Elegí dos lugares. El recorrido sigue conexiones cartografiadas.</div>
-    <canvas id="profile" width="550" height="150" aria-label="Perfil de elevación de la ruta"></canvas>
-    <div class="row"><button id="walk" disabled>Recorrer</button><button id="stop" disabled>Pausar</button></div>
-    <label for="speed">Velocidad del recorrido</label><select id="speed"><option value="1.4">1,4 m/s · caminar</option><option value="12">12 m/s · inspección rápida</option><option value="50">50 m/s · avance rápido</option></select>
-    <details><summary>Etapas y accesos del recorrido</summary><p id="route-stops"></p><p id="route-gaps"></p></details>
-    <p class="note">Elevación GSI · malla de 10 m. Los escalones y muros pequeños requieren relevamiento adicional.</p>
-    <details><summary>Capas y procedencia</summary>
-      <label><input type="checkbox" id="buildings"> Huellas de edificios · alturas aproximadas</label>
-      <label><input type="checkbox" id="paths" checked> Caminos y calles</label>
-      <label><input type="checkbox" id="landmarks"> Santuarios y puntos cartografiados</label>
-      <p>Terreno sin exageración vertical. Anchuras sin etiqueta OSM son aproximadas. Los volúmenes grises son contexto. Los edificios detallados reutilizan el proyecto anterior; su distribución local sigue siendo interpretativa.</p>
-      <p>El rectángulo incluye alrededores; no representa el límite legal del predio. Los tramos aislados no se conectan artificialmente. Puentes y túneles no se habilitan para recorrido a ras de suelo.</p>
-      <a href="../geography/manifest.json" target="_blank">Manifest y fuentes</a> · <a href="../interactive_viewer/index.html">Escena anterior</a>
+    <label for="branch">Senbon branch</label><select id="branch"><option value="">Automatic</option><option value="way/260121328">First mapped branch</option><option value="way/377968455">Second mapped branch</option></select><button id="route" class="primary">Plan route</button>
+    <div id="route-info" role="status">Choose two places to follow the mapped trail network.</div>
+    <canvas id="profile" width="550" height="150" aria-label="Route elevation profile"></canvas>
+    <div class="row"><button id="walk" disabled>Follow route</button><button id="stop" disabled>Pause</button></div>
+    <label for="speed">Tour speed</label><select id="speed"><option value="1.4">1.4 m/s · walking</option><option value="12">12 m/s · quick inspection</option><option value="50">50 m/s · fast forward</option></select>
+    <details><summary>Stops and trail access</summary><p id="route-stops"></p><p id="route-gaps"></p></details>
+    <p class="note">GSI elevation · 10 m grid. Individual steps and retaining walls still need surveying.</p>
+    <details><summary>Layers and sources</summary>
+      <label><input type="checkbox" id="buildings"> Building footprints · estimated heights</label>
+      <label><input type="checkbox" id="paths" checked> Trails and streets</label>
+      <label><input type="checkbox" id="landmarks"> Shrines and mapped landmarks</label>
+      <p>Terrain has no vertical exaggeration. Untagged widths and building heights are estimates. Detailed buildings preserve the original project; local layouts remain interpretive.</p>
+      <p>The map includes surrounding neighborhoods, not a legal property boundary. Disconnected paths are not artificially joined. Bridges and tunnels are excluded from ground-level routing.</p>
+      <a href="../geography/manifest.json" target="_blank">Manifest and sources</a> · <a href="../interactive_viewer/index.html">Original scene</a>
     </details>
   </aside>
-  <section id="map-panel"><div class="row"><span class="eyebrow">N ↑ · PLANTA DEL MISMO TERRENO</span><span>500 m ━</span></div><canvas id="map" width="600" height="580" aria-label="Mapa de caminos, puntos y posición actual"></canvas><p>Arrastrá para orbitar · rueda para acercar · clic en un punto para elegir destino</p></section>
-  <div id="position">Escala horizontal y vertical 1:1</div>
-  <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terreno derivado de <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Mapa oficial del santuario</a></footer>
-  <div id="loading">Preparando terreno y red de caminos…</div>
+  <section id="map-panel"><div class="row"><span class="eyebrow">N ↑ · TERRAIN PLAN</span><span>500 m ━</span></div><canvas id="map" width="600" height="580" aria-label="Map of trails, landmarks and current location"></canvas><p>Drag to orbit · scroll to zoom · click a landmark to choose a destination</p></section>
+  <div id="position">Horizontal and vertical scale 1:1</div>
+  <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terrain derived from <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Official shrine map</a></footer>
+  <div id="loading">Preparing terrain and trails…</div>
   <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs"></script>
 </body>
 </html>

@@ -1,3 +1,5 @@
+import {flightDisplacement} from './flight-motion.mjs';
+import {englishInteraction} from './interaction-english.mjs';
 import * as THREE from 'three';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {walkingSpeed,movementSteps} from './walking-motion.mjs';
@@ -20,6 +22,28 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     }
   }
   document.body.dataset.walkHeightAudit=JSON.stringify(heightAudit);
+  // Opt-in QA only: no additional per-frame or normal-startup cost.
+  if(new URLSearchParams(location.search).has('audit')){
+    const profiles=[];
+    for(const review of assembly.surfaces.stats.profileReview){
+      const segments=assembly.surfaces.segments.filter(s=>s.id===review.id);
+      const points=segments.flatMap(s=>{
+        const count=Math.max(1,Math.ceil(Math.hypot(s.b[0]-s.a[0],s.b[2]-s.a[2])/.25));
+        return Array.from({length:count},(_,i)=>[s.a[0]+(s.b[0]-s.a[0])*i/count,s.a[2]+(s.b[2]-s.a[2])*i/count]);
+      });
+      if(segments.length)points.push([segments.at(-1).b[0],segments.at(-1).b[2]]);
+      let maxJump=0,blocked=0;
+      for(const route of [points,[...points].reverse()]){
+        let previous;
+        for(const [x,z] of route){const y=assembly.walkHeight(x,z,previous);if(previous!==undefined)maxJump=Math.max(maxJump,Math.abs(y-previous));previous=y;
+          const resolved=obstacles.resolvePlayer(x,y+1.7,z);if(Math.hypot(resolved.x-x,resolved.z-z)>.35)blocked++;
+        }
+      }
+      profiles.push({id:review.id,samples:points.length*2,maxJump,blocked,status:maxJump>.4||blocked?'inspect-access':'centerline-check-passed; fidelity-unverified'});
+    }
+    document.body.dataset.profileWalkAudit=JSON.stringify(profiles);
+  }
+
   const localBranches=assembly.surfaces.segments.filter(s=>s.kind!=='restricted'&&s.a[0]>735&&s.a[0]<840&&s.a[2]>-280&&s.a[2]<-170)
     .map(s=>[(s.a[0]+s.b[0])/2,(s.ya+s.yb)/2,(s.a[2]+s.b[2])/2]);
   audit.localBranchSamples=localBranches.length;
@@ -46,17 +70,17 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const keys=new Set(),direction=new THREE.Vector3(),right=new THREE.Vector3();
   const ray=new THREE.Raycaster(),panel=document.getElementById('interaction');
   const crosshair=document.getElementById('crosshair'),button=document.getElementById('freewalk');
-  let active=false,footstep=0,paused=false;
+  let active=false,footstep=0,paused=false,flying=false;
   function stop(){
-    active=false;keys.clear();dragging=false;controls.enabled=true;crosshair.hidden=true;
+    active=false;flying=false;keys.clear();dragging=false;controls.enabled=true;crosshair.hidden=true;
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(8));
-    document.body.classList.remove('walking');button.textContent='Caminar · WASD';
+    document.body.classList.remove('walking');button.textContent='Walk · WASD';
   }
-  function start(){
+  function start(flight=false){
     document.activeElement?.blur();
-    onStart();active=true;controls.enabled=false;crosshair.hidden=false;
-    camera.position.y=assembly.walkHeight(camera.position.x,camera.position.z)+1.7;
-    document.body.classList.add('walking');button.textContent='Vista libre';
+    onStart();active=true;flying=flight;keys.clear();controls.enabled=false;crosshair.hidden=false;
+    if(!flying)camera.position.y=assembly.walkHeight(camera.position.x,camera.position.z)+1.7;
+    document.body.classList.add('walking');button.textContent='Orbit view';
   }
   button.onclick=()=>{if(active)stop();else start();};
   let dragging=false,lastX=0,lastY=0;
@@ -80,23 +104,24 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     while(target&&!target.userData.interactable)target=target.parent;
     const data=target?.userData.interactable;
     if(!data)return;
+    const english=englishInteraction(data);
     panel.replaceChildren();
-    const title=document.createElement('strong');title.textContent=data.title;
-    const text=document.createElement('p');text.textContent=data.description;
-    const note=document.createElement('small');note.textContent='Descripción heredada del proyecto original; fidelidad histórica no verificada en esta integración.';
-    const close=document.createElement('button');close.textContent='Cerrar';close.onclick=()=>panel.hidden=true;
+    const title=document.createElement('strong');title.textContent=english.title;
+    const text=document.createElement('p');text.textContent=english.description;
+    const note=document.createElement('small');note.textContent='Preserved from the original project; historical accuracy is not verified.';
+    const close=document.createElement('button');close.textContent='Close';close.onclick=()=>panel.hidden=true;
     panel.append(title,text,note,close);panel.hidden=false;
     data.onTrigger?.();
   }
   addEventListener('keydown',e=>{
     if(!active||paused)return;
     if(e.target.closest?.('input,select,textarea'))return;
-    if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){keys.add(e.code);e.preventDefault();}
-    if(e.code==='KeyE')interact();
+    if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR','KeyF','Space','ControlLeft','ControlRight'].includes(e.code)){keys.add(e.code);e.preventDefault();}
+    if(e.code==='KeyE'&&!flying)interact();
   });
   addEventListener('keyup',e=>keys.delete(e.code));
   addEventListener('blur',()=>{keys.clear();if(active)stop();});
-  return {stop,start,pause(value){paused=value;keys.clear();dragging=false;},get active(){return active;},teleport(point,target){
+  return {stop,start,fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},pause(value){paused=value;keys.clear();dragging=false;},get active(){return active;},teleport(point,target){
     keys.clear();dragging=false;panel.hidden=true;
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){
@@ -111,6 +136,15 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   },update(dt){
     if(!active)return false;
     if(paused)return true;
+    if(flying){
+      camera.getWorldDirection(direction);right.crossVectors(direction,camera.up).normalize();
+      const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
+      const side=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
+      const vertical=Number(keys.has('KeyR')||keys.has('Space'))-Number(keys.has('KeyF')||keys.has('ControlLeft')||keys.has('ControlRight'));
+      const delta=flightDisplacement(direction.toArray(),forward,side,vertical,dt,document.getElementById('flight-speed')?.value??15,keys.has('ShiftLeft')||keys.has('ShiftRight'));
+      camera.position.x+=delta[0];camera.position.y+=delta[1];camera.position.z+=delta[2];
+      return true;
+    }
     camera.getWorldDirection(direction);direction.y=0;direction.normalize();right.crossVectors(direction,camera.up).normalize();
     const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
     const side=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
@@ -127,7 +161,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
         audio.step(assembly.surfaces.sample(camera.position.x,camera.position.z)?.segment.kind==='stone');footstep=0;
       }
     }
-    document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m s.n.m. · WASD · arrastrar para mirar · Shift correr · E interactuar · Esc menú`;
+    document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m ASL · WASD · drag to look · Shift boost · E interact · Esc menu`;
     return true;
   }};
 }

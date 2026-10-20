@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 13")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISION 14")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -24,7 +24,7 @@ html=html.replace('<script type="module"', '<div id="interaction" hidden></div><
 (out/"index.html").write_text(html,encoding="utf-8")
 js=(root/"geography/viewer.mjs").read_text(encoding="utf-8")
 js=js.replace("from './geo-core.mjs'","from '../geography/geo-core.mjs'")
-js="import {installExplorationHUD} from './exploration-hud.mjs?v=13';\nimport {integrate} from './integration.mjs?v=13';\nimport {installWalking} from './walking.mjs?v=13';\nimport {createAudio} from './audio.mjs';\n"+js
+js="import {installExplorationHUD} from './exploration-hud.mjs?v=14';\nimport {integrate} from './integration.mjs?v=14';\nimport {installWalking} from './walking.mjs?v=14';\nimport {createAudio} from './audio.mjs';\n"+js
 js=js.replace("fetch(`${name}.json`)","fetch(`../geography/${name}.json`)")
 js=js.replace("const ground=(x,z)=>heightAt(terrain,x,z);","let assembly=null;\n  const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);")
 js=js.replace("renderer.outputColorSpace=", "renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;\n  renderer.outputColorSpace=")
@@ -97,9 +97,9 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
   const hud=installExplorationHUD({camera,features,assembly,teleport:id=>{
     const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
     if(!node)return;
-    const main=assembly.spatial.main;
+    const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
-    const point=id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
+    const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
     const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Listo para caminar`;
@@ -158,6 +158,7 @@ js=js.replace("const terrainMaterial=new THREE.MeshStandardMaterial({vertexColor
   const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});""")
+js=js.replace("ctx.strokeStyle='#e8b979'","ctx.strokeStyle='#526e5c'").replace("ctx.fillStyle='#acbdad'","ctx.fillStyle='#3d5043'")
 (out/"viewer.mjs").write_text(js,encoding="utf-8")
 # Retain the original sound synthesis, with a working mute.
 source=(root/"interactive_viewer/index.html").read_text(encoding="utf-8")
@@ -168,3 +169,13 @@ step:playFootstepTick,update:(camera,night)=>ambience?.update(camera,night),togg
 }
 """,encoding="utf-8")
 print("Built integrated explorer and preserved audio synthesis.")
+
+# Translate only the generated explorer, preserving the original Spanish sources.
+import json
+translations=json.loads((root/"scripts/integrated-english.json").read_text(encoding="utf-8"))
+for filename in ["index.html","viewer.mjs"]:
+    target=out/filename
+    text=target.read_text(encoding="utf-8").replace('lang="es"','lang="en"')
+    for source,english in sorted(translations.items(),key=lambda item:-len(item[0])):
+        text=text.replace(source,english)
+    target.write_text(text,encoding="utf-8")

@@ -201,7 +201,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const originalStats={roots:legacy.scene.children.length,meshes:0,instances:0};
   legacy.scene.traverse(o=>{if(o.isMesh)originalStats.meshes++;if(o.isInstancedMesh)originalStats.instances+=o.count;});
   for(const object of [...legacy.scene.children])moveObject(object);
-  callbacks.progress?.('Adaptando pavimento, escaleras y torii al recorrido…');
+  callbacks.progress?.('Adapting paving, stairs and torii to the trails…');
   const surfaces=makePathSurfaces(features,ground),twinColliders=[];
   const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
   const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
@@ -222,7 +222,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   // Reuse each lower building as a rigid object, never stretch the old compressed precinct.
   const gltfLoader=new GLTFLoader();
   for(const id of ['romon','gehaiden','naihaiden','honden']){
-    callbacks.progress?.(`Integrando ${id} con sus detalles originales…`);
+    callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
     if(id==='romon')refineRomonCurtain(gltf.scene);
     gltf.scene.traverse(object=>{
