@@ -18,7 +18,8 @@ import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
-import {precinctLevel,lowerCourtBlend} from './precinct-grade.mjs';
+import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=24';
+import {buildSanctuaryLanding} from './sanctuary-landing.mjs?v=24';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {refineRomonWings} from './romon-wings.mjs';
 import {buildCourtyardShop,courtyardShopId} from './courtyard-shop.mjs';
@@ -63,6 +64,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   // GSI's 10 m grid cannot resolve the court versus raised building plinths.
   // Video-guided shared court datum; preserve the hall's own authored podium.
   byId.gehaiden.target[1]=byId.romon.target[1];
+  byId.naihaiden.target[1]=byId.romon.target[1]+1.6;
+  byId.honden.target[1]=byId.naihaiden.target[1];
   byId.temizuya.mappedTarget=[...byId.temizuya.target];
   byId.temizuya.target=separatedTemizuya(byId.romon,byId.temizuya);
   byId.temizuya.placementStatus='Video-inferred roof clearance; mapped POI retained as mappedTarget';
@@ -183,7 +186,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const courtyard=weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
     const datum=byId.romon.target[1]-byId.romon.source[1];
     const connected=lowerCourtBlend(ex,ez,courtyard,byId.romon.target[1]);
-    return datum+westLandingTransition(ex,ez,connected-datum);
+    const [nx,nz]=rotateXZ(x-byId.naihaiden.target[0],z-byId.naihaiden.target[2],-byId.naihaiden.yaw);
+    const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
+    return datum+westLandingTransition(ex,ez,upper-datum);
   }
   function moveObject(object){
     refineEntranceObjects(object,legacy.materials);
@@ -269,7 +274,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       const tags={Vermilion_ShuIro:'vermilionMat',Black_Lacquer_Nemaki:'blackNemakiMat',
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
-      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
+      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':['romon','naihaiden','honden'].includes(id)&&key==='stoneMat'?'entryStoneMat':key];break;}
     });
     if(id==='romon')refineRomonWings(gltf.scene,legacy.materials);
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
@@ -307,6 +312,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return {type:c.type,args};
   }).filter(Boolean);
   colliders.push(...twinColliders);
+  buildSanctuaryLanding(root,byId.naihaiden,legacy.materials,colliders);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);

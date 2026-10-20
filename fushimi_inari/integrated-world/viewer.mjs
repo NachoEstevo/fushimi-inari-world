@@ -1,13 +1,15 @@
+import {terrainTriangles} from './terrain-triangles.mjs?v=24';
 import {installExplorationMenu} from './exploration-menu.mjs';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
-import {distantCanopy} from './distant-canopy.mjs';
+import {distantCanopy} from './distant-canopy.mjs?v=24';
 import {blendCourtyardGround} from './courtyard-ground.mjs';
+import {installSeasons} from './seasons.mjs?v=24';
 import {buildPathMeshes} from './path-meshes.mjs?v=16';
 import {installExplorationHUD} from './exploration-hud.mjs?v=14';
-import {integrate} from './integration.mjs?v=17';
+import {integrate} from './integration.mjs?v=24';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -40,24 +42,15 @@ try {
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
-  const terrainGeo=new THREE.BufferGeometry(), pos=[], colors=[], indices=[];
-  const color=new THREE.Color();
-  for(let r=0;r<terrain.rows-1;r++)for(let c=0;c<terrain.cols-1;c++){
+  const terrainGeo=new THREE.BufferGeometry();
+  const pos=terrainTriangles(terrain,(c,r)=>{
     const x=terrain.xmin+c*terrain.step,z=terrain.zmin+r*terrain.step;
     const nearby=assembly.spatial.anchors.some(a=>a.radius&&Math.hypot(x+5-a.target[0],z+5-a.target[2])<a.radius*1.5+10);
     const corridor=x>110&&x<1430&&z>-580&&z<330&&(assembly.pathDistance(x+5,z+5)?.distance??100)<8;
-    const subdivisions=nearby||corridor?10:1,step=terrain.step/subdivisions;
-    for(let iz=0;iz<subdivisions;iz++)for(let ix=0;ix<subdivisions;ix++){
-      const sx=x+ix*step,sz=z+iz*step,corners=[[sx,sz],[sx,sz+step],[sx+step,sz],[sx+step,sz+step]];
-      for(const j of [0,1,2,2,1,3]){
-        const [px,pz]=corners[j],h=assembly.surfaces.terrainHeight(px,pz)-.06;
-        indices.push(pos.length/3);pos.push(px,h,pz);
-        color.setHSL(.26,.22,.12+h/240*.04);colors.push(color.r,color.g,color.b);
-      }
-    }
-  }
+    return nearby||corridor;
+  },(x,z)=>assembly.surfaces.terrainHeight(x,z)-.06);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
-  terrainGeo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));terrainGeo.setIndex(indices);terrainGeo.computeVertexNormals();
+  terrainGeo.computeVertexNormals();
   const soilLoader=new THREE.TextureLoader();
   const soil=await soilLoader.loadAsync('../assets/textures/nanobanana/surface_forest_soil_leaves.png');
   soil.colorSpace=THREE.SRGBColorSpace;soil.wrapS=soil.wrapT=THREE.RepeatWrapping;soil.anisotropy=8;
@@ -316,6 +309,7 @@ try {
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   const menu=installExplorationMenu({walker,controls,camera,assembly});
+  installSeasons(assembly,canopy);
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
 

@@ -33,9 +33,17 @@ Open [the integrated world](http://127.0.0.1:8420/integrated-world/index.html).
 | **R / Space**, **F / Ctrl** | Fly up / down |
 | **E** | Interact with supported objects |
 | **Checkpoints** | Teleport to a named location |
-| **Environment** | Lighting and ambient sound |
+| **Environment** | Spring / Autumn, lighting and ambient sound |
 
 The minimap follows your position. Movement speed, free flight, routes and sound are available in the menu. Start with **Rōmon**, **Temizuya**, **Shrine reception** or **Senbon Torii**.
+
+## Seasons and upper court
+
+![Autumn woodland from the live viewer](docs/images/autumn.png)
+
+Choose **Esc → Environment → Season** for fresh spring greens or autumn gold and amber. The choice persists locally. Evergreen trees retain their green foliage; sparse spring flowering crowns are interpretive, not surveyed tree locations. Seasonal changes reuse the same geometry and textures.
+
+The Naihaiden ascent now connects to the lower court and upper side platforms, with finer granite and stitched terrain boundaries. Dimensions remain video-guided estimates. See [R24 references and walking checks](fushimi_inari/integrated-world/REFERENCES-R24.md).
 
 ## Entrance details
 
