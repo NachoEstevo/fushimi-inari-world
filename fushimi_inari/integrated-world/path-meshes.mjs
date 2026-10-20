@@ -4,7 +4,7 @@ import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
 
 export function buildPathMeshes(network,legacy){
-  const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[]},senbonUV=[];
+  const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[]},senbonUV=[];
   const quad=(out,a,b,c,d)=>out.push(...a,...c,...b,...a,...d,...c);
   for(const [index,s] of network.segments.entries()){
     const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],len=Math.hypot(dx,dz);
@@ -19,7 +19,7 @@ export function buildPathMeshes(network,legacy){
       const va=s.distance/.65,vb=(s.distance+len)/.65;
       senbonUV.push(0,va,1,vb,0,vb,0,va,1,va,1,vb);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
-    }else quad(buckets[s.stair&&s.kind==='stone'?'edge':s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
+    }else quad(buckets[s.stair&&s.kind==='stone'?'edge':s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
     if(s.stair){
       const p=s.riserAt==='b'?s.b:s.a,y=s.riserAt==='b'?s.yb:s.ya;
       quad(buckets.edge,point(p,y-s.rise,-s.width/2),point(p,y,-s.width/2),point(p,y,s.width/2),point(p,y-s.rise,s.width/2));
@@ -67,7 +67,7 @@ export function buildPathMeshes(network,legacy){
   const paving=new THREE.CanvasTexture(tile);paving.wrapS=paving.wrapT=THREE.RepeatWrapping;paving.colorSpace=THREE.SRGBColorSpace;paving.anisotropy=8;
   // Fine granite without paving joints continuing vertically across risers.
   const stairFace=fineGranite();
-  const materials={stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
+  const materials={precinct:legacy.materials.precinctPaving,stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
     senbon:new THREE.MeshStandardMaterial({map:paving,roughness:.91}),
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
     restricted:new THREE.MeshStandardMaterial({color:0x766e5e,roughness:1}),

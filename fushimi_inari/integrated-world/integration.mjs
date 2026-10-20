@@ -1,3 +1,4 @@
+import {refineRomonGold,refineEntryPaving} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -14,7 +15,7 @@ import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
-import {fineGranite,courtyardGravel} from './surface-materials.mjs?v=15';
+import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
 
@@ -24,6 +25,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const legacy=await buildLegacy(renderer,callbacks);
   legacy.materials.entryStoneMat=fineGranite();
   legacy.materials.gravelMat.copy(courtyardGravel());
+  legacy.materials.precinctPaving=precinctPaving();
+  legacy.materials.precinctCobbles=precinctPaving(true);
+  legacy.materials.goldMat.color.set('#e7bc62');
+  legacy.materials.goldMat.roughness=.32;
+  legacy.materials.goldMat.metalness=.68;
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
@@ -226,14 +232,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
-    if(id==='romon')refineRomonCurtain(gltf.scene);
+    if(id==='romon'){refineRomonCurtain(gltf.scene);refineRomonGold(gltf.scene,legacy.materials.goldMat);}
     gltf.scene.traverse(object=>{
-      if(!object.isMesh)return;
+      if(!object.isMesh||object.material===legacy.materials.goldMat)return;
       object.castShadow=true;object.receiveShadow=true;
       const tags={Vermilion_ShuIro:'vermilionMat',Black_Lacquer_Nemaki:'blackNemakiMat',
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
-      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
+      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
+      if(id==='romon'&&object.material===legacy.materials.precinctPaving)refineEntryPaving(object,legacy.materials.precinctPaving,legacy.materials.precinctCobbles);
     });
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
   }
@@ -284,8 +291,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
   const walkSurfaces=[];
+  const floorMaterials=[legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat,legacy.materials.entryStoneMat,legacy.materials.precinctPaving,legacy.materials.precinctCobbles];
   root.traverse(object=>{
-    if(!object.isMesh||object.isInstancedMesh||![legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat,legacy.materials.entryStoneMat].includes(object.material))return;
+    if(!object.isMesh||object.isInstancedMesh||![object.material].flat().every(m=>floorMaterials.includes(m)))return;
     const geo=object.geometry.clone().applyMatrix4(object.matrixWorld),position=geo.attributes.position,index=geo.index;
     const vertices=[],a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),normal=new THREE.Vector3();
     for(let i=0;i<(index?index.count:position.count);i+=3){
@@ -296,7 +304,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     geo.dispose();
     if(vertices.length){
       const floorGeo=new THREE.BufferGeometry();floorGeo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-      walkSurfaces.push(new THREE.Mesh(floorGeo,object.material));
+      walkSurfaces.push(new THREE.Mesh(floorGeo,legacy.materials.entryStoneMat));
     }
   });
   const floorRay=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
@@ -312,7 +320,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(!object.isMesh||object.isInstancedMesh||retained.has(object)||Array.isArray(object.material))return;
     object.geometry.computeBoundingSphere();
     const center=object.geometry.boundingSphere.center.clone().applyMatrix4(object.matrixWorld);
-    const key=`${Math.floor(center.x/128)},${Math.floor(center.z/128)}:`+object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index);
+    const key=`${Math.floor(center.x/128)},${Math.floor(center.z/128)}:`+object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index)+`:${object.castShadow}:${object.receiveShadow}`;
     if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(object);
   });
   for(const objects of buckets.values()){
@@ -321,7 +329,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const merged=mergeGeometries(geometries,false);
     geometries.forEach(g=>g.dispose());
     if(!merged)continue;
-    const mesh=new THREE.Mesh(merged,objects[0].material);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+    const mesh=new THREE.Mesh(merged,objects[0].material);mesh.castShadow=objects[0].castShadow;mesh.receiveShadow=objects[0].receiveShadow;root.add(mesh);
     objects.forEach(o=>o.removeFromParent());
   }
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
