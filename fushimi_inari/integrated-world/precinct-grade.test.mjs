@@ -20,6 +20,11 @@ test('sanctuary grading meets both ends of the preserved stairs and upper landin
   assert.equal(sanctuaryCourtBlend(0,-19.6,99,40),41.6);
   assert.ok(Math.abs(sanctuaryCourtBlend(0,-22.2,99,40)-43.2)<1e-9);
   assert.ok(Math.abs(sanctuaryCourtBlend(15,-35,99,40)-43.2)<1e-9);
-  assert.equal(sanctuaryCourtBlend(35,-25,99,40),99);
+  assert.equal(sanctuaryCourtBlend(41,-25,99,40),99);
   for(const z of [-19.6,-22.2])assert.ok(Math.abs(sanctuaryCourtBlend(0,z-.0001,50,40)-sanctuaryCourtBlend(0,z+.0001,50,40))<.001);
+});
+
+test('upper sanctuary terrace extends past the mapped Honden side access',()=>{
+  assert.equal(sanctuaryCourtBlend(16,-50,48,40.78225),43.98225);
+  assert.equal(sanctuaryCourtBlend(16,-58,48,40.78225),43.98225);
 });

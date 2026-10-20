@@ -4,12 +4,12 @@ import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
-import {distantCanopy} from './distant-canopy.mjs?v=24';
+import {distantCanopy} from './distant-canopy.mjs?v=25';
 import {blendCourtyardGround} from './courtyard-ground.mjs';
-import {installSeasons} from './seasons.mjs?v=24';
+import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=16';
 import {installExplorationHUD} from './exploration-hud.mjs?v=14';
-import {integrate} from './integration.mjs?v=24';
+import {integrate} from './integration.mjs?v=25e';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -347,6 +347,7 @@ try {
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
     sky.update();canopy.update(camera);
+    for(const {object,bounds} of assembly.forestChunks)object.visible=camera.position.distanceTo(bounds.center)<bounds.radius+400;
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.
     for(const chunks of buildingGroup.children)for(const mesh of chunks.children){

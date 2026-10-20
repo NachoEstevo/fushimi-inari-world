@@ -33,6 +33,9 @@ export function distantCanopy(features,ground,pathDistance,terrain){
     buckets.get(key).push([px,y,pz,patch,random(),random()]);count++;
   }
   const geo=new THREE.IcosahedronGeometry(1,0);
+  // Smooth crown lighting without increasing the twenty-triangle silhouette.
+  const points=geo.attributes.position,normals=geo.attributes.normal,n=new THREE.Vector3();
+  for(let i=0;i<points.count;i++){n.fromBufferAttribute(points,i).normalize();normals.setXYZ(i,n.x,n.y,n.z);}
   const mat=new THREE.MeshLambertMaterial({color:0xffffff});
   const dummy=new THREE.Object3D(),color=new THREE.Color();
   for(const trees of buckets.values()){

@@ -3,7 +3,7 @@ import {validSeason} from './season-palette.mjs?v=24';
 
 export function installSeasons(assembly,canopy){
   const maple=assembly.legacy.foliage[2].material,meshes=[];
-  assembly.root.traverse(o=>{if(o.isInstancedMesh&&o.material===maple)meshes.push(o);});
+  assembly.root.traverse(o=>{if(o.isInstancedMesh&&(o.material===maple||o.userData.seasonalMaple))meshes.push(o);});
   // Retain the old leaf alpha/normal maps and remove their baked red pigment.
   maple.onBeforeCompile=shader=>{
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>

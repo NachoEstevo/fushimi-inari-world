@@ -80,8 +80,8 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
         const horizon=new THREE.InstancedMesh(horizonEvergreen.geometry,horizonEvergreen.material,list.length);
         tintLeaves(far);tintLeaves(horizon);
         list.forEach((matrix,i)=>horizon.setMatrixAt(i,matrix));horizon.position.copy(mesh.position);horizon.computeBoundingSphere();
-        lod.addLevel(mesh,0);lod.addLevel(far,85,.12);lod.addLevel(horizon,200,.15);root.add(lod);
-      }else root.add(mesh);
+        lod.addLevel(mesh,0);lod.addLevel(far,85,.12);lod.addLevel(horizon,200,.15);lod.userData.nearForest=true;root.add(lod);
+      }else {mesh.userData.nearForest=true;root.add(mesh);}
     });
     total+=trees.length;
   }

@@ -1,3 +1,6 @@
+import {preservedForestLOD} from './forest-lod.mjs';
+import {okushaCourtGrade} from './okusha-court.mjs?v=25';
+import {buildOkushaCourt} from './okusha-details.mjs?v=25c';
 import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
@@ -5,7 +8,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildLegacy} from './legacy-builders.mjs';
-import {extendForest} from './forest.mjs?v=10';
+import {extendForest} from './forest.mjs?v=25';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs?v=15';
@@ -18,8 +21,8 @@ import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
-import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=24';
-import {buildSanctuaryLanding} from './sanctuary-landing.mjs?v=24';
+import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=25e';
+import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=25b';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {refineRomonWings} from './romon-wings.mjs';
 import {buildCourtyardShop,courtyardShopId} from './courtyard-shop.mjs';
@@ -66,6 +69,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   byId.gehaiden.target[1]=byId.romon.target[1];
   byId.naihaiden.target[1]=byId.romon.target[1]+1.6;
   byId.honden.target[1]=byId.naihaiden.target[1];
+  for(const id of ['gonden','tamayama'])byId[id].target[1]=byId.naihaiden.target[1];
   byId.temizuya.mappedTarget=[...byId.temizuya.target];
   byId.temizuya.target=separatedTemizuya(byId.romon,byId.temizuya);
   byId.temizuya.placementStatus='Video-inferred roof clearance; mapped POI retained as mappedTarget';
@@ -83,6 +87,12 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       a.yaw=Math.atan2(node.point[0]-a.target[0],node.point[2]-a.target[2])-Math.atan2(old.pt.x-a.source[0],old.pt.z-a.source[2]);
     }else if(node&&a.id==='summit')a.yaw=Math.atan2(node.point[0]-a.target[0],node.point[2]-a.target[2]);
   }
+  // The court meets the shared tunnel exit; a coarse hillside DEM is not a podium survey.
+  byId.okusha.target[1]=spatial.twins[0].at(1).point[1];
+  byId.okusha.yaw=-Math.PI+.14;
+  byId.okusha.radius=22;
+  const oldOkusha=legacy.scene.children.find(o=>o.userData.zone==='okusha'&&o.isGroup);
+  if(oldOkusha)byId.okusha.source[1]=oldOkusha.position.y;
   const pond=features.water.find(w=>w.tags.name==='新池');
   if(pond){
     const center=pond.points.reduce((p,v)=>[p[0]+v[0]/pond.points.length,p[1]+v[2]/pond.points.length],[0,0]);
@@ -188,7 +198,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const connected=lowerCourtBlend(ex,ez,courtyard,byId.romon.target[1]);
     const [nx,nz]=rotateXZ(x-byId.naihaiden.target[0],z-byId.naihaiden.target[2],-byId.naihaiden.yaw);
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
-    return datum+westLandingTransition(ex,ez,upper-datum);
+    return okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1]);
   }
   function moveObject(object){
     refineEntranceObjects(object,legacy.materials);
@@ -313,6 +323,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }).filter(Boolean);
   colliders.push(...twinColliders);
   buildSanctuaryLanding(root,byId.naihaiden,legacy.materials,colliders);
+  buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
@@ -321,17 +332,21 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
+  buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders);
   const terraces=supportTerraces(root,legacy,ground);
   for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
     if(!mesh.parent)continue;
     const parent=mesh.parent;mesh.updateMatrix();
-    parent.add(partitionInstances(mesh));mesh.removeFromParent();
+    const chunks=partitionInstances(mesh);
+    if([legacy.foliage[1],legacy.foliage[2]].includes(mesh))preservedForestLOD(chunks,mesh===legacy.foliage[2]);
+    else if(legacy.foliage.includes(mesh))for(const child of chunks.children)child.userData.nearForest=true;
+    parent.add(chunks);mesh.removeFromParent();
   }
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
   const walkSurfaces=[];
-  const floorMaterials=[legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat,legacy.materials.entryStoneMat,legacy.materials.precinctPaving,legacy.materials.precinctCobbles];
+  const floorMaterials=[legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat,legacy.materials.entryStoneMat,legacy.materials.precinctPaving,legacy.materials.precinctCobbles,legacy.materials.sanctuaryApronMat];
   root.traverse(object=>{
     if(!object.isMesh||object.isInstancedMesh||![object.material].flat().every(m=>floorMaterials.includes(m)))return;
     const geo=object.geometry.clone().applyMatrix4(object.matrixWorld),position=geo.attributes.position,index=geo.index;
@@ -372,8 +387,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const mesh=new THREE.Mesh(merged,objects[0].material);mesh.castShadow=objects[0].castShadow;mesh.receiveShadow=objects[0].receiveShadow;root.add(mesh);
     objects.forEach(o=>o.removeFromParent());
   }
+  const forestChunks=[];root.updateMatrixWorld(true);
+  root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>b.id===courtyardShopId||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+  return {root,spatial,ground,walkHeight,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,
+    excludesBuilding:b=>b.id===courtyardShopId||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

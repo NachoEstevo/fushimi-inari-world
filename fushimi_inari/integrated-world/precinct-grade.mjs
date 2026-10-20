@@ -23,7 +23,7 @@ export function lowerCourtBlend(x,z,existing,level){
 // steps rise from 1.6 to 3.2 m between z=-19.6 and -22.2.
 export function sanctuaryCourtBlend(x,z,existing,datum){
   const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
-  const weight=(1-smooth((Math.abs(x)-26)/5))*smooth((-z-7)/4)*(1-smooth((-z-45)/6));
+  const weight=(1-smooth((Math.abs(x)-26)/14))*smooth((-z-7)/4)*(1-smooth((-z-58)/12));
   const level=z>=-19.6?1.6:z>=-22.2?1.6+1.6*(-19.6-z)/2.6:3.2;
   return existing+(datum+level-existing)*weight;
 }

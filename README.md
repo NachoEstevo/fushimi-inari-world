@@ -45,6 +45,8 @@ Choose **Esc → Environment → Season** for fresh spring greens or autumn gold
 
 The Naihaiden ascent now connects to the lower court and upper side platforms, with finer granite and stitched terrain boundaries. Dimensions remain video-guided estimates. See [R24 references and walking checks](fushimi_inari/integrated-world/REFERENCES-R24.md).
 
+The twin Senbon exits now open onto a connected Okusha court, with the original ema and Omokaru details retained and mapped lateral buildings added. Exterior sanctuary approaches follow OSM paths. Preserved tree crowns now have lightweight distant substitutes. See [R25 reference, walking and performance checks](fushimi_inari/integrated-world/REFERENCES-R25.md).
+
 ## Entrance details
 
 ![Satellite-guided woodland and mapped surrounding neighbourhoods](docs/images/aerial-context.png)
