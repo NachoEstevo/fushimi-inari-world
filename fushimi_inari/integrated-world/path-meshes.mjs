@@ -14,7 +14,10 @@ export function buildPathMeshes(network,legacy){
       senbonUV.push(0,va,1,vb,0,vb,0,va,1,va,1,vb);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
     }else quad(buckets[s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
-    if(s.stair)quad(buckets.edge,point(s.a,s.ya-.23,-s.width/2),point(s.a,s.ya,-s.width/2),point(s.a,s.ya,s.width/2),point(s.a,s.ya-.23,s.width/2));
+    if(s.stair){
+      const p=s.riserAt==='b'?s.b:s.a,y=s.riserAt==='b'?s.yb:s.ya;
+      quad(buckets.edge,point(p,y-s.rise,-s.width/2),point(p,y,-s.width/2),point(p,y,s.width/2),point(p,y-s.rise,s.width/2));
+    }
     if(s.kind==='stone'){
       for(const side of [-1,1]){
         const inner=side*s.width/2,outer=inner+side*.13;

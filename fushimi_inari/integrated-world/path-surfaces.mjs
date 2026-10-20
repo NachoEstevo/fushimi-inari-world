@@ -25,7 +25,10 @@ export function makePathSurfaces(features,ground){
         const level=h1>=h0?(i+1)/count:i/count;
         ya=yb=h0+(h1-h0)*level+.14;
       }
-      const segment={a,b,ya,yb,width,kind,stair,id:path.id,distance:i*length/count,handrail:stair&&path.tags.handrail==='yes'};
+      const rise=stair?Math.abs(h1-h0)/count:0;
+      const segment={a,b,ya,yb,width,kind,stair,rise,
+        riserAt:stair?(h1>=h0?'a':'b'):null,
+        id:path.id,distance:i*length/count,handrail:stair&&path.tags.handrail==='yes'};
       segments.push(segment);
       const pad=width/2+.3;
       for(let x=Math.floor((Math.min(a[0],b[0])-pad)/size);x<=Math.floor((Math.max(a[0],b[0])+pad)/size);x++)

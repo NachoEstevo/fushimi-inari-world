@@ -8,6 +8,7 @@ import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spati
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {buildSenbon} from './senbon.mjs';
 import {buildMountainTorii} from './mountain-torii.mjs';
+import {supportTerraces} from './terrace-foundations.mjs';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spec=await fetch('anchors.json').then(r=>r.json());
@@ -214,6 +215,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   colliders.push(...twinColliders);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
+  const terraces=supportTerraces(root,legacy,ground);
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
@@ -257,7 +259,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     objects.forEach(o=>o.removeFromParent());
   }
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
-    forest,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    forest,terraces,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
     excludesBuilding:b=>anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
