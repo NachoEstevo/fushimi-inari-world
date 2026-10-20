@@ -24,7 +24,7 @@ html=html.replace('<script type="module"', '<div id="interaction" hidden></div><
 (out/"index.html").write_text(html,encoding="utf-8")
 js=(root/"geography/viewer.mjs").read_text(encoding="utf-8")
 js=js.replace("from './geo-core.mjs'","from '../geography/geo-core.mjs'")
-js="import {installExplorationHUD} from './exploration-hud.mjs?v=14';\nimport {integrate} from './integration.mjs?v=16';\nimport {installWalking} from './walking.mjs?v=14';\nimport {createAudio} from './audio.mjs';\n"+js
+js="import {installExplorationHUD} from './exploration-hud.mjs?v=14';\nimport {integrate} from './integration.mjs?v=17';\nimport {installWalking} from './walking.mjs?v=14';\nimport {createAudio} from './audio.mjs';\n"+js
 js=js.replace("fetch(`${name}.json`)","fetch(`../geography/${name}.json`)")
 js=js.replace("const ground=(x,z)=>heightAt(terrain,x,z);","let assembly=null;\n  const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);")
 js=js.replace("renderer.outputColorSpace=", "renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;\n  renderer.outputColorSpace=")
@@ -100,7 +100,7 @@ js=js.replace("  $('loading').remove();trace();","""  const walker=installWalkin
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Listo para caminar`;
       document.body.dataset.checkpoint=id;

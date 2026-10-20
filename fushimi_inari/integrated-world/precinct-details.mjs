@@ -48,3 +48,25 @@ export function refineRomonGold(scene,gold){
   const mesh=new THREE.Mesh(geometry,gold);mesh.name='Romon photo-referenced kanagu and lantern mounts';
   mesh.castShadow=false;mesh.receiveShadow=true;scene.add(mesh);
 }
+
+// Decorative vocabulary from photos 3 and 8; dimensions follow inherited roofs.
+export function refineRomonGables(scene,gold){
+  const parts=[];
+  for(const [x,y,width,side] of [[4.15,13.20,2.6,1],[-4.15,13.20,2.6,-1],[16.12,7.02,1.6,1],[8.88,7.02,1.6,-1],[-8.88,7.02,1.6,1],[-16.12,7.02,1.6,-1]]){
+    const transform=geo=>{if(geo.index){const source=geo;geo=source.toNonIndexed();source.dispose();}geo.rotateY(side*Math.PI/2);geo.translate(x,y,0);parts.push(geo);};
+    const outline=new THREE.Shape();outline.moveTo(-.26,.18);outline.quadraticCurveTo(-.40,-.12,-.18,-.24);outline.quadraticCurveTo(-.25,-.42,0,-.55);outline.quadraticCurveTo(.25,-.42,.18,-.24);outline.quadraticCurveTo(.40,-.12,.26,.18);outline.closePath();
+    for(const px of [-.14,.14]){const hole=new THREE.Path();hole.absellipse(px,-.12,.045,.07,0,Math.PI*2,true);outline.holes.push(hole);}
+    transform(new THREE.ExtrudeGeometry(outline,{depth:.025,bevelEnabled:false,curveSegments:8}));
+    for(const sign of [-1,1]){
+      const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(0,.28,.01),new THREE.Vector3(sign*width*.25,.05,.01),new THREE.Vector3(sign*width*.5,-.25,.01));
+      transform(new THREE.TubeGeometry(curve,16,.025,5,false));
+      for(let j=1;j<=3;j++){
+        const c=curve.getPoint(j/4);
+        for(let k=0;k<12;k++){
+          const a=k*Math.PI/6,p=new THREE.SphereGeometry(1,6,4).scale(.028,.075,.014);p.rotateZ(a);p.translate(c.x-Math.sin(a)*.06,c.y+Math.cos(a)*.06,.025);transform(p);
+        }
+      }
+    }
+  }
+  const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,gold);mesh.name='Gable floral kanagu';mesh.receiveShadow=true;scene.add(mesh);
+}

@@ -1,4 +1,5 @@
-import {refineRomonGold,refineEntryPaving} from './precinct-details.mjs';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs';
+import {refineRomonGold,refineEntryPaving,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -167,6 +168,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
   }
   function moveObject(object){
+    refineEntranceObjects(object,legacy.materials);
     refineShrineFinishes(object,legacy.materials.entryStoneMat);
     // Replace only generic slabs/shells; original source files and detailed
     // fittings remain intact. No square plaza is laid across mapped stairways.
@@ -232,9 +234,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
-    if(id==='romon'){refineRomonCurtain(gltf.scene);refineRomonGold(gltf.scene,legacy.materials.goldMat);}
+    if(id==='romon'){refineRomonCurtain(gltf.scene);refineRomonGold(gltf.scene,legacy.materials.goldMat);refineRomonGables(gltf.scene,legacy.materials.goldMat);}
     gltf.scene.traverse(object=>{
       if(!object.isMesh||object.material===legacy.materials.goldMat)return;
+      if(id==='romon'&&object.material.name.includes('Foliage_Canopy')){refineRomonShrubs(object);return;}
       object.castShadow=true;object.receiveShadow=true;
       const tags={Vermilion_ShuIro:'vermilionMat',Black_Lacquer_Nemaki:'blackNemakiMat',
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
@@ -279,6 +282,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   colliders.push(...twinColliders);
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
+  const reception=buildReception(root,features,ground,legacy.materials,colliders);
+  if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
   const terraces=supportTerraces(root,legacy,ground);
@@ -333,7 +338,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     objects.forEach(o=>o.removeFromParent());
   }
   const inventory={...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
-    forest,margins,terraces,yotsutsuji,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

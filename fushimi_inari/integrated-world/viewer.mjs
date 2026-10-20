@@ -5,7 +5,7 @@ import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs?v=16';
 import {installExplorationHUD} from './exploration-hud.mjs?v=14';
-import {integrate} from './integration.mjs?v=16';
+import {integrate} from './integration.mjs?v=17';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -284,7 +284,7 @@ try {
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;
