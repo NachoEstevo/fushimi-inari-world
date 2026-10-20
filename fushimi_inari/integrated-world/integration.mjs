@@ -18,6 +18,9 @@ import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
+import {separatedTemizuya,westStairHeight} from './entrance-layout.mjs';
+import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
+import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
@@ -54,6 +57,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(gozendani)byId.gozendani.source=gozendani.position.toArray();
   // Keep local floor datums exactly consistent with the original builders.
   for(const a of anchors)a.source[1]=legacy.sampleGroundHeight(a.source[0],a.source[2]);
+  byId.temizuya.mappedTarget=[...byId.temizuya.target];
+  byId.temizuya.target=separatedTemizuya(byId.romon,byId.temizuya);
+  byId.temizuya.placementStatus='Video-inferred roof clearance; mapped POI retained as mappedTarget';
   for(const id of ['chaya_n','chaya_s']){
     const original=legacy.scene.children.find(o=>o.userData.zone===id&&o.isGroup);
     if(original)byId[id].source[1]=original.position.y;
@@ -145,6 +151,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       .multiply(new THREE.Matrix4().makeTranslation(...f.source.map(n=>-n)));
   }
   function ground(x,z){
+    const [ex,ez]=rotateXZ(x-byId.romon.target[0],z-byId.romon.target[2],-byId.romon.yaw);
+    const west=westStairHeight(ex,ez);
+    if(west!==null)return byId.romon.target[1]-byId.romon.source[1]+west;
     const raw=heightAt(terrain,x,z);
     const original=x>790&&x<808&&z>-226&&z<-207?yotsuGrade(x,z,raw):raw;
     let weight=0,weightedHeight=0;
@@ -238,6 +247,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     gltf.scene.traverse(object=>{
       if(!object.isMesh||object.material===legacy.materials.goldMat)return;
       if(id==='romon'&&object.material.name.includes('Foliage_Canopy')){refineRomonShrubs(object);return;}
+      if(id==='romon'&&object.material.name.includes('Granite_Stone_Moss'))clearWestStairPodium(object);
       object.castShadow=true;object.receiveShadow=true;
       const tags={Vermilion_ShuIro:'vermilionMat',Black_Lacquer_Nemaki:'blackNemakiMat',
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
@@ -280,6 +290,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return {type:c.type,args};
   }).filter(Boolean);
   colliders.push(...twinColliders);
+  buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const reception=buildReception(root,features,ground,legacy.materials,colliders);

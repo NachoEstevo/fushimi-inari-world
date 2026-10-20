@@ -1,0 +1,16 @@
+import {rotateXZ} from './spatial.mjs';
+
+// Video 00:30/00:54 establishes separation, not surveyed metre dimensions.
+// Retain the mapped lateral offset; clear the inherited corridor roof (z=4.9).
+export function separatedTemizuya(romon,temizuya){
+  const [x]=rotateXZ(temizuya.target[0]-romon.target[0],temizuya.target[2]-romon.target[2],-romon.yaw);
+  const [dx,dz]=rotateXZ(x,9.1,romon.yaw);
+  return [romon.target[0]+dx,romon.target[1]-romon.source[1]+temizuya.source[1],romon.target[2]+dz];
+}
+
+export const entryWallRuns=[[-19.1,-5.4],[5.4,18.6]];
+
+export function westStairHeight(x,z){
+  if(x< -24.8||x> -19.7||z< -1||z>14.5)return null;
+  return 1.6*Math.max(0,Math.min(1,(13.8-z)/(13.8-1.89)));
+}
