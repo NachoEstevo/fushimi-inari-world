@@ -1,5 +1,6 @@
 import {terrainTriangles} from './terrain-triangles.mjs?v=24';
 import {installExplorationMenu} from './exploration-menu.mjs';
+import {installPhotoMode} from './photo-mode.mjs?v=27c';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
@@ -8,8 +9,8 @@ import {distantCanopy} from './distant-canopy.mjs?v=25';
 import {blendCourtyardGround} from './courtyard-ground.mjs';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=26';
-import {installExplorationHUD} from './exploration-hud.mjs?v=14';
-import {integrate} from './integration.mjs?v=26c';
+import {installExplorationHUD} from './exploration-hud.mjs?v=27';
+import {integrate} from './integration.mjs?v=27b';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -292,7 +293,7 @@ try {
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=id==='yotsu'?[812.443,166.1,-213.978]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const target=id==='yotsu'?[-300,80,-300]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;
@@ -308,6 +309,7 @@ try {
     hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
   const menu=installExplorationMenu({walker,controls,camera,assembly});
   installSeasons(assembly,canopy);
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
@@ -337,7 +339,7 @@ try {
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
       $('position').textContent=arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!walker.update(dt)){
+    }else if(!photo.active&&!walker.update(dt)){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);

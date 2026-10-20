@@ -28,7 +28,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
   select.value='romon';
   const ids=['romon','senbon','okusha','kumataka','yotsu','sannomine','ninomine','summit','mitsurugi','gozendani'];
   for(const id of ids){
-    const button=document.createElement('button');button.textContent=assembly.spatial.byId[id].label;
+    const button=document.createElement('button');button.textContent=id==='yotsu'?'Yotsutsuji · Kyoto view':assembly.spatial.byId[id].label;
     button.onclick=()=>{select.value=id;teleport(id);};panel.querySelector('#checkpoint-buttons').append(button);
   }
   panel.querySelector('#checkpoint-go').onclick=()=>teleport(select.value);

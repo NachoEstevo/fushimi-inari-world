@@ -15,7 +15,7 @@ import {makePathSurfaces} from './path-surfaces.mjs?v=15';
 import {buildSenbon} from './senbon.mjs?v=26';
 import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
-import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
+import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=27b';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';

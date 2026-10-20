@@ -103,6 +103,20 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.computeVertexNormals();
   const mat=legacy.materials.flagstoneMat.clone();mat.side=THREE.DoubleSide;
   const plaza=new THREE.Mesh(geo,mat);plaza.receiveShadow=true;group.add(plaza);
+  // Resting places stay inside the existing forecourt, clear of all three
+  // stair mouths. Dimensions are inferred from viewpoint/tea-house references.
+  for(const x of [797,803]){
+    const z=-219.75,y=ground(x,z)+.10;
+    box(2.5,.10,.52,x,y+.43,z,wood);
+    for(const dx of [-.92,.92])box(.18,.40,.38,x+dx,y+.20,z,legacy.materials.stoneMat);
+    colliders.push({type:'box',args:[x,z,1.25,.26,0,y,y+.55,'yotsu_rest_bench']});
+  }
+  // Low stone edge frames the outlook; the southern descent remains open.
+  const edgeX=792.2,edgeZ=-218.2,edgeY=ground(edgeX,edgeZ);
+  const edge=box(.30,.55,3.7,edgeX,edgeY+.275,edgeZ,legacy.materials.entryStoneMat);
+  const ep=edge.geometry.attributes.position,en=edge.geometry.attributes.normal,eu=edge.geometry.attributes.uv;
+  for(let i=0;i<ep.count;i++)eu.setXY(i,(Math.abs(en.getX(i))>.5?ep.getZ(i):ep.getX(i))/1.5,(Math.abs(en.getY(i))>.5?ep.getZ(i):ep.getY(i))/1.5);
+  colliders.push({type:'box',args:[edgeX,edgeZ,.15,1.85,0,edgeY,edgeY+.65,'yotsu_view_edge']});
   // Lateral ten-step approach and north branch are visible in panoramas.
   // Individual gate positions are inferred within these mapped ways.
   const finishes=toriiMaterials(legacy);

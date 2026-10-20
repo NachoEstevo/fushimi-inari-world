@@ -57,3 +57,11 @@ header .eyebrow{color:#b8382b}header h1{font-size:27px;margin-bottom:0}
 .menu-credit{flex-shrink:0;margin:20px 0 0;padding-top:14px;border-top:1px solid #b8382b26;text-align:center;font-size:11px;color:#77675f}
 .menu-credit a{color:#b8382b;text-decoration:none;font-weight:600}.menu-credit a:hover{text-decoration:underline}.menu-credit a:focus-visible{outline:2px solid #b8382b;outline-offset:4px;border-radius:2px}
 #exploration-menu #ambient-volume{margin:0;max-width:100%;box-sizing:border-box}
+
+/* Photo controls stay separate from the clean, full-viewport composition. */
+#photo-open{position:fixed;right:118px;top:28px;z-index:20;background:#ffffffb8;color:#392823;border:1px solid #fff9;backdrop-filter:blur(14px)}
+#photo-panel{position:fixed;right:24px;top:24px;width:280px;box-sizing:border-box;max-height:calc(100dvh - 48px);overflow:auto;z-index:40;padding:22px;background:#ffffffd4;backdrop-filter:blur(20px);border:1px solid #fffc;border-radius:20px;color:#392823}
+#photo-panel h2{font-size:24px}#photo-panel label{display:block;font-size:12px;margin:12px 0 5px}#photo-panel input[type=range]{width:100%;margin:0;accent-color:#b8382b}#photo-panel select{width:100%}#photo-panel output{float:right;color:#a32e23}#photo-panel .row{margin-top:16px;gap:8px}#photo-panel .row button{flex:1}.photo-help,#photo-status{font-size:11px;line-height:1.5;color:#77675f}#photo-panel .photo-grid-label{display:flex;align-items:center;gap:8px}#photo-grid-toggle{width:auto;accent-color:#b8382b}
+.photo-mode header,.photo-mode #navigation,.photo-mode footer,.photo-mode #crosshair,.photo-mode #interaction,.photo-mode #menu-open,.photo-mode #photo-open{display:none!important}
+#photo-grid{position:fixed;inset:0;pointer-events:none;z-index:30;background:linear-gradient(to right,transparent calc(33.333% - .5px),#ffffff65 33.333%,transparent calc(33.333% + .5px),transparent calc(66.666% - .5px),#ffffff65 66.666%,transparent calc(66.666% + .5px)),linear-gradient(to bottom,transparent calc(33.333% - .5px),#ffffff65 33.333%,transparent calc(33.333% + .5px),transparent calc(66.666% - .5px),#ffffff65 66.666%,transparent calc(66.666% + .5px))}
+@media(max-width:700px){#photo-open{top:64px;right:16px;font-size:11px;padding:9px}#photo-panel{right:12px;top:12px;width:250px;max-height:calc(100dvh - 24px);padding:16px}}

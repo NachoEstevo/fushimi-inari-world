@@ -34,8 +34,13 @@ Open [the integrated world](http://127.0.0.1:8420/integrated-world/index.html).
 | **E** | Interact with supported objects |
 | **Checkpoints** | Teleport to a named location |
 | **Environment** | Spring / Autumn, lighting and ambient sound |
+| **Photo mode** | Pan, tilt, field of view, exposure and clean PNG export up to 3840 px |
 
 The minimap follows your position. Movement speed, free flight, routes and sound are available in the menu. Start with **Rōmon**, **Temizuya**, **Shrine reception** or **Senbon Torii**.
+
+For the city outlook, choose **Checkpoints → Yotsutsuji · Kyoto view**. The existing forecourt has resting benches and an open stair approach. Its furniture dimensions are inferred from references; the distant city remains simplified mapped massing.
+
+**Photo mode** holds your position and hides navigation overlays. Adjust the composition, optionally show a thirds grid, then **Save PNG**. Exports retain the screen aspect ratio with a 1920 or 3840 pixel longest edge; the grid and controls are excluded. **Open last photo** provides the latest capture if the browser does not download automatically. **Esc** restores the original camera settings and exploration controls. High-resolution rendering is temporary and uses the existing renderer.
 
 ## Seasons and upper court
 
