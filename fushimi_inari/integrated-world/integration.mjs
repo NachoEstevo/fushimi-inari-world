@@ -11,11 +11,16 @@ import {buildMountainTorii} from './mountain-torii.mjs';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs';
 import {yotsuGrade} from './site-grading.mjs';
+import {partitionInstances} from './spatial-mesh.mjs';
+import {refineShrineFinishes} from './shrine-finishes.mjs';
+import {fineGranite} from './surface-materials.mjs';
+import {entryHeight} from './entry-profile.mjs';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spec=await fetch('anchors.json').then(r=>r.json());
   const spatial=makeSpatial(terrain,features,spec);
   const legacy=await buildLegacy(renderer,callbacks);
+  legacy.materials.entryStoneMat=fineGranite();
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
@@ -147,11 +152,13 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       let localY=a.source[1];
       if(a.id==='romon'||a.id==='naihaiden')
         localY=a.id==='romon'&&Math.abs(localX)>5.2&&localZ>2.5&&localZ<6.5?0:legacy.sampleGroundHeight(localX,localZ);
+      if(a.id==='romon')localY=entryHeight(localX,localZ,localY);
       weightedHeight+=(a.target[1]+localY-a.source[1])*influence;weight+=influence;
     }
     return weight?THREE.MathUtils.lerp(original,weightedHeight/weight,Math.min(1,weight)):original;
   }
   function moveObject(object){
+    refineShrineFinishes(object,legacy.materials.entryStoneMat);
     // Replace only generic slabs/shells; original source files and detailed
     // fittings remain intact. No square plaza is laid across mapped stairways.
     if(object.userData.zone==='yotsu'&&object.isMesh&&object.geometry.type==='BoxGeometry'&&
@@ -208,10 +215,21 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       const tags={Vermilion_ShuIro:'vermilionMat',Black_Lacquer_Nemaki:'blackNemakiMat',
         Granite_Stone_Moss:'stoneMat',Flagstone_Walkway:'flagstoneMat',Courtyard_Gravel_Dark:'gravelMat',
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
-      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key];break;}
+      for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[id==='romon'&&key==='stoneMat'?'entryStoneMat':key];break;}
     });
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
   }
+  const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';
+  for(const flight of [{count:11,width:9.2,start:6.5,end:3.4,bottom:0,rise:2.1},{count:4,width:3.6,start:-5,end:-3.4,bottom:1.6,rise:.5}]){
+    const depth=Math.abs(flight.end-flight.start)/flight.count;
+    for(let i=0;i<flight.count;i++){
+      const height=flight.rise*(i+1)/flight.count;
+      const step=new THREE.Mesh(new THREE.BoxGeometry(flight.width,height,depth+.015),legacy.materials.entryStoneMat);
+      step.position.set(0,flight.bottom+height/2,flight.start+(flight.end-flight.start)*(i+.5)/flight.count);
+      step.receiveShadow=true;entrySteps.add(step);
+    }
+  }
+  entrySteps.applyMatrix4(matrix(byId.romon));root.add(entrySteps);
   // Transform original physical obstacles with the same zone/route rules as their meshes.
   const colliders=legacy.colliders.map(c=>{
     if(['yotsutsuji_rail','chaya'].includes(c.args.at(-1)))return null;
@@ -238,12 +256,17 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const terraces=supportTerraces(root,legacy,ground);
+  for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
+    if(!mesh.parent)continue;
+    const parent=mesh.parent;mesh.updateMatrix();
+    parent.add(partitionInstances(mesh));mesh.removeFromParent();
+  }
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
   const walkSurfaces=[];
   root.traverse(object=>{
-    if(!object.isMesh||object.isInstancedMesh||![legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat].includes(object.material))return;
+    if(!object.isMesh||object.isInstancedMesh||![legacy.materials.stoneMat,legacy.materials.flagstoneMat,legacy.materials.gravelMat,legacy.materials.entryStoneMat].includes(object.material))return;
     const geo=object.geometry.clone().applyMatrix4(object.matrixWorld),position=geo.attributes.position,index=geo.index;
     const vertices=[],a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),normal=new THREE.Vector3();
     for(let i=0;i<(index?index.count:position.count);i+=3){
@@ -268,7 +291,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const object of legacy.interactables)object.traverse(child=>retained.add(child));
   root.traverse(object=>{
     if(!object.isMesh||object.isInstancedMesh||retained.has(object)||Array.isArray(object.material))return;
-    const key=object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index);
+    object.geometry.computeBoundingSphere();
+    const center=object.geometry.boundingSphere.center.clone().applyMatrix4(object.matrixWorld);
+    const key=`${Math.floor(center.x/128)},${Math.floor(center.z/128)}:`+object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index);
     if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(object);
   });
   for(const objects of buckets.values()){

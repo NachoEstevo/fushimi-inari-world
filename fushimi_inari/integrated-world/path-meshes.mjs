@@ -1,11 +1,17 @@
 import * as THREE from 'three';
+import {spatialMeshes} from './spatial-mesh.mjs';
+import {pathOffset} from './path-frame.mjs';
+import {fineGranite} from './surface-materials.mjs';
 
 export function buildPathMeshes(network,legacy){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[]},senbonUV=[];
   const quad=(out,a,b,c,d)=>out.push(...a,...c,...b,...a,...d,...c);
-  for(const s of network.segments){
-    const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],len=Math.hypot(dx,dz),nx=-dz/len,nz=dx/len;
-    const point=(p,y,offset)=>[p[0]+nx*offset,y,p[2]+nz*offset];
+  for(const [index,s] of network.segments.entries()){
+    const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],len=Math.hypot(dx,dz);
+    const adjacent=(candidate,end)=>candidate?.id===s.id&&Math.hypot(candidate[end][0]-(end==='b'?s.a:s.b)[0],candidate[end][2]-(end==='b'?s.a:s.b)[2])<.001?candidate:null;
+    const startNormal=pathOffset(s.a,s.b,adjacent(network.segments[index-1],'b'));
+    const endNormal=pathOffset(s.a,s.b,adjacent(network.segments[index+1],'a'),true);
+    const point=(p,y,offset)=>{const n=p===s.a?startNormal:endNormal;return [p[0]+n[0]*offset,y,p[2]+n[1]*offset];};
     const senbon=['way/260121328','way/377968455'].includes(s.id);
     if(senbon){
       const w=.66;
@@ -42,7 +48,8 @@ export function buildPathMeshes(network,legacy){
   ctx.putImageData(pixels,0,0);ctx.fillStyle='#66685f';
   ctx.fillRect(0,0,512,2);ctx.fillRect(0,254,512,2);ctx.fillRect(254,0,3,256);
   const paving=new THREE.CanvasTexture(tile);paving.wrapS=paving.wrapT=THREE.RepeatWrapping;paving.colorSpace=THREE.SRGBColorSpace;paving.anisotropy=8;
-  const stairFace=legacy.materials.flagstoneMat.clone();stairFace.color.set('#b8b9ae');
+  // Fine granite without paving joints continuing vertically across risers.
+  const stairFace=fineGranite();
   const materials={stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
     senbon:new THREE.MeshStandardMaterial({map:paving,roughness:.91}),
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
@@ -60,7 +67,7 @@ export function buildPathMeshes(network,legacy){
     }
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     const material=materials[key].clone();material.side=THREE.DoubleSide;
-    const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;group.add(mesh);
+    group.add(spatialMeshes(geo,material));geo.dispose();
   }
   return group;
 }

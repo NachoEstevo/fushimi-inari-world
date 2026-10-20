@@ -85,6 +85,13 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
       box(len,.10,1.05,x+normal[0]*.5,spec.floor+2.8,z+normal[1]*.5,roofMat,yaw);
       for(let j=0;j<=bays;j++)box(.055,.12,1.08,a[0]+dx*j/bays+normal[0]*.5,spec.floor+2.77,a[2]+dz*j/bays+normal[1]*.5,wood,yaw);
       box(len,.10,.10,x+normal[0]*.97,spec.floor+2.78,z+normal[1]*.97,roofMat,yaw);
+      // Timber fascia, lower sill and rainwater downpipe. Positions/dimensions
+      // are inferred fittings on the already mapped shell, not surveyed items.
+      box(len,.14,.12,x+normal[0]*.94,spec.floor+2.70,z+normal[1]*.94,wood,yaw);
+      box(len,.11,.34,x+normal[0]*.25,spec.floor+.82,z+normal[1]*.25,wood,yaw);
+      const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,2.55,8),roofMat);
+      pipe.position.set(a[0]+dx*.035+normal[0]*.35,spec.floor+1.37,a[2]+dz*.035+normal[1]*.35);
+      pipe.castShadow=true;group.add(pipe);
     });
   }
   // A bounded, sloped forecourt follows the existing junction instead of

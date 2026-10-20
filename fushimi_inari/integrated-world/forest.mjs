@@ -30,7 +30,8 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
   const crownMat=legacy.foliage[1].material.clone();crownMat.color.set('#879e70');crownMat.roughness=.9;
   const broadMat=legacy.foliage[3].material.clone();broadMat.color.set('#8b9a75');broadMat.roughness=.9;
   const evergreen=evergreenCanopy();
-  const distantEvergreen=evergreenCanopy(96);
+  const distantEvergreen=evergreenCanopy(48);
+  const horizonEvergreen=evergreenCanopy(12);
   const branchGeo=new THREE.CylinderGeometry(.035,.12,1,6);branchGeo.translate(0,.5,0);
   let total=0,understory=0,broadleaf=0;
   for(const trees of buckets.values()){
@@ -41,9 +42,11 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
       put(0,x,y-.2,z,scale*.70,scale*(broad?.68:1),scale*.70,yaw);
       if(broad){
         broadleaf++;
-        for(let layer=0;layer<5;layer++){
-          const bx=x+Math.sin(layer*2+yaw)*1.3,by=y+(7.2+layer*.5)*scale,bz=z+Math.cos(layer*2+yaw)*1.3;
-          put(2,bx,by,bz,2.4*scale,2.1*scale,2.4*scale,yaw+layer);
+        const clusters=3+Math.floor(random()*3),spread=1+random()*1.2;
+        for(let layer=0;layer<clusters;layer++){
+          const angle=yaw+layer*2.4+(random()-.5)*.8;
+          const bx=x+Math.sin(angle)*spread,by=y+(6.8+random()*2.8)*scale,bz=z+Math.cos(angle)*spread;
+          put(2,bx,by,bz,(1.8+random())*scale,(1.1+random()*1.1)*scale,(1.7+random())*scale,angle);
           const start=new THREE.Vector3(x,y+5.8*scale,z),delta=new THREE.Vector3(bx,by,bz).sub(start);
           dummy.position.copy(start);dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());
           dummy.scale.set(scale,delta.length(),scale);dummy.updateMatrix();matrices[4].push(dummy.matrix.clone());
@@ -68,7 +71,9 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
         mesh.position.copy(center).negate();
         const far=new THREE.InstancedMesh(distantEvergreen.geometry,distantEvergreen.material,list.length);
         list.forEach((matrix,i)=>far.setMatrixAt(i,matrix));far.position.copy(mesh.position);far.receiveShadow=true;far.computeBoundingSphere();
-        lod.addLevel(mesh,0);lod.addLevel(far,110);root.add(lod);
+        const horizon=new THREE.InstancedMesh(horizonEvergreen.geometry,horizonEvergreen.material,list.length);
+        list.forEach((matrix,i)=>horizon.setMatrixAt(i,matrix));horizon.position.copy(mesh.position);horizon.computeBoundingSphere();
+        lod.addLevel(mesh,0);lod.addLevel(far,85,.12);lod.addLevel(horizon,200,.15);root.add(lod);
       }else root.add(mesh);
     });
     total+=trees.length;

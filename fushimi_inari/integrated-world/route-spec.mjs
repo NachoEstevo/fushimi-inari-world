@@ -1,7 +1,7 @@
 // Meters. OSM dimensions/counts are dated survey claims; other dimensions remain
 // inferred from photographs and comparable wooden Inari torii, not a laser survey.
 export const routeSpec = {
-  revision: 6,
+  revision: 7,
   senbon: {
     pillarDiameter: .15, pillarCenters: 1.82, height: 2.55,
     crossbarUnderside: 1.98, beamWidth: 2.95, blackBaseHeight: .46,

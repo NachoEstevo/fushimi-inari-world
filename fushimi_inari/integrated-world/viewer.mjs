@@ -1,3 +1,5 @@
+import {spatialMeshes} from './spatial-mesh.mjs';
+import {renderStats} from './render-stats.mjs';
 import {buildPathMeshes} from './path-meshes.mjs';
 import {installExplorationHUD} from './exploration-hud.mjs';
 import {integrate} from './integration.mjs';
@@ -55,10 +57,16 @@ try {
   soil.colorSpace=THREE.SRGBColorSpace;soil.wrapS=soil.wrapT=THREE.RepeatWrapping;soil.anisotropy=8;
   const soilNormal=await soilLoader.loadAsync('../assets/textures/nanobanana/surface_forest_soil_leaves_normal.png');
   soilNormal.wrapS=soilNormal.wrapT=THREE.RepeatWrapping;
-  const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/4,pos[i+2]/4);
+  const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
-  const landscape=new THREE.Mesh(terrainGeo,terrainMaterial);landscape.receiveShadow=true;scene.add(landscape);
+  const courtyard=assembly.legacy.materials.gravelMat.clone();courtyard.color.set('#c2bbae');
+  const romon=assembly.spatial.byId.romon;
+  const landscape=spatialMeshes(terrainGeo,terrainMaterial,160,(x,z)=>{
+    const dx=x-romon.target[0],dz=z-romon.target[2],c=Math.cos(romon.yaw),s=Math.sin(romon.yaw);
+    const lx=c*dx-s*dz,lz=s*dx+c*dz;
+    return Math.abs(lx)<25&&lz>-20&&lz<22?courtyard:terrainMaterial;
+  });scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.computeVertexNormals();
@@ -291,6 +299,7 @@ try {
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
 
+  const recordRender=renderStats(renderer);
   let mapTimer=0;
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;
@@ -319,7 +328,7 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
-    renderer.render(scene,camera);
+    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     hud.update(time);audio.update(camera,$('light').value==='night');

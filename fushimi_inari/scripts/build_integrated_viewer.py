@@ -6,7 +6,7 @@ html=(root/"geography/index.html").read_text(encoding="utf-8")
 html=html.replace('href="style.css"','href="../geography/style.css"><link rel="stylesheet" href="world.css"')
 html=html.replace("Inariyama · Territorio a escala real","Fushimi Inari · Mundo integrado")
 html=html.replace("La montaña, a su escala.","El recinto y la montaña.")
-html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 06")
+html=html.replace("ESTUDIO DEL TERRITORIO","MUNDO INTEGRADO · REVISIÓN 07")
 html=html.replace('<aside>','''<button id="panels">Ocultar paneles</button><aside>
     <label for="place">Visitar sector integrado</label><select id="place"></select>
     <div class="row"><button id="visit">Visitar</button><button id="freewalk">Caminar · WASD</button></div>
@@ -56,7 +56,13 @@ js=js[:start]+"""  for(let r=0;r<terrain.rows-1;r++)for(let c=0;c<terrain.cols-1
 """ +js[end:]
 start=js.index("  terrainMaterial.onBeforeCompile")
 end=js.index("\n  function meshFrom",start)
-js=js[:start]+"""  const landscape=new THREE.Mesh(terrainGeo,terrainMaterial);landscape.receiveShadow=true;scene.add(landscape);
+js=js[:start]+"""  const courtyard=assembly.legacy.materials.gravelMat.clone();courtyard.color.set('#c2bbae');
+  const romon=assembly.spatial.byId.romon;
+  const landscape=spatialMeshes(terrainGeo,terrainMaterial,160,(x,z)=>{
+    const dx=x-romon.target[0],dz=z-romon.target[2],c=Math.cos(romon.yaw),s=Math.sin(romon.yaw);
+    const lx=c*dx-s*dz,lz=s*dx+c*dz;
+    return Math.abs(lx)<25&&lz>-20&&lz<22?courtyard:terrainMaterial;
+  });scene.add(landscape);terrainGeo.dispose();
 """ +js[end:]
 js=js.replace("return new THREE.Mesh(geo,material);","const uv=[];for(let i=0;i<vertices.length;i+=3)uv.push(vertices[i]/2,vertices[i+2]/2);geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;return mesh;")
 js=js.replace("new THREE.MeshBasicMaterial({color:tint,side:THREE.DoubleSide})","key==='trail'?assembly.legacy.materials.flagstoneMat:new THREE.MeshStandardMaterial({color:tint,roughness:1,side:THREE.DoubleSide})")
@@ -130,7 +136,9 @@ js=js.replace("    renderer.render(scene,camera);","""    renderer.render(scene,
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     hud.update(time);audio.update(camera,$('light').value==='night');
 """)
-js="import {buildPathMeshes} from './path-meshes.mjs';\n"+js
+js="import {spatialMeshes} from './spatial-mesh.mjs';\nimport {renderStats} from './render-stats.mjs';\nimport {buildPathMeshes} from './path-meshes.mjs';\n"+js
+js=js.replace("  let mapTimer=0;","  const recordRender=renderStats(renderer);\n  let mapTimer=0;")
+js=js.replace("    renderer.render(scene,camera);","    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);")
 start=js.index("  const pathGroup=new THREE.Group();")
 end=js.index("  // Footprints are sourced.",start)
 js=js[:start]+"  const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy);scene.add(pathGroup);\n\n"+js[end:]
@@ -139,7 +147,7 @@ js=js.replace("const terrainMaterial=new THREE.MeshStandardMaterial({vertexColor
   soil.colorSpace=THREE.SRGBColorSpace;soil.wrapS=soil.wrapT=THREE.RepeatWrapping;soil.anisotropy=8;
   const soilNormal=await soilLoader.loadAsync('../assets/textures/nanobanana/surface_forest_soil_leaves_normal.png');
   soilNormal.wrapS=soilNormal.wrapT=THREE.RepeatWrapping;
-  const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/4,pos[i+2]/4);
+  const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});""")
 (out/"viewer.mjs").write_text(js,encoding="utf-8")

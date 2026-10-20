@@ -12,7 +12,7 @@ export function makePathSurfaces(features,ground){
     const sourceCount=Number(path.tags.step_count);
     const h0=ground(...[path.points[0][0],path.points[0][2]]),last=path.points.at(-1),h1=ground(last[0],last[2]);
     const profile=stair?stairProfile(length,h0,h1,sourceCount):null;
-    const resolved=profile?.conflict?inferredTreads(path.points,ground):null;
+    const resolved=stair&&(profile.conflict||profile.mapped===null)?inferredTreads(path.points,ground):null;
     const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
     if(stair){stats.stairWays++;stats.treads+=count;if(sourceCount>0)stats.sourceStepCounts++;}
     if(profile?.unresolved)stats.unresolvedStairProfiles.push(path.id);
