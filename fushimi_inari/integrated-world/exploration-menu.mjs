@@ -3,6 +3,7 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Movement','Checkpoints','Routes','Environment'];
   menu.innerHTML=`<div class="menu-heading"><h2 id="menu-title">Explore Inariyama</h2><button id="menu-close" aria-label="Close menu">×</button></div><div class="menu-tabs" role="tablist" aria-label="Settings">${tabs.map((t,i)=>`<button role="tab" id="tab-${i}" aria-controls="pane-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${t}</button>`).join('')}</div>${tabs.map((t,i)=>`<section role="tabpanel" id="pane-${i}" aria-labelledby="tab-${i}" ${i?'hidden':''}></section>`).join('')}`;
+  menu.insertAdjacentHTML('beforeend','<p class="menu-credit">Made by <a href="https://nachoestevo.com" target="_blank" rel="noopener noreferrer">Ignacio Estevo</a></p>');
   document.body.append(menu);
   const move=(id,pane,label=false)=>{const el=$(id);if(label){const l=document.querySelector(`label[for="${id}"]`);if(l)$(pane).append(l);}$(pane).append(el);};
   move('walk-speed','pane-0',true);

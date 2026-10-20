@@ -157,9 +157,9 @@ try {
     const canvas=$('profile'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
     ctx.clearRect(0,0,w,h);canvas.style.display='block';
     const total=routeMetrics(points).length,lo=Math.min(...points.map(p=>p[1])),hi=Math.max(...points.map(p=>p[1]));
-    let along=0;ctx.strokeStyle='#526e5c';ctx.lineWidth=2;ctx.beginPath();
+    let along=0;ctx.strokeStyle='#b8382b';ctx.lineWidth=2;ctx.beginPath();
     points.forEach((p,i)=>{if(i)along+=distance(points[i-1],p);const x=12+along/Math.max(total,1)*(w-24),y=h-28-(p[1]-lo)/Math.max(hi-lo,1)*(h-55);if(!i)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
-    ctx.fillStyle='#3d5043';ctx.font='20px system-ui';ctx.fillText(`${Math.round(lo)}–${Math.round(hi)} m`,12,20);
+    ctx.fillStyle='#593a33';ctx.font='20px system-ui';ctx.fillText(`${Math.round(lo)}–${Math.round(hi)} m`,12,20);
   }
   function clearRoute(){
     walking=false;controls.enabled=true;activeRoute=[];routeProgress=0;travelled=0;marker.visible=false;

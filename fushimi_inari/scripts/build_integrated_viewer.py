@@ -158,7 +158,7 @@ js=js.replace("const terrainMaterial=new THREE.MeshStandardMaterial({vertexColor
   const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});""")
-js=js.replace("ctx.strokeStyle='#e8b979'","ctx.strokeStyle='#526e5c'").replace("ctx.fillStyle='#acbdad'","ctx.fillStyle='#3d5043'")
+js=js.replace("ctx.strokeStyle='#e8b979'","ctx.strokeStyle='#b8382b'").replace("ctx.fillStyle='#acbdad'","ctx.fillStyle='#593a33'")
 (out/"viewer.mjs").write_text(js,encoding="utf-8")
 # Retain the original sound synthesis, with a working mute.
 source=(root/"interactive_viewer/index.html").read_text(encoding="utf-8")

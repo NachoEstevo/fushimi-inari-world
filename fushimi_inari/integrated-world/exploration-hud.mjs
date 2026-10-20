@@ -5,7 +5,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
   panel.innerHTML=`<div class="row"><strong>INARIYAMA</strong><button id="nav-collapse" aria-label="Collapse minimap">−</button></div>
     <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimap with position and trails"></canvas>
     <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Minimap scale"><option value="320">Nearby · 320 m</option><option value="1000">Area · 1 km</option><option value="2700">Entire area</option></select></div>
-    <small>Green: trails · amber: stairs · blue: water · dashed: restricted or grade-separated</small>
+    <small>Rose: trails · amber: stairs · blue: water · dashed: restricted or grade-separated</small>
     <label for="walk-speed">Walking speed</label><select id="walk-speed"><option value="1.6">Stroll · 1.6 m/s</option><option value="3" selected>Brisk · 3 m/s</option><option value="6">Fast · 6 m/s</option><option value="10">Explore · 10 m/s</option></select>
     <label>Quick checkpoints</label><div id="checkpoint-buttons"></div>
     <label for="checkpoint-select">Destination</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Teleport</button></div>
@@ -45,7 +45,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     const range=Number(panel.querySelector('#map-range').value),all=range>2000;
     const cx=all?660:camera.position.x,cz=all?-220:camera.position.z;
     const scale=(all?240:canvas.width)/range,px=x=>200+(x-cx)*scale,pz=z=>120+(z-cz)*scale;
-    ctx.fillStyle='#162c25';ctx.fillRect(0,0,400,240);
+    ctx.fillStyle='#2c201e';ctx.fillRect(0,0,400,240);
     for(const water of features.water){
       if(!water.points.some(p=>Math.abs(p[0]-cx)<range&&Math.abs(p[2]-cz)<range))continue;
       ctx.beginPath();water.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));
@@ -54,11 +54,11 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     }
     for(const b of features.buildings){
       if(!b.points.some(p=>Math.abs(p[0]-cx)<range*.6&&Math.abs(p[2]-cz)<range*.5))continue;
-      ctx.fillStyle='#72857188';ctx.beginPath();b.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.fill();
+      ctx.fillStyle='#947c7188';ctx.beginPath();b.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.fill();
     }
     for(const p of features.paths){
       if(!p.points.some(p=>Math.abs(p[0]-cx)<range&&Math.abs(p[2]-cz)<range))continue;
-      ctx.strokeStyle=isRestricted(p.tags)?'#c98780':p.tags.highway==='steps'?'#edb06c':'#9bb39a';
+      ctx.strokeStyle=isRestricted(p.tags)?'#c98780':p.tags.highway==='steps'?'#edb06c':'#d4a29a';
       ctx.setLineDash(isRestricted(p.tags)||p.tags.tunnel==='yes'||p.tags.bridge==='yes'?[3,3]:[]);
       ctx.lineWidth=p.tags.highway==='steps'?2:1.2;ctx.beginPath();
       p.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.stroke();
@@ -70,7 +70,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     });
     for(const p of secondary){
       const x=px(p.point[0]),z=pz(p.point[2]);if(x<0||x>400||z<0||z>240)continue;
-      ctx.fillStyle='#b8cbb0';ctx.fillRect(x-2,z-2,4,4);
+      ctx.fillStyle='#d8beb1';ctx.fillRect(x-2,z-2,4,4);
       ctx.font='11px system-ui';const name=p.tags['name:en']??p.tags.name;
       const label={x:Math.min(x+5,300),y:z-5,w:ctx.measureText(name).width,h:13};
       if(!all&&z>35&&!labels.some(b=>label.x<b.x+b.w+5&&label.x+label.w+5>b.x&&label.y<b.y+b.h+3&&label.y+label.h+3>b.y)){
@@ -93,7 +93,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     // Camera's local -Z transformed by its quaternion, without importing Three.
     const q=camera.quaternion,dx=-2*(q.x*q.z+q.w*q.y),dz=-(1-2*(q.x*q.x+q.y*q.y));
     ctx.save();ctx.translate(px(camera.position.x),pz(camera.position.z));ctx.rotate(Math.atan2(dx,-dz));
-    ctx.fillStyle='#fff4dc';ctx.strokeStyle='#15241f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,8);ctx.lineTo(0,4);ctx.lineTo(-7,8);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+    ctx.fillStyle='#fff4dc';ctx.strokeStyle='#301b16';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,8);ctx.lineTo(0,4);ctx.lineTo(-7,8);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     ctx.fillStyle='#e3e6d7';ctx.font='14px system-ui';ctx.fillText('N ↑',12,22);
     const meters=all?500:range===1000?100:50;
     ctx.fillRect(12,217,meters*scale,2);ctx.fillText(`${meters} m`,12,208);
