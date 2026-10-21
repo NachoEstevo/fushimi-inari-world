@@ -70,6 +70,11 @@ import {refineOkumiya} from './okumiya-facade.mjs?v=65';
 import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
 import {sanctuaryTerrainSupport} from './sanctuary-terrain-support.mjs?v=65b';
+import {tamayamaAccessTerrain} from './tamayama-access-support.mjs?v=66';
+import {tamayamaAccessFeatures} from './tamayama-access-width.mjs?v=66';
+import {buildTamayamaStairRail} from './tamayama-stair-rail.mjs?v=66';
+import {buildGondenAccessTorii} from './gonden-access-torii.mjs?v=66';
+import {buildTamayamaAccessShoulders} from './tamayama-access-shoulders.mjs?v=66';
 import {refineNinomine} from './ninomine-details.mjs?v=39';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
@@ -318,9 +323,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   legacy.scene.traverse(o=>{if(o.isMesh)originalStats.meshes++;if(o.isInstancedMesh)originalStats.instances+=o.count;});
   for(const object of [...legacy.scene.children])moveObject(object);
   callbacks.progress?.('Adapting paving, stairs and torii to the trails…');
-  const surfaces=makePathSurfaces(features,ground),twinColliders=[];
+  const surfaces=makePathSurfaces(tamayamaAccessFeatures(features),ground),twinColliders=[];
   surfaces.terrainHeight=okumiyaTerrainGrade(surfaces);
   surfaces.terrainHeight=sanctuaryTerrainSupport(surfaces);
+  surfaces.terrainHeight=tamayamaAccessTerrain(surfaces,features);
   surfaces.edgeCovered=okumiyaLandingEdges(surfaces,features);
   const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
   const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
@@ -404,6 +410,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }).filter(Boolean);
   document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   colliders.push(...twinColliders);
+  document.body.dataset.tamayamaRail=JSON.stringify(buildTamayamaStairRail(root,surfaces,colliders));
+  document.body.dataset.gondenAccessTorii=JSON.stringify(buildGondenAccessTorii(root,legacy,features,surfaces,colliders));
+  document.body.dataset.tamayamaShoulders=JSON.stringify(buildTamayamaAccessShoulders(root,features,surfaces,legacy.materials));
   document.body.dataset.entranceShrineConflicts=JSON.stringify(clearLegacyShrineConflicts(root,colliders));
   legacy.interactables=legacy.interactables.filter(o=>!o.userData.legacyShrineConflictRemoved);
   legacy.flickeringCandleMeshes=legacy.flickeringCandleMeshes.filter(o=>!o.userData.legacyShrineConflictRemoved);
