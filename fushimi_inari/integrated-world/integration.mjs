@@ -66,8 +66,10 @@ import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
-import {refineOkumiya} from './okumiya-facade.mjs?v=38b';
+import {refineOkumiya} from './okumiya-facade.mjs?v=65';
+import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
+import {sanctuaryTerrainSupport} from './sanctuary-terrain-support.mjs?v=65b';
 import {refineNinomine} from './ninomine-details.mjs?v=39';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
@@ -273,6 +275,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     refineShrineFinishes(object,legacy.materials.entryStoneMat);
     refineNinomine(object,legacy.materials);
     refineOkumiya(object,legacy.materials);
+    refineGondenFacade(object,legacy.materials);
     // Replace only generic slabs/shells; original source files and detailed
     // fittings remain intact. No square plaza is laid across mapped stairways.
     if(object.userData.zone==='yotsu'&&object.isMesh&&object.geometry.type==='BoxGeometry'&&
@@ -317,6 +320,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   callbacks.progress?.('Adapting paving, stairs and torii to the trails…');
   const surfaces=makePathSurfaces(features,ground),twinColliders=[];
   surfaces.terrainHeight=okumiyaTerrainGrade(surfaces);
+  surfaces.terrainHeight=sanctuaryTerrainSupport(surfaces);
   surfaces.edgeCovered=okumiyaLandingEdges(surfaces,features);
   const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
   const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
