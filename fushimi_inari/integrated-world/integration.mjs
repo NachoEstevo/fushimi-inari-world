@@ -2,18 +2,19 @@ import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buil
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
 import {buildEntranceSidePlanting} from './entrance-side-planting.mjs?v=52';
 import {buildOmotesandoShoulders} from './omotesando-shoulders.mjs?v=53';
-import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=53';
+import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=56';
 import {buildEntranceAreaSurfaces} from './entrance-area-surfaces.mjs?v=54';
 import {alignFirstOmotesandoTorii} from './first-torii-alignment.mjs?v=54';
 import {placeMappedInariStation,mappedStationId} from './station-placement.mjs?v=54';
 import {clearLegacyApproachSlabs} from './legacy-approach-slabs.mjs?v=54';
+import {isUnsupportedEntranceProp,isUnsupportedEntranceCollider} from './entrance-unsupported-props.mjs?v=56';
 import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=55';
-import {buildEntranceMappedTrees} from './entrance-mapped-trees.mjs?v=55';
+import {buildEntranceMappedTrees} from './entrance-mapped-trees.mjs?v=56';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
-import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=40';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=56';
 import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
@@ -236,6 +237,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return northCourtGrade(x,z,azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1])));
   }
   function moveObject(object){
+    if(isUnsupportedEntranceProp(object))return;
     // The illustrative flank pavilion was carried with Gehaiden onto the
     // mapped Azumamaro approach. Keep the sourced main hall, not this duplicate.
     if(object.userData.zone==='gehaiden'&&object.isGroup&&
@@ -361,7 +363,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   entrySteps.applyMatrix4(matrix(byId.romon));root.add(entrySteps);
   // Transform original physical obstacles with the same zone/route rules as their meshes.
-  const colliders=legacy.colliders.filter(c=>c.args.at(-1)!=='kaguraden').map(c=>{
+  const colliders=legacy.colliders.filter(c=>c.args.at(-1)!=='kaguraden'&&!isUnsupportedEntranceCollider(c)).map(c=>{
     if(['yotsutsuji_rail','chaya'].includes(c.args.at(-1)))return null;
     const args=[...c.args],x=args[0],z=args[1];
     if(args.at(-1)==='torii'){

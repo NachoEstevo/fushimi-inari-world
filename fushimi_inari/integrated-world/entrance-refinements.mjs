@@ -117,7 +117,6 @@ function refineShop(g,m){
     box(.70,.055,.35,x,1.12,2.30,m.vermilionMat,g);
     for(let i=0;i<4;i++)box(.12,.15,.08,x-.24+i*.16,1.22,2.30,m.plasterMat,g);
   }
-  const label=sign('Welcome · ようこそ',2.4,.40);label.position.set(0,2.88,2.20);g.add(label);
 }
 
 // Replace solid shrub shells with small bent leaves at their existing surfaces.

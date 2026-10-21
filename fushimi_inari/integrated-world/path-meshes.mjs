@@ -2,13 +2,14 @@ import * as THREE from 'three';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
+import {omotesandoPaving} from './omotesando-paving.mjs';
 import {outsideArrival} from './okusha-arrival.mjs';
 
 export function buildPathMeshes(network,legacy,ground){
-  const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[]},senbonUV=[];
+  const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[]},senbonUV=[],approachUV=[];
   const quad=(out,a,b,c,d)=>{
     for(const polygon of outsideArrival([a,b,c,d]))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
-      out.push(...p.slice(0,3));if(out===buckets.senbon)senbonUV.push(p[3],p[4]);
+      out.push(...p.slice(0,3));if(out===buckets.senbon)senbonUV.push(p[3],p[4]);if(out===buckets.omotesando)approachUV.push(p[3],p[4]);
     }
   };
   for(const [index,s] of network.segments.entries()){
@@ -23,6 +24,9 @@ export function buildPathMeshes(network,legacy,ground){
       const va=s.distance/.65,vb=(s.distance+len)/.65;
       quad(buckets.senbon,[...point(s.a,s.ya,-w),0,va],[...point(s.b,s.yb,-w),0,vb],[...point(s.b,s.yb,w),1,vb],[...point(s.a,s.ya,w),1,va]);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
+    }else if(s.id==='way/105449722'&&!s.stair){
+      const u=s.width/1.6,va=s.distance/3.2,vb=(s.distance+len)/3.2;
+      quad(buckets.omotesando,[...point(s.a,s.ya,-s.width/2),0,va],[...point(s.b,s.yb,-s.width/2),0,vb],[...point(s.b,s.yb,s.width/2),u,vb],[...point(s.a,s.ya,s.width/2),u,va]);
     }else quad(buckets[s.stair&&s.kind==='stone'?'edge':s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind],point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2));
     if(s.stair){
       const p=s.riserAt==='b'?s.b:s.a,y=s.riserAt==='b'?s.yb:s.ya;
@@ -98,7 +102,7 @@ export function buildPathMeshes(network,legacy,ground){
   const paving=new THREE.CanvasTexture(tile);paving.wrapS=paving.wrapT=THREE.RepeatWrapping;paving.colorSpace=THREE.SRGBColorSpace;paving.anisotropy=8;
   // Fine granite without paving joints continuing vertically across risers.
   const stairFace=fineGranite();
-  const materials={precinct:legacy.materials.precinctPaving,stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
+  const materials={omotesando:omotesandoPaving(),precinct:legacy.materials.precinctPaving,stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
     senbon:new THREE.MeshStandardMaterial({map:paving,roughness:.91}),
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
     restricted:new THREE.MeshStandardMaterial({color:0x766e5e,roughness:1}),
@@ -107,8 +111,8 @@ export function buildPathMeshes(network,legacy,ground){
     if(!vertices.length)continue;
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     geo.computeVertexNormals();
-    const uv=key==='senbon'?senbonUV:[];
-    if(key!=='senbon')for(let i=0;i<vertices.length;i+=3){
+    const uv=key==='senbon'?senbonUV:key==='omotesando'?approachUV:[];
+    if(key!=='senbon'&&key!=='omotesando')for(let i=0;i<vertices.length;i+=3){
       const n=i/3,normal=geo.attributes.normal;
       if(Math.abs(normal.getY(n))>.5)uv.push(vertices[i]/2,vertices[i+2]/2);
       else uv.push((Math.abs(normal.getX(n))>.5?vertices[i+2]:vertices[i])/2,vertices[i+1]/2);
