@@ -42,7 +42,7 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs?v=66-mountain';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=47';
+import {makePathSurfaces} from './path-surfaces.mjs?v=68-near-precinct';
 import {buildSenbon} from './senbon.mjs?v=37';
 import {buildMountainTorii} from './mountain-torii.mjs?v=67-mountain';
 import {supportTerraces} from './terrace-foundations.mjs';
@@ -69,7 +69,9 @@ import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
-import {refineOkumiya} from './okumiya-facade.mjs?v=65';
+import {refineOkumiya} from './okumiya-facade.mjs?v=68-near-precinct';
+import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
+import {refineTamayamaOkumiyaAccess} from './tamayama-okumiya-access.mjs?v=68-near-precinct';
 import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
 import {sanctuaryTerrainSupport} from './sanctuary-terrain-support.mjs?v=65b';
@@ -260,7 +262,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
     return northCourtGrade(x,z,azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1])));
   }
-  let kumatakaRefinement=null;
+  let kumatakaRefinement=null,okumiyaRefinement=null;
   function moveObject(object){
     if(isUnsupportedEntranceProp(object))return;
     // The illustrative flank pavilion was carried with Gehaiden onto the
@@ -285,6 +287,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     refineNinomine(object,legacy.materials);
     kumatakaRefinement=refineKumatakasha(object,legacy.materials)??kumatakaRefinement;
     refineOkumiya(object,legacy.materials);
+    if(object.userData.okumiyaDetail)okumiyaRefinement=object.userData.okumiyaDetail;
+    refineTamayama(object,legacy.materials);
     refineGondenFacade(object,legacy.materials);
     // Replace only generic slabs/shells; original source files and detailed
     // fittings remain intact. No square plaza is laid across mapped stairways.
@@ -333,6 +337,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   surfaces.terrainHeight=sanctuaryTerrainSupport(surfaces);
   surfaces.terrainHeight=tamayamaAccessTerrain(surfaces,features);
   surfaces.edgeCovered=okumiyaLandingEdges(surfaces,features);
+  const nearPrecinctAccess=refineTamayamaOkumiyaAccess(surfaces,features);
   const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
   const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
   for(const review of surfaces.stats.profileReview){
@@ -415,6 +420,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }).filter(Boolean);
   document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   colliders.push(...twinColliders);
+  const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
+  document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
+  document.body.dataset.nearPrecinctAccess=JSON.stringify(nearPrecinctAccess);
   document.body.dataset.tamayamaRail=JSON.stringify(buildTamayamaStairRail(root,surfaces,colliders));
   document.body.dataset.gondenAccessTorii=JSON.stringify(buildGondenAccessTorii(root,legacy,features,surfaces,colliders));
   document.body.dataset.tamayamaShoulders=JSON.stringify(buildTamayamaAccessShoulders(root,features,surfaces,legacy.materials));
@@ -522,6 +531,14 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const hit=floorRay.intersectObjects(walkSurfaces,false).find(hit=>hit.point.y>=base-.15&&hit.point.y<=Math.max(base,previous)+.24);
     return hit?Math.max(base,hit.point.y+.025):base;
   }
+  // Reviewed exterior positions on the mapped approaches. The nearest graph
+  // node can fall beside a stair or inside the sanctuary's solid footprint.
+  for(const [id,x,z] of [['tamayama',100,-33.979],['okumiya',118.4,-15.941]]){
+    const anchor=byId[id];
+    if(!anchor)continue;
+    anchor.checkpoint=[x,walkHeight(x,z),z];
+    anchor.lookAt=[anchor.target[0],anchor.target[1]+2,anchor.target[2]];
+  }
   const buckets=new Map(),retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes]);
   for(const object of legacy.interactables)object.traverse(child=>retained.add(child));
   root.traverse(object=>{
@@ -543,7 +560,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const forestChunks=[];root.updateMatrixWorld(true);
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
-    forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
+    nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
     excludesBuilding:b=>entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

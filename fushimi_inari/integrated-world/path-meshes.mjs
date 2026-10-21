@@ -26,7 +26,13 @@ export function buildPathMeshes(network,legacy,ground){
     const senbon=['way/260121328','way/377968455'].includes(s.id);
     const mountain=isMountainPathSegment(s);
     if(mountain){detail.segments++;if(s.stair)detail.treads++;}
-    if(senbon){
+    if(s.accessJunctionTriangles){
+      // The two near-precinct junction patches remove overlapping ribbons.
+      // Walking reads these same triangles; keep the existing material/cell
+      // batches instead of layering a second decal or an extra draw object.
+      const bucket=s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind;
+      buckets[bucket].push(...s.accessJunctionTriangles);
+    }else if(senbon){
       const w=.66;
       const va=s.distance/.65,vb=(s.distance+len)/.65;
       quad(buckets.senbon,[...point(s.a,s.ya,-w),0,va],[...point(s.b,s.yb,-w),0,vb],[...point(s.b,s.yb,w),1,vb],[...point(s.a,s.ya,w),1,va]);
@@ -55,12 +61,17 @@ export function buildPathMeshes(network,legacy,ground){
           const b=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),(part+1)/cuts);
           const oa=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),part/cuts);
           const ob=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),(part+1)/cuts);
+          if(s.accessJunction){
+            a[1]=network.accessJunctionEdgeHeight(s,a[0],a[2],a[1]);
+            b[1]=network.accessJunctionEdgeHeight(s,b[0],b[2],b[1]);
+            oa[1]=a[1];ob[1]=b[1];
+          }
           const m=lerp(a,b,.5);
           if(network.edgeCovered(m[0],m[2],m[1],s.id))continue;
           // The longer mountain strips must never span a junction mouth when
           // only their centre falls outside the connected branch. Trim the
           // whole strip conservatively if either end meets that branch.
-          if(mountain&&[a,b].some(p=>network.edgeCovered(p[0],p[2],p[1],s.id)))continue;
+          if((mountain||s.accessJunction)&&[a,b].some(p=>network.edgeCovered(p[0],p[2],p[1],s.id)))continue;
           const up=(p,h)=>[p[0],p[1]+h,p[2]];
           const lip=s.curbLip??.025;
           const cap=[up(a,lip),up(b,lip),up(ob,lip),up(oa,lip)];
@@ -165,6 +176,7 @@ export function buildPathMeshes(network,legacy,ground){
     group.add(spatialMeshes(geo,material));geo.dispose();
   }
   group.userData.mountainPaths=detail;
+  if(network.accessJunctions)group.userData.accessJunctions=network.accessJunctions;
   document.body.dataset.mountainPaths=JSON.stringify(detail);
   return group;
 }
