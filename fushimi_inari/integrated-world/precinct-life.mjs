@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createActivity} from './activity-state.mjs';
 import {createKitsune,createAttendant} from './precinct-models.mjs?v=32';
-import {upgradeReceptionAttendant} from './reception-attendant.mjs';
+import {upgradeReceptionAttendant} from './reception-attendant.mjs?v=34';
 
 const mat=color=>new THREE.MeshStandardMaterial({color,roughness:.87});
 function mesh(parent,geo,material,x,y,z){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}

@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><base href="/integrated-world/">
+<title>Reception animation regression</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+<pre id="result">Loading real character…</pre>
+<script type="module">
+import * as THREE from 'three';
+import {upgradeReceptionAttendant} from './reception-attendant.mjs?v=34';
+try {
+const person=new THREE.Group();const update=upgradeReceptionAttendant(person);
+const deadline=performance.now()+10000;
+while(!person.userData.importedAttendant&&performance.now()<deadline)await new Promise(r=>setTimeout(r,50));
+if(!person.userData.importedAttendant)throw Error('Character failed to load within 10 seconds');
+const hands=[];person.traverse(o=>{if(o.isBone&&o.name.startsWith('Fist'))hands.push(o);});
+const rotations=()=>{person.updateWorldMatrix(true,true);return hands.map(h=>h.getWorldQuaternion(new THREE.Quaternion()).normalize());};
+const angles=(a,b)=>Math.max(...a.map((q,i)=>q.angleTo(b[i])));
+update(10000,0);const first=rotations();for(let i=0;i<120;i++)update(10000,0);
+const repeatedFrameAngle=angles(first,rotations());
+let before=rotations(),maxIdleAngle=0;
+for(let i=1;i<=600;i++){update(10000+i*1000/60,0);const after=rotations();maxIdleAngle=Math.max(maxIdleAngle,angles(before,after));before=after;}
+const wrist=()=>{person.updateWorldMatrix(true,true);return hands[1].getWorldPosition(new THREE.Vector3());};
+const rest=wrist();let lowest=rest.y;
+for(let i=0;i<=108;i++){update(20000+i*1000/60,Math.sin(Math.PI*i/108));lowest=Math.min(lowest,wrist().y);}
+const stampTravel=rest.y-lowest;
+const pass=repeatedFrameAngle<1e-5&&maxIdleAngle<.05&&stampTravel>.02&&stampTravel<.12;
+document.querySelector('#result').textContent=JSON.stringify({pass,repeatedFrameAngle,maxIdleAngle,stampTravel,idleFrames:600,repeatedFrames:120},null,2);
+document.title=pass?'PASS · Reception animation':'FAIL · Reception animation';
+} catch(error) {
+ document.title='FAIL · Reception animation';
+ document.querySelector('#result').textContent=JSON.stringify({pass:false,error:error.message});
+}
+</script>

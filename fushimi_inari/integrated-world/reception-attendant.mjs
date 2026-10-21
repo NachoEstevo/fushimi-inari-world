@@ -18,7 +18,13 @@ export function upgradeReceptionAttendant(person){
     const bones={};model.traverse(o=>{if(o.isBone)bones[o.name]=o;});
     const limbs=['L','R'].map(side=>['UpperArm','LowerArm','Fist'].map(name=>bones[`${name}${side}`]??bones[`${name}.${side}`]));
     if(limbs.some(l=>l.some(b=>!b)))throw Error('Reception character is missing arm joints');
-    const mixer=new THREE.AnimationMixer(model);mixer.clipAction(asset.animations[0]).play();
+    const mixer=new THREE.AnimationMixer(model),sourceIdle=asset.animations[0];
+    const initial=mixer.clipAction(sourceIdle);initial.play();mixer.update(0);
+    const armPose=limbs.flat().map(bone=>({bone,position:bone.position.clone(),quaternion:bone.quaternion.clone(),scale:bone.scale.clone()}));
+    initial.stop();mixer.uncacheAction(sourceIdle);
+    const controlled=new Set(armPose.map(p=>p.bone.name)),bodyIdle=sourceIdle.clone();
+    bodyIdle.tracks=bodyIdle.tracks.filter(track=>!controlled.has(THREE.PropertyBinding.parseTrackName(track.name).nodeName));
+    mixer.clipAction(bodyIdle).play();
     // Keep the registered interaction root, replacing only its visual children.
     const geometries=new Set(),materials=new Set();
     person.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);materials.add(o.material);}});
@@ -37,6 +43,12 @@ export function upgradeReceptionAttendant(person){
       bone.updateWorldMatrix(false,true);
     };
     animate=(now,press)=>{
+      // AnimationMixer skips unchanged track values. Never use last frame's IK
+      // pose as input: that accumulates the wrist's quarter-turn every frame.
+      // Arms belong exclusively to the reach solver; Idle owns the remaining rig.
+      for(const pose of armPose){
+        pose.bone.position.copy(pose.position);pose.bone.quaternion.copy(pose.quaternion);pose.bone.scale.copy(pose.scale);
+      }
       mixer.update(previous===null?0:Math.min(.05,(now-previous)/1000));previous=now;
       person.updateWorldMatrix(true,true);
       limbs.forEach(([upper,lower,hand],i)=>{

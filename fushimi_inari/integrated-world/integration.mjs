@@ -1,4 +1,4 @@
-import {installPrecinctLife} from './precinct-life.mjs?v=33';
+import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
