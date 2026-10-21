@@ -9,13 +9,13 @@ import {installVisitors} from './visitors.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
-import {blendCourtyardGround} from './courtyard-ground.mjs?v=33';
+import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
-import {groundCover} from './ground-cover.mjs';
+import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=56';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=63';
+import {integrate} from './integration.mjs?v=64';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -64,16 +64,19 @@ try {
   soilNormal.wrapS=soilNormal.wrapT=THREE.RepeatWrapping;
   const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
-  const cover=[],coverCache=new Map();
+  const cover=[],precinctGrass=[],coverCache=new Map();
+  const groundCover=makePrecinctGroundCover(features,{surfaceAreas:assembly.entranceSurfaces});
   for(let i=0;i<pos.length;i+=3){
     const x=pos[i],y=pos[i+1],z=pos[i+2],key=`${x},${z}`;
     if(!coverCache.has(key)){
       const slope=Math.hypot(ground(x+1,z)-ground(x-1,z),ground(x,z+1)-ground(x,z-1))/2;
-      coverCache.set(key,groundCover(x,y,z,slope,assembly.pathDistance(x,z)?.distance??100));
+      const distance=assembly.pathDistance(x,z)?.distance??100;
+      coverCache.set(key,[groundCover(x,y,z,slope,distance),groundCover.precinct(x,y,z,slope,distance)]);
     }
-    cover.push(coverCache.get(key));
+    cover.push(coverCache.get(key)[0]);precinctGrass.push(coverCache.get(key)[1]);
   }
   terrainGeo.setAttribute('groundCover',new THREE.Float32BufferAttribute(cover,1));
+  terrainGeo.setAttribute('precinctGrass',new THREE.Float32BufferAttribute(precinctGrass,1));
   coverCache.clear();
   const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
   const courtyard=assembly.legacy.materials.gravelMat;

@@ -522,6 +522,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,
+  return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
     excludesBuilding:b=>entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
