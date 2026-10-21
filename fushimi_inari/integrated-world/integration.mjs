@@ -1,3 +1,4 @@
+import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
@@ -32,7 +33,7 @@ import {buildAzumamaroHouses,azumamaroHouseIds} from './azumamaro-houses.mjs?v=4
 import {buildAzumamaroCourtDetails} from './azumamaro-court-details.mjs?v=47';
 import {buildAzumamaroContext,azumamaroContextIds} from './azumamaro-context.mjs?v=46';
 import {buildAzumamaroPlanting} from './azumamaro-planting.mjs?v=44c';
-import {makeAzumamaroCourtGrade} from './entrance-ground.mjs?v=48';
+import {makeAzumamaroCourtGrade,makeNorthCourtGrade} from './entrance-ground.mjs?v=49';
 import {clearAzumamaroLegacySugi} from './azumamaro-legacy-clearance.mjs?v=45b';
 import {buildAzumamaroSignage} from './azumamaro-signage.mjs?v=43';
 import {refineGehaiden} from './gehaiden-refinements.mjs?v=48';
@@ -58,6 +59,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
+  const northCourtGrade=makeNorthCourtGrade(byId.romon,features);
   const azumamaroCourtGrade=makeAzumamaroCourtGrade(byId.romon,features,(x,z)=>heightAt(terrain,x,z));
   // Keep the original benches, lanterns and noren beside the mapped storefronts.
   Object.assign(byId.chaya_s,{target:[806.8,164.35,-207.5],yaw:0,label:'Nishimura-tei'});
@@ -216,7 +218,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const connected=lowerCourtBlend(ex,ez,courtyard,byId.romon.target[1]);
     const [nx,nz]=rotateXZ(x-byId.naihaiden.target[0],z-byId.naihaiden.target[2],-byId.naihaiden.yaw);
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
-    return azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1]));
+    return northCourtGrade(x,z,azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1])));
   }
   function moveObject(object){
     // The illustrative flank pavilion was carried with Gehaiden onto the
@@ -383,6 +385,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildAzumamaroHouses(root,features,(x,z)=>surfaces.height(x,z),legacy.materials,colliders);
   const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.azumamaroCourtDetails=JSON.stringify(courtDetails);
+  buildNorthCourtBuildings(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroContext(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroPlanting(root,features,surfaces,legacy.materials,colliders);
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
@@ -458,5 +461,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

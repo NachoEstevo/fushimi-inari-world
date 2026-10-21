@@ -239,3 +239,14 @@ Inspected the east and west views of June 2012 panorama Hdl-ibkcKhfZHayKv9g9Bg a
 The service lane223276650 now transitions monotonically from the graded court to its unchanged DEM endpoint within a narrow corridor. This removes an artificial grade-release crest; it is an inferred support profile, not surveyed topography. Building, water and stair exclusions remain.
 
 Validation:103 Node tests pass, syntax/diff checks pass, actual-GLB Gehaiden fixture checked by delegated reviewer. Root inspected the running central court and wings and traversed the adjacent court with no console errors. Full service-lane traversal and hardware performance benchmark remain unverified. Source images and review captures stay local under outputs/r48. Remaining work includes peripheral buildings/planting and finer geometric correspondence; no exact-replica claim.
+
+
+## R49 — observed northern court frontage
+
+Walked June 2012 Google Street View from IKgCmUJ1Zb3Emb-Rrz7ohQ through 6HyaCe_dTq2qRogjCsr5ZA and yxp8DtVtQ4139x267uNKCQ to nzE3S9y0zB2Rus4DtW7YRA. Local north-close.png confirms a two-storey timber frontage with pale/muted glazing, occasional shutters, slatted upper sill, pale awning, tiled roof and a lower western neighbour.
+
+Mapped footprints305214375+305214356 form the likely continuous two-storey row;305214355 the lower western neighbour. The exact split between the two row polygons is not resolved by the photograph. New source-based facades preserve those polygons and replace generic render ownership. Heights and bay dimensions remain visual estimates, not surveyed measurements. Unseen rear faces remain restrained; no named businesses or invented signs.
+
+The curved planter, tree and stone lantern at the right of the reference are confirmed visually but have no independent mapped anchor in the available data. They were deliberately not added at a guessed location. Existing unrelated project-cover.png and root outputs remain untouched.
+
+R49 validation:104 Node tests pass; syntax/diff checks pass; root walked from Gehaiden to the north frontage and reviewed the updated surface and facade with no console errors. Localized apron grading uses mapped south shop fronts and crossing105449672; it preserves stairs and rear terrain. Ceramic roof map is generated appearance texture, not a photographic or dimensional source. Remaining: precise planter anchoring, finer shop-bay detail and roof junction fidelity. No performance benchmark this pass.

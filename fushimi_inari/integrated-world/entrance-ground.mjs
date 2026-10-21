@@ -16,6 +16,39 @@ function inRing(x,z,points){
   return inside;
 }
 
+// June 2012 north-close reference shows a near-flat public mineral apron.
+// Its level is inferred; mapped shop walls and crossing own its footprint.
+export function makeNorthCourtGrade(romon,features){
+  const ids=['way/305214355','way/305214375','way/305214356'];
+  const shops=(features.buildings??[]).filter(p=>ids.includes(p.id));
+  const crossing=features.paths?.find(p=>p.id==='way/105449672');
+  if(shops.length!==ids.length||!crossing)return (x,z,existing)=>existing;
+  const points=shops.flatMap(p=>p.points),xmin=Math.min(...points.map(p=>p[0])),xmax=Math.max(...points.map(p=>p[0]));
+  const crossingPoints=crossing.points.filter(p=>p[0]>=xmin&&p[0]<=xmax);
+  if(!crossingPoints.length)return (x,z,existing)=>existing;
+  const south=Math.max(...crossingPoints.map(p=>p[2]));
+  const steps=(features.paths??[]).filter(p=>p.tags?.highway==='steps');
+  return (x,z,existing)=>{
+    let weight=smooth(xmin-1.5,xmin,x)*(1-smooth(xmax,xmax+1.5,x))*(1-smooth(south,south+2,z));
+    if(!weight)return existing;
+    const sx=Math.max(xmin,Math.min(xmax,x));
+    let front=-Infinity;
+    for(const shop of shops)for(let i=1;i<shop.points.length;i++){
+      const a=shop.points[i-1],b=shop.points[i];
+      if(sx<Math.min(a[0],b[0])||sx>Math.max(a[0],b[0]))continue;
+      const t=(sx-a[0])/(b[0]-a[0]||1);
+      front=Math.max(front,a[2]+(b[2]-a[2])*t);
+    }
+    if(!Number.isFinite(front))return existing;
+    // Release within the front footing; never flatten the shops' rear land.
+    weight*=smooth(front-.8,front,z);
+    if(!weight)return existing;
+    for(const path of steps)for(let i=1;i<path.points.length;i++)
+      weight*=smooth(pathWidth(path.tags)/2+1,pathWidth(path.tags)/2+2,segmentDistance(x,z,path.points[i-1],path.points[i]));
+    return existing+(romon.target[1]-existing)*weight;
+  };
+}
+
 // The small court east of the mapped Azumamaro approach connects to the
 // Gehaiden court. A coarse DEM slope here made gravel berms between the
 // approach and its side access. Dimensions are inferred courtyard shoulders;

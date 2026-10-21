@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeEntranceGroundMask,blendEntranceGround,makeAzumamaroCourtGrade} from './entrance-ground.mjs';
+import {makeEntranceGroundMask,blendEntranceGround,makeAzumamaroCourtGrade,makeNorthCourtGrade} from './entrance-ground.mjs';
 import fs from 'node:fs';
 import {rotateXZ} from './spatial.mjs';
 import {heightAt,pathWidth} from '../geography/geo-core.mjs';
@@ -8,6 +8,19 @@ import {heightAt,pathWidth} from '../geography/geo-core.mjs';
 const anchor={target:[0,0,0],source:[0,0,0],yaw:0};
 const empty={paths:[],buildings:[],water:[]};
 const ring=(x,z)=>({points:[[x-2,0,z-2],[x+2,0,z-2],[x+2,0,z+2],[x-2,0,z+2],[x-2,0,z-2]]});
+
+test('north shop public apron follows mapped fronts and leaves rear land and stairs intact',()=>{
+  const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url)));
+  const grade=makeNorthCourtGrade({target:[0,42.382249,0]},features);
+  for(const [x,z] of [[0,-28],[10,-28],[10,-24],[-10,-28]])assert.equal(grade(x,z,44),42.382249,`${x},${z}`);
+  for(const [x,z] of [[0,-40],[10,-40],[-20,-28],[20,-28],[0,0],[800,-216],[-10,-21]])assert.equal(grade(x,z,44),44,`${x},${z}`);
+  assert.equal(makeNorthCourtGrade(anchor,empty)(0,-28,44),44);
+  const front=-30.424+(-30.891+30.424)*(10-7.325)/(13.009-7.325);
+  assert.equal(grade(10,front-1,44),44);
+  assert.equal(grade(10,front,44),42.382249);
+  const midpoint=grade(10,front-.4,44);
+  assert.ok(midpoint>42.382249&&midpoint<44);
+});
 
 test('service lane removes the artificial crest while retaining endpoint and bounded shoulders',()=>{
   const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url)));
