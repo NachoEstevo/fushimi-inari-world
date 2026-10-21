@@ -7,6 +7,8 @@ import {buildEntranceAreaSurfaces} from './entrance-area-surfaces.mjs?v=54';
 import {alignFirstOmotesandoTorii} from './first-torii-alignment.mjs?v=54';
 import {placeMappedInariStation,mappedStationId} from './station-placement.mjs?v=54';
 import {clearLegacyApproachSlabs} from './legacy-approach-slabs.mjs?v=54';
+import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=55';
+import {buildEntranceMappedTrees} from './entrance-mapped-trees.mjs?v=55';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
@@ -54,10 +56,11 @@ import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b
 import {refineNinomine} from './ninomine-details.mjs?v=39';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
-  const [spec,entranceBarriers,entranceSurfaces]=await Promise.all([
+  const [spec,entranceBarriers,entranceSurfaces,entranceContext]=await Promise.all([
     fetch('anchors.json').then(r=>r.json()),
     fetch('../geography/sources/entrance-barriers.json').then(r=>{if(!r.ok)throw new Error('Entrance barrier data unavailable');return r.json();}),
-    fetch('../geography/sources/entrance-surfaces-r54.json').then(r=>{if(!r.ok)throw new Error('Entrance surface data unavailable');return r.json();})
+    fetch('../geography/sources/entrance-surfaces-r54.json').then(r=>{if(!r.ok)throw new Error('Entrance surface data unavailable');return r.json();}),
+    fetch('../geography/sources/entrance-context-r55.json').then(r=>{if(!r.ok)throw new Error('Entrance context data unavailable');return r.json();})
   ]);
   const spatial=makeSpatial(terrain,features,spec);
   const legacy=await buildLegacy(renderer,callbacks);
@@ -393,6 +396,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const stationPlacement=placeMappedInariStation(root,features,surfaces,colliders);
   document.body.dataset.stationPlacement=JSON.stringify(stationPlacement);
   document.body.dataset.approachSlabs=JSON.stringify(clearLegacyApproachSlabs(root));
+  const entranceNeighborhood=buildEntranceNeighborhood(root,features,surfaces.terrainHeight,legacy.materials,colliders);
+  document.body.dataset.entranceNeighborhood=JSON.stringify({builtIds:entranceNeighborhood.builtIds,skipped:entranceNeighborhood.skippedLegacyShopOverlap});
+  document.body.dataset.entranceTrees=JSON.stringify(buildEntranceMappedTrees(root,entranceContext,features,surfaces,colliders));
   const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroSignage(root,features,surfaces,legacy.materials,colliders);
   if(lateralEntry?.torii){
@@ -482,5 +488,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

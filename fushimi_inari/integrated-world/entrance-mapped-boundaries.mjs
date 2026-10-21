@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export const entranceMappedWallIds=Object.freeze(['way/1133052410','way/1133052420','way/1133052413','way/1133052417']);
-export const entranceMappedHedgeIds=Object.freeze(['way/1133052411','way/1133052412','way/1133053711']);
+export const entranceMappedHedgeIds=Object.freeze(['way/1133052411','way/1133052412','way/1133053711','way/1051333119','way/1133052439']);
 const wallIds=new Set(entranceMappedWallIds);
 const hedgeIds=new Set(entranceMappedHedgeIds);
 // Actual OSM linework owns wall ends, returns and gaps. White plaster, restrained
