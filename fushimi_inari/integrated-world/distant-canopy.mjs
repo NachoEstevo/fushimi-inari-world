@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {canopyPalette,woodlandPatch} from './season-palette.mjs?v=24';
+import {outlookOpening} from './panorama-policy.mjs?v=33';
 
 // Satellite-guided coverage envelope, NOT surveyed individual trees or estate limits.
 // Existing detailed forest remains authoritative beside the walking routes.
@@ -27,10 +28,12 @@ export function distantCanopy(features,ground,pathDistance,terrain){
     const key=`${Math.floor(px/size)},${Math.floor(pz/size)}`;
     if((blocked.get(key)??[]).some(b=>px>b[0]&&px<b[1]&&pz>b[2]&&pz<b[3]))continue;
     if((pathDistance(px,pz)?.distance??100)<8)continue;
-    if(!buckets.has(key))buckets.set(key,[]);
     // Broad patches break up the uniform confetti pattern, with per-tree variation.
     const patch=woodlandPatch(px,pz);
-    buckets.get(key).push([px,y,pz,patch,random(),random()]);count++;
+    const tree=[px,y,pz,patch,random(),random()];
+    if(outlookOpening(px,pz))continue;
+    if(!buckets.has(key))buckets.set(key,[]);
+    buckets.get(key).push(tree);count++;
   }
   const geo=new THREE.IcosahedronGeometry(1,0);
   // Smooth crown lighting without increasing the twenty-triangle silhouette.

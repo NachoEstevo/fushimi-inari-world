@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {routeSpec} from './route-spec.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs?v=10';
+import {outlookOpening} from './panorama-policy.mjs?v=33';
 
 // Reuses original trunk, crown and understory assets. A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.
@@ -24,8 +25,10 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     // Dense near paths, coarser distant cover; no rigid visible orchard grid.
     if(distance>27&&random()>.20)continue;
     const key=`${Math.floor(px/80)},${Math.floor(pz/80)}`;
+    const tree={x:px,y,z:pz,scale:.85+random()*.65,yaw:random()*Math.PI*2,broad:random()<.76,under:distance<22};
+    if(outlookOpening(px,pz))continue;
     if(!buckets.has(key))buckets.set(key,[]);
-    buckets.get(key).push({x:px,y,z:pz,scale:.85+random()*.65,yaw:random()*Math.PI*2,broad:random()<.76,under:distance<22});
+    buckets.get(key).push(tree);
   }
   const crownMat=legacy.foliage[1].material.clone();crownMat.color.set('#879e70');crownMat.roughness=.9;
   const broadMat=legacy.foliage[3].material.clone();broadMat.color.set('#8b9a75');broadMat.roughness=.9;

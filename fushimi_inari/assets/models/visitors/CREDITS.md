@@ -18,3 +18,7 @@ Rebuild with `fushimi_inari/scripts/export_visitors.py` using Blender 5.2 with
 kept in ignored local outputs. Export limits weights to four influences per vertex.
 Unused finger tracks from the source action do not have corresponding bones and
 are omitted by the exporter; the exported body rig has 69 animation channels.
+
+The reception instance reuses Kimono_Female with ivory/red materials, smaller hands
+and a procedural two-bone reach layered over Idle for the commemorative stamp.
+This wardrobe and gesture are interpretive, not a surveyed staff uniform or ritual.

@@ -153,7 +153,19 @@ export function buildReception(root,features,ground,m,colliders){
   const wings=[{x:14.66,z:3.9,w:29.32,d:7.8},{x:5.8,z:9.73,w:11.6,d:3.86}];
   for(const wing of wings){
     const {x,z,w,d}=wing;
-    box(w,3.0,d,x,1.5,z,m.plasterMat,g);box(w+.18,.34,d+.18,x,.17,z,m.entryStoneMat,g);
+    if(z>8){
+      // The service window is an actual opening, not a dark decal over a solid
+      // building. Keep a shallow interior behind the rigged counter attendant.
+      box(w,3,.16,x,1.5,z-d/2+.08,m.plasterMat,g);
+      for(const side of [-1,1])box(.16,3,d,x+side*(w/2-.08),1.5,z,m.plasterMat,g);
+      const front=z+d/2-.08;
+      box(1.4,3,.16,.7,1.5,front,m.plasterMat,g);
+      box(w-3.1,3,.16,(w+3.1)/2,1.5,front,m.plasterMat,g);
+      box(1.7,1.20,.16,2.25,.60,front,m.plasterMat,g);
+      box(1.7,.55,.16,2.25,2.725,front,m.plasterMat,g);
+      box(1.7,1.45,.08,2.25,1.85,10.85,dark,g);
+    }else box(w,3.0,d,x,1.5,z,m.plasterMat,g);
+    box(w+.18,.34,d+.18,x,.17,z,m.entryStoneMat,g);
     // Expand both axes: the former end faces were coplanar with the plaster.
     box(w+.04,.65,d+.04,x,.65,z,vermilion,g);
     for(const side of [-1,1]){
@@ -167,7 +179,10 @@ export function buildReception(root,features,ground,m,colliders){
     for(const side of [-1,1]){
       const ez=z+side*(d/2+.035);
       box(w+.12,.14,.10,x,2.95,ez,wood,g);
-      for(let px=x-w/2+.1;px<x+w/2;px+=2.4)box(.10,2.9,.10,px,1.6,ez,wood,g);
+      for(let px=x-w/2+.1;px<x+w/2;px+=2.4){
+        if(z>8&&side===1&&px>1.4&&px<3.1)continue;
+        box(.10,2.9,.10,px,1.6,ez,wood,g);
+      }
       box(w+1.05,.16,.12,x,3.12,z+side*(d/2+.6),wood,g);
     }
     const roof=new THREE.BufferGeometry(),v=[],uv=[];
@@ -179,7 +194,10 @@ export function buildReception(root,features,ground,m,colliders){
     colliders.push({type:'box',args:[cx,cz,w/2,d/2,yaw,g.position.y,g.position.y+4.2,'shrine_reception']});
   }
   for(const [start,end,z] of [[.65,10.9,11.69],[12.3,28.6,7.84]]){
-    const w=end-start;box(w,1.25,.045,(start+end)/2,1.82,z,dark,g);
+    const w=end-start;
+    if(z>10){
+      for(const [a,b] of [[start,1.4],[3.1,end]])box(b-a,1.25,.045,(a+b)/2,1.82,z,dark,g);
+    }else box(w,1.25,.045,(start+end)/2,1.82,z,dark,g);
     box(w+.2,.12,.47,(start+end)/2,1.15,z+.20,wood,g);
     for(let x=start;x<end;x+=.24)box(.018,.28,.04,x,2.28,z+.06,wood,g);
     box(w,.035,.045,(start+end)/2,2.12,z+.07,wood,g);

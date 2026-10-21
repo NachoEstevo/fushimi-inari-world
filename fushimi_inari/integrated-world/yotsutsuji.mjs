@@ -115,7 +115,7 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   // This furnishing is interpretive, not a surveyed historical bench.
   {
     const x=794.15,z=-219.85,y=ground(x,z)+.11;
-    const turf=new THREE.MeshStandardMaterial({color:0x65734b,roughness:1});
+    const turf=new THREE.MeshStandardMaterial({color:0x537d39,roughness:1});
     box(1.45,.045,1.55,x,y-.045,z,turf);
     for(const dz of [-.48,-.24,0,.24,.48])box(.55,.075,.20,x,y+.45,z+dz,wood);
     box(.08,.30,1.45,x+.28,y+.77,z,wood);

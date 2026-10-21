@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createActivity} from './activity-state.mjs';
 import {createKitsune,createAttendant} from './precinct-models.mjs?v=32';
+import {upgradeReceptionAttendant} from './reception-attendant.mjs';
 
 const mat=color=>new THREE.MeshStandardMaterial({color,roughness:.87});
 function mesh(parent,geo,material,x,y,z){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
@@ -23,6 +24,7 @@ export function installPrecinctLife(root,legacy,callbacks){
   const reception=root.getObjectByName('Mapped shrine reception');
   if(reception){
     const person=createAttendant();person.position.set(2.2,.12,11.83);reception.add(person);
+    const animateImported=upgradeReceptionAttendant(person);
     const paper=box(reception,.36,.012,.25,mat('#eee5d2'),2.2,1.275,12.03);
     const stamp=box(reception,.07,.12,.07,mat('#6e3826'),2.25,1.36,12.04);
     const seal=box(reception,.065,.002,.065,mat('#b53c32'),2.2,1.283,12.03);seal.visible=false;
@@ -36,8 +38,10 @@ export function installPrecinctLife(root,legacy,callbacks){
     updates.push({object:person,run:()=>{
       const now=performance.now(),t=activity.progress(now),press=Math.sin(Math.PI*t),rig=person.userData.attendantRig;
       stamp.position.y=1.36-.07*press;person.rotation.x=.025*press;
-      rig.head.rotation.y=.055*Math.sin(now*.00045);rig.head.rotation.x=.07*press;
-      rig.arms[0].rotation.x=.012*Math.sin(now*.0017);rig.arms[1].rotation.x=-.12*press+.009*Math.sin(now*.0017+1);
+      if(!animateImported(now,press)){
+        rig.head.rotation.y=.055*Math.sin(now*.00045);rig.head.rotation.x=.07*press;
+        rig.arms[0].rotation.x=.012*Math.sin(now*.0017);rig.arms[1].rotation.x=-.12*press+.009*Math.sin(now*.0017+1);
+      }
       if(stamped&&t>.6)seal.visible=true;
     }});
   }

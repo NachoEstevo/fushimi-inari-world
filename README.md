@@ -119,10 +119,9 @@ The Blender master and scene specifications are preserved in `fushimi_inari/`. T
 
 ## Develop and verify
 
-The integrated entry point is generated. Edit its builder when changing generated HTML or viewer code:
+The current integrated entry point is maintained in `fushimi_inari/integrated-world/`. The old `build_integrated_viewer.py` is a historical bootstrap and does not reproduce later refinements; do not run it over the current viewer. Validate changes with:
 
 ```powershell
-python fushimi_inari/scripts/build_integrated_viewer.py
 node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.test.mjs
 ```
 
@@ -136,3 +135,5 @@ node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.
 - Bird recording: [audio credits](fushimi_inari/assets/audio/CREDITS.md). The uguisu recording is CC BY-SA 3.0 and was recorded in Kantō, not Inariyama.
 
 Private working repository. No blanket redistribution license is granted for third-party material. External photographs remain references rather than bundled textures. Selected documentation images are screenshots of this project.
+
+The latest local refinement adds the accepted rigged character style to the stamp counter, green ground cover outside paths, and southwest-facing secondary viewpoints. See [R33 validation and limits](docs/r33-reception-and-ground.md).

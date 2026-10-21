@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {panoramaVisible,outlooks} from './panorama-policy.mjs';
+import {panoramaVisible,outlooks,outlookOpening} from './panorama-policy.mjs';
 import {readFileSync} from 'node:fs';
 import {buildGraph,nearestNode,shortestRoute} from '../geography/geo-core.mjs';
 test('both additional outlooks connect to Yotsutsuji on existing mapped paths',()=>{
@@ -26,4 +26,11 @@ test('hysteresis prevents churn and distant aerial cameras turn detail off',()=>
   assert.equal(panoramaVisible(p,true),true);
   assert.equal(panoramaVisible({...p,x:1100},true),false);
   assert.equal(panoramaVisible({x:795,y:500,z:-216},true),false);
+});
+test('secondary view openings stay bounded and face mapped southwest',()=>{
+  for(const [x,,z] of outlooks.slice(1)){
+    assert.equal(outlookOpening(x-10,z+10),true);
+    assert.equal(outlookOpening(x+10,z-10),false);
+    assert.equal(outlookOpening(x-30,z+30),false);
+  }
 });
