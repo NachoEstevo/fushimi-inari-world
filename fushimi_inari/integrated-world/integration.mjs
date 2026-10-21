@@ -1,7 +1,8 @@
 import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
 import {buildEntranceSidePlanting} from './entrance-side-planting.mjs?v=52';
-import {buildOmotesandoShoulders} from './omotesando-shoulders.mjs?v=52';
+import {buildOmotesandoShoulders} from './omotesando-shoulders.mjs?v=53';
+import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=53';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
@@ -49,7 +50,10 @@ import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b
 import {refineNinomine} from './ninomine-details.mjs?v=39';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
-  const spec=await fetch('anchors.json').then(r=>r.json());
+  const [spec,entranceBarriers]=await Promise.all([
+    fetch('anchors.json').then(r=>r.json()),
+    fetch('../geography/sources/entrance-barriers.json').then(r=>{if(!r.ok)throw new Error('Entrance barrier data unavailable');return r.json();})
+  ]);
   const spatial=makeSpatial(terrain,features,spec);
   const legacy=await buildLegacy(renderer,callbacks);
   legacy.materials.entryStoneMat=fineGranite();
@@ -378,6 +382,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
   buildEntranceSidePlanting(root,byId.romon);
   buildOmotesandoShoulders(root,features,ground,surfaces,legacy.materials);
+  buildEntranceMappedBoundaries(root,entranceBarriers,ground,legacy.materials,colliders);
   const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroSignage(root,features,surfaces,legacy.materials,colliders);
   if(lateralEntry?.torii){
