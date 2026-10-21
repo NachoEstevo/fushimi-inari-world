@@ -24,3 +24,9 @@ test('photographed Minami detail is limited to the uniquely closest NE public ed
  const distances=minami.points.map((a,i)=>{const b=minami.points[(i+1)%minami.points.length],mid=[(a[0]+b[0])/2,(a[2]+b[2])/2];return Math.min(...route.points.slice(1).map((b,j)=>distance(mid,route.points[j],b)));});
  assert.equal(distances.indexOf(Math.min(...distances)),1);
 });
+
+test('only the photographed Gishikiden receives the explicit16m massing estimate',()=>{
+ const records=entranceNeighborhoodLayout(features).records,gishikiden=records.find(r=>r.id==='way/223276575'),source=features.buildings.find(b=>b.id===gishikiden.id);
+ assert.equal(gishikiden.height,16);assert.match(gishikiden.heightSource,/estimated16m/);assert.match(gishikiden.heightSource,/not storeys/);assert.deepEqual(gishikiden.points,source.points.slice(0,-1));
+ for(const r of records.filter(r=>!['way/223276575','way/260121332'].includes(r.id))){const b=features.buildings.find(b=>b.id===r.id),h=Number.parseFloat(b.tags.height),levels=Number.parseFloat(b.tags['building:levels']);assert.equal(r.height,Number.isFinite(h)&&h>0?h:Number.isFinite(levels)&&levels>0?levels*3:4.5);}
+});

@@ -49,6 +49,7 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     for(const level of [.15,.87])box(w+.05,.07,.09,x,y+wall*level,front+.05,body);
     // Bark roofs use real thickness and short exposed rafter tails. Their
     // silhouettes are based on the supplied 2021 photo, not a measured survey.
+    const roofBatchStarts=new Map([...batches].map(([mat,parts])=>[mat,parts.length]));
     const eave=y+wall+.05,roofD=d+.53,half=roofW/2;
     const profile=t=>eave+rise*(1-t)+(spec.curved ? .11*t*t : 0);
     const verts=[],uv=[],strips=spec.curved?8:1;
@@ -69,6 +70,10 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
       const gable=new THREE.BufferGeometry();gable.setAttribute('position',new THREE.Float32BufferAttribute([x-w/2,eave,zz,x,eave+rise-.06,zz,x+w/2,eave,zz],3));gable.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,.5,1,1,0],2));gable.computeVertexNormals();put(gable,spec.dark?bark:white);
       box(w,.07,.08,x,eave-.015,zz,body);
       box(.07,rise*.75,.08,x,eave+rise*.37,zz,body);
+    }
+    if(spec.id===entranceRoadsideShrineIds[1]){
+      // Fujio presents a roof pitch to the front: rotate roof and gables only.
+      for(const [mat,parts]of batches)for(let i=roofBatchStarts.get(mat)??0;i<parts.length;i++)parts[i].translate(-x,0,-z).rotateY(Math.PI/2).translate(x,0,z);
     }
     if(spec.dark){
       // Chigi cross finials at the two ridge ends, without invented emblems.
@@ -95,7 +100,7 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
       box(1.54,.09,.13,x,toriiBase+1.44,tz,stone);
       box(.09,.30,.10,x,toriiBase+1.62,tz,stone);
     }
-    records.push({id:spec.id,name:spec.name,position:[x,base,z],estimatedBody:[w,wall,d],estimatedPlinth:plinth,front:'+Z',estimatedRoofWidth:roofW});
+    records.push({id:spec.id,name:spec.name,position:[x,base,z],estimatedBody:[w,wall,d],estimatedPlinth:plinth,front:'+Z',estimatedRoofWidth:roofW,roofRidgeAxis:spec.id===entranceRoadsideShrineIds[1]?"X":"Z"});
   }
   for(const [mat,parts]of batches){const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!merged)throw Error('Roadside shrine material merge failed');const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
   group.userData={sourceIds:entranceRoadsideShrineIds,records,photo:'https://fushimiinari-guide.com/wp-content/uploads/IMG_6470_20210313.jpg',provenance:'Exact OSM POI centres; estimated photo-based dimensions, closed unlettered doors, bark roofs; existing mapped enclosures retain ownership of fences, retaining walls and collisions'};

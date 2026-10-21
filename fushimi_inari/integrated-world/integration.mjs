@@ -7,14 +7,16 @@ import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=
 import {buildEntranceHedgeUnderstory} from './entrance-hedge-understory.mjs?v=59';
 import {buildEntranceShrineEnclosures} from './entrance-shrine-enclosures.mjs?v=59';
 import {clearLegacyShrineConflicts} from './entrance-legacy-shrine-conflicts.mjs?v=59';
-import {buildEntranceRoadsideShrines} from './entrance-roadside-shrines.mjs?v=59';
-import {buildEntranceShrineCourt} from './entrance-shrine-court.mjs?v=59';
+import {buildEntranceRoadsideShrines} from './entrance-roadside-shrines.mjs?v=60';
+import {buildEntranceShrineCourtDetails} from './entrance-shrine-court-details.mjs?v=60';
+import {buildEntranceShrineCourtTrees} from './entrance-shrine-court-trees.mjs?v=60';
+import {buildEntranceShrineCourt} from './entrance-shrine-court.mjs?v=60';
 import {buildEntranceAreaSurfaces} from './entrance-area-surfaces.mjs?v=59';
 import {alignFirstOmotesandoTorii} from './first-torii-alignment.mjs?v=58';
 import {placeMappedInariStation,mappedStationId} from './station-placement.mjs?v=54';
 import {clearLegacyApproachSlabs} from './legacy-approach-slabs.mjs?v=54';
 import {isUnsupportedEntranceProp,isUnsupportedEntranceCollider} from './entrance-unsupported-props.mjs?v=56';
-import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=58';
+import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=60';
 import {buildEntranceMappedTrees} from './entrance-mapped-trees.mjs?v=59';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
@@ -406,6 +408,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.entranceShrineEnclosures=JSON.stringify(buildEntranceShrineEnclosures(root,entranceBarriers,ground,legacy.materials,colliders).ways);
   document.body.dataset.entranceRoadsideShrines=JSON.stringify(buildEntranceRoadsideShrines(root,features,surfaces,legacy.materials,colliders).records);
   buildEntranceShrineCourt(root,features,surfaces);
+  document.body.dataset.entranceCourtDetails=JSON.stringify(buildEntranceShrineCourtDetails(root,features,surfaces,legacy.materials,colliders).records);
+  document.body.dataset.entranceCourtTrees=JSON.stringify(buildEntranceShrineCourtTrees(root,features,surfaces,colliders));
   buildEntranceAreaSurfaces(root,entranceSurfaces,features,surfaces.terrainHeight);
   document.body.dataset.firstToriiAlignment=JSON.stringify(alignFirstOmotesandoTorii(root,features,surfaces,colliders));
   const stationPlacement=placeMappedInariStation(root,features,surfaces,colliders);

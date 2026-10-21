@@ -9,7 +9,9 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
  const plaster=new THREE.MeshStandardMaterial({color:'#b9b5a8',roughness:.97});
  const roof=new THREE.MeshStandardMaterial({color:'#656963',roughness:.94,side:THREE.DoubleSide});
  const eave=new THREE.MeshStandardMaterial({color:'#777366',roughness:.96});
- const roofDetails=[];
+ const roofDetails=[],facadeDetails=[];
+ const gishikidenRecess=new THREE.MeshStandardMaterial({color:'#41494a',roughness:.78,metalness:.08});
+ const gishikidenConcrete=new THREE.MeshStandardMaterial({color:'#bfc2b6',roughness:.93});
  const minamiRoof=new THREE.MeshStandardMaterial({color:'#69716f',roughness:.83,side:THREE.DoubleSide});
  const minamiTile=new THREE.MeshStandardMaterial({color:'#79817e',roughness:.82});
  const minamiTimber=new THREE.MeshStandardMaterial({color:'#554b3e',roughness:.95}),minamiScreen=new THREE.MeshStandardMaterial({color:'#b8b6a3',roughness:.73}),minamiAwning=new THREE.MeshStandardMaterial({color:'#b8aa88',roughness:.95});
@@ -17,7 +19,8 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
  const part=(geo,mat)=>{if(geo.index){const old=geo;geo=geo.toNonIndexed();old.dispose();}if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);};
  const box=(w,h,d,x,y,z,mat,yaw)=>{if(h<=0)return;part(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(x,y,z),mat);};
  for(const spec of layout.records){
-  const heights=spec.points.map(p=>ground(p[0],p[2])),sorted=[...heights].sort((a,b)=>a-b),floor=spec.publicFacadeEdge!==null?(ground(spec.points[spec.publicFacadeEdge][0],spec.points[spec.publicFacadeEdge][2])+ground(spec.points[(spec.publicFacadeEdge+1)%spec.points.length][0],spec.points[(spec.publicFacadeEdge+1)%spec.points.length][2]))/2:sorted[Math.floor((sorted.length-1)/2)],top=floor+spec.height;
+  const gishikiden=spec.id==='way/223276575',upperRailZone=gishikiden?spec.height*.103125:0;
+  const heights=spec.points.map(p=>ground(p[0],p[2])),sorted=[...heights].sort((a,b)=>a-b),floor=spec.publicFacadeEdge!==null?(ground(spec.points[spec.publicFacadeEdge][0],spec.points[spec.publicFacadeEdge][2])+ground(spec.points[(spec.publicFacadeEdge+1)%spec.points.length][0],spec.points[(spec.publicFacadeEdge+1)%spec.points.length][2]))/2:sorted[Math.floor((sorted.length-1)/2)],overallTop=floor+spec.height,top=overallTop-upperRailZone;
   // Wall bottoms follow local terrain; a shared roof plane never introduces
   // an artificial multi-metre stone podium on the sloping neighborhood.
   for(let i=0;i<spec.points.length;i++){
@@ -25,10 +28,34 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
    const sections=Math.max(1,Math.ceil(length/2));
    for(let j=0;j<sections;j++){
     const t0=j/sections,t1=(j+1)/sections,x0=a[0]+dx*t0,z0=a[2]+dz*t0,x1=a[0]+dx*t1,z1=a[2]+dz*t1,cx=(x0+x1)/2,cz=(z0+z1)/2,base=Math.min(ground(x0,z0),ground(x1,z1),ground(cx,cz))-.04,yaw=Math.atan2(-dz,dx),w=length/sections;
-    box(w,Math.max(.1,top-base),.12,cx,(top+base)/2,cz,plaster,yaw);box(w,.16,.16,cx,base+.06,cz,stone,yaw);
-    colliders.push({type:'box',args:[cx,cz,w/2,.12,yaw,base,top,'mapped_entrance_'+spec.id.split('/')[1]]});
+    box(w,Math.max(.1,top-base),.12,cx,(top+base)/2,cz,gishikiden?gishikidenRecess:plaster,yaw);box(w,.16,.16,cx,base+.06,cz,stone,yaw);
+    colliders.push({type:'box',args:[cx,cz,w/2,.12,yaw,base,overallTop,'mapped_entrance_'+spec.id.split('/')[1]]});
    }
-   const yaw=Math.atan2(-dz,dx);box(length,.14,.22,(a[0]+b[0])/2,top-.03,(a[2]+b[2])/2,eave,yaw);
+   const yaw=Math.atan2(-dz,dx);box(length,.14,.22,(a[0]+b[0])/2,top-.03,(a[2]+b[2])/2,gishikiden?gishikidenConcrete:eave,yaw);
+   if(gishikiden){
+    // Twenty closely spaced facade-screen fins are NOT twenty storeys.
+    // All dimensions scale with the explicit overall-height estimate.
+    const first=spec.height*.1875,last=spec.height-upperRailZone-.08;
+    for(let band=0;band<20;band++){
+     const level=floor+first+(last-first)*band/19;
+     box(length,.15,.34,(a[0]+b[0])/2,level,(a[2]+b[2])/2,gishikidenConcrete,yaw);
+    }
+    // The photographs show daylight between the upper rails; do not fill
+    // that zone with an additional solid floor or white parapet box.
+    for(const fraction of [.20,.56,.92])box(length,.13,.30,(a[0]+b[0])/2,top+upperRailZone*fraction,(a[2]+b[2])/2,gishikidenConcrete,yaw);
+   }
+  }
+  if(gishikiden){
+   const seen=new Set();
+   for(let i=0;i<spec.points.length;i++){
+    const previous=spec.points[(i+spec.points.length-1)%spec.points.length],p=spec.points[i],next=spec.points[(i+1)%spec.points.length],v0=[p[0]-previous[0],p[2]-previous[2]],v1=[next[0]-p[0],next[2]-p[2]],l0=Math.hypot(...v0),l1=Math.hypot(...v1),turn=Math.abs(v0[0]*v1[1]-v0[1]*v1[0])/Math.max(1e-8,l0*l1),key=p[0]+','+p[2];
+    // Only substantial changes of direction receive projecting uprights;
+    // tiny offsets in the OSM ring do not become invented structural piers.
+    if(l0<3||l1<3||turn<.25||seen.has(key))continue;seen.add(key);
+    const base=ground(p[0],p[2]),height=overallTop-base;
+    box(.31,height,.31,p[0],base+height/2,p[2],gishikidenConcrete,0);
+   }
+   facadeDetails.push({id:spec.id,reference:'IMG_6470_20210313 and IMG_7524_20210405',overallHeight:spec.height,heightStatus:'photo-based estimate for two-view review',closedMassHeight:spec.height-upperRailZone,screenFinRows:20,openUpperRails:3,internalStoreys:'unverified; fins are not floor counts',footprintPreserved:true});
   }
   if(spec.id==='way/260121332'){
    // townphoto.net/kyoto/k01/k01202.jpg (2016) identifies Minami Shingu.
@@ -106,6 +133,6 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
   builtIds.push(spec.id);
  }
  for(const [material,parts]of batches){const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
- group.userData={sourceIds:builtIds,roofDetails,heights:layout.records.map(r=>({id:r.id,height:r.height,source:r.heightSource})),skippedLegacyShopOverlap:layout.skippedLegacyShopOverlap,provenance:'Exact OSM wall/roof footprints; tag heights/storeys where available, otherwise estimated4.5m; neutral caps are not verified roof forms/facades'};
+ group.userData={sourceIds:builtIds,roofDetails,facadeDetails,heights:layout.records.map(r=>({id:r.id,height:r.height,source:r.heightSource})),skippedLegacyShopOverlap:layout.skippedLegacyShopOverlap,provenance:'Exact OSM wall/roof footprints; tag heights/storeys where available, otherwise estimated4.5m; neutral caps are not verified roof forms/facades'};
  root.add(group);return {group,builtIds,skippedLegacyShopOverlap:layout.skippedLegacyShopOverlap};
 }

@@ -14,9 +14,9 @@ export function entranceNeighborhoodLayout(features){
   const overlaps=oldShopCenters.some(([sx,sz])=>Math.min(...xs)<sx+3&&Math.max(...xs)>sx-3&&Math.min(...zs)<sz+3.6&&Math.max(...zs)>sz-3.6);
   if(overlaps){skipped.push(building.id);continue;}
   const explicit=Number.parseFloat(building.tags?.height),levels=Number.parseFloat(building.tags?.['building:levels']);
-  const photographedMinami=building.id==='way/260121332';
-  const height=photographedMinami?5.2:Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(levels)&&levels>0?levels*3:4.5;
-  records.push({id:building.id,points,height,publicFacadeEdge:photographedMinami?1:null,heightSource:photographedMinami?'2016 photograph two storeys; estimated5.2m':Number.isFinite(explicit)&&explicit>0?'OSM height':Number.isFinite(levels)&&levels>0?'OSM storeys at estimated3m':'estimated4.5m',center:[cx,cz]});
+  const photographedMinami=building.id==='way/260121332',photographedGishikiden=building.id==='way/223276575';
+  const height=photographedGishikiden?16:photographedMinami?5.2:Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(levels)&&levels>0?levels*3:4.5;
+  records.push({id:building.id,points,height,publicFacadeEdge:photographedMinami?1:null,heightSource:photographedGishikiden?'2021 photographs, estimated16m overall; screen bands are not storeys':photographedMinami?'2016 photograph two storeys; estimated5.2m':Number.isFinite(explicit)&&explicit>0?'OSM height':Number.isFinite(levels)&&levels>0?'OSM storeys at estimated3m':'estimated4.5m',center:[cx,cz]});
  }
  return {records,skippedLegacyShopOverlap:skipped};
 }
