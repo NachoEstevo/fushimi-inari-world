@@ -1,14 +1,16 @@
+import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=29c';
+import {inscriptionVariant,inscriptionDate} from './mountain-torii-profile.mjs?v=29c';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {routeSpec} from './route-spec.mjs';
 import {toriiVariation} from './torii-variation.mjs';
 import {senbonLayout} from './senbon-layout.mjs';
-import {toriiMaterials} from './torii-materials.mjs';
+import {toriiMaterials} from './torii-materials.mjs?v=29';
 
 // Refines the original Inari-torii construction at its actual small-gate scale.
 // Materials are inherited; architecture elsewhere is left intact.
 export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
-  const s=routeSpec.senbon,red=[],black=[],beams=[],finishes=toriiMaterials(legacy);
+  const s=routeSpec.senbon,red=[],black=[],beams=[],finishes=toriiMaterials(legacy,{separateInk:true});
   function box(w,h,d,x,y,z,collection){
     const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);collection.push(g);
   }
@@ -58,15 +60,6 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
     list.forEach(({m,variation},i)=>{mesh.setMatrixAt(i,m);if(variation)mesh.setColorAt(i,new THREE.Color().setRGB(variation.tint,variation.tint*.96,variation.tint*.92));});
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();root.add(mesh);
   }
-  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=512;
-  const ctx=canvas.getContext('2d');ctx.fillStyle='#171612';ctx.textAlign='center';ctx.font='100px serif';
-  ctx.fillText('奉',64,160);ctx.fillText('納',64,310);
-  const ink=new THREE.CanvasTexture(canvas);ink.colorSpace=THREE.SRGBColorSpace;
-  const label=new THREE.PlaneGeometry(.075,.48);
-  const labels=new THREE.InstancedMesh(label,new THREE.MeshStandardMaterial({map:ink,transparent:true,alphaTest:.3,roughness:1}),mats.length*2);
-  mats.forEach((m,i)=>[-1,1].forEach((side,j)=>{
-    labels.setMatrixAt(i*2+j,m.clone().multiply(new THREE.Matrix4().makeTranslation(side*s.pillarCenters/2,1.50,-.077)).multiply(new THREE.Matrix4().makeRotationY(Math.PI)));
-  }));
-  labels.computeBoundingSphere();root.add(labels);
+  buildToriiInscriptions(root,mats.map((m,i)=>({m,inscription:inscriptionVariant(13,i),dateInscription:inscriptionDate(13,i)})),{halfSpan:s.pillarCenters/2,bottomRadius:s.pillarDiameter*.5,topRadius:s.pillarDiameter*.48,bottomY:0,topY:s.height-.16,small:true});
   return {gates:mats.length,fresh:fresh.length,weathered:weathered.length,spacing:s.spacing,pillarDiameter:s.pillarDiameter,clearWidth:s.pillarCenters-s.pillarDiameter,height:s.height,countSource:s.countSource,dimensionsStatus:s.otherDimensions};
 }

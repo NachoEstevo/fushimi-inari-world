@@ -11,7 +11,7 @@ import {blendCourtyardGround} from './courtyard-ground.mjs';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=26';
 import {installExplorationHUD} from './exploration-hud.mjs?v=28';
-import {integrate} from './integration.mjs?v=28';
+import {integrate} from './integration.mjs?v=29c';
 import {installWalking} from './walking.mjs?v=14';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
