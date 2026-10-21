@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createActivity} from './activity-state.mjs';
-import {createKitsune,createAttendant} from './precinct-models.mjs?v=31';
+import {createKitsune,createAttendant} from './precinct-models.mjs?v=32';
 
 const mat=color=>new THREE.MeshStandardMaterial({color,roughness:.87});
 function mesh(parent,geo,material,x,y,z){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
@@ -33,7 +33,13 @@ export function installPrecinctLife(root,legacy,callbacks){
     }};
     const data={title:'Shrine reception',description:'A commemorative stamp demonstration. This is a virtual souvenir, not an official goshuin.',actions:[action]};
     register(person,data);register(paper,data);register(stamp,data);register(seal,data);
-    updates.push({object:person,run:()=>{const t=activity.progress(performance.now());stamp.position.y=1.36-.07*Math.sin(Math.PI*t);person.rotation.x=.05*Math.sin(Math.PI*t);if(stamped&&t>.6)seal.visible=true;}});
+    updates.push({object:person,run:()=>{
+      const now=performance.now(),t=activity.progress(now),press=Math.sin(Math.PI*t),rig=person.userData.attendantRig;
+      stamp.position.y=1.36-.07*press;person.rotation.x=.025*press;
+      rig.head.rotation.y=.055*Math.sin(now*.00045);rig.head.rotation.x=.07*press;
+      rig.arms[0].rotation.x=.012*Math.sin(now*.0017);rig.arms[1].rotation.x=-.12*press+.009*Math.sin(now*.0017+1);
+      if(stamped&&t>.6)seal.visible=true;
+    }});
   }
   const ladles=[];root.traverse(o=>{if(o.userData.ladle)ladles.push(o);});
   for(const ladle of ladles){

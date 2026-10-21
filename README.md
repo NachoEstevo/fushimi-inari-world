@@ -46,6 +46,11 @@ the added bench placement are interpretive. See [R28 notes](docs/r28-outlooks.md
 
 The minimap follows your position. Movement speed, free flight, routes and sound are available in the menu. Start with **Rōmon**, **Temizuya**, **Shrine reception** or **Senbon Torii**.
 
+**Night** adds luminous stars with gentle scintillation. Press **L** to toggle your
+flashlight, or use **Environment → Personal light**. Reception visitors use external
+CC0 rigged models with skeletal idle animation; see [credits](fushimi_inari/assets/models/visitors/CREDITS.md)
+and [R32 scope](docs/r32-visitors-and-night.md). Characters remain stylized.
+
 At **Temizuya**, approach and aim at the basin, then press **E** to lift a ladle.
 At **Shrine reception**, aim at the attendant under the Goshuin sign for a
 commemorative stamp demonstration. At **Ichinomine**, approach the hanging rope

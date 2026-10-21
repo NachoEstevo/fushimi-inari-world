@@ -59,16 +59,22 @@ export function createKitsune(){
 }
 export function createAttendant(){
   const g=new THREE.Group();g.name='Stylized reception attendant';
+  const armParts=[];
   const ivory=material('#eae6dc'),fold=material('#c9c7bd'),skin=material('#c99978',.75),hair=material('#262321',.7),ink=material('#46342e'),lips=material('#965f50'),red=material('#a52927');
   add(g,loft([[0,.94,0,.14,.10],[0,1.06,0,.16,.11],[0,1.28,0,.20,.12],[0,1.40,0,.18,.105],[0,1.45,0,.08,.075]]),ivory);
-  add(g,new THREE.CylinderGeometry(.053,.065,.15,16),skin,[0,1.48,0]);
+  add(g,new THREE.CylinderGeometry(.053,.065,.09,16),skin,[0,1.46,0]);
+  const faceStart=g.children.length;
   // Jaw tapers into the chin; eyes stay small and quiet in the stylized face.
   add(g,loft([[0,1.535,.015,.025,.035],[0,1.56,.01,.061,.070],[0,1.61,0,.089,.086],[0,1.68,-.008,.096,.09],[0,1.75,-.018,.087,.078],[0,1.79,-.02,.04,.04],[0,1.80,-.02,.002,.002]]),skin);
-  oval(g,skin,[0,1.635,.086],[.014,.025,.022]);
+  oval(g,skin,[0,1.635,.086],[.011,.019,.016]);
   for(const side of [-1,1]){
     oval(g,skin,[side*.092,1.644,-.006],[.018,.035,.018]);
     oval(g,ink,[side*.039,1.669,.078],[.016,.005,.005]);
     cord(g,hair,[[side*.023,1.69,.074],[side*.041,1.695,.073],[side*.057,1.689,.067]],.003);
+  }
+  const faceParts=g.children.slice(faceStart);
+  for(const side of [-1,1]){
+    const start=g.children.length;
     // Soft draped sleeve profile runs from shoulder to a generous hanging cuff.
     add(g,loft([[side*.245,1.02,.085,.10,.095],[side*.26,1.11,.07,.115,.12],[side*.24,1.24,.025,.105,.11],[side*.18,1.38,0,.07,.08]]),ivory);
     cord(g,fold,[[side*.26,1.04,.18],[side*.275,1.16,.17],[side*.215,1.31,.11]],.004);
@@ -76,16 +82,22 @@ export function createAttendant(){
     for(let j=0;j<4;j++)oval(g,skin,[side*.16+(j-1.5)*.018,1.167,.302],[.009,.014,.035]);
     oval(g,skin,[side*.205,1.18,.25],[.017,.018,.037]);
     cord(g,ivory,[[side*.27,1.19,.14],[side*.20,1.18,.19],[side*.16,1.17,.22]],.037);
+    armParts.push({parts:g.children.slice(start),pivot:[side*.18,1.35,0]});
   }
+  const hairStart=g.children.length;
   cord(g,lips,[[-.024,1.59,.077],[0,1.586,.085],[.024,1.59,.077]],.0025);
   // Close-fitting cap, side locks and a low tied bun, all one shared material.
   const cap=add(g,new THREE.SphereGeometry(1,28,18,0,Math.PI*2,0,Math.PI*.55),hair,[0,1.697,-.017],[.103,.108,.094]);
   oval(g,hair,[0,1.65,-.078],[.095,.105,.052]);oval(g,hair,[0,1.60,-.118],[.064,.057,.052]);
   for(const side of [-1,1])cord(g,hair,[[side*.08,1.747,.035],[side*.094,1.69,.02],[side*.094,1.62,-.005]],.013);
   cord(g,hair,[[-.08,1.72,.055],[-.03,1.728,.076],[.03,1.75,.064],[.078,1.74,.035]],.017);
+  const headParts=[...faceParts,...g.children.slice(hairStart)];
+  for(const part of headParts)part.position.y-=.055;
   // Crossed robe collar, not a Western V-neck or two floating white bars.
   cord(g,fold,[[-.065,1.445,.071],[.015,1.30,.12],[.055,1.12,.12]],.025);
   cord(g,ivory,[[.065,1.445,.071],[-.035,1.27,.13],[-.07,1.11,.12]],.023);
   add(g,new THREE.BoxGeometry(.29,.055,.025),red,[0,1.03,.112]);
-  return consolidate(g);
+  const joint=(parts,pivot)=>{const group=new THREE.Group();for(const part of parts){part.position.sub(new THREE.Vector3(...pivot));group.add(part);}consolidate(group);group.position.set(...pivot);return group;};
+  const head=joint(headParts,[0,1.49,0]),arms=armParts.map(a=>joint(a.parts,a.pivot));
+  consolidate(g);g.add(head,...arms);g.userData.attendantRig={head,arms};return g;
 }

@@ -1,17 +1,19 @@
 import {installCityPanorama} from './city-panorama.mjs';
 import {terrainTriangles} from './terrain-triangles.mjs?v=24';
-import {installExplorationMenu} from './exploration-menu.mjs?v=31';
-import {installPhotoMode} from './photo-mode.mjs?v=31';
+import {installExplorationMenu} from './exploration-menu.mjs?v=32';
+import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
-import {installSky} from './sky.mjs';
+import {installSky} from './sky.mjs?v=32';
+import {installFlashlight} from './flashlight.mjs';
+import {installVisitors} from './visitors.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=25';
 import {blendCourtyardGround} from './courtyard-ground.mjs';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=26';
-import {installExplorationHUD} from './exploration-hud.mjs?v=31';
-import {integrate} from './integration.mjs?v=31';
+import {installExplorationHUD} from './exploration-hud.mjs?v=32';
+import {integrate} from './integration.mjs?v=32';
 import {installWalking} from './walking.mjs?v=30';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -313,6 +315,8 @@ try {
   };$('light').onchange();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
   const menu=installExplorationMenu({walker,controls,camera,assembly});
+  const flashlight=installFlashlight(scene,camera);
+  const visitors=installVisitors(assembly);
   installSeasons(assembly,canopy);
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
@@ -350,7 +354,7 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
-    sky.update();canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    sky.update();flashlight.update();visitors.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     for(const {object,bounds} of assembly.forestChunks)object.visible=camera.position.distanceTo(bounds.center)<bounds.radius+400;
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.

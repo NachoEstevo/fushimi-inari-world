@@ -1,4 +1,4 @@
-import {sculptEntranceFoxes} from './precinct-life.mjs?v=31';
+import {sculptEntranceFoxes} from './precinct-life.mjs?v=32';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {refineTemizuyaCanopy} from './temizuya-canopy.mjs';
@@ -79,6 +79,20 @@ function refineBasin(g,m){
   for(const x of [-1.17,1.17])box(.10,.035,1.43,x,.30,0,wet,g);
   box(2.45,.035,.10,0,.30,.72,wet,g);
   const bamboo=new THREE.MeshStandardMaterial({color:'#b6a477',roughness:.76});
+  // Reference: TABI FUN entrance temizuya, longitudinal bamboo rack with
+  // transverse rests and dark lashings. Fit the inherited basin footprint.
+  const binding=new THREE.MeshStandardMaterial({color:'#39392c',roughness:.95});
+  for(const z of [-.42,.42]){
+    const rail=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,2.45,12),bamboo);rail.rotation.z=Math.PI/2;rail.position.set(0,1.12,z);g.add(rail);
+    for(const x of [-.94,0,.94]){
+      const knot=new THREE.Mesh(new THREE.TorusGeometry(.047,.008,5,12),binding);knot.rotation.y=Math.PI/2;knot.position.set(x,1.12,z);g.add(knot);
+    }
+  }
+  for(const x of [-.94,0,.94]){
+    const rest=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1.05,10),bamboo);rest.rotation.x=Math.PI/2;rest.position.set(x,1.08,0);g.add(rest);
+  }
+  const guide=sign('手水 · Rinse your hands',.72,.24);guide.position.set(0,1.48,-.48);g.add(guide);
+  for(const x of [-.30,.30])box(.025,.38,.025,x,1.29,-.49,bamboo,g);
   const spout=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.62,10),bamboo);spout.rotation.x=Math.PI/2;spout.position.set(.68,1.22,-.48);g.add(spout);
   const stream=new THREE.Mesh(new THREE.CylinderGeometry(.009,.014,.25,6),new THREE.MeshStandardMaterial({color:'#a9c4b5',transparent:true,opacity:.45,roughness:.2}));stream.position.set(.68,1.09,-.17);g.add(stream);
   const metal=new THREE.MeshStandardMaterial({color:'#b7bbaf',metalness:.65,roughness:.3,side:THREE.DoubleSide});
@@ -122,7 +136,7 @@ export function refineRomonShrubs(mesh){
     const across=new THREE.Vector3().crossVectors(normal,tangent).normalize(),r=.14+(i%17)*.004;
     const a=center.clone().addScaledVector(tangent,r),b=center.clone().addScaledVector(across,r*.55),c=center.clone().addScaledVector(tangent,-r),d=center.clone().addScaledVector(across,-r*.55);
     center.addScaledVector(normal,.035);
-    for(const v of [a,b,center,b,c,center,c,d,center,d,a,center]){vertices.push(v.x,v.y,v.z);const shade=.8+(i%11)*.035;colors.push(.045*shade,.105*shade,.025*shade);}
+    for(const v of [a,b,center,b,c,center,c,d,center,d,a,center]){vertices.push(v.x,v.y,v.z);const shade=.74+(i%13)*.04;colors.push(.085*shade,.18*shade,.035*shade);}
   }
   const leaves=new THREE.BufferGeometry();leaves.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));leaves.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));leaves.computeVertexNormals();
   mesh.geometry=leaves;mesh.material=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.9});mesh.castShadow=false;
