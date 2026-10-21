@@ -4,11 +4,21 @@
 
 Made by [Ignacio Estevo](https://nachoestevo.com).
 
-![Romon entrance, captured from the live viewer](docs/images/romon.png)
+![Rōmon entrance, forecourt and side buildings in the current viewer](docs/images/romon-current.png)
 
 Explore the preserved architectural scene on a geographic trail network: the Rōmon entrance, Senbon Torii, tea houses, secondary paths and the ascent to Ichinomine. Switch between walking, free flight and orbit view, or jump to a checkpoint from the menu.
 
 > Work in progress. This is a reference-driven reconstruction, not a surveyed digital twin. The screenshots show the actual viewer, not concept renders.
+
+## From the entrance to the mountain
+
+![Aerial overview of Inariyama, its connected trails and the surrounding Kyoto neighbourhoods](docs/images/inariyama-overview.png)
+
+The geographic study area spans approximately **2.55 km east–west × 2.45 km north–south**, including surrounding neighbourhoods. This rectangle is **not the legal shrine estate boundary**. The mountain, trail network and urban context share a metre-based coordinate system without vertical exaggeration. City buildings are simplified volumes; forest coverage and individual crowns are interpretive.
+
+![Yotsutsuji terrace looking over the torii descent toward the simplified Kyoto skyline](docs/images/yotsutsuji-current.png)
+
+**Yotsutsuji · Kyoto view.** A ground-level view connects the terrace, descending torii and distant city. These three new images were exported directly through Photo mode on **20 October 2026**, at **1920 × 1356**, without navigation overlays or retouching. They document the current model, including its remaining visual limitations.
 
 ## Run locally
 
@@ -55,9 +65,11 @@ At **Temizuya**, approach and aim at the basin, then press **E** to lift a ladle
 At **Shrine reception**, aim at the attendant under the Goshuin sign for a
 commemorative stamp demonstration. At **Ichinomine**, approach the hanging rope
 and press **E** to ring the bell. Enable sound in **Environment** to hear the
-existing effects. The attendant and entrance kitsune are original stylized models,
-not scans. The white exploration menu, location identity and model improvements
-are documented in [R31 visual review](docs/r31-ui-and-models.md).
+existing effects. The attendant is adapted from a CC0 Quaternius rigged character;
+the entrance kitsune are original procedural models. Both remain stylized, not scans.
+See the [model credits](fushimi_inari/assets/models/visitors/CREDITS.md),
+[R33 reception refinement](docs/r33-reception-and-ground.md) and
+[animation regression checks](fushimi_inari/tests/README.md).
 
 For the city outlook, choose **Checkpoints → Yotsutsuji · Kyoto view**. The existing forecourt has resting benches and an open stair approach. Its furniture dimensions are inferred from references; the distant city remains simplified mapped massing.
 
@@ -75,15 +87,11 @@ The twin Senbon exits now open onto a connected Okusha court, with the original 
 
 ## Entrance details
 
-![Satellite-guided woodland and mapped surrounding neighbourhoods](docs/images/aerial-context.png)
-
-The aerial view now includes the surrounding OSM building footprints and lightweight distant forest crowns. Google Maps satellite views guide broad woodland coverage; building heights and individual trees remain approximate. Toggle these layers under **Esc → Routes → Layers and sources**. The lower court shares a connected ground level, with original building pedestals retained. See [R23 reference and validation notes](fushimi_inari/integrated-world/REFERENCES-R23.md).
+The lower court shares a connected ground level, with original building pedestals retained. Surrounding OSM building footprints and lightweight distant forest crowns provide context for aerial exploration. Google Maps satellite views guide broad woodland coverage; building heights and individual trees remain approximate. Toggle these layers under **Esc → Routes → Layers and sources**. See [R23 reference and validation notes](fushimi_inari/integrated-world/REFERENCES-R23.md).
 
 ![Purification basin with ladles and water](docs/images/temizuya.png)
 
 The original buildings remain the foundation of the scene. Current refinements include grey slab paving and aggregate, gilded fittings, curved gable ornaments, leafy shrubs, a hollow purification basin with animated water, and additional detail on the original approach shops.
-
-![Reception counters on the mapped shrine-office footprint](docs/images/reception.png)
 
 The reception building follows the mapped Juyosho footprint. Counter interiors, furnishings and the particular goshuin window are interpretive. Personal visit photographs guide materials and details; they are not uploaded or redistributed here.
 
@@ -94,11 +102,15 @@ The reception building follows the mapped Juyosho footprint. Counter interiors, 
 | Trail connectivity | OpenStreetMap node topology; alternative routes remain distinct |
 | Broad terrain | GSI elevation data; the baseline is a 10 m grid |
 | Building placement | Mapped anchors with preserved original architecture |
-| Steps and local grading | Mixed source counts and inferred profiles; **52 profiles remain under review** |
+| Steps and local grading | Mixed source counts and inferred profiles; the [recorded 52-profile audit](fushimi_inari/integrated-world/profile-walk-audit-r14.json) checks centreline continuity, but marks real-world fidelity unverified |
 | Vegetation and minor furnishings | Reference-informed, unsurveyed placement |
 | Reception, shops and gables | Visual reconstruction; exact dimensions and counter locations remain unverified |
+| Torii | Regional size and inscription variations; individual dimensions, spacing and donor inscriptions are not an exact inventory |
+| City panorama | Mapped footprints with simplified, partly inferred heights and facades |
 
-Known gaps include the Mitsurugi lateral-access collider, several retaining-wall and ground transitions, entrance proportions and side buildings, and detailed correspondence to each real shrine. The scene is still GPU-heavy. Static meshes are batched and vegetation is spatially partitioned, but a complete performance qualification has not been completed.
+There is **no measured overall accuracy percentage**. Geographic provenance does not establish centimetre-level placement, accurate step geometry or a complete inventory of shrine details. Automated route and walking checks establish model behaviour, not correspondence to the physical site.
+
+The strongest foundation is broad terrain and mapped route connectivity. The largest fidelity gaps are local platforms and stairs, building proportions and roof profiles, shrine-specific furnishings, vegetation structure and the city skyline. Earlier access and ground-transition audits are not a current exhaustive clearance survey. Static meshes are batched and vegetation is spatially partitioned, but a complete performance qualification has not been completed.
 
 See [R18 video references](fushimi_inari/integrated-world/REFERENCES-R18.md), [R17 references and validation](fushimi_inari/integrated-world/REFERENCES-R17.md), [personal-photo reference notes](fushimi_inari/integrated-world/REFERENCES-R16.md), and the [geographic manifest](fushimi_inari/geography/manifest.json).
 
@@ -135,5 +147,3 @@ node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.
 - Bird recording: [audio credits](fushimi_inari/assets/audio/CREDITS.md). The uguisu recording is CC BY-SA 3.0 and was recorded in Kantō, not Inariyama.
 
 Private working repository. No blanket redistribution license is granted for third-party material. External photographs remain references rather than bundled textures. Selected documentation images are screenshots of this project.
-
-The latest local refinement adds the accepted rigged character style to the stamp counter, green ground cover outside paths, and southwest-facing secondary viewpoints. See [R33 validation and limits](docs/r33-reception-and-ground.md).
