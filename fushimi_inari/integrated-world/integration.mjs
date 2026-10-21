@@ -1,3 +1,4 @@
+import {clearEntranceStatues} from './entrance-statue-clearance.mjs?v=57';
 import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
 import {buildEntranceSidePlanting} from './entrance-side-planting.mjs?v=52';
@@ -398,6 +399,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const stationPlacement=placeMappedInariStation(root,features,surfaces,colliders);
   document.body.dataset.stationPlacement=JSON.stringify(stationPlacement);
   document.body.dataset.approachSlabs=JSON.stringify(clearLegacyApproachSlabs(root));
+  document.body.dataset.entranceStatues=JSON.stringify(clearEntranceStatues(root,entranceBarriers,features,surfaces,colliders));
   const entranceNeighborhood=buildEntranceNeighborhood(root,features,surfaces.terrainHeight,legacy.materials,colliders);
   document.body.dataset.entranceNeighborhood=JSON.stringify({builtIds:entranceNeighborhood.builtIds,skipped:entranceNeighborhood.skippedLegacyShopOverlap});
   document.body.dataset.entranceTrees=JSON.stringify(buildEntranceMappedTrees(root,entranceContext,features,surfaces,colliders));
