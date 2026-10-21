@@ -3,6 +3,7 @@ import {englishInteraction} from './interaction-english.mjs';
 import * as THREE from 'three';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {walkingSpeed,movementSteps} from './walking-motion.mjs';
+import {auditSectorConnections} from './sector-audit.mjs';
 
 export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart}){
   const obstacles=new SpatialCollisionWorld(4);
@@ -24,6 +25,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   document.body.dataset.walkHeightAudit=JSON.stringify(heightAudit);
   // Opt-in QA only: no additional per-frame or normal-startup cost.
   if(new URLSearchParams(location.search).has('audit')){
+    document.body.dataset.sectorAudit=JSON.stringify(auditSectorConnections(assembly.spatial,assembly.walkHeight,obstacles));
     const profiles=[];
     for(const review of assembly.surfaces.stats.profileReview){
       const segments=assembly.surfaces.segments.filter(s=>s.id===review.id);

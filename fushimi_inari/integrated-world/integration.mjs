@@ -14,7 +14,7 @@ import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs?v=15';
 import {buildSenbon} from './senbon.mjs?v=29c';
-import {buildMountainTorii} from './mountain-torii.mjs?v=29c';
+import {buildMountainTorii} from './mountain-torii.mjs?v=35';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=33';
 import {yotsuGrade} from './site-grading.mjs';
@@ -70,7 +70,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   byId.gehaiden.target[1]=byId.romon.target[1];
   byId.naihaiden.target[1]=byId.romon.target[1]+1.6;
   byId.honden.target[1]=byId.naihaiden.target[1];
-  for(const id of ['gonden','tamayama'])byId[id].target[1]=byId.naihaiden.target[1];
+  byId.gonden.target[1]=byId.naihaiden.target[1];
+  // Tamayama is ~60 m beyond Naihaiden, outside its shared terrace. Forcing
+  // the same datum excavated a ~6 m pit and a 0.55 m/sample access drop.
+  // Retain its geographic elevation; exact stair geometry remains unverified.
   byId.temizuya.mappedTarget=[...byId.temizuya.target];
   byId.temizuya.target=separatedTemizuya(byId.romon,byId.temizuya);
   byId.temizuya.placementStatus='Video-inferred roof clearance; mapped POI retained as mappedTarget';

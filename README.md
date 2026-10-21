@@ -97,6 +97,11 @@ The reception building follows the mapped Juyosho footprint. Counter interiors, 
 
 ## What is sourced—and what is still approximate
 
+The [sector review and reconstruction queue](docs/sector-review.md) tracks current
+coverage, timestamped video observations, official-map omissions and physical
+access findings. Its [R35 runtime audit](docs/audits/sector-audit-r35.json) separates
+mapped connectivity from collision and height checks.
+
 | Layer | Status |
 | --- | --- |
 | Trail connectivity | OpenStreetMap node topology; alternative routes remain distinct |
