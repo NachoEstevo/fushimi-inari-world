@@ -2,12 +2,32 @@ import * as THREE from 'three';
 import {pathWidth} from '../geography/geo-core.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs';
 
+function mappedPineNeedleTexture(){
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+  const ctx=canvas.getContext('2d');let seed=647063;
+  const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+  ctx.lineCap='round';
+  for(let fan=0;fan<14;fan++){
+    const x=23+random()*82,y=23+random()*82,heading=random()*Math.PI*2;
+    ctx.strokeStyle='#7d8456';ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.moveTo(x-Math.cos(heading)*9,y-Math.sin(heading)*9);ctx.lineTo(x,y);ctx.stroke();
+    for(let needle=0;needle<24;needle++){
+      const angle=heading+(random()-.5)*4.7,length=9+random()*19;
+      ctx.strokeStyle=needle%3===0?'#b5bc83':needle%3===1?'#8a9c61':'#667c45';ctx.lineWidth=.8+random()*.6;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(angle)*length,y+Math.sin(angle)*length);ctx.stroke();
+    }
+  }
+  const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=4;return map;
+}
+
 // Exact OSM roots, inferred mature crowns. No new islands, lawn or forest fill.
 export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
   const nodes=(data.greenery??[]).filter(n=>n.tags?.natural==='tree'&&n.point);
   const group=new THREE.Group();group.name='Mapped entrance specimen trees';
-  const branches=[],crowns=[],built=[],skipped=[],dummy=new THREE.Object3D();
-  const up=new THREE.Vector3(0,1,0),bark=new THREE.MeshStandardMaterial({color:'#696252',roughness:1});
+  const branches=[],crowns=[],pineCrowns=[],built=[],skipped=[],dummy=new THREE.Object3D();
+  const barkMap=new THREE.TextureLoader().load(new URL('../assets/textures/nanobanana/bark_mossy_roots_color.png',import.meta.url).href);
+  barkMap.colorSpace=THREE.SRGBColorSpace;barkMap.wrapS=barkMap.wrapT=THREE.RepeatWrapping;barkMap.repeat.set(1,5);barkMap.anisotropy=4;
+  const up=new THREE.Vector3(0,1,0),bark=new THREE.MeshStandardMaterial({color:'#aaa699',map:barkMap,bumpMap:barkMap,bumpScale:.05,roughness:1});
   // Keep the generator's green per-leaf pigment and brown twigs. Disabling
   // vertex colors exposed the pale mask texture and made every tree look white.
   const crown=evergreenCanopy(384),leaves=crown.material.clone();leaves.vertexColors=true;
@@ -50,19 +70,33 @@ export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
     const lean=.20*Math.sin(index*2.3),forkY=y+height*.57;
     stem([x,y-.04,z],[x+lean,forkY,z+.10],radius);
     if(pine)stem([x+lean,forkY,z+.10],[x+lean*.6,y+height*.88,z+.12],radius*.52);
-    const count=camphor?7:5,spread=camphor?3.2:pine?1.7:2.6;
+    if(pine){
+      // IMG_6470 shows dense radial needles at irregular horizontal branch ends,
+      // with exposed trunk gaps between tiers, rather than broad leaf lobes.
+      for(let tier=0;tier<5;tier++){
+        const cy=y+height*(.40+tier*.13),reach=1.9-tier*.16;
+        for(let arm=0;arm<3;arm++){
+          const angle=arm*Math.PI*2/3+tier*.87+index*.77,r=reach*.48;
+          const cx=x+Math.cos(angle)*r+Math.sin(tier*2.1)*.20,cz=z+Math.sin(angle)*r*.8,rise=Math.sin(angle*1.8)*.15;
+          stem([x+lean,cy-.30,z+.10],[cx,cy+rise-.12,cz],radius*(.27-tier*.025));
+          dummy.position.set(cx,cy+rise,cz);dummy.rotation.set(Math.sin(angle)*.30,angle,Math.cos(angle)*.24);
+          dummy.scale.set(reach*.76,.55+(arm%2)*.15,reach*.64);dummy.updateMatrix();pineCrowns.push(dummy.matrix.clone());
+        }
+      }
+    }
+    const count=pine?0:camphor?7:5,spread=camphor?3.2:2.6;
     for(let k=0;k<count;k++){
-      const angle=k*2.39996+index*.77,r=pine?(k===4?.08:spread*.42):k===0?0:spread*(.48+(k%3)*.12);
-      const cx=x+Math.cos(angle)*r,cz=z+Math.sin(angle)*r,cy=y+height*(pine?.43+k*.115:.69+(k%3)*.055);
-      stem([x+lean,pine?cy-.25:forkY,z+.10],[cx,cy-.14,cz],radius*.34);
-      dummy.position.set(cx,cy,cz);dummy.rotation.set(.08*Math.sin(k),angle,.07*Math.cos(k));
-      // The mapped pine uses small, open horizontal tiers rather than the
-      // broadleaf volume. Shared fine sprays remain a botanical approximation.
-      const taper=pine?1-k*.10:1;
-      dummy.scale.set(spread*(.63+(k%2)*.1)*taper,pine?.43:height*.25,spread*(.56+(k%3)*.06)*taper);dummy.updateMatrix();crowns.push(dummy.matrix.clone());
+      const angle=k*2.39996+index*.77,r=k===0?0:spread*(.48+(k%3)*.12);
+      const cx=x+Math.cos(angle)*r,cz=z+Math.sin(angle)*r,cy=y+height*(.69+(k%3)*.055);
+      stem([x+lean,forkY,z+.10],[cx,cy-.14,cz],radius*.34);
+      dummy.position.set(cx,cy,cz);dummy.rotation.set(.15*Math.sin(k+index),angle,.12*Math.cos(k-index));
+      // Small deterministic asymmetry avoids identical crown lobes while
+      // retaining the established broadleaf coverage and source root.
+      const taper=.93+.08*Math.sin(k*2.1+index*.73);
+      dummy.scale.set(spread*(.63+(k%2)*.1)*taper,height*.25,spread*(.56+(k%3)*.06)*taper);dummy.updateMatrix();crowns.push(dummy.matrix.clone());
     }
     if(clearance>.12)colliders.push({type:'cylinder',args:[x,z,radius,y,y+height*.65,'mapped_entrance_tree']});
-    built.push({id:node.id,root:[x,y,z],height,heightSource:Number.isFinite(tagged)?'OSM height tag':'visual estimate',species:node.tags.species??node.tags.genus??'unspecified',appearance:pine?'mapped Pinus, inferred five flat open tiers with shared fine foliage sprays':camphor?'mapped camphor, inferred dense pruned crown':'inferred dense pruned broadleaf crown',pathClearance:clearance,colliderRadius:clearance>.12?radius:0});
+    built.push({id:node.id,root:[x,y,z],height,heightSource:Number.isFinite(tagged)?'OSM height tag':'visual estimate',species:node.tags.species??node.tags.genus??'unspecified',appearance:pine?'mapped Pinus, photo-informed irregular branch tiers with radial needle cutouts':camphor?'mapped camphor, inferred dense pruned crown':'inferred dense pruned broadleaf crown',pathClearance:clearance,colliderRadius:clearance>.12?radius:0});
   }
   if(branches.length){
     const mesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.72,1,1,8),bark,branches.length);branches.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=mesh.receiveShadow=true;mesh.name='Mapped tree trunks and exposed branching';mesh.computeBoundingSphere();group.add(mesh);
@@ -72,6 +106,15 @@ export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
     crowns.forEach((m,i)=>{mesh.setMatrixAt(i,m);mesh.setColorAt(i,color.setHSL(.24+(i%4)*.006,.10,.72+(i%5)*.035));});
     mesh.castShadow=false;mesh.receiveShadow=true;mesh.name='Mapped tree leafy crowns and open pine tiers';mesh.computeBoundingSphere();group.add(mesh);
   }
+  if(pineCrowns.length){
+    const pine=evergreenCanopy(96),pineMaterial=pine.material.clone();pineMaterial.vertexColors=true;
+    pineMaterial.map=mappedPineNeedleTexture();pineMaterial.alphaTest=.25;
+    const mesh=new THREE.InstancedMesh(pine.geometry,pineMaterial,pineCrowns.length);
+    pineCrowns.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));
+    mesh.castShadow=false;mesh.receiveShadow=true;mesh.name='Mapped Pinus fine radial needle branch tiers';mesh.computeBoundingSphere();group.add(mesh);
+  }
   root.add(group);const metadata={trees:built,skipped,drawBatches:group.children.length,crownSpraysPerCluster:384,sprayCoverageScale:1.85,
-    provenance:'entrance-context-r55.json exact OSM tree node roots and available botanical tags. Heights, branch form and crown spread inferred from entrance broadleaf reference; no tree coordinates invented.'};group.userData.provenance=metadata;return metadata;
+    pineClusters:pineCrowns.length,pineSpraysPerCluster:96,
+    triangles:branches.length*32+crowns.length*(384*2+16)+pineCrowns.length*(96*2+16),
+    provenance:'entrance-context-r55.json exact OSM tree node roots and available botanical tags. IMG_6470_20210313 informs pine needle fans, open branch tiers and grey textured bark; heights and crown spread remain inferred. No tree coordinates invented.'};group.userData.provenance=metadata;return metadata;
 }

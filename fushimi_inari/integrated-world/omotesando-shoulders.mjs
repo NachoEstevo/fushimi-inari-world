@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import {makeOmotesandoShoulderExclusion,shoulderHeight,upwardShoulderTriangles,makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
+import {shoulderHeight,upwardShoulderTriangles,makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
+import {subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
+import {pathWidth} from '../geography/geo-core.mjs';
 
 // Reference photograph supplied for this pass shows small grey cobble margins
 // beside the central slabs. Width2.8m per side is inferred, not surveyed.
@@ -9,7 +11,24 @@ export function buildOmotesandoShoulders(root,features,ground,surfaces,materials
   if(!path||path.points.length<2||!materials.precinctCobbles)return null;
   const xs=path.points.map(p=>p[0]),zs=path.points.map(p=>p[2]),margin=7.5;
   const bounds=[Math.min(...xs)-margin,Math.max(...xs)+margin,Math.min(...zs)-margin,Math.max(...zs)+margin];
-  const halfWidth=4,shoulderWidth=2.8,excluded=makeOmotesandoShoulderExclusion(features,bounds),positions=[],uv=[];
+  const halfWidth=4,shoulderWidth=2.8,positions=[],uv=[];
+  const polygonBounds=p=>[Math.min(...p.map(v=>v[0])),Math.max(...p.map(v=>v[0])),Math.min(...p.map(v=>v[1])),Math.max(...p.map(v=>v[1]))];
+  const overlaps=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2];
+  const cuts=[],addCut=p=>{const b=polygonBounds(p);if(overlaps(bounds,b))cuts.push({points:p,bounds:b});};
+  for(const feature of [...(features.buildings??[]),...(features.water??[])]){
+    const ring=feature.points.map(p=>[p[0],p[2]]);if(!overlaps(bounds,polygonBounds(ring)))continue;
+    if(ring.length>2&&ring[0][0]===ring.at(-1)[0]&&ring[0][1]===ring.at(-1)[1])ring.pop();
+    for(const tri of THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(...p)),[]))addCut(tri.map(i=>ring[i]));
+  }
+  for(const other of features.paths){
+    if(other.id===path.id)continue;
+    const radius=pathWidth(other.tags??{})/2+.15;
+    for(let i=1;i<other.points.length;i++){
+      const a=other.points[i-1],b=other.points[i],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);if(length<.001)continue;
+      const nx=-dz/length*radius,nz=dx/length*radius;
+      addCut([[a[0]+nx,a[2]+nz],[b[0]+nx,b[2]+nz],[b[0]-nx,b[2]-nz],[a[0]-nx,a[2]-nz]]);
+    }
+  }
   const points=path.points,normalAt=(i)=>{
     const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);
     return [-dz/length,dx/length];
@@ -24,10 +43,28 @@ export function buildOmotesandoShoulders(root,features,ground,surfaces,materials
         const ex=a[0]+dx*t+side*nx/nlen*halfWidth,ez=a[2]+dz*t+side*nz/nlen*halfWidth,y=shoulderHeight(off,surfaces.height(ex,ez),ground(x,z));
         return {p:[x,y,z],uv:[(along+length*t)/2,side*(halfWidth+off)/2]};
       };
-      const corners=[vertex(row,col),vertex(row+1,col),vertex(row+1,col+1),vertex(row,col+1)],cx=corners.reduce((n,v)=>n+v.p[0],0)/4,cz=corners.reduce((n,v)=>n+v.p[2],0)/4;
-      const radius=Math.max(...corners.map(v=>Math.hypot(v.p[0]-cx,v.p[2]-cz)));
-      if(excluded(cx,cz,radius)||corners.some(v=>excluded(v.p[0],v.p[2]))){rejected++;continue;}
-      for(const i of upwardShoulderTriangles(corners)){positions.push(...corners[i].p);uv.push(...corners[i].uv);}accepted++;
+      const corners=[vertex(row,col),vertex(row+1,col),vertex(row+1,col+1),vertex(row,col+1)],order=upwardShoulderTriangles(corners);let emitted=false;
+      // Cut original triangles at obstacle boundaries, preserving their exact
+      // blended height/UV planes instead of rejecting complete boundary cells.
+      for(let k=0;k<6;k+=3){
+        const tri=order.slice(k,k+3).map(i=>corners[i]),flat=tri.map(v=>[v.p[0],v.p[2]]),cellBounds=polygonBounds(flat);
+        let pieces=[flat];
+        for(const cut of cuts){if(overlaps(cellBounds,cut.bounds))pieces=pieces.flatMap(p=>subtractConvex(p,cut.points));if(!pieces.length)break;}
+        const [a,b,c]=tri.map(v=>v.p),den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-10)continue;
+        for(let piece of pieces){
+          if(polygonArea(piece)<0)piece=[...piece].reverse();
+          for(let j=1;j<piece.length-1;j++){
+            if(Math.abs(polygonArea([piece[0],piece[j],piece[j+1]]))<1e-9)continue;
+            for(const [px,pz]of [piece[0],piece[j+1],piece[j]]){
+              const u=((b[2]-c[2])*(px-c[0])+(c[0]-b[0])*(pz-c[2]))/den,v=((c[2]-a[2])*(px-c[0])+(a[0]-c[0])*(pz-c[2]))/den,w=1-u-v;
+              const y=u*a[1]+v*b[1]+w*c[1];if(![px,y,pz].every(Number.isFinite))throw Error('Nonfinite clipped Omotesando shoulder');
+              positions.push(px,y,pz);uv.push(...[0,1].map(i=>u*tri[0].uv[i]+v*tri[1].uv[i]+w*tri[2].uv[i]));
+            }
+            emitted=true;
+          }
+        }
+      }
+      if(emitted)accepted++;else rejected++;
     }
     along+=length;
   }
@@ -35,7 +72,7 @@ export function buildOmotesandoShoulders(root,features,ground,surfaces,materials
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
   const material=materials.precinctCobbles.clone();material.side=THREE.FrontSide;
   const mesh=new THREE.Mesh(geometry,material);mesh.name='Omotesando terrain-following cobble shoulders';mesh.receiveShadow=true;
-  mesh.userData={sourcePath:path.id,centralWidth:8,estimatedSideWidth:shoulderWidth,acceptedCells:accepted,rejectedCells:rejected,provenance:'Supplied 2024 reference photo small grey cobble margins; inferred2.8m shoulder extent; mapped paths/buildings/water excluded'};
+  mesh.userData={sourcePath:path.id,centralWidth:8,estimatedSideWidth:shoulderWidth,acceptedCells:accepted,rejectedCells:rejected,exactBoundaryClipping:true,provenance:'Supplied 2024 reference photo small grey cobble margins; inferred2.8m shoulder extent; exact mapped path/building/water polygon subtraction'};
   // The narrow blend can sit above raw terrain near the slab edge. Register
   // the exact rendered planes so feet follow that blend, rather than its DEM.
   const previousHeight=surfaces.height.bind(surfaces),triangleHeight=makeShoulderTriangleHeight(geometry.attributes.position.array);

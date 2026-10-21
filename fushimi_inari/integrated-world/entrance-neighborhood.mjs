@@ -134,8 +134,38 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
     for(let k=0;k<6;k++)frontBox(.045,2.20,.045,u-bw*.42+k*bw*.168,1.19,.14,minamiTimber);
    }
    for(const y of [2.55,3.24,4.64,5.08])frontBox(length,.11,.12,length/2,y,.15,minamiTimber);
-   frontBox(length,.055,.70,length/2,2.50,.38,minamiAwning);
    frontBox(length,.13,.055,length/2,2.43,.73,minamiAwning);
+   // R63: the same 2016 image clearly exposes the Omotesando-facing gable
+   // end (mapped edge2): timber boards, not a generic blank plaster wall.
+   const sa=spec.points[2],sb=spec.points[3],sdx=sb[0]-sa[0],sdz=sb[2]-sa[2],sl=Math.hypot(sdx,sdz),syaw=Math.atan2(-sdz,sdx),snx=sdz/sl,snz=-sdx/sl;
+   const sideBox=(w,h,d,u,y,out,mat)=>box(w,h,d,sa[0]+sdx/sl*u+snx*out,floor+y,sa[2]+sdz/sl*u+snz*out,mat,syaw);
+   sideBox(sl,5.08,.035,sl/2,2.57,.075,minamiTimber);
+   for(let u=.12;u<sl;u+=.24)sideBox(.027,5.00,.04,u,2.57,.105,eave);
+   sideBox(sl,.12,.11,sl/2,.22,.12,minamiTimber);
+   sideBox(sl,.14,.13,sl/2,5.04,.13,minamiTimber);
+   // Recessed lower glazing behind the already authored timber uprights.
+   // Beige reed blinds retain a readable grain instead of flat upper panels.
+   for(let i=0;i<bays;i++){
+    const u=(i+.5)*bw;
+    for(let row=0;row<13;row++)frontBox(bw-.24,.018,.016,u,3.38+row*.088,.145,eave);
+    frontBox(.065,1.42,.07,u,3.95,.19,minamiTimber);
+    frontBox(bw-.14,.10,.10,u,.12,.19,minamiTimber);
+   }
+   // Canvas extends only to the existing .73m authored awning envelope.
+   // Sloped bands and a short valance match the observed cream/brown cloth.
+   const clothPart=(u0,u1,out0,out1,y0,y1,mat)=>{
+    const vertices=[];
+    for(const [u,out,y]of [[u0,out0,y0],[u1,out0,y0],[u0,out1,y1],[u1,out0,y0],[u1,out1,y1],[u0,out1,y1]])vertices.push(a[0]+ux*u+nx*out,floor+y,a[2]+uz*u+nz*out);
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,1,0,0,1,1,0,1,1,0,1],2));g.computeVertexNormals();part(g,mat);
+   };
+   clothPart(0,length,.12,.73,2.585,2.425,minamiAwning);
+   for(let u=0;u<length;u+=.28){
+    const end=Math.min(length,u+.14);
+    clothPart(u,end,.12,.73,2.59,2.43,minamiScreen);
+    frontBox(end-u,.12,.012,(u+end)/2,2.38,.754,minamiScreen);
+   }
+   facadeDetails.push({id:spec.id,reference:'https://townphoto.net/kyoto/k01/k01202.jpg',pass:'R63',observed:'vertical timber siding on avenue-facing gable end, reed upper blinds, striped short canvas awning',sideEdge:2,facadeDimensions:'estimated within unchanged mapped footprint',awningEnvelopePreserved:true,noInventedSignsOrMerchandise:true});
+
   }
   if(spec.id==='way/260121332'){
    // The photographed dark tiled gable runs parallel to the verified NE
@@ -174,7 +204,7 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
      for(const v of [v0,t0,v1,v1,t0,t1])gables.push(...v);
     }
    }
-   const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(gables,3));gg.setAttribute('uv',new THREE.Float32BufferAttribute(gables.flatMap((_,i)=>i%3===0?[gables[i]/2,gables[i+1]/2]:[]),2));gg.computeVertexNormals();part(gg,minamiTimber);
+   const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(gables,3));gg.setAttribute('uv',new THREE.Float32BufferAttribute(gables.flatMap((_,i)=>i%3===0?[gables[i]/2,gables[i+1]/2]:[]),2));gg.computeVertexNormals();part(gg,minamiScreen);
    // Modest longitudinal ceramic ribs are clipped to the actual roof polygon.
    // Each ridge-parallel clipping strip yields only in-footprint tile courses.
    const umin=Math.min(...plan.map(p=>p[0])),umax=Math.max(...plan.map(p=>p[0]));
@@ -185,6 +215,16 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
    }
    const ridgeCuts=[];for(let i=0;i<plan.length;i++){const p=plan[i],q=plan[(i+1)%plan.length];if((p[1]<=ridge&&q[1]>ridge)||(q[1]<=ridge&&p[1]>ridge)){const t=(ridge-p[1])/(q[1]-p[1]);ridgeCuts.push(p[0]+t*(q[0]-p[0]));}}
    ridgeCuts.sort((a,b)=>a-b);for(let i=0;i+1<ridgeCuts.length;i+=2){const p=world(ridgeCuts[i],ridge),q=world(ridgeCuts[i+1],ridge);beam([p[0],eaveY+rise+.055,p[1]],[q[0],eaveY+rise+.055,q[1]],.075,minamiTile);}
+   // Exposed dark gable bargeboards and compact rafter tails are visible in
+   // the source. Follow existing clipped boundaries; no rectangular infill.
+   for(let i=0;i<plan.length;i++){
+    const p=plan[i],q=plan[(i+1)%plan.length],du=q[0]-p[0],dv=q[1]-p[1],len=Math.hypot(du,dv);
+    const subdivisions=Math.max(1,Math.ceil(len/.35));
+    for(let j=0;j<subdivisions;j++){
+     const t0=j/subdivisions,t1=(j+1)/subdivisions,u0=p[0]+du*t0,v0=p[1]+dv*t0,u1=p[0]+du*t1,v1=p[1]+dv*t1,w0=world(u0,v0),w1=world(u1,v1);
+     beam([w0[0],roofY(v0)-.06,w0[1]],[w1[0],roofY(v1)-.06,w1[1]],.045,minamiTimber);
+    }
+   }
    roofDetails.push({id:spec.id,form:'photographed grey tiled gable parallel to NE public facade',estimatedRise:rise,footprintClipped:true,splitAtRidge:true});
   }else{
    const shape=new THREE.Shape();spec.points.forEach((p,i)=>i?shape.lineTo(p[0],-p[2]):shape.moveTo(p[0],-p[2]));shape.closePath();const cap=new THREE.ShapeGeometry(shape);cap.rotateX(-Math.PI/2);cap.translate(0,top+.045,0);part(cap,roof);
