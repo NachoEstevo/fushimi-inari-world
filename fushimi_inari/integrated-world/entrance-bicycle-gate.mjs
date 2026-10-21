@@ -66,4 +66,3 @@ export function buildEntranceBicycleGate(root,features,barriers,surfaces,materia
  root.add(group);return {group,clearWidth:clear};
 }
 export const builder=buildEntranceBicycleGate;
-
