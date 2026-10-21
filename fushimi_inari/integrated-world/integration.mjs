@@ -1,5 +1,7 @@
 import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
+import {buildEntranceSidePlanting} from './entrance-side-planting.mjs?v=52';
+import {buildOmotesandoShoulders} from './omotesando-shoulders.mjs?v=52';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
@@ -374,6 +376,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
   buildRomonCourtSideDetails(root,byId.romon,legacy.materials);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
+  buildEntranceSidePlanting(root,byId.romon);
+  buildOmotesandoShoulders(root,features,ground,surfaces,legacy.materials);
   const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroSignage(root,features,surfaces,legacy.materials,colliders);
   if(lateralEntry?.torii){
