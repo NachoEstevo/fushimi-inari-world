@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=66-mountain';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=66-mountain';
+import {integrate} from './integration.mjs?v=67-mountain';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -291,7 +291,7 @@ try {
   for(const a of assembly.spatial.anchors){const option=document.createElement('option');option.value=a.id;option.textContent=a.label;$('place').append(option);}
   function visit(){
     walker.stop();walking=false;controls.enabled=true;
-    const a=assembly.spatial.byId[$('place').value],near=nearestNode(graph,a.target,80)?.node.point??a.target;
+    const a=assembly.spatial.byId[$('place').value],near=a.checkpoint??nearestNode(graph,a.target,80)?.node.point??a.target;
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
     if(a.id==='romon'){
       camera.position.set(near[0]-35,ground(near[0]-35,near[2]+14)+8,near[2]+14);
@@ -304,6 +304,7 @@ try {
       camera.position.set(eye[0],ground(eye[0],eye[2])+1.7,eye[2]);
       controls.target.set(target[0],ground(target[0],target[2])+1.7,target[2]);
     }else camera.position.set(near[0],ground(near[0],near[2])+2,near[2]);
+    if(a.lookAt)controls.target.set(...a.lookAt);
     controls.update();
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m ASL`;
   }
@@ -313,8 +314,8 @@ try {
     if(!node)return;
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
-    const point=id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const point=anchor.checkpoint??(id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point);
+    const target=anchor.lookAt??(['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)]);
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;

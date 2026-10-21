@@ -10,7 +10,7 @@ import {toriiPosts,toriiClearsPaths} from './torii-clearance.mjs';
 // Original large torii assets on connected mountain paths. The corridor
 // coverage follows the official pilgrimage route; individual gate stations
 // remain inferred until each segment is visually surveyed.
-export function buildMountainTorii(root,legacy,spatial,surfaces,colliders){
+export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{excludeGate}={}){
   const finishes=toriiMaterials(legacy,{separateInk:true});
   const sections=[
     {from:'okusha',to:'kumataka',spacing:1.35,scale:1.16},
@@ -30,6 +30,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders){
     const next=spatial.graph.get(edge.id);if(next)routePaths.push({points:[node.point,next.point]});
   }
   const nearestPath=pathClearance(routePaths);let omittedForAccess=0;
+  const landmarkExclusions=[];
   // The first two merged cylinder components are the original pillars. Change
   // only their radial section, preserving beam shapes and pillar centre lines.
   const cylinder=new THREE.CylinderGeometry(.122,.135,2.62,16);
@@ -59,6 +60,14 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders){
       const sx=scale*variation.width*profile.width,sy=scale*.96*variation.height*profile.height,sz=scale*variation.depth;
       const posts=toriiPosts(x,z,yaw,sx,sz,profile.thickness);
       if(!toriiClearsPaths(posts,nearestPath)){omittedForAccess++;continue;}
+      const reason=excludeGate?.({x,z,posts});
+      if(reason){
+        // Reject the whole inferred station before geometry, inscriptions or
+        // colliders are emitted. Remaining stations retain their positions.
+        landmarkExclusions.push({id:`${section.from}-${section.to}:${index}`,sectionIndex,index,
+          from:section.from,to:section.to,point:[x,y,z],reason});
+        continue;
+      }
       const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,sz));
       matrices.push({m,variation,thickness:profile.thickness,inscription:inscriptionVariant(sectionIndex,index),dateInscription:inscriptionDate(sectionIndex,index)});
       for(const p of posts){
@@ -82,5 +91,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders){
   }
   }
   buildToriiInscriptions(root,matrices,{halfSpan:1.24,bottomRadius:.135,topRadius:.122,bottomY:.65,topY:3.27});
-  return {sizeCohorts:3,inscriptionVariants:16,count:matrices.length,omittedForAccess,weathered:matrices.filter(e=>e.variation.weathered).length,sections:sections.length,provenance:'Original geometry, unlettered timber maps, three inferred size cohorts and interpretive dedications; individual gates not surveyed.'};
+  return {sizeCohorts:3,inscriptionVariants:16,count:matrices.length,omittedForAccess,
+    omittedForLandmarks:landmarkExclusions.length,landmarkExclusions,
+    weathered:matrices.filter(e=>e.variation.weathered).length,sections:sections.length,provenance:'Original geometry, unlettered timber maps, three inferred size cohorts and interpretive dedications; individual gates not surveyed.'};
 }
