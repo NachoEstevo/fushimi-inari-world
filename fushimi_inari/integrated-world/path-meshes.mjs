@@ -4,7 +4,7 @@ import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
 import {outsideArrival} from './okusha-arrival.mjs';
 
-export function buildPathMeshes(network,legacy){
+export function buildPathMeshes(network,legacy,ground){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[]},senbonUV=[];
   const quad=(out,a,b,c,d)=>{
     for(const polygon of outsideArrival([a,b,c,d]))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
@@ -43,15 +43,42 @@ export function buildPathMeshes(network,legacy){
           const m=lerp(a,b,.5);
           if(network.edgeCovered(m[0],m[2],m[1],s.id))continue;
           const up=(p,h)=>[p[0],p[1]+h,p[2]];
-          quad(buckets.edge,up(a,.025),up(b,.025),up(ob,.025),up(oa,.025));
-          quad(buckets.edge,up(oa,-.30),up(ob,-.30),up(ob,.025),up(oa,.025));
-          if(s.handrail)quad(buckets.rail,up(oa,.82),up(ob,.82),up(ob,.86),up(oa,.86));
+          const lip=s.curbLip??.025;
+          quad(buckets.edge,up(a,lip),up(b,lip),up(ob,lip),up(oa,lip));
+          const foot=p=>[p[0],Math.min(p[1]-.30,ground(p[0],p[2])-.20),p[2]];
+          quad(buckets.edge,foot(oa),foot(ob),up(ob,lip),up(oa,lip));
           // Narrow, uneven earth shoulder on mountain paths, below the curb.
           if(s.ya>55&&!senbon){
             const spread=.28+.10*Math.sin(s.distance*1.73+side);
             const ea=[oa[0]+side*startNormal[0]*spread,oa[1]-.12,oa[2]+side*startNormal[1]*spread];
             const eb=[ob[0]+side*endNormal[0]*spread,ob[1]-.12,ob[2]+side*endNormal[1]*spread];
             if(!network.sample(ea[0],ea[2])&&!network.sample(eb[0],eb[2]))quad(buckets.earth,up(oa,-.08),up(ob,-.08),eb,ea);
+          }
+        }
+        if(s.handrail){
+          // Average neighbouring tread elevations at each joint so the rail
+          // is continuous rather than a row of disconnected horizontal strips.
+          const prev=adjacent(network.segments[index-1],'b');
+          const next=adjacent(network.segments[index+1],'a');
+          const a=point(s.a,(s.ya+(prev?.yb??s.ya))/2+.84,outer);
+          const b=point(s.b,(s.yb+(next?.ya??s.yb))/2+.84,outer);
+          const tube=(p,q)=>{
+            const nx=startNormal[0]*.025,nz=startNormal[1]*.025;
+            const ring=v=>[[v[0]-nx,v[1]-.025,v[2]-nz],[v[0]+nx,v[1]-.025,v[2]+nz],[v[0]+nx,v[1]+.025,v[2]+nz],[v[0]-nx,v[1]+.025,v[2]-nz]];
+            const r=ring(p),t=ring(q);
+            for(let j=0;j<4;j++)quad(buckets.rail,r[j],t[j],t[(j+1)%4],r[(j+1)%4]);
+            quad(buckets.rail,...r);quad(buckets.rail,...t);
+          };
+          tube(a,b);
+          for(const t of [0,1]){
+            if(t===0&&prev||t===1&&next&&Math.floor(s.distance/1.8)===Math.floor((s.distance+len)/1.8))continue;
+            const p=t?b:a;
+            // Two perpendicular faces form a visible support from all views.
+            const y=(t?s.yb:s.ya)-.05;
+            for(const axis of [0,2]){
+              const l=[...p],r=[...p];l[axis]-=.035;r[axis]+=.035;
+              quad(buckets.rail,[l[0],y,l[2]],[r[0],y,r[2]],r,l);
+            }
           }
         }
       }

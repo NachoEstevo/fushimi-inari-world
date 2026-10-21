@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Temizuya detail fixture</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"}}</script>
+<pre id="result">Running…</pre>
+<script type="module">
+import * as THREE from 'three';
+import {refineTemizuyaDetails} from '../integrated-world/temizuya-details.mjs';
+try{
+  const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+  const group=new THREE.Group();group.userData.zone='temizuya';
+  assert(refineTemizuyaDetails(group)===null,'Raw legacy shell is rejected');
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(1.87,.9));water.rotation.x=-Math.PI/2;water.position.y=.96;group.add(water);
+  const ladle=new THREE.Group();ladle.userData.ladle=true;group.add(ladle);
+  const details=refineTemizuyaDetails(group),count=group.children.length;
+  assert(details,'Refined basin receives details');
+  assert(refineTemizuyaDetails(group)===details&&group.children.length===count,'Adapter is idempotent');
+  assert(water.parent===group&&ladle.parent===group&&ladle.userData.ladle,'Original interaction objects survive');
+  assert(ladle.children.length===2,'Existing ladle receives one rim and ferrule');
+  group.position.set(42,3,-18);group.rotation.y=.7;group.updateMatrixWorld(true);
+  const mouth=details.getObjectByName('bamboo-inlet-mouth'),actual=mouth.getWorldPosition(new THREE.Vector3());
+  const expected=group.localToWorld(new THREE.Vector3(.68,1.22,-.169));
+  assert(actual.distanceTo(expected)<1e-9,'World placement inherits pavilion translation and yaw');
+  const drain=details.getObjectByName('runoff-channel-front-lip');
+  assert(drain.position.z+drain.geometry.parameters.depth/2<1.9,'Drain stays on existing plinth');
+  assert(details.getObjectByName('irregular-stone-moss').count===58,'Moss uses a single sparse instanced mesh');
+  document.querySelector('#result').textContent='PASS: guard, idempotence, interaction identity, ladle attachments, transformed placement, plinth bounds, instancing';
+  window.temizuyaTestPassed=true;
+}catch(error){document.querySelector('#result').textContent=error.stack;window.temizuyaTestPassed=false;throw error;}
+</script>

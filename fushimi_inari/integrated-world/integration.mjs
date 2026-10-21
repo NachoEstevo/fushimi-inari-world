@@ -2,7 +2,8 @@ import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
-import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=33';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=40';
+import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
@@ -12,8 +13,8 @@ import {buildLegacy} from './legacy-builders.mjs';
 import {extendForest} from './forest.mjs?v=33';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
-import {makePathSurfaces} from './path-surfaces.mjs?v=15';
-import {buildSenbon} from './senbon.mjs?v=29c';
+import {makePathSurfaces} from './path-surfaces.mjs?v=47';
+import {buildSenbon} from './senbon.mjs?v=37';
 import {buildMountainTorii} from './mountain-torii.mjs?v=35';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=33';
@@ -25,11 +26,23 @@ import {entryHeight} from './entry-profile.mjs';
 import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=25e';
 import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=25b';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
+import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs?v=48';
 import {refineRomonWings} from './romon-wings.mjs';
-import {buildCourtyardShop,courtyardShopId} from './courtyard-shop.mjs';
+import {buildAzumamaroHouses,azumamaroHouseIds} from './azumamaro-houses.mjs?v=47';
+import {buildAzumamaroCourtDetails} from './azumamaro-court-details.mjs?v=47';
+import {buildAzumamaroContext,azumamaroContextIds} from './azumamaro-context.mjs?v=46';
+import {buildAzumamaroPlanting} from './azumamaro-planting.mjs?v=44c';
+import {makeAzumamaroCourtGrade} from './entrance-ground.mjs?v=48';
+import {clearAzumamaroLegacySugi} from './azumamaro-legacy-clearance.mjs?v=45b';
+import {buildAzumamaroSignage} from './azumamaro-signage.mjs?v=43';
+import {refineGehaiden} from './gehaiden-refinements.mjs?v=48';
 import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
+import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
+import {refineOkumiya} from './okumiya-facade.mjs?v=38b';
+import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
+import {refineNinomine} from './ninomine-details.mjs?v=39';
 
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const spec=await fetch('anchors.json').then(r=>r.json());
@@ -45,6 +58,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const pathDistance=pathClearance(features.paths);
   const root=new THREE.Group();root.name='Preserved original architecture';scene.add(root);
   const {anchors,byId}=spatial, v=new THREE.Vector3();
+  const azumamaroCourtGrade=makeAzumamaroCourtGrade(byId.romon,features,(x,z)=>heightAt(terrain,x,z));
   // Keep the original benches, lanterns and noren beside the mapped storefronts.
   Object.assign(byId.chaya_s,{target:[806.8,164.35,-207.5],yaw:0,label:'Nishimura-tei'});
   Object.assign(byId.chaya_n,{target:[815,171.7,-243.5],yaw:0,label:'Okumura-tei'});
@@ -202,11 +216,30 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const connected=lowerCourtBlend(ex,ez,courtyard,byId.romon.target[1]);
     const [nx,nz]=rotateXZ(x-byId.naihaiden.target[0],z-byId.naihaiden.target[2],-byId.naihaiden.yaw);
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
-    return okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1]);
+    return azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1]));
   }
   function moveObject(object){
+    // The illustrative flank pavilion was carried with Gehaiden onto the
+    // mapped Azumamaro approach. Keep the sourced main hall, not this duplicate.
+    if(object.userData.zone==='gehaiden'&&object.isGroup&&
+      Math.abs(object.position.x-15.8)<.01&&Math.abs(object.position.z+12.5)<.01)return;
+    // The eight old tunnel fixtures were loose children of the precinct,
+    // so nearest-building placement stranded them around Okumiya. Rebuild
+    // their mounts with the mapped torii below, never as independent props.
+    const p=object.geometry?.parameters;
+    if(object.userData.zone==='precinct'&&object.isMesh&&object.position.z<-43&&p&&(
+      (p.width===.36&&p.height===.10&&p.depth===.36)||
+      (p.width===.24&&p.height===.24&&p.depth===.24&&object.material===legacy.materials.lanternGlowMat)||
+      (p.radiusTop===.012&&p.radiusBottom===.012&&p.height===.42)))return;
+    // buildConvergenceAprons authored a compressed, illustrative route. Its
+    // loose slabs and fence posts cannot be rigidly relocated with Okumiya:
+    // the mapped staircase now owns this connection. Keep shrine groups intact.
+    if(object.userData.zone==='okumiya'&&object.isMesh&&object.geometry.type==='BoxGeometry')return;
     refineEntranceObjects(object,legacy.materials);
+    refineTemizuyaDetails(object);
     refineShrineFinishes(object,legacy.materials.entryStoneMat);
+    refineNinomine(object,legacy.materials);
+    refineOkumiya(object,legacy.materials);
     // Replace only generic slabs/shells; original source files and detailed
     // fittings remain intact. No square plaza is laid across mapped stairways.
     if(object.userData.zone==='yotsu'&&object.isMesh&&object.geometry.type==='BoxGeometry'&&
@@ -250,6 +283,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const object of [...legacy.scene.children])moveObject(object);
   callbacks.progress?.('Adapting paving, stairs and torii to the trails…');
   const surfaces=makePathSurfaces(features,ground),twinColliders=[];
+  surfaces.terrainHeight=okumiyaTerrainGrade(surfaces);
+  surfaces.edgeCovered=okumiyaLandingEdges(surfaces,features);
   const pilgrimage=pathClearance([{points:spatial.main},{points:spatial.returning}]);
   const sourcePaths=new Map(features.paths.map(p=>[p.id,p]));
   for(const review of surfaces.stats.profileReview){
@@ -271,6 +306,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
+    if(id==='gehaiden'){
+      refineGehaiden(gltf.scene,legacy.materials);
+      document.body.dataset.gehaidenRails=String(gltf.scene.userData.gehaidenBalustradeRemovalCount??0);
+    }
     if(id==='romon'){
       // Export manifest: these two materials contain only T00 approach slabs.
       // Terrain + mapped path surfaces now own the outdoor floor; a rigid slab
@@ -305,7 +344,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   entrySteps.applyMatrix4(matrix(byId.romon));root.add(entrySteps);
   // Transform original physical obstacles with the same zone/route rules as their meshes.
-  const colliders=legacy.colliders.map(c=>{
+  const colliders=legacy.colliders.filter(c=>c.args.at(-1)!=='kaguraden').map(c=>{
     if(['yotsutsuji_rail','chaya'].includes(c.args.at(-1)))return null;
     const args=[...c.args],x=args[0],z=args[1];
     if(args.at(-1)==='torii'){
@@ -314,6 +353,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       if(s.u>=.144&&s.u<=.256)return null;
     }
     const tag=args.at(-1);
+    if(tag==='okumiya'&&c.type==='box')args[4]-=Math.PI/2+.06;
     const named={gonden:'gonden',tamayama_inari:'tamayama',byakkosha:'byakko',okumiya:'okumiya',gozendani:'gozendani'};
     const zone=named[tag]??(['chaya','chaya_bench'].includes(tag)?(z<-205?'chaya_n':'chaya_s'):c.zone);
     const f=frame([x,legacy.sampleGroundHeight(x,z),z],zone,tag==='tree'?4.5:['sign','lantern'].includes(tag)?2.2:0);
@@ -325,14 +365,26 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(c.type==='box')args[4]=(args[4]??0)+f.yaw;
     return {type:c.type,args};
   }).filter(Boolean);
+  document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   colliders.push(...twinColliders);
   buildSanctuaryLanding(root,byId.naihaiden,legacy.materials,colliders);
   buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
+  buildRomonCourtSideDetails(root,byId.romon,legacy.materials);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
+  const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
+  buildAzumamaroSignage(root,features,surfaces,legacy.materials,colliders);
+  if(lateralEntry?.torii){
+    const a={id:'azumamaro_entry',label:'Azumamaro · side entrance',target:lateralEntry.torii,radius:0};
+    anchors.push(a);byId[a.id]=a;
+  }
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders);
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
-  buildCourtyardShop(root,features,ground,legacy.materials,colliders);
+  buildAzumamaroHouses(root,features,(x,z)=>surfaces.height(x,z),legacy.materials,colliders);
+  const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.azumamaroCourtDetails=JSON.stringify(courtDetails);
+  buildAzumamaroContext(root,features,surfaces,legacy.materials,colliders);
+  buildAzumamaroPlanting(root,features,surfaces,legacy.materials,colliders);
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
   // Existing mapped outlooks: checkpoints use their connected trail nodes.
   // No invented large terrace is flattened into the mountainside.
@@ -406,5 +458,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     forest,margins,terraces,yotsutsuji,reception,source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,
-    excludesBuilding:b=>b.id===courtyardShopId||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

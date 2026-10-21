@@ -48,6 +48,21 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
       const y=surfaceHeight(x,z)-.015;
       const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,variation.depth));
       mats.push(m);
+      // Side-mounted fittings follow the actual gate's position, rotation and
+      // scale. Mounting is inferred; keep the lantern outside the walk opening.
+      if([.16,.38,.60,.82].some(t=>i===Math.round((stations.length-1)*t))){
+        const fixture=new THREE.Group();
+        const side=index===0?-1:1,x=side*(s.pillarCenters/2+.30);
+        const add=(w,h,d,px,py,material)=>{
+          const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+          mesh.position.set(px,py,0);mesh.castShadow=true;fixture.add(mesh);
+        };
+        add(.36,.045,.06,side*(s.pillarCenters/2+.15),2.36,legacy.materials.blackNemakiMat);
+        add(.025,.14,.025,x,2.28,legacy.materials.blackNemakiMat);
+        add(.36,.10,.36,x,2.18,legacy.materials.blackNemakiMat);
+        add(.24,.24,.24,x,2.01,legacy.materials.lanternGlowMat);
+        fixture.applyMatrix4(m);root.add(fixture);
+      }
       (variation.weathered?weathered:fresh).push({m,variation});
       for(const side of [-1,1]){
         const offset=side*s.pillarCenters*.5*sx;

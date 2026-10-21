@@ -73,8 +73,7 @@ function refineBasin(g,m){
     water.castShadow=false;
   }
   const wet=stone.clone();wet.color.set('#626b48');wet.roughness=.55;
-  const moss=new THREE.MeshStandardMaterial({color:'#536437',roughness:1});
-  box(2.18,.055,.045,0,.86,.63,moss,g);
+  // Irregular damp growth is added by temizuya-details after basin refinement.
   for(const z of [-.57,.57])box(2.13,.11,.025,0,.92,z,wet,g);
   for(const x of [-1.17,1.17])box(.10,.035,1.43,x,.30,0,wet,g);
   box(2.45,.035,.10,0,.30,.72,wet,g);

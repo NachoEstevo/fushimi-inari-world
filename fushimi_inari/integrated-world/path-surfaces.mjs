@@ -17,6 +17,10 @@ export function makePathSurfaces(features,ground){
     const sampler=pathSampler(path.points),length=sampler.total;
     if(length<.01)continue;
     const stair=path.tags.highway==='steps',width=pathWidth(path.tags);
+    // The photographed Azumamaro approaches have a low paving edge. Terrain
+    // rendering subtracts another .06 m, so .02 m paving + .01 m curb exposes
+    // .09 m total. Keep the mountain roadbeds and every stair unchanged.
+    const lowApproach=!stair&&['way/105449706','way/952687108'].includes(path.id);
     const sourceCount=Number(path.tags.step_count);
     const h0=ground(...[path.points[0][0],path.points[0][2]]),last=path.points.at(-1),h1=ground(last[0],last[2]);
     const profile=stair?stairProfile(length,h0,h1,sourceCount):null;
@@ -45,7 +49,8 @@ export function makePathSurfaces(features,ground){
     const kind=isRestricted(path.tags)?'restricted':['dirt','ground','earth','unpaved','gravel'].includes(path.tags.surface)?'earth':['footway','steps','pedestrian','path'].includes(path.tags.highway)?'stone':'street';
     for(let i=0;i<count;i++){
       const tread=resolved?.[i],a=tread?.a??sampler.at(i/count).point,b=tread?.b??sampler.at((i+1)/count).point;
-      let ya=ground(a[0],a[2])+.14,yb=ground(b[0],b[2])+.14;
+      const surfaceOffset=lowApproach ? .02 : .14;
+      let ya=ground(a[0],a[2])+surfaceOffset,yb=ground(b[0],b[2])+surfaceOffset;
       if(stair){
         // A single tread has one level. Endpoint levels remain tied to the DEM;
         // intermediate step geometry is inferred, never labelled measured.
@@ -53,7 +58,7 @@ export function makePathSurfaces(features,ground){
         ya=yb=(tread?.level??h0+(h1-h0)*level)+.14;
       }
       const rise=stair?(tread?.rise??Math.abs(h1-h0)/count):0;
-      const segment={a,b,ya,yb,width,kind,stair,rise,
+      const segment={a,b,ya,yb,width,kind,stair,rise,lowApproach,curbLip:lowApproach ? .01 : .025,
         riserAt:tread?.riserAt??(stair?(h1>=h0?'a':'b'):null),
         id:path.id,profileStatus:profile?.status,distance:tread?.distance??i*length/count,handrail:stair&&path.tags.handrail==='yes'};
       segments.push(segment);
@@ -90,6 +95,6 @@ export function makePathSurfaces(features,ground){
     terrainHeight(x,z){
       const road=sample(x,z),base=ground(x,z);
       // Cut a shallow roadbed so a coarse cross-slope cannot cover the treads.
-      return road?Math.min(base,road.height-.22):base;
+      return road?Math.min(base,road.height-(road.segment.lowApproach ? .02 : .22)):base;
     }};
 }

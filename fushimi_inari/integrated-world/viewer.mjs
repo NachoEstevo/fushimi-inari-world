@@ -10,11 +10,12 @@ import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground.mjs?v=33';
+import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {groundCover} from './ground-cover.mjs';
 import {installSeasons} from './seasons.mjs?v=25';
-import {buildPathMeshes} from './path-meshes.mjs?v=26';
+import {buildPathMeshes} from './path-meshes.mjs?v=47';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=35';
+import {integrate} from './integration.mjs?v=48';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -78,6 +79,7 @@ try {
   const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
   blendCourtyardGround(terrainMaterial,courtyard,romon);
+  blendEntranceGround(terrainGeo,terrainMaterial,courtyard,romon,features);
   const landscape=spatialMeshes(terrainGeo,terrainMaterial,160);scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
@@ -94,7 +96,7 @@ try {
       for(const j of [0,1,2,0,2,3])vertices.push(...corners[j]);
     }
   }
-  const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy);scene.add(pathGroup);
+  const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy,assembly.ground);scene.add(pathGroup);
 
   // Footprints are sourced. Extrusion height is metadata-based or explicitly inferred.
   const buildingGroup=new THREE.Group();scene.add(buildingGroup);buildingGroup.visible=$('buildings').checked;
@@ -308,8 +310,8 @@ try {
     if(!node)return;
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
-    const point=id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
-    const target=['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
+    const point=id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point;
+    const target=['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)];
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;

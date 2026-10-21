@@ -133,3 +133,109 @@ Camera coordinates above include eye height. Local review capture:
 
 People, lighting and expanded city detail remain later stages. A successful unit
 test or this inventory does not close these outstanding reconstruction tasks.
+
+## R38 · Okumiya facade pass
+
+Revisited the user's Rec Lab tour at the 10:00 approach
+(https://www.youtube.com/watch?v=zFKeYi0AK0M&t=600s). The frame shows three
+recessed dark front bays, hanging brass fittings, layered vermilion eaves and a
+pitched bark roof. Replaced the generic front appearance with bay carpentry,
+beam brackets, rafter ends and suspended lantern assemblies. The existing
+building, veranda, collision and interaction remain. Roof silhouette and all
+new dimensions are inferred, not measured. Geometry joins existing static batches;
+no new textures, dependencies, point lights or per-frame updates.
+
+Reopened the existing February 2020 Ninomine panorama in Google Maps: stone
+stair cheeks, tall vermilion lanterns and dense stone monuments remain an
+independent next work item, not evidence for Okumiya's dimensions.
+
+The front now faces the mapped western stair, inferred from the video.
+Still open at Okumiya: surveyed orientation,
+platform outline and side grades, lower lattice pattern, roof ornament and
+adjacent lantern pedestals. This is a facade improvement, not sector completion.
+
+## R39 · parallel sector work, integrated and reviewed
+
+Three Sol 6.1 agents produced bounded changes; root reviewed and integrated them.
+- Okumiya: local terrain support for five mapped access ways, bounded evaluation
+  outside the sector, and curb clipping across the existing short landing. Four
+  regressions cover surface preservation, shoulder continuity, scope and actual
+  OSM connectivity. Visual review still finds a raised side strip at the upper
+  landing; this is NOT marked resolved by the terrain/curb changes.
+- Ninomine: existing mini offerings are open torii with black caps; existing stone
+  monuments have rounded crowns, restrained mineral variation; stair cheeks slope
+  toward the foot. Placements and walking width retained. Root inspected the front
+  staircase in the live scene. Full compound fidelity remains pending.
+- Ainomine: see [reference and incorporation specification](ainomine-reference.md).
+  Geographic identity and graph access are documented; architecture is not built.
+
+Validation: 91 Node tests pass, diff whitespace check passes, no browser console
+errors in local review. No full-route manual certification or FPS benchmark.
+Evidence: ignored local outputs/r39 directory under fushimi_inari.
+
+## R40 — Entry mineral ground and purification basin
+
+- Three Sol 6.1 agents researched entry references, implemented the localized mineral ground shader, and refined the existing temizuya. Root integrated and performed two visual passes.
+- User photos 1/2 establish grey slab/cobble paving and confined dark gravel; photo 7 establishes a rectangular granite basin with ladles and damp growth, not a central ornamental fountain. Root also inspected Attractions Atlas video FmRyJ-RtBPg, paused at 4:17: reception forecourt has slab strips and dark gravel. Bench placement and a central fountain remain unconfirmed.
+- Side aprons use the existing gravel map on the existing terrain, with mapped paths/buildings/water and authored planting exclusions. Extents are inferred, not surveyed. No extra terrain draw calls or colliders.
+- Basin detail preserves water and ladle roots, adds drain channel and metal lips. Render review rejected large dark moss blobs and inherited uniform green band; second pass uses subtle lower wet growth (58 instances) and removes band. Shared gravel color removes courtyard overlap tint seam.
+- Validation: 95 Node tests pass, diff whitespace check, browser loaded without console errors; short walking approach and lateral movement at Temizuya. No full-site walking audit or FPS benchmark in this pass. Existing Okumiya landing height strip remains outstanding from R39.
+- Local captures: fushimi_inari/outputs/r40/temizuya.png. No push.
+
+## R41 — Azumamaro side approach
+- Inspected user-open Google Street View panorama ALTClVF04s972933Dg4p2g, June 2012, in two directions: Azumamaro marker/torii and roofed timber gate, plaster/timber tile-capped wall; rear of Romon with gravel and stone routes. No central fountain visible in these views.
+- Added mapped marker node/10964871774 and visually inferred torii station on path way/105449706. Dimensions remain estimates. Existing mapped buildings retained. Added side entrance checkpoint.
+- Visual QA exposed an inherited illustrative Kagura-den carried with Gehaiden onto the mapped approach. Excluded that source group and its collider from the integrated scene; original source and main Gehaiden retained. Walked from checkpoint through torii (camera reached x16.67 z19.22), no console errors. Second visual correction extends torii footings to the lower terrain shoulders.
+- 95 tests passed before final footing adjustment; syntax and diff checks pass. Roofed timber gate, plaster wall, residence facade, planting and exact historical/current proportions remain incomplete. Local screenshot r41 shows the intermediate entrance; not a claim of complete replica or surveyed geometry.
+
+## R42 — Azumamaro whole entrance pass
+- User screenshot codex-clipboard-17926ce1-8ffd-4c0e-a513-81cc3976e7b1.png and a second rotated June 2012 Street View angle guide the ensemble. Three Sol 6.1 agents separately authored gate/wall, mapped houses, and trained pine/hedge/support poles.
+- Added timber boarded gate with tiled gable, plaster/timber boundary, glazed enclosure on existing way/305214616, red rear worship hall on way/305214824. Replaced prior generic courtyard shop representation; mapped polygons retained and duplicate extrusion excluded. Heights/facades remain inferred.
+- Added pine, hedge, three props and short red fence. Second render pass reduced large smooth foliage clumps to irregular small tufts and corrected house height from highest rear corner to median front access elevation.
+- Existing static merge/chunking retained; roof ribs and foliage instanced. No FPS benchmark; 95 tests passed, syntax and diff checks passed. Full dimensional identity is not established: roof proportions, signage, other adjacent buildings and vegetation still need comparison. No push.
+
+## R43 — Azumamaro signage and timber finish
+- Added white prayer reception board with wording read from supplied reference, metal support and low marker stones. Torii plaque reads shrine identity but is explicitly marked inferred because reference lettering is unreadable.
+- Simplified wall coping ridges (removed oversized stacked crowns on every short wall segment); added shared 128x256 subtle timber grain/bump to existing doors and boards, no extra geometry.
+- 95 Node tests passed. Syntax/diff checked. Browser console clear; walked through approach to x16.70,z19.24 with new banner present. Visual capture outputs/r43/azumamaro.png. Remaining fidelity gaps include general vegetation, facade/roof proportions and exact unmeasured offsets. No FPS benchmark or push.
+
+## R44-R45 — Azumamaro proportions and Gehaiden balustrade
+- Compared the supplied Azumamaro entrance photograph and previously inspected June 2012 Street View. Lowered tiled gate/house eaves, added curved gable infills and roof surfaces, retained mapped footprints. Dimensions remain visually inferred.
+- Replaced solid pine clumps with instanced needle sprays and fine hedge leaves. Fixed black hedge shading: its plane has no vertex color attribute, so its cloned material disables vertexColors while keeping instance colors. Reduced cards to 795 pine / 600 hedge and retained shared geometry/materials.
+- Repaired three exact connected slab components in the actual Gehaiden GLB that filled its verandah. Replaced them with eight open perimeter rails and sixteen discrete gold clasps; source roofs, columns, pickets and materials retained. Browser fixture tests actual tracked GLB, preservation and idempotence; PASS.
+- Added bounded Azumamaro court grading before path construction so terrain, paths, houses and walking share the same surface; mapped stair corridors excluded. The lateral shoulder is inferred, not a surveyed height map. Distant apron transitions still need reference-based reconstruction.
+- Removed exactly two observed legacy sugi and their paired crowns/blockers within the entrance envelope. Adjacent maple and farther woodland retained. Browser reports 2 cleared, 3 Gehaiden slab repairs; console errors empty. Walked through torii to camera x16.68,z19.49.
+- 99 live geography/integrated-world Node tests pass; syntax and whitespace checks pass. A broad recursive test discovery also picked up old ignored output snapshots, whose missing relative imports fail; those are not the live test suite. Browser Gehaiden fixture uses the production pinned CDN runtime and needs network access.
+- User confirmed native navigation remains fluid. Automated browser reports ~1 FPS with low CPU submit times; no trustworthy FPS benchmark inferred from it. No additional WebGL tab opened. Capture: outputs/r44/azumamaro.png; earlier open-balustrade view outputs/r44/gehaiden.png.
+- Remaining: exact historic/current facade dimensions, lateral perimeter landscaping/grade transitions, broader courtyard proportions and full walking coverage. This pass is not a claim of an identical or complete surveyed replica. No push.
+
+## R46 — Lateral court transitions and persistent nearby buildings
+- Expanded the Azumamaro graded apron to the mapped east building edge (way/952815193) and rear hall extent (way/305214824). The prior release crossed the open gravel yard; the new smooth transition falls under/beyond the enclosing footprints. Heights remain inferred from the connected court datum, not surveyed. Mapped stairs and distant terrain remain unchanged.
+- Extended the front plaster/timber/tile wall toward mapped former-residence building way/305214609. The new section follows local ground; exact alignment and its junction remain inferred from the supplied entrance photograph.
+- Identified a visibility cause of empty surroundings: generic city chunks are deliberately hidden at walking distance. Added permanent nearby context for mapped buildings305214608,305214609,952815193, excluding their generic duplicate extrusions. Footprint polygons and concave notches retained; roof decomposition, heights and restrained facade finishes are explicitly approximate. No duplicate of existing custom gate305214597.
+- The new context uses static batching and existing materials/runtime. No new dependencies. It still needs close photographic facade refinement; do not mistake these simplified walls for a complete detailed replica.
+- 100 live Node tests pass, including transition endpoint slope continuity and preservation of stairs/distant terrain. Syntax and diff whitespace checks pass. Browser loaded R46; walked through torii to x16.39,z23.44 and across court to x26.54,z15.59. East building collision stopped x at37.97..38.01 while sliding along its wall fromz22.16 to24.44. No new errors after reload; one old failed-fetch log was from the stopped server before recovery.
+- Restarted absent local Python server bound127.0.0.1:8420 (PID44728, HTTP200); reused the one existing WebGL tab. Capture outputs/r46/east-court.png. No FPS benchmark or push.
+- Additional discovery sources (not surveyed geometry): https://inari.jp/trip/map02/ and https://www2.city.kyoto.lg.jp/somu/rekishi/fm/ishibumi/html/hu123.html. Image search surfaced more Azumamaro entrances; one direct image fetch timed out and was not treated as inspected evidence.
+
+
+## R47 — closer Street View inspection of the Azumamaro lateral court
+
+Inspected June 2012 panoramas `ALTClVF04s972933Dg4p2g`, `Hdl-ibkcKhfZHayKv9g9Bg` and `28Lu_LMTCVcZAAidEdCHuA` by walking forward and rotating in Google Maps. Local review captures: `fushimi_inari/outputs/r47/street-front.png`, `street-passage.png`, `street-house-side.png`. These are historical appearance references, not a current survey.
+
+The closer passage view corrected the initial distant interpretation: the tall structure is a three-tier donor-name board, not reed fencing. Added its open supports, subdued plaque texture (no invented donor names), grass behind its base, a rectangular drain and circular utility cover. Geometry is instanced and fitted between mapped paths and buildings; dimensions and exact placement remain inferred.
+
+Added the separate low woven screens beside the timber gate, tan notice with unresolved lettering omitted, and a perforated threshold drain. Glazed enclosure now has white upper and side panels, stronger timber sills and eave rafters. The entrance torii has a shallow upward-curving cap instead of a perfectly straight beam. Existing source buildings and route network retained.
+
+Visual review identified remaining gaps: service-lane crest beyond the near court, missing enclosing vegetation and distant boundary detail, overly uniform foliage, and unresolved exact placement of the votive rack. These are not claimed as complete. No claim of an identical replica or surveyed dimensions.
+
+R47 validation: 102 Node tests pass, including two new low-approach regressions; module syntax and git diff checks pass. Browser reload and walking review completed with no console errors. Only ways 105449706 and 952687108 use the low paving policy (8 cm paving / 9 cm curb above rendered terrain); stairs retain existing profiles. Final screenshot: fushimi_inari/outputs/r47/world-final.png. No new dependency or additional WebGL tab. Performance was not benchmarked across hardware.
+
+
+## R48 — central court laterals and service passage
+
+Inspected the east and west views of June 2012 panorama Hdl-ibkcKhfZHayKv9g9Bg and moved back toward ALTClVF04s972933Dg4p2g. The court-facing Romon wings show green lattice bays, pale double rails and suspended bronze lanterns. Added these to the existing authored wings, batched into six material meshes; the central passage stays open. The Gehaiden replacement rails now use vermilion lacquer with small gold fastener heads, preserving prior source mesh repairs.
+
+The service lane223276650 now transitions monotonically from the graded court to its unchanged DEM endpoint within a narrow corridor. This removes an artificial grade-release crest; it is an inferred support profile, not surveyed topography. Building, water and stair exclusions remain.
+
+Validation:103 Node tests pass, syntax/diff checks pass, actual-GLB Gehaiden fixture checked by delegated reviewer. Root inspected the running central court and wings and traversed the adjacent court with no console errors. Full service-lane traversal and hardware performance benchmark remain unverified. Source images and review captures stay local under outputs/r48. Remaining work includes peripheral buildings/planting and finer geometric correspondence; no exact-replica claim.

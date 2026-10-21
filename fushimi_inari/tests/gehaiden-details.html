@@ -1,0 +1,73 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Gehaiden actual asset regression fixture</title>
+<!-- Serve repository root over HTTP; open /fushimi_inari/tests/gehaiden-details.html.
+     Uses the same pinned CDN runtime as production; network access is required. -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"}}</script>
+<pre id="result">Running…</pre>
+<script type="module">
+import * as THREE from 'three';
+import {refineGehaiden} from '../integrated-world/gehaiden-refinements.mjs';
+const assert={
+  ok(condition,message='assertion failed'){if(!condition)throw new Error(message);},
+  equal(actual,expected,message='values differ'){if(actual!==expected)throw new Error(message);},
+  deepEqual(actual,expected,message='arrays differ'){
+    if(actual.length!==expected.length||!actual.every((v,i)=>v===expected[i]))throw new Error(message);
+  }
+};
+async function actualGehaiden(){
+  const response=await fetch('../integrated-world/gehaiden.glb');
+  assert.ok(response.ok,'actual GLB loads');
+  const buffer=await response.arrayBuffer(),bytes=new DataView(buffer);
+  const jsonLength=bytes.getUint32(12,true),gltf=JSON.parse(new TextDecoder().decode(buffer.slice(20,20+jsonLength)));
+  const binaryStart=28+jsonLength;
+  function attribute(id){
+    const accessor=gltf.accessors[id],view=gltf.bufferViews[accessor.bufferView];
+    const start=binaryStart+(view.byteOffset||0)+(accessor.byteOffset||0);
+    const Type={5126:Float32Array,5123:Uint16Array,5125:Uint32Array}[accessor.componentType];
+    const itemSize={VEC3:3,VEC2:2,SCALAR:1}[accessor.type];
+    assert.ok(Type&&itemSize,'fixture accessor type is supported');
+    assert.ok(!view.byteStride,'fixture uses packed accessors');
+    const data=buffer.slice(start,start+accessor.count*itemSize*Type.BYTES_PER_ELEMENT);
+    return new THREE.BufferAttribute(new Type(data),itemSize);
+  }
+  const scene=new THREE.Group();
+  for(const mesh of gltf.meshes)for(const primitive of mesh.primitives){
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',attribute(primitive.attributes.POSITION));
+    geometry.setIndex(attribute(primitive.indices));
+    const material=new THREE.MeshStandardMaterial();material.name=gltf.materials[primitive.material].name;
+    scene.add(new THREE.Mesh(geometry,material));
+  }
+  return scene;
+}
+
+try{
+  const scene=await actualGehaiden(),originals=[...scene.children];
+  const before=new Map(originals.map(mesh=>[mesh,{geometry:mesh.geometry,material:mesh.material,indexCount:mesh.geometry.index.count}]));
+  refineGehaiden(scene);
+  assert.equal(scene.userData.gehaidenBalustradeRemovalCount,3);
+  assert.equal(scene.userData.gehaidenBalustradeRefined,true);
+  const balustrade=scene.getObjectByName('Gehaiden open verandah balustrade');
+  assert.ok(balustrade);assert.equal(balustrade.children.length,24);
+  let changed=0;
+  for(const mesh of originals){
+    const previous=before.get(mesh);
+    assert.equal(mesh.parent,scene,'original source mesh retained');
+    assert.equal(mesh.material,previous.material,'original source material retained');
+    if(/Vermilion_ShuIro|Gold_Kanagu_Leaf/.test(mesh.material.name)){
+      changed++;assert.ok(mesh.geometry.index.count<previous.indexCount,'only slab triangles removed');
+      assert.deepEqual(mesh.geometry.attributes.position.array,previous.geometry.attributes.position.array,'source positions remain intact');
+    }else assert.equal(mesh.geometry,previous.geometry,'roof, stone, lanterns, pickets and other source geometry preserved');
+  }
+  assert.equal(changed,2);
+  assert.ok(balustrade.children.every(mesh=>mesh.geometry.parameters.width<.2||mesh.geometry.parameters.depth<.2),'no replacement spans the verandah as a solid slab');
+  const after=[...scene.children],geometries=originals.map(mesh=>mesh.geometry);
+  refineGehaiden(scene);
+  assert.deepEqual(scene.children,after,'second refinement adds nothing');
+  originals.forEach((mesh,i)=>assert.equal(mesh.geometry,geometries[i],'second refinement leaves geometry unchanged'));
+
+  document.querySelector('#result').textContent='PASS: actual GLB, three removals, source mesh/material preservation, open rails, idempotence';
+  window.gehaidenTestPassed=true;
+}catch(error){document.querySelector('#result').textContent=error.stack;window.gehaidenTestPassed=false;throw error;}
+</script>
