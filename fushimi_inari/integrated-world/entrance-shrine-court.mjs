@@ -37,17 +37,21 @@ export function buildEntranceShrineCourt(root,features,surfaces){
   for(let x=left;x<right-1e-6;x+=grid)for(let z=back;z<front-1e-6;z+=grid)
     cell(x,z,Math.min(x+grid,right),Math.min(z+grid,front));
   if(!cells)return null;
-  const pixels=new Uint8Array(128*128*4);let seed=647059;
+  const textureSize=256,pixels=new Uint8Array(textureSize*textureSize*4);let seed=647059;
   for(let i=0;i<pixels.length;i+=4){
     seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-    const grey=128+seed%19;
+    const pixel=i/4,x=pixel%textureSize,z=Math.floor(pixel/textureSize);
+    // Small aggregate grains with quiet, periodic colour variation. The
+    // photograph supports mineral paving, not large pebbles or brown turf.
+    const mottling=3*Math.sin(x*Math.PI*2/textureSize)*Math.cos(z*Math.PI*4/textureSize);
+    const grey=132+seed%23+mottling-(seed%13===0?16:0);
     pixels[i]=grey;pixels[i+1]=grey+1;pixels[i+2]=grey;pixels[i+3]=255;
   }
-  const map=new THREE.DataTexture(pixels,128,128,THREE.RGBAFormat);
+  const map=new THREE.DataTexture(pixels,textureSize,textureSize,THREE.RGBAFormat);
   map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;
   map.magFilter=THREE.LinearFilter;map.minFilter=THREE.LinearMipmapLinearFilter;
   map.generateMipmaps=true;map.anisotropy=4;map.needsUpdate=true;
-  const material=new THREE.MeshStandardMaterial({map,color:'#ffffff',roughness:1,
+  const material=new THREE.MeshStandardMaterial({map,bumpMap:map,bumpScale:.008,color:'#ffffff',roughness:1,
     polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));

@@ -47,6 +47,23 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
       box(.028,.075,.025,x+side*.055,y+wall*.48,front+.07,gold);
     }
     for(const level of [.15,.87])box(w+.05,.07,.09,x,y+wall*level,front+.05,body);
+    // The photo shows gold-framed doors with recessed dark panels, rather
+    // than uninterrupted metallic rectangles. No emblems or text are inferred.
+    for(const side of [-1,1]){
+      const panelX=x+side*doorW*.24;
+      for(const level of [.30,.61]){
+        box(doorW*.30,wall*.19,.018,panelX,y+wall*level,front+.055,wood);
+        box(doorW*.32,.018,.025,panelX,y+wall*(level+.10),front+.069,gold);
+      }
+      box(.042,doorH+.06,.065,x+side*(doorW/2+.035),y+wall*.49,front+.07,body);
+    }
+    // Visible header brackets and side-panel framing remain within the walls.
+    for(let i=0;i<6;i++)box(.055,.055,.075,x-w*.42+i*w*.168,y+wall-.13,front+.07,spec.dark?wood:gold);
+    for(const side of [-1,1]){
+      box(.055,.055,d-.08,x+side*(w/2+.012),y+wall*.28,z,body);
+      box(.055,.055,d-.08,x+side*(w/2+.012),y+wall*.78,z,body);
+      if(spec.dark)for(let i=1;i<6;i++)box(.025,wall*.80,.025,x+side*(w/2+.018),y+wall*.49,z-d/2+i*d/6,wood);
+    }
     // Bark roofs use real thickness and short exposed rafter tails. Their
     // silhouettes are based on the supplied 2021 photo, not a measured survey.
     const roofBatchStarts=new Map([...batches].map(([mat,parts])=>[mat,parts.length]));
@@ -66,6 +83,21 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     // Fine parallel bark courses give thickness at the eave without tile ribs.
     for(let i=1;i<5;i++){const t=.80+i*.04;for(const side of [-1,1])box(.025,.018,roofD,x+side*half*t,profile(t)+.012,z,bark);}
     box(.13,.11,roofD+.10,x,eave+rise+.025,z,wood);
+    // Shallow closely spaced bark courses break up Fujio's broad front pitch;
+    // all roof parts below are rotated with Fujio's existing roof assembly.
+    for(const side of [-1,1])for(let i=1;i<=15;i++){
+      const t=i/16;
+      beam([x+side*half*t,profile(t)+.008,z-roofD/2+.025],[x+side*half*t,profile(t)+.008,z+roofD/2-.025],.006,bark);
+    }
+    // Layered fascia follows the same estimated envelope and existing pitch.
+    for(const side of [-1,1])for(let i=0;i<strips;i++){
+      const t0=i/strips,t1=(i+1)/strips;
+      for(const zz of [z-roofD/2+.025,z+roofD/2-.025]){
+        beam([x+side*half*t0,profile(t0)-.065,zz],[x+side*half*t1,profile(t1)-.065,zz],.023,spec.curved?red:wood);
+        beam([x+side*half*t0,profile(t0)-.095,zz],[x+side*half*t1,profile(t1)-.095,zz],.016,wood);
+      }
+    }
+    for(let zz=z-roofD/2+.10;zz<z+roofD/2-.04;zz+=.14)for(const side of [-1,1])box(.15,.035,.035,x+side*(half-.09),profile(1)-.10,zz,spec.curved?red:wood);
     for(const zz of [z-d/2-.015,z+d/2+.015]){
       const gable=new THREE.BufferGeometry();gable.setAttribute('position',new THREE.Float32BufferAttribute([x-w/2,eave,zz,x,eave+rise-.06,zz,x+w/2,eave,zz],3));gable.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,.5,1,1,0],2));gable.computeVertexNormals();put(gable,spec.dark?bark:white);
       box(w,.07,.08,x,eave-.015,zz,body);
@@ -103,7 +135,7 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     records.push({id:spec.id,name:spec.name,position:[x,base,z],estimatedBody:[w,wall,d],estimatedPlinth:plinth,front:'+Z',estimatedRoofWidth:roofW,roofRidgeAxis:spec.id===entranceRoadsideShrineIds[1]?"X":"Z"});
   }
   for(const [mat,parts]of batches){const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!merged)throw Error('Roadside shrine material merge failed');const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
-  group.userData={sourceIds:entranceRoadsideShrineIds,records,photo:'https://fushimiinari-guide.com/wp-content/uploads/IMG_6470_20210313.jpg',provenance:'Exact OSM POI centres; estimated photo-based dimensions, closed unlettered doors, bark roofs; existing mapped enclosures retain ownership of fences, retaining walls and collisions'};
+  group.userData={sourceIds:entranceRoadsideShrineIds,records,photo:'https://fushimiinari-guide.com/wp-content/uploads/IMG_6470_20210313.jpg',provenance:'Exact OSM POI centres; estimated photo-based dimensions, closed unlettered doors, bark roofs; R61 front-photo detail pass: layered Kumano curved fascia, recessed paired door panels, bark courses, Fujio ridge-X roof and restrained Reikon timber framing; dimensions and hidden surfaces remain inferred. Existing mapped enclosures retain ownership of fences and retaining walls'};
   root.add(group);return {group,records};
 }
 export const builder=buildEntranceRoadsideShrines;
