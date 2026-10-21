@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {pathWidth} from '../geography/geo-core.mjs';
 import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
-export const entranceParkingIds=Object.freeze(['way/1325613474','way/626313864']);
+export const entranceParkingIds=Object.freeze(['way/1325613474','way/626313864','way/264074614']);
 const bounds=p=>[Math.min(...p.map(v=>v[0])),Math.max(...p.map(v=>v[0])),Math.min(...p.map(v=>v[1])),Math.max(...p.map(v=>v[1]))];
 const overlaps=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2];
 function triangles(points){
@@ -10,7 +10,7 @@ function triangles(points){
   if(ring.length>2&&ring[0][0]===ring.at(-1)[0]&&ring[0][1]===ring.at(-1)[1])ring.pop();
   return THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(...p)),[]).map(t=>t.map(i=>ring[i]));
 }
-// Two mapped parking footprints only. Ground remains unchanged: the thin paved
+// Mapped vehicle and bicycle parking footprints only. Ground remains unchanged: the thin paved
 // surface follows it; buildings and all existing path corridors have precedence.
 export function buildEntranceAreaSurfaces(root,data,features,ground){
   const ways=(Array.isArray(data)?data:data.ways??[]).filter(w=>entranceParkingIds.includes(w.id));
@@ -55,7 +55,7 @@ export function buildEntranceAreaSurfaces(root,data,features,ground){
         }
       }
     }
-    reports.push({id:way.id,area,triangles:triangleCount,materialSource:way.tags.surface==='asphalt'?'OSM surface tag':'inferred asphalt from four mapped asphalt parking aisles'});
+    reports.push({id:way.id,area,triangles:triangleCount,materialSource:way.id==='way/264074614'?'2021 photograph IMG_7698_20210405 shows dark asphalt inside bicycle entrance; extending finish across mapped recess is inferred':way.tags.surface==='asphalt'?'OSM surface tag':'inferred asphalt from four mapped asphalt parking aisles'});
   }
   if(!positions.length)return null;
   const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d');

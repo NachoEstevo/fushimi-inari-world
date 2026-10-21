@@ -95,7 +95,10 @@ export function buildEntranceMappedBoundaries(root,barriers,ground,materials,col
             put(hedgeStone,x+ux*offset,floor+stoneHeight/2+slope*offset,z+uz*offset,step/3+.018,stoneHeight,.73,yaw,slope);
           }
           const coreHeight=stoneEdgedHedge?(height-stoneHeight)*.90+.012*Math.sin(i*2.4):height*.82+.018*Math.sin(i*2.4);
-          put(hedgeCore,x,floor+stoneHeight+coreHeight/2,z,step,coreHeight,.64,yaw,slope);
+          // Interior hedges retain the same leaf silhouette and collider; the
+          // slimmer opaque centre reveals fine understory inside their footprint.
+          const coreWidth=stoneEdgedHedge?.64:.48;
+          put(hedgeCore,x,floor+stoneHeight+coreHeight/2,z,step,coreHeight,coreWidth,yaw,slope);
         }
         colliders.push({type:'box',args:[x,z,step/2,hedge?.38:.17,yaw,low,high,hedge?'mapped_approach_hedge':'mapped_approach_wall']});
       }

@@ -8,7 +8,9 @@ export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
   const group=new THREE.Group();group.name='Mapped entrance specimen trees';
   const branches=[],crowns=[],built=[],skipped=[],dummy=new THREE.Object3D();
   const up=new THREE.Vector3(0,1,0),bark=new THREE.MeshStandardMaterial({color:'#696252',roughness:1});
-  const crown=evergreenCanopy(384),leaves=crown.material.clone();leaves.vertexColors=false;
+  // Keep the generator's green per-leaf pigment and brown twigs. Disabling
+  // vertex colors exposed the pale mask texture and made every tree look white.
+  const crown=evergreenCanopy(384),leaves=crown.material.clone();leaves.vertexColors=true;
   // The shared canopy generator compensates card size for its sample count:
   // merely increasing leafCount preserves almost the same sparse coverage.
   // Enlarge each six-vertex cutout spray around its own centre, retaining the
@@ -67,7 +69,7 @@ export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
   }
   if(crowns.length){
     const mesh=new THREE.InstancedMesh(crown.geometry,leaves,crowns.length),color=new THREE.Color();
-    crowns.forEach((m,i)=>{mesh.setMatrixAt(i,m);mesh.setColorAt(i,color.setHSL(.24+(i%4)*.006,.06,.72+(i%5)*.035));});
+    crowns.forEach((m,i)=>{mesh.setMatrixAt(i,m);mesh.setColorAt(i,color.setHSL(.24+(i%4)*.006,.10,.72+(i%5)*.035));});
     mesh.castShadow=false;mesh.receiveShadow=true;mesh.name='Mapped tree leafy crowns and open pine tiers';mesh.computeBoundingSphere();group.add(mesh);
   }
   root.add(group);const metadata={trees:built,skipped,drawBatches:group.children.length,crownSpraysPerCluster:384,sprayCoverageScale:1.85,
