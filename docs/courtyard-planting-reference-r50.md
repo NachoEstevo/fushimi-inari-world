@@ -32,3 +32,11 @@ The historical imagery selector exposed only June 2012 at this panorama. Present
 ## Reconstruction constraints
 
 The relative location and component list are now observed, not invented. Before committing geometry, match the red hall frontage and adjacent stair to the existing scene footprint, then estimate the island bounds from at least two viewpoints. Record those bounds as an estimate, not a survey. Preserve the paved crossing, shop access and stair approach. Avoid assigning a tree species, exact diameter or permanent sign text without additional evidence.
+
+## R51 implementation
+
+The estimated island is anchored to mapped reception footprint `way/105449708`, shop `way/305214356` and stair `way/1106589424`. Center approximately `[18.2,-21.60]` in scene X/Z; ellipse radii 2.5/2.1 m. These are reconstruction estimates from the contextual and closer views, not surveyed dimensions. Low segmented curb, clipped hedge, supported drooping tree and stone lantern are included. The historical event sign is omitted because its text and current presence are unverified.
+
+Three placement tests cover relative position, clearance from four mapped routes and missing-source behavior. Full suite: 107 passing tests. Browser inspection identified overly sparse square foliage; rounded leaf geometry and a continuous clipped hedge core replace it. Geometry is merged by material and foliage instanced; no new dependencies or lights. Hardware performance was not benchmarked.
+
+Known adjacent mismatch: the existing reception facade and roof still do not match the red hall in the photograph. The existing large conifers and terrain beyond the northern frontage also need a separate evidence-backed pass. This planting addition does not certify the whole courtyard as an exact replica.

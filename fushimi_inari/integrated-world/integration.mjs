@@ -1,4 +1,5 @@
 import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
+import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
@@ -386,6 +387,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.azumamaroCourtDetails=JSON.stringify(courtDetails);
   buildNorthCourtBuildings(root,features,surfaces,legacy.materials,colliders);
+  buildNorthCourtPlanting(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroContext(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroPlanting(root,features,surfaces,legacy.materials,colliders);
   if(reception){const a={id:'reception',label:'Shrine reception',target:[30,ground(30,-16.4),-16.4],radius:0};anchors.push(a);byId.reception=a;}
