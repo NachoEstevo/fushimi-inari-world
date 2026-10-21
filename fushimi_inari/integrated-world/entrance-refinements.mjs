@@ -1,3 +1,4 @@
+import {sculptEntranceFoxes} from './precinct-life.mjs?v=30';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {refineTemizuyaCanopy} from './temizuya-canopy.mjs';
@@ -22,6 +23,7 @@ export function refineEntranceObjects(object,materials){
   }
   if(object.userData.zone==='temizuya'&&object.isGroup){refineBasin(object,materials);refineTemizuyaCanopy(object,materials);}
   if(object.userData.zone==='entrance'){
+    if(object.isGroup)sculptEntranceFoxes(object);
     const shops=[];object.traverse(g=>{
       if(g.isGroup&&g.children.some(m=>m.geometry?.parameters?.width===6.2&&m.geometry.parameters.height===3.2))shops.push(g);
     });
@@ -81,7 +83,7 @@ function refineBasin(g,m){
   const stream=new THREE.Mesh(new THREE.CylinderGeometry(.009,.014,.25,6),new THREE.MeshStandardMaterial({color:'#a9c4b5',transparent:true,opacity:.45,roughness:.2}));stream.position.set(.68,1.09,-.17);g.add(stream);
   const metal=new THREE.MeshStandardMaterial({color:'#b7bbaf',metalness:.65,roughness:.3,side:THREE.DoubleSide});
   for(const [i,x] of [-.58,.50].entries()){
-    const ladle=new THREE.Group();ladle.position.set(x,1.095,.06);ladle.rotation.y=i?-.22:.25;
+    const ladle=new THREE.Group();ladle.userData.ladle=true;ladle.position.set(x,1.095,.06);ladle.rotation.y=i?-.22:.25;
     box(.035,.025,.85,0,0,.34,i?bamboo:materialsWood(),ladle);
     const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.11,.10,.075,20,1,true),metal);bowl.position.set(0,.015,-.12);ladle.add(bowl);
     const bottom=new THREE.Mesh(new THREE.CircleGeometry(.10,20),metal);bottom.rotation.x=-Math.PI/2;bottom.position.set(0,-.022,-.12);ladle.add(bottom);g.add(ladle);

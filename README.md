@@ -46,6 +46,13 @@ the added bench placement are interpretive. See [R28 notes](docs/r28-outlooks.md
 
 The minimap follows your position. Movement speed, free flight, routes and sound are available in the menu. Start with **Rōmon**, **Temizuya**, **Shrine reception** or **Senbon Torii**.
 
+At **Temizuya**, approach and aim at the basin, then press **E** to lift a ladle.
+At **Shrine reception**, aim at the attendant under the Goshuin sign for a
+commemorative stamp demonstration. At **Ichinomine**, approach the hanging rope
+and press **E** to ring the bell. Enable sound in **Environment** to hear the
+existing effects. The attendant is provisional; see [R30 scope and asset
+research](docs/r30-precinct-life.md) for reference and fidelity limits.
+
 For the city outlook, choose **Checkpoints → Yotsutsuji · Kyoto view**. The existing forecourt has resting benches and an open stair approach. Its furniture dimensions are inferred from references; the distant city remains simplified mapped massing.
 
 **Photo mode** holds your position and hides navigation overlays. Adjust the composition, optionally show a thirds grid, then **Save PNG**. Exports retain the screen aspect ratio with a 1920 or 3840 pixel longest edge; the grid and controls are excluded. **Open last photo** provides the latest capture if the browser does not download automatically. **Esc** restores the original camera settings and exploration controls. High-resolution rendering is temporary and uses the existing renderer.

@@ -104,20 +104,29 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     while(target&&!target.userData.interactable)target=target.parent;
     const data=target?.userData.interactable;
     if(!data)return;
-    const english=englishInteraction(data);
+    const english=data.language==='en'?data:englishInteraction(data);
     panel.replaceChildren();
     const title=document.createElement('strong');title.textContent=english.title;
     const text=document.createElement('p');text.textContent=english.description;
-    const note=document.createElement('small');note.textContent='Preserved from the original project; historical accuracy is not verified.';
+    const note=document.createElement('small');note.textContent=data.note??'Preserved from the original project; historical accuracy is not verified.';
     const close=document.createElement('button');close.textContent='Close';close.onclick=()=>panel.hidden=true;
-    panel.append(title,text,note,close);panel.hidden=false;
+    panel.append(title,text,note);
+    for(const action of data.actions??[]){
+      const actionButton=document.createElement('button');actionButton.textContent=action.label;
+      actionButton.onclick=()=>{
+        target.getWorldPosition(direction);
+        if(camera.position.distanceTo(direction)>7){text.textContent='Move closer to interact.';return;}
+        text.textContent=action.run();
+      };panel.append(actionButton);
+    }
+    panel.append(close);panel.hidden=false;
     data.onTrigger?.();
   }
   addEventListener('keydown',e=>{
     if(!active||paused)return;
     if(e.target.closest?.('input,select,textarea'))return;
     if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR','KeyF','Space','ControlLeft','ControlRight'].includes(e.code)){keys.add(e.code);e.preventDefault();}
-    if(e.code==='KeyE'&&!flying)interact();
+    if(e.code==='KeyE'&&!flying&&!e.repeat)interact();
   });
   addEventListener('keyup',e=>keys.delete(e.code));
   addEventListener('blur',()=>{keys.clear();if(active)stop();});
