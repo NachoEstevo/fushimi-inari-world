@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {basinHedgeGap} from './entrance-roadside-basin.mjs?v=62';
 
 // Only the two mapped interior hedges without a stone plinth receive inferred
 // understory. The other three source hedges keep their visible stone base.
@@ -29,12 +30,13 @@ export function buildEntranceHedgeUnderstory(root,barriers,surfaces){
   const totalLength=segments.reduce((sum,s)=>sum+s.length,0),spacing=Math.max(.15,totalLength*2/1500);
   const plants=[];let seed=59031;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-  for(const {a,dx,dz,length} of segments){
+  for(const {a,dx,dz,length,id} of segments){
     const count=Math.max(1,Math.floor((length-.16)/spacing)),ux=dx/length,uz=dz/length;
     for(let i=0;i<count;i++)for(const side of [-1,1]){
       // End clearance preserves mapped gaps. Entire blade extent remains under
       // .32m from the mapped centreline, inside the existing .64m hedge core.
       const along=.08+(i+.5)*(length-.16)/count,offset=side*(.265+random()*.015);
+      if(basinHedgeGap(id,along/length))continue;
       const x=a[0]+ux*along-uz*offset,z=a[1]+uz*along+ux*offset;
       const y=surfaces.terrainHeight(x,z);
       if(!Number.isFinite(y))throw new Error('Nonfinite mapped hedge understory ground at '+x+','+z);

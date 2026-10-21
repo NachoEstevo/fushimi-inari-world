@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {basinHedgeGap} from './entrance-roadside-basin.mjs?v=62';
 
 export const entranceMappedWallIds=Object.freeze(['way/1133052410','way/1133052420','way/1133052413','way/1133052417','way/1133052418','way/1133052438','way/1133052435']);
 export const entranceMappedHedgeIds=Object.freeze(['way/1133052411','way/1133052412','way/1133053711','way/1051333119','way/1133052439']);
@@ -61,6 +62,7 @@ export function buildEntranceMappedBoundaries(root,barriers,ground,materials,col
       const profileHeight=t=>{const q=Math.min(count,t*count),i=Math.min(count-1,Math.floor(q));return profile[i]+(profile[i+1]-profile[i])*(q-i);};
       for(let i=0;i<count;i++){
         const t=(i+.5)/count,x=a[0]+dx*t,z=a[1]+dz*t;
+        if(hedge&&basinHedgeGap(way.id,t))continue;
         const ya=profile[i],yb=profile[i+1],slope=(yb-ya)/step;
         const floor=(ya+yb)/2,low=Math.min(ya,yb,actualGround[i],actualGround[i+1])-.07,high=Math.max(ya,yb)+height;
         if(!(low<=Math.min(ya,yb)&&high>floor))throw new Error('Unseated mapped boundary section: '+way.id);
@@ -120,6 +122,7 @@ export function buildEntranceMappedBoundaries(root,barriers,ground,materials,col
         const leafCount=Math.ceil(length*240);
         for(let i=0;i<leafCount;i++){
           const t=(i+.5)/leafCount,x=a[0]+dx*t,z=a[1]+dz*t;
+          if(basinHedgeGap(way.id,t))continue;
           const leafBase=stoneEdgedHedge?Math.min(.34,height*.42):.10;
           const side=Math.sin(i*17.13)*.32,h=leafBase+((i*43)%97)/97*(height-leafBase-.03);
           dummy.position.set(x+nx*side,sample(x+nx*side,z+nz*side)+h,z+nz*side);

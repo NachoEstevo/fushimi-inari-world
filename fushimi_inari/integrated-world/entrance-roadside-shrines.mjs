@@ -10,8 +10,15 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
   const white=new THREE.MeshStandardMaterial({color:'#ddd9c9',roughness:.97,side:THREE.DoubleSide});
   const wood=new THREE.MeshStandardMaterial({color:'#4b382b',roughness:.96});
   const bark=new THREE.MeshStandardMaterial({color:'#494137',roughness:.99,side:THREE.DoubleSide});
+  const cloth=new THREE.MeshStandardMaterial({color:'#526b82',roughness:1});
   const gold=new THREE.MeshStandardMaterial({color:'#a68c4d',roughness:.6,metalness:.38});
-  const stone=materials.entryStoneMat??materials.stoneMat??white,batches=new Map(),records=[];
+  const stone=(materials.entryStoneMat??materials.stoneMat??white).clone();stone.color.set('#aaa99b');stone.roughness=1;
+  // Deterministic micro relief stands for material grain, never historic marks.
+  const grain=new Uint8Array(64*64*4);
+  for(let i=0;i<64*64;i++){const v=90+Math.floor((Math.sin(i*91.713)*43758.5453%1+1)%1*140);grain.set([v,v,v,255],i*4);}
+  const relief=new THREE.DataTexture(grain,64,64,THREE.RGBAFormat);relief.wrapS=relief.wrapT=THREE.RepeatWrapping;relief.repeat.set(8,8);relief.needsUpdate=true;
+  stone.bumpMap=relief;stone.bumpScale=.018;bark.bumpMap=relief;bark.bumpScale=.012;
+  const batches=new Map(),records=[];
   const put=(geo,mat)=>{if(geo.index){const old=geo;geo=old.toNonIndexed();old.dispose();}if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);};
   const box=(w,h,d,x,y,z,mat)=>put(new THREE.BoxGeometry(w,h,d).translate(x,y,z),mat);
   const beam=(a,b,r,mat)=>{const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),delta=bv.clone().sub(av);const geo=new THREE.CylinderGeometry(r,r,delta.length(),7);geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize()));geo.translate(...av.add(bv).multiplyScalar(.5).toArray());put(geo,mat);};
@@ -40,7 +47,7 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     for(const side of [-1,1])for(const end of [-1,1])box(.10,wall+.08,.10,x+side*(w/2-.03),y+wall/2,z+end*(d/2+.012),body);
     // Closed unlettered paired doors, small hinges and modest horizontal rails.
     const doorW=w*.60,doorH=wall*.76;
-    box(doorW,doorH,.045,x,y+wall*.49,front+.025,spec.dark?wood:gold);
+    box(doorW,doorH,.045,x,y+wall*.49,front+.025,gold);
     box(.035,doorH,.035,x,y+wall*.49,front+.06,body);
     for(const side of [-1,1]){
       for(const level of [.28,.66])box(.08,.035,.025,x+side*doorW*.44,y+wall*level,front+.065,gold);
@@ -52,10 +59,21 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     for(const side of [-1,1]){
       const panelX=x+side*doorW*.24;
       for(const level of [.30,.61]){
-        box(doorW*.30,wall*.19,.018,panelX,y+wall*level,front+.055,wood);
+        box(doorW*.30,wall*.19,.018,panelX,y+wall*level,front+.055,spec.dark?gold:wood);
         box(doorW*.32,.018,.025,panelX,y+wall*(level+.10),front+.069,gold);
       }
       box(.042,doorH+.06,.065,x+side*(doorW/2+.035),y+wall*.49,front+.07,body);
+    }
+    if(spec.dark){
+      // Blue fabric borders and tan reed screens are visible in IMG_7115.
+      // Their patterned crests and the name plaque are deliberately not copied.
+      box(doorW+.06,.13,.02,x,y+wall*.86,front+.081,cloth);
+      for(const side of [-1,1])box(.065,doorH,.02,x+side*(doorW/2-.015),y+wall*.49,front+.081,cloth);
+      for(let i=0;i<13;i++)box(doorW-.10,.008,.012,x,y+wall*.16+i*wall*.046,front+.075,wood);
+      for(const side of [-1,1]){
+        box(.07,wall+.07,.10,x+side*(w/2-.04),y+wall/2,front+.08,wood);
+        box(.16,.08,d+.14,x+side*(w/2-.05),y+wall-.12,z,wood);
+      }
     }
     // Visible header brackets and side-panel framing remain within the walls.
     for(let i=0;i<6;i++)box(.055,.055,.075,x-w*.42+i*w*.168,y+wall-.13,front+.07,spec.dark?wood:gold);
@@ -66,10 +84,22 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     }
     // Bark roofs use real thickness and short exposed rafter tails. Their
     // silhouettes are based on the supplied 2021 photo, not a measured survey.
+    if(!spec.dark){
+      // White cabinet below the offering shelf, enclosed by red corner posts.
+      // This is part of the photographed shrine, not a new ground platform.
+      for(const side of [-1,1])for(const end of [-1,1])box(.075,plinth-.08,.075,x+side*(w/2-.02),base+plinth/2,z+end*(d/2-.01),red);
+      box(w+.12,.055,d+.15,x,base+.10,z,wood);
+      box(w+.12,.075,.18,x,y+.02,front+.06,red);
+      // Hanging brass bell and short suspension visible on both small shrines.
+      beam([x,y+wall-.10,front+.13],[x,y+wall*.72,front+.13],.012,wood);
+      put(new THREE.SphereGeometry(.067,10,7).translate(x,y+wall*.69,front+.13),gold);
+      box(.035,.035,.035,x,y+wall*.62,front+.13,gold);
+      for(const side of [-1,1])box(.065,.13,.16,x+side*(w/2-.04),y+wall-.10,front+.06,red);
+    }
     const roofBatchStarts=new Map([...batches].map(([mat,parts])=>[mat,parts.length]));
     const eave=y+wall+.05,roofD=d+.53,half=roofW/2;
-    const profile=t=>eave+rise*(1-t)+(spec.curved ? .11*t*t : 0);
-    const verts=[],uv=[],strips=spec.curved?8:1;
+    const profile=t=>eave+rise*(1-t)**(spec.curved?1.85:spec.dark?1.65:1.70)+.09*t**8;
+    const verts=[],uv=[],strips=10;
     for(const side of [-1,1])for(let i=0;i<strips;i++){
       const t0=i/strips,t1=(i+1)/strips,xa=x+side*half*t0,xb=x+side*half*t1;
       for(const zz of [-1,1])beam([xa,profile(t0),z+zz*roofD/2],[xb,profile(t1),z+zz*roofD/2],.045,wood);
@@ -82,7 +112,9 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     }
     // Fine parallel bark courses give thickness at the eave without tile ribs.
     for(let i=1;i<5;i++){const t=.80+i*.04;for(const side of [-1,1])box(.025,.018,roofD,x+side*half*t,profile(t)+.012,z,bark);}
-    box(.13,.11,roofD+.10,x,eave+rise+.025,z,wood);
+    // Raised ceramic ridge cap and restrained round end caps, without crests.
+    for(const level of [.025,.085,.14])box(.16,.045,roofD+.10,x,eave+rise+level,z,wood);
+    for(const zz of [z-roofD/2-.045,z+roofD/2+.045])put(new THREE.CylinderGeometry(.095,.095,.035,12).rotateX(Math.PI/2).translate(x,eave+rise+.10,zz),wood);
     // Shallow closely spaced bark courses break up Fujio's broad front pitch;
     // all roof parts below are rotated with Fujio's existing roof assembly.
     for(const side of [-1,1])for(let i=1;i<=15;i++){
@@ -99,7 +131,12 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
     }
     for(let zz=z-roofD/2+.10;zz<z+roofD/2-.04;zz+=.14)for(const side of [-1,1])box(.15,.035,.035,x+side*(half-.09),profile(1)-.10,zz,spec.curved?red:wood);
     for(const zz of [z-d/2-.015,z+d/2+.015]){
-      const gable=new THREE.BufferGeometry();gable.setAttribute('position',new THREE.Float32BufferAttribute([x-w/2,eave,zz,x,eave+rise-.06,zz,x+w/2,eave,zz],3));gable.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,.5,1,1,0],2));gable.computeVertexNormals();put(gable,spec.dark?bark:white);
+      const gv=[],gu=[];
+      for(const side of [-1,1])for(let i=0;i<strips;i++){
+        const t0=i/strips*w/roofW,t1=(i+1)/strips*w/roofW;
+        for(const p of [[x,eave-.04,zz],[x+side*half*t0,profile(t0)-.06,zz],[x+side*half*t1,profile(t1)-.06,zz]]){gv.push(...p);gu.push((p[0]-x)/w+.5,(p[1]-eave)/rise);}
+      }
+      const gable=new THREE.BufferGeometry();gable.setAttribute('position',new THREE.Float32BufferAttribute(gv,3));gable.setAttribute('uv',new THREE.Float32BufferAttribute(gu,2));gable.computeVertexNormals();put(gable,spec.dark?bark:white);
       box(w,.07,.08,x,eave-.015,zz,body);
       box(.07,rise*.75,.08,x,eave+rise*.37,zz,body);
     }
@@ -108,6 +145,8 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
       for(const [mat,parts]of batches)for(let i=roofBatchStarts.get(mat)??0;i<parts.length;i++)parts[i].translate(-x,0,-z).rotateY(Math.PI/2).translate(x,0,z);
     }
     if(spec.dark){
+      // The close photograph confirms short transverse katsuogi ridge logs.
+      for(const dz of [-.34,0,.34])beam([x-.24,eave+rise+.17,z+dz],[x+.24,eave+rise+.17,z+dz],.043,wood);
       // Chigi cross finials at the two ridge ends, without invented emblems.
       for(const zz of [z-roofD*.37,z+roofD*.37])for(const side of [-1,1])beam([x-side*.22,eave+rise-.16,zz],[x+side*.31,eave+rise+.40,zz],.035,wood);
       // Three compact treads fit inside the mapped rail's open front.
@@ -124,18 +163,19 @@ export function buildEntranceRoadsideShrines(root,features,surfaces,materials,co
       };
       const tz=-15.40,toriiBase=surfaces.height(x,tz);
       for(const side of [-1,1]){
-        beam([x+side*.60,toriiBase,tz],[x+side*.57,toriiBase+1.77,tz],.065,stone);
+        beam([x+side*.60,toriiBase,tz],[x+side*.57,toriiBase+1.77,tz],.095,stone);
         colliders.push({type:'cylinder',args:[x+side*.60,tz,.10,toriiBase,toriiBase+1.77,'roadside_stone_torii']});
         box(.20,.12,.20,x+side*.60,toriiBase+.04,tz,stone);
       }
-      box(1.68,.13,.19,x,toriiBase+1.82,tz,stone);
+      box(1.68,.18,.23,x,toriiBase+1.82,tz,stone);
+      box(1.63,.045,.26,x,toriiBase+1.925,tz,stone);
       box(1.54,.09,.13,x,toriiBase+1.44,tz,stone);
       box(.09,.30,.10,x,toriiBase+1.62,tz,stone);
     }
     records.push({id:spec.id,name:spec.name,position:[x,base,z],estimatedBody:[w,wall,d],estimatedPlinth:plinth,front:'+Z',estimatedRoofWidth:roofW,roofRidgeAxis:spec.id===entranceRoadsideShrineIds[1]?"X":"Z"});
   }
   for(const [mat,parts]of batches){const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!merged)throw Error('Roadside shrine material merge failed');const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
-  group.userData={sourceIds:entranceRoadsideShrineIds,records,photo:'https://fushimiinari-guide.com/wp-content/uploads/IMG_6470_20210313.jpg',provenance:'Exact OSM POI centres; estimated photo-based dimensions, closed unlettered doors, bark roofs; R61 front-photo detail pass: layered Kumano curved fascia, recessed paired door panels, bark courses, Fujio ridge-X roof and restrained Reikon timber framing; dimensions and hidden surfaces remain inferred. Existing mapped enclosures retain ownership of fences and retaining walls'};
+  group.userData={sources:['https://fushimiinari-guide.com/kumanosha/','https://fushimiinari-guide.com/fujiosha/','https://fushimiinari-guide.com/reikonsha/'],sourceIds:entranceRoadsideShrineIds,records,photo:'https://fushimiinari-guide.com/wp-content/uploads/IMG_6470_20210313.jpg',provenance:'Exact OSM POI centres; estimated photo-based dimensions, closed unlettered doors, bark roofs; R62 close-photo pass from kumanosha/fujiosha/reikonsha: sampled concave bark profiles, ceramic ridge layers, bell and lower cabinet framing, Reikon katsuogi and grain-textured stone torii; earlier detail pass: layered Kumano curved fascia, recessed paired door panels, bark courses, Fujio ridge-X roof and restrained Reikon timber framing; dimensions and hidden surfaces remain inferred. Existing mapped enclosures retain ownership of fences and retaining walls'};
   root.add(group);return {group,records};
 }
 export const builder=buildEntranceRoadsideShrines;

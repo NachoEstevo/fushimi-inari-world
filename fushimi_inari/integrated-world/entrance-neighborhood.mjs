@@ -1,17 +1,22 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {entranceNeighborhoodLayout} from './entrance-neighborhood-layout.mjs';
+import {pathWidth} from '../geography/geo-core.mjs';
+import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
 // Permanent map-backed context for the otherwise empty entrance surroundings.
 // This is restrained footprint massing, not a verified facade reconstruction.
-export function buildEntranceNeighborhood(root,features,ground,materials,colliders){
+export function buildEntranceNeighborhood(root,features,ground,materials,colliders,surfaces=null){
  const layout=entranceNeighborhoodLayout(features),group=new THREE.Group();group.name='Mapped entrance neighborhood context';
  const plaster=new THREE.MeshStandardMaterial({color:'#b9b5a8',roughness:.97});
  const roof=new THREE.MeshStandardMaterial({color:'#656963',roughness:.94,side:THREE.DoubleSide});
  const eave=new THREE.MeshStandardMaterial({color:'#777366',roughness:.96});
  const roofDetails=[],facadeDetails=[];
- const gishikidenRecess=new THREE.MeshStandardMaterial({color:'#41494a',roughness:.78,metalness:.08});
- const gishikidenConcrete=new THREE.MeshStandardMaterial({color:'#bfc2b6',roughness:.93});
+ const gishikidenRecess=new THREE.MeshStandardMaterial({color:'#52666b',roughness:.42,metalness:.18});
+ const gishikidenConcrete=new THREE.MeshStandardMaterial({color:'#aeb4af',roughness:.94});
+ const gishikidenPaving=new THREE.MeshStandardMaterial({color:'#999c94',roughness:.98,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+ const gishikidenFrame=new THREE.MeshStandardMaterial({color:'#777e78',roughness:.72,metalness:.18});
+ const gishikidenEntranceGlass=new THREE.MeshStandardMaterial({color:'#40595d',roughness:.31,metalness:.24});
  const minamiRoof=new THREE.MeshStandardMaterial({color:'#69716f',roughness:.83,side:THREE.DoubleSide});
  const minamiTile=new THREE.MeshStandardMaterial({color:'#79817e',roughness:.82});
  const minamiTimber=new THREE.MeshStandardMaterial({color:'#554b3e',roughness:.95}),minamiScreen=new THREE.MeshStandardMaterial({color:'#b8b6a3',roughness:.73}),minamiAwning=new THREE.MeshStandardMaterial({color:'#b8aa88',roughness:.95});
@@ -28,7 +33,11 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
    const sections=Math.max(1,Math.ceil(length/2));
    for(let j=0;j<sections;j++){
     const t0=j/sections,t1=(j+1)/sections,x0=a[0]+dx*t0,z0=a[2]+dz*t0,x1=a[0]+dx*t1,z1=a[2]+dz*t1,cx=(x0+x1)/2,cz=(z0+z1)/2,base=Math.min(ground(x0,z0),ground(x1,z1),ground(cx,cz))-.04,yaw=Math.atan2(-dz,dx),w=length/sections;
-    box(w,Math.max(.1,top-base),.12,cx,(top+base)/2,cz,gishikiden?gishikidenRecess:plaster,yaw);box(w,.16,.16,cx,base+.06,cz,stone,yaw);
+    if(gishikiden){
+     const sill=floor+2.85;
+     box(w,Math.max(.1,sill-base),.12,cx,(sill+base)/2,cz,gishikidenConcrete,yaw);
+     box(w,top-sill,.12,cx,(top+sill)/2,cz,gishikidenRecess,yaw);
+    }else box(w,Math.max(.1,top-base),.12,cx,(top+base)/2,cz,plaster,yaw);box(w,.16,.16,cx,base+.06,cz,stone,yaw);
     colliders.push({type:'box',args:[cx,cz,w/2,.12,yaw,base,overallTop,'mapped_entrance_'+spec.id.split('/')[1]]});
    }
    const yaw=Math.atan2(-dz,dx);box(length,.14,.22,(a[0]+b[0])/2,top-.03,(a[2]+b[2])/2,gishikiden?gishikidenConcrete:eave,yaw);
@@ -38,11 +47,15 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
     const first=spec.height*.1875,last=spec.height-upperRailZone-.08;
     for(let band=0;band<20;band++){
      const level=floor+first+(last-first)*band/19;
-     box(length,.15,.34,(a[0]+b[0])/2,level,(a[2]+b[2])/2,gishikidenConcrete,yaw);
+     box(length+.26,.16,.62,(a[0]+b[0])/2,level,(a[2]+b[2])/2,gishikidenConcrete,yaw);
     }
     // The photographs show daylight between the upper rails; do not fill
     // that zone with an additional solid floor or white parapet box.
-    for(const fraction of [.20,.56,.92])box(length,.13,.30,(a[0]+b[0])/2,top+upperRailZone*fraction,(a[2]+b[2])/2,gishikidenConcrete,yaw);
+    for(const fraction of [.20,.56,.86])box(length+.26,.17,.50,(a[0]+b[0])/2,top+upperRailZone*fraction,(a[2]+b[2])/2,gishikidenConcrete,yaw);
+    // Narrow aluminium divisions behind the projecting fins, observed in
+    // the 2019 opposite view. Their spacing is estimated, not storey structure.
+    const panes=Math.max(1,Math.round(length/1.15));
+    for(let pane=1;pane<panes;pane++){const t=pane/panes;box(.042,last-first,.035,a[0]+dx*t+dz/length*.08,floor+(first+last)/2,a[2]+dz*t-dx/length*.08,gishikidenFrame,yaw);}
    }
   }
   if(gishikiden){
@@ -53,9 +66,55 @@ export function buildEntranceNeighborhood(root,features,ground,materials,collide
     // tiny offsets in the OSM ring do not become invented structural piers.
     if(l0<3||l1<3||turn<.25||seen.has(key))continue;seen.add(key);
     const base=ground(p[0],p[2]),height=overallTop-base;
-    box(.31,height,.31,p[0],base+height/2,p[2],gishikidenConcrete,0);
+    box(.37,height,.37,p[0],base+height/2,p[2],gishikidenConcrete,0);
    }
-   facadeDetails.push({id:spec.id,reference:'IMG_6470_20210313 and IMG_7524_20210405',overallHeight:spec.height,heightStatus:'photo-based estimate for two-view review',closedMassHeight:spec.height-upperRailZone,screenFinRows:20,openUpperRails:3,internalStoreys:'unverified; fins are not floor counts',footprintPreserved:true});
+   // The mapped open roof shares precisely edges20 and21 with this hall.
+   // It locates the photographed glazed entrance without guessing a facade.
+   const canopy=features.buildings.find(b=>b.id==='way/751194634'&&b.tags?.building==='roof');
+   if(canopy){
+    const entranceEdges=[20,21],canopyTop=floor+3.08;
+    for(const edge of entranceEdges){
+     const a=spec.points[edge],b=spec.points[(edge+1)%spec.points.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz),yaw=Math.atan2(-dz,dx),ux=dx/length,uz=dz/length,nx=uz,nz=-ux;
+     const front=(w,h,d,u,y,out,mat)=>box(w,h,d,a[0]+ux*u+nx*out,floor+y,a[2]+uz*u+nz*out,mat,yaw);
+     front(length-.12,2.44,.035,length/2,1.38,.09,gishikidenEntranceGlass);
+     const bays=Math.max(2,Math.round(length/1.05));
+     for(let bay=0;bay<=bays;bay++)front(.065,2.52,.08,bay*length/bays,1.40,.13,gishikidenFrame);
+     for(const y of [.16,.75,2.64])front(length,.065,.08,length/2,y,.13,gishikidenFrame);
+     // Closed glazed doors: no unsupported walkable interior is introduced.
+     if(edge===21)for(const du of [-.12,.12])front(.025,.40,.065,length*.70+du,1.12,.20,gishikidenFrame);
+    }
+    const ring=canopy.points.slice(0,-1),shape=new THREE.Shape();
+    ring.forEach((p,i)=>i?shape.lineTo(p[0],-p[2]):shape.moveTo(p[0],-p[2]));shape.closePath();
+    const slab=new THREE.ExtrudeGeometry(shape,{depth:.18,bevelEnabled:false});slab.rotateX(-Math.PI/2);slab.translate(0,canopyTop-.18,0);part(slab,gishikidenConcrete);
+    // Only the outer two supported corners; the mapped under-roof route stays open.
+    for(const index of [1,3]){const p=ring[index],base=ground(p[0],p[2]),h=canopyTop-.18-base;box(.16,h,.16,p[0],base+h/2,p[2],gishikidenFrame,0);colliders.push({type:'box',args:[p[0],p[2],.08,.08,0,base,canopyTop,'mapped_entrance_canopy_post']});}
+    // IMG7524 shows a mineral-paved entry under this mapped roof. Subtract
+    // existing mapped corridors, including the route beneath the canopy, so
+    // their raised path surfaces retain sole ownership and never z-fight.
+    const ring2=ring.map(p=>[p[0],p[2]]),cuts=[];
+    const minx=Math.min(...ring2.map(p=>p[0])),maxx=Math.max(...ring2.map(p=>p[0])),minz=Math.min(...ring2.map(p=>p[1])),maxz=Math.max(...ring2.map(p=>p[1]));
+    for(const path of features.paths){
+     const radius=pathWidth(path.tags)/2+.025;
+     for(let i=1;i<path.points.length;i++){
+      const a=path.points[i-1],b=path.points[i],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);if(length<.01)continue;
+      if(Math.max(a[0],b[0])+radius<minx||Math.min(a[0],b[0])-radius>maxx||Math.max(a[2],b[2])+radius<minz||Math.min(a[2],b[2])-radius>maxz)continue;
+      const nx=-dz/length*radius,nz=dx/length*radius;cuts.push([[a[0]+nx,a[2]+nz],[b[0]+nx,b[2]+nz],[b[0]-nx,b[2]-nz],[a[0]-nx,a[2]-nz]]);
+     }
+    }
+    const paving=[],pavingUV=[],grid=.65,heightAt=surfaces?.height?surfaces.height.bind(surfaces):ground;
+    for(const tri of THREE.ShapeUtils.triangulateShape(ring2.map(p=>new THREE.Vector2(...p)),[])){
+     const triangle=tri.map(i=>ring2[i]);
+     for(let x=Math.floor(minx/grid)*grid;x<maxx;x+=grid)for(let z=Math.floor(minz/grid)*grid;z<maxz;z+=grid){
+      const cell=clipConvex(triangle,[[x,z],[x+grid,z],[x+grid,z+grid],[x,z+grid]]);if(!cell.length)continue;
+      let pieces=[cell];for(const cut of cuts)pieces=pieces.flatMap(p=>subtractConvex(p,cut));
+      for(let piece of pieces){if(polygonArea(piece)<0)piece=[...piece].reverse();for(let j=1;j<piece.length-1;j++)for(const p of [piece[0],piece[j+1],piece[j]]){paving.push(p[0],heightAt(p[0],p[1])+.022,p[1]);pavingUV.push(p[0]/2,p[1]/2);}}
+     }
+    }
+    if(paving.length){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(paving,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(pavingUV,2));geo.computeVertexNormals();part(geo,gishikidenPaving);}
+    roofDetails.push({id:canopy.id,paving:'photographed grey mineral entry; mapped roof footprint only',pavingGrid:grid,pavingOffset:.022,pathCorridorsSubtracted:true,terrainUnchanged:true});
+    builtIds.push(canopy.id);roofDetails.push({id:canopy.id,form:'mapped open entrance canopy',estimatedTopAboveHallDatum:3.08,exactFootprint:true,entranceEdges,source:'IMG_7524_20210405; OSM shared edges'});
+   }
+   facadeDetails.push({id:spec.id,reference:'IMG_6470_20210313 and IMG_7524_20210405',overallHeight:spec.height,heightStatus:'photo-based estimate for two-view review',closedMassHeight:spec.height-upperRailZone,screenFinRows:20,estimatedFinDepth:.62,glazingMullionSpacing:'estimated1.15m',openUpperRails:3,entranceMapping:'canopy way/751194634 shared edges20/21',internalStoreys:'unverified; fins are not floor counts',footprintPreserved:true});
   }
   if(spec.id==='way/260121332'){
    // townphoto.net/kyoto/k01/k01202.jpg (2016) identifies Minami Shingu.

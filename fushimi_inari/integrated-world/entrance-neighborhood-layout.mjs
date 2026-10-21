@@ -1,6 +1,6 @@
-// Retain the five existing authored shop assets pending source-led replacement.
+// Retain the three remaining authored southern shop assets pending source-led replacement.
 // These positions are only an overlap exclusion, never geographic authority.
-const oldShopCenters=[[-89.35,-7.96],[-78.34,-8.22],[-89.16,20.07],[-78.68,19.45],[-68.70,18.85]];
+const oldShopCenters=[[-89.16,20.07],[-78.68,19.45],[-68.70,18.85]];
 export function entranceNeighborhoodLayout(features){
  const records=[],skipped=[];
  for(const building of features.buildings){

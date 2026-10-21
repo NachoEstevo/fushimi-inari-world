@@ -23,7 +23,9 @@ export function buildEntranceShrineCourtDetails(root,features,surfaces,materials
     box(.54,footH,.54,x,low+footH/2,z,stone);
     const lanternStarts=new Map([...batches].map(([mat,parts])=>[mat,parts.length]));
     box(.44,.10,.44,x,base+.15,z,stone);
-    cylinder(.105,.145,.75,x,base+.565,z,stone);
+    // The photographed stone shaft is waisted and faceted, not a plain pole.
+    const shaftProfile=[[.16,0],[.17,.06],[.12,.17],[.085,.36],[.095,.51],[.15,.67],[.19,.75]].map(([r,h])=>new THREE.Vector2(r,h));
+    put(new THREE.LatheGeometry(shaftProfile,4).rotateY(Math.PI/4).translate(x,base+.19,z),stone);
     cylinder(.24,.16,.14,x,base+1.01,z,stone);
     box(.36,.08,.36,x,base+1.11,z,stone);
     box(.23,.25,.23,x,base+1.275,z,shadow);
@@ -45,6 +47,8 @@ export function buildEntranceShrineCourtDetails(root,features,surfaces,materials
     box(.48,base-bottom+.18,.48,x,(bottom+base+.18)/2,z,stone);
     box(.36,.12,.36,x,base+.24,z,stone);
     cylinder(.07,.10,2.65,x,base+1.60,z,oxidized,8);
+    for(const level of [.37,.46,1.12,2.73,2.87])cylinder(.105,.105,.045,x,base+level,z,oxidized,8);
+    box(.28,.35,.28,x,base+.48,z,oxidized);
     cylinder(.15,.10,.13,x,base+2.96,z,oxidized,6);
     cylinder(.23,.18,.12,x,base+3.08,z,oxidized,6);
     cylinder(.19,.19,.37,x,base+3.31,z,cream,6);
@@ -53,6 +57,10 @@ export function buildEntranceShrineCourtDetails(root,features,surfaces,materials
       cylinder(.018,.018,.41,x+Math.cos(a)*.19,base+3.31,z+Math.sin(a)*.19,oxidized,5);
     }
     cylinder(.25,.22,.08,x,base+3.535,z,oxidized,6);
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3;
+      box(.022,.34,.022,x+Math.cos(a)*.12,base+3.31,z+Math.sin(a)*.12,oxidized);
+    }
     put(new THREE.ConeGeometry(.36,.18,6).translate(x,base+3.66,z),oxidized);
     cylinder(.025,.045,.10,x,base+3.80,z,oxidized,6);
     colliders.push({type:'box',args:[x,z,.25,.25,0,bottom,base+3.86,'shrine_court_tall_exterior_lantern']});
@@ -92,7 +100,7 @@ export function buildEntranceShrineCourtDetails(root,features,surfaces,materials
     records.push({kind:'information_board',sourceId:spec.id,verifiedName:verified[i]||null,position:[x,base,z],estimatedPanel:[w,h],placement:'beside, outside mapped front opening'});
   });
   for(const [material,parts]of batches){const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!merged)throw Error('Shrine court accessory merge failed');const mesh=new THREE.Mesh(merged,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
-  group.userData={sourcePhoto,sourceIds:shrineIds,records,provenance:'Photo-based 1.10m stone lanterns, approximately 3.8m blue green exterior lanterns and cream timber board forms; all accessory positions and dimensions estimated. Names copied only from mapped POI tags. Footings and posts sample surfaces.height individually; mapped entrance gaps, fences, shrine bodies and steps unchanged.'};
+  group.userData={sourcePhoto,sourceIds:shrineIds,records,provenance:'R62 close-photo accessories: waisted faceted stone shafts, tall lamp collars and glazing bars. Photo-based 1.10m stone lanterns, approximately 3.8m blue green exterior lanterns and cream timber board forms; all accessory positions and dimensions estimated. Names copied only from mapped POI tags. Footings and posts sample surfaces.height individually; mapped entrance gaps, fences, shrine bodies and steps unchanged.'};
   root.add(group);return {group,records};
 }
 export const builder=buildEntranceShrineCourtDetails;
