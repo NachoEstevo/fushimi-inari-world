@@ -2,7 +2,7 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   const $=id=>document.getElementById(id);
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Movement','Checkpoints','Routes','Environment'];
-  menu.innerHTML=`<div class="menu-heading"><h2 id="menu-title">Explore Inariyama</h2><button id="menu-close" aria-label="Close menu">×</button></div><div class="menu-tabs" role="tablist" aria-label="Settings">${tabs.map((t,i)=>`<button role="tab" id="tab-${i}" aria-controls="pane-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${t}</button>`).join('')}</div>${tabs.map((t,i)=>`<section role="tabpanel" id="pane-${i}" aria-labelledby="tab-${i}" ${i?'hidden':''}></section>`).join('')}`;
+  menu.innerHTML=`<div class="menu-heading"><div><h2 id="menu-title">Explore Inariyama</h2><p id="menu-context">Fushimi Inari Taisha</p></div><button id="menu-close" aria-label="Close menu">×</button></div><div class="menu-tabs" role="tablist" aria-label="Settings">${tabs.map((t,i)=>`<button role="tab" id="tab-${i}" aria-controls="pane-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${t}</button>`).join('')}</div>${tabs.map((t,i)=>`<section role="tabpanel" id="pane-${i}" aria-labelledby="tab-${i}" ${i?'hidden':''}></section>`).join('')}`;
   menu.insertAdjacentHTML('beforeend','<p class="menu-credit">Made by <a href="https://nachoestevo.com" target="_blank" rel="noopener noreferrer">Ignacio Estevo</a></p>');
   document.body.append(menu);
   const move=(id,pane,label=false)=>{const el=$(id);if(label){const l=document.querySelector(`label[for="${id}"]`);if(l)$(pane).append(l);}$(pane).append(el);};
@@ -19,7 +19,7 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   document.querySelector('label[for="place"]').hidden=true;$('place').hidden=true;$('visit').parentElement.hidden=true;
   // Remove obsolete HUD labels; the map retains only scale and altitude.
   for(const node of [...$('nav-content').children])if(node.matches('label,p,small'))node.remove();
-  const trigger=document.createElement('button');trigger.id='menu-open';trigger.textContent='Menu · Esc';document.body.append(trigger);
+  const trigger=document.createElement('button');trigger.id='menu-open';trigger.setAttribute('aria-label','Menu · Esc');trigger.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span>Menu</span><kbd>Esc</kbd>';document.body.append(trigger);
   const activate=i=>{tabs.forEach((_,j)=>{const t=$(`tab-${j}`);t.setAttribute('aria-selected',String(i===j));t.tabIndex=i===j?0:-1;$(`pane-${j}`).hidden=i!==j;});};
   tabs.forEach((_,i)=>{const t=$(`tab-${i}`);t.onclick=()=>activate(i);t.onkeydown=e=>{let n=i;if(e.key==='ArrowRight')n=(i+1)%4;else if(e.key==='ArrowLeft')n=(i+3)%4;else if(e.key==='Home')n=0;else if(e.key==='End')n=3;else return;e.preventDefault();activate(n);$(`tab-${n}`).focus();};});
   function open(){if(menu.open)return;if(!$('stop').disabled)$('stop').click();walker.pause(true);controls.enabled=false;$('interaction').hidden=true;menu.showModal();$('menu-close').focus();}
@@ -32,11 +32,13 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   addEventListener('keydown',e=>{if(e.code!=='Escape')return;e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
   for(const id of ['checkpoint-go','visit','freewalk','walk','overview'])$(id).addEventListener('click',close);
   $('checkpoint-buttons').addEventListener('click',e=>{if(e.target.closest('button'))close();});
-  const title=document.querySelector('header h1');document.querySelector('header .eyebrow').textContent='FUSHIMI INARI TAISHA';
+  const title=document.querySelector('header h1');document.querySelector('header .eyebrow').textContent='Fushimi Inari Taisha';
+  title.parentElement.insertAdjacentHTML('afterbegin','<svg class="place-mark" viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 5q14 4 28 0M4 10h24M5 17h22M9 11 7 33M23 11l2 22M16 11v6"/></svg>');
   let last=0;
   return {update(time){if(time-last<350)return;last=time;
     const nearest=assembly.spatial.anchors.reduce((best,a)=>{const distance=Math.hypot(camera.position.x-a.target[0],camera.position.z-a.target[2]);return !best||distance<best.distance?{a,distance}:best;},null);
     title.textContent=camera.position.y>400?'Inariyama':nearest.distance<45?nearest.a.label:`Trail · ${nearest.a.label}`;
+    $('menu-context').textContent=`${title.textContent} · ${Math.round(camera.position.y-1.7)} m ASL`;
     document.body.dataset.movementMode=walker.mode;
     for(const mode of ['walk','fly','orbit'])$(`mode-${mode}`).setAttribute('aria-pressed',String(walker.mode===mode));
   }};

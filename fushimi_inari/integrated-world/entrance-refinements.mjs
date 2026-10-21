@@ -1,4 +1,4 @@
-import {sculptEntranceFoxes} from './precinct-life.mjs?v=30';
+import {sculptEntranceFoxes} from './precinct-life.mjs?v=31';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {refineTemizuyaCanopy} from './temizuya-canopy.mjs';

@@ -50,8 +50,9 @@ At **Temizuya**, approach and aim at the basin, then press **E** to lift a ladle
 At **Shrine reception**, aim at the attendant under the Goshuin sign for a
 commemorative stamp demonstration. At **Ichinomine**, approach the hanging rope
 and press **E** to ring the bell. Enable sound in **Environment** to hear the
-existing effects. The attendant is provisional; see [R30 scope and asset
-research](docs/r30-precinct-life.md) for reference and fidelity limits.
+existing effects. The attendant and entrance kitsune are original stylized models,
+not scans. The white exploration menu, location identity and model improvements
+are documented in [R31 visual review](docs/r31-ui-and-models.md).
 
 For the city outlook, choose **Checkpoints → Yotsutsuji · Kyoto view**. The existing forecourt has resting benches and an open stair approach. Its furniture dimensions are inferred from references; the distant city remains simplified mapped massing.
 

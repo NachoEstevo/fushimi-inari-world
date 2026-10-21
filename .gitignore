@@ -11,3 +11,4 @@ node_modules/
 *.key
 .agents/
 investigacion-skill-3d.md
+.taste-skill/

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export function installPhotoMode({renderer,scene,camera,walker,controls,overlays}){
-  const button=document.createElement('button');button.id='photo-open';button.textContent='Photo mode';document.body.append(button);
+  const button=document.createElement('button');button.id='photo-open';button.setAttribute('aria-label','Photo mode');button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Photo mode</span>';document.body.append(button);
   const panel=document.createElement('section');panel.id='photo-panel';panel.hidden=true;panel.setAttribute('aria-label','Photo settings');
   panel.innerHTML=`<div class="menu-heading"><h2>Photo mode</h2><button id="photo-close" aria-label="Close photo mode">×</button></div>
     <p class="photo-help">Frame a moment from your current position.</p>

@@ -1,8 +1,8 @@
-import {installPrecinctLife} from './precinct-life.mjs?v=30';
+import {installPrecinctLife} from './precinct-life.mjs?v=31';
 import {preservedForestLOD} from './forest-lod.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
-import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=30';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=31';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
