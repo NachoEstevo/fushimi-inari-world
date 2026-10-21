@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bamboo geometry and LOD inspection</title>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+  <style>body{margin:0;overflow:hidden;background:#b9c2ab;font:14px system-ui}aside{position:fixed;top:16px;left:16px;background:#fffef0e8;padding:14px;max-width:290px;border-radius:8px}button{padding:7px 12px;margin-right:5px;border:1px solid #bbc3ae;background:white;cursor:pointer}p{margin:8px 0;font-size:12px;line-height:1.5}#stats{font-variant-numeric:tabular-nums}</style>
+</head>
+<body>
+<aside><strong>Bamboo detail inspection</strong><p>Drag to orbit. Check the raised pale nodes and the fine dark line below each one.</p><button id="near">Close</button><button id="far">Distant LOD</button><p id="stats">Loading…</p></aside>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {refineBamboo,bambooLOD} from '../integrated-world/bamboo-details.mjs';
+import {partitionInstances} from '../integrated-world/spatial-mesh.mjs';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b9c2ab');
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.05,180);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.append(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight('#f5f7e9','#414c2c',2.1));
+const light=new THREE.DirectionalLight('#fff1d2',3.0);light.position.set(-3,7,5);scene.add(light);
+const loader=new THREE.TextureLoader(),map=loader.load('../assets/textures/nanobanana/foliage_bamboo_fern.png');map.colorSpace=THREE.SRGBColorSpace;
+const normalMap=loader.load('../assets/textures/nanobanana/foliage_bamboo_fern_normal.png');
+const culms=new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial(),2);
+const leaves=new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial({map,normalMap,side:THREE.DoubleSide}),2);
+const matrix=new THREE.Matrix4();
+for(let i=0;i<2;i++){matrix.makeRotationY(i*1.2);matrix.setPosition(i*2.1,0,-i*1.7);culms.setMatrixAt(i,matrix);matrix.setPosition(i*2.1,6.8,-i*1.7);leaves.setMatrixAt(i,matrix);}
+const stats=refineBamboo({foliage:[null,null,null,null,culms,leaves]});
+scene.add(bambooLOD(partitionInstances(culms,64),'culms'),bambooLOD(partitionInstances(leaves,64),'leaves'));
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:'#62704b',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.025;scene.add(ground);
+function view(distance){camera.position.set(.9,2.6,distance);controls.target.set(.05,2.4,0);controls.update();}
+document.getElementById('near').onclick=()=>view(2.6);
+document.getElementById('far').onclick=()=>view(62);
+view(2.6);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+let last=0;
+renderer.setAnimationLoop(time=>{controls.update();renderer.render(scene,camera);if(time-last>400){last=time;document.getElementById('stats').textContent=`${stats.clumps} clumps · ${stats.nodesPerCulm} nodes/culm · ${renderer.info.render.calls} draw calls · ${renderer.info.render.triangles.toLocaleString()} triangles`;}});
+</script>
+</body>
+</html>

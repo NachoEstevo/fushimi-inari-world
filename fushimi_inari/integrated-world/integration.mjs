@@ -26,6 +26,7 @@ import {buildEntranceBicycleGate} from './entrance-bicycle-gate.mjs?v=63';
 import {buildEntranceBicycleSurfaceCollar} from './entrance-bicycle-surface-collar.mjs?v=63';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';
+import {bambooLOD} from './bamboo-details.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
 import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=56';
@@ -36,7 +37,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildLegacy} from './legacy-builders.mjs';
-import {extendForest} from './forest.mjs?v=33';
+import {extendForest} from './forest.mjs?v=66-mountain';
 import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs?v=47';
@@ -481,8 +482,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
     if(!mesh.parent)continue;
     const parent=mesh.parent;mesh.updateMatrix();
-    const chunks=partitionInstances(mesh);
-    if([legacy.foliage[1],legacy.foliage[2]].includes(mesh))preservedForestLOD(chunks,mesh===legacy.foliage[2]);
+    const bambooKind=mesh===legacy.foliage[4]?'culms':mesh===legacy.foliage[5]?'leaves':null;
+    const chunks=partitionInstances(mesh,bambooKind?64:128);
+    if(bambooKind)bambooLOD(chunks,bambooKind);
+    else if([legacy.foliage[1],legacy.foliage[2]].includes(mesh))preservedForestLOD(chunks,mesh===legacy.foliage[2]);
     else if(legacy.foliage.includes(mesh))for(const child of chunks.children)child.userData.nearForest=true;
     parent.add(chunks);mesh.removeFromParent();
   }

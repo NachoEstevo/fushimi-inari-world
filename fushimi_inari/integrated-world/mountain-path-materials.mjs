@@ -1,0 +1,26 @@
+import {fineGranite} from './surface-materials.mjs';
+
+export function mountainPathMaterials(legacy){
+  // Paving shares the existing flagstone material, and darker risers share
+  // fine granite with the curbs via vertex color. Only the tread wear tile
+  // and mossy retaining face need distinct mountain material batches.
+  const retaining=legacy.materials.stoneMat.clone();
+  retaining.roughness=.98;
+  retaining.normalScale?.set(.65,.65);
+  const tread=fineGranite(),canvas=tread.map.image,ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  // Mineral wear is baked once into a 512×256 tile. The front bevel is a
+  // subtle light strip and dirt collects in the back joint, without adding
+  // floating decals or geometry to thousands of steps.
+  let gradient=ctx.createLinearGradient(0,0,0,h);
+  gradient.addColorStop(0,'rgba(222,218,199,.15)');
+  gradient.addColorStop(.08,'rgba(222,218,199,0)');
+  gradient.addColorStop(.78,'rgba(47,52,39,0)');
+  gradient.addColorStop(1,'rgba(47,52,39,.30)');
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(51,53,43,.24)';ctx.fillRect(0,0,2,h);
+  ctx.fillStyle='rgba(221,216,196,.13)';ctx.fillRect(2,0,1,h);
+  tread.map.needsUpdate=true;tread.bumpMap=tread.map;tread.bumpScale=.003;
+  tread.roughness=.97;
+  return {mountainTread:tread,mountainRetaining:retaining};
+}

@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import {routeSpec} from './route-spec.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs?v=10';
 import {outlookOpening} from './panorama-policy.mjs?v=33';
+import {refineBamboo} from './bamboo-details.mjs';
 
 // Reuses original trunk, crown and understory assets. A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.
 export function extendForest(root,legacy,features,anchors,ground,pathDistance,colliders){
+  const bamboo=refineBamboo(legacy);
   let seed=routeSpec.forest.seed;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const forbidden=new Map(),cell=32;
@@ -88,5 +90,5 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     });
     total+=trees.length;
   }
-  return {trees:total,broadleaf,understory,seed:routeSpec.forest.seed,provenance:routeSpec.forest.provenance};
+  return {trees:total,broadleaf,understory,bamboo,seed:routeSpec.forest.seed,provenance:routeSpec.forest.provenance};
 }
