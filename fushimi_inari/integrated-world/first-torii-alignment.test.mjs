@@ -12,9 +12,9 @@ test('first torii source retains both actual raw OSM way endpoints, not first-po
   assert.ok(Math.abs(x-firstToriiSource.endpoints[i][0])<1e-8);assert.ok(Math.abs(z-firstToriiSource.endpoints[i][1])<1e-8);
  }
 });
-test('mapped gate midpoint, heading and scaled pillar centers reproduce source endpoints',()=>{
- const p=mappedFirstToriiPlacement();assert.ok(Math.abs(p.center[0]+138.295876)<.00001);assert.ok(Math.abs(p.center[1]-10.764595)<.00001);assert.ok(Math.abs(p.span-11.5102)<.001);
+test('gate retains mapped midpoint and heading while narrowing the over-wide visual span',()=>{
+ const p=mappedFirstToriiPlacement();assert.ok(Math.abs(p.center[0]+138.295876)<.00001);assert.ok(Math.abs(p.center[1]-10.764595)<.00001);assert.ok(Math.abs(p.sourceSpan-11.5102)<.001);
  for(const [i,side]of [-1,1].entries()){
-  const x=p.center[0]+side*4.4*p.scaleX*Math.cos(p.yaw),z=p.center[1]-side*4.4*p.scaleX*Math.sin(p.yaw),endpoint=firstToriiSource.endpoints[i];assert.ok(Math.hypot(x-endpoint[0],z-endpoint[1])<1e-8);
+  const x=p.center[0]+side*4.4*p.scaleX*Math.cos(p.yaw),z=p.center[1]-side*4.4*p.scaleX*Math.sin(p.yaw),endpoint=firstToriiSource.endpoints[i];const expected=[p.center[0]+.8*(endpoint[0]-p.center[0]),p.center[1]+.8*(endpoint[1]-p.center[1])];assert.ok(Math.hypot(x-expected[0],z-expected[1])<1e-8);
  }
 });

@@ -3,13 +3,13 @@ import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buil
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
 import {buildEntranceSidePlanting} from './entrance-side-planting.mjs?v=52';
 import {buildOmotesandoShoulders} from './omotesando-shoulders.mjs?v=53';
-import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=56';
+import {buildEntranceMappedBoundaries} from './entrance-mapped-boundaries.mjs?v=58';
 import {buildEntranceAreaSurfaces} from './entrance-area-surfaces.mjs?v=54';
-import {alignFirstOmotesandoTorii} from './first-torii-alignment.mjs?v=54';
+import {alignFirstOmotesandoTorii} from './first-torii-alignment.mjs?v=58';
 import {placeMappedInariStation,mappedStationId} from './station-placement.mjs?v=54';
 import {clearLegacyApproachSlabs} from './legacy-approach-slabs.mjs?v=54';
 import {isUnsupportedEntranceProp,isUnsupportedEntranceCollider} from './entrance-unsupported-props.mjs?v=56';
-import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=55';
+import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs?v=58';
 import {buildEntranceMappedTrees} from './entrance-mapped-trees.mjs?v=56';
 import {installPrecinctLife} from './precinct-life.mjs?v=34';
 import {preservedForestLOD} from './forest-lod.mjs';

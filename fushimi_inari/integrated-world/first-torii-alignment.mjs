@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {mappedFirstToriiPlacement} from './first-torii-alignment-layout.mjs';
 
-// Raw two-node OSM way owns midpoint and transverse span. Preserve the
-// authored decorative geometry/height while fitting its X span to those nodes.
+// Raw OSM owns midpoint and heading. R58 narrows the prior visual span;
+// height is retained and source span is not treated as measured pillar spacing.
 export function alignFirstOmotesandoTorii(root,features,surfaces,colliders){
  root.updateWorldMatrix(true,true);
  const candidates=[];
@@ -17,6 +17,6 @@ export function alignFirstOmotesandoTorii(root,features,surfaces,colliders){
  root.add(group);
  for(let i=colliders.length-1;i>=0;i--)if(colliders[i].args.at(-1)==='ichiban_torii')colliders.splice(i,1);
  for(const side of [-1,1])colliders.push({type:'cylinder',args:[x+side*half*c,z-side*half*s,.52*placement.scaleX,base,base+10,'ichiban_torii']});
- group.userData={sourceWay:placement.sourceWay,nodeIds:placement.nodeIds,oldCenter:before.toArray(),sourceEndpoints:true,horizontalSpan:placement.span,authoredHeightRetained:true,sourceAccuracy:'OSM geometry; not independently surveyed'};
+ group.userData={sourceWay:placement.sourceWay,nodeIds:placement.nodeIds,oldCenter:before.toArray(),sourceEndpoints:false,sourceSpan:placement.sourceSpan,widthFactor:placement.widthFactor,horizontalSpan:placement.span,authoredHeightRetained:true,sourceAccuracy:'OSM midpoint/heading; width is a visual estimate reduced20percent from R54, not surveyed'};
  return {aligned:true,...group.userData,center:[x,base,z],yaw,scaleX:placement.scaleX};
 }
