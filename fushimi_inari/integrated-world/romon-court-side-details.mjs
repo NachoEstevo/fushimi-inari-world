@@ -2,15 +2,14 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // June 2012 central-west Street View shows the COURT-facing Kairo screens,
-// pale double rails and dark hanging lanterns. romon-wings.mjs already owns
-// approach-facing screens and the red framing on both sides; do not duplicate it.
+// dark hanging lanterns. IMG6484/6485 resolve the barrier as red posts with
+// one pale bamboo rail. romon-wings.mjs owns the physical outer window wall
+// and open court arcade; never duplicate its apertures at the court edge.
 export function buildRomonCourtSideDetails(root,romon,materials){
   const group=new THREE.Group();group.name='Romon existing wings court-facing detail';
   const source=romon.source??[0,1.6,0],yaw=romon.yaw??0,c=Math.cos(yaw),s=Math.sin(yaw);
   group.rotation.y=yaw;group.position.set(romon.target[0]-c*source[0]-s*source[2],romon.target[1]-source[1],romon.target[2]+s*source[0]-c*source[2]);
-  group.userData={provenance:'Supplied June 2012 central-west Street View; existing authored Kairo coordinates; detailing dimensions visually inferred',courtFaceLocalZ:-2.16};
-  const green=new THREE.MeshStandardMaterial({color:'#426f50',roughness:.87});
-  const shade=new THREE.MeshStandardMaterial({color:'#29382c',roughness:1});
+  group.userData={provenance:'Guide IMG6484/6485 (2021) resolves single pale rail/red posts; June2012 court view supports lanterns; inherited Kairo coordinates and inferred dimensions',courtFaceLocalZ:-2.31,screenOwner:'romon-wings.mjs outer wall',barrier:'IMG6484/6485 single pale rail on red posts; gallery remains closed by original kairo colliders'};
   const pale=new THREE.MeshStandardMaterial({color:'#d5cdb5',roughness:.82,metalness:.08});
   const bronze=new THREE.MeshStandardMaterial({color:'#363e31',roughness:.78,metalness:.35});
   const lanternShade=new THREE.MeshStandardMaterial({color:'#737462',roughness:.95});
@@ -20,18 +19,10 @@ export function buildRomonCourtSideDetails(root,romon,materials){
   const cylinder=(r0,r1,h,x,y,z,material,segments=8)=>part(new THREE.CylinderGeometry(r0,r1,h,segments).translate(x,y,z),material);
   for(const side of [-1,1]){
     const mid=side*12.5;
-    for(let bay=0;bay<5;bay++){
-      const x=mid-4.8+bay*2.4;
-      box(1.92,2.05,.045,x,3.52,-2.09,shade);
-      for(const dx of [-1,1])box(.10,2.23,.12,x+dx,3.52,-2.15,red);
-      for(const y of [2.42,4.62])box(2.1,.10,.12,x,y,-2.15,red);
-      for(let bar=0;bar<18;bar++)box(.055,2.04,.055,x-.90+bar*1.8/17,3.52,-2.16,green);
-      for(const y of [3.10,4.02])box(1.92,.045,.06,x,y,-2.17,green);
-    }
-    // The reference rails sit inside the existing column line. They do not
-    // cross the central passage or extend the wing's existing collision volume.
-    for(const y of [2.42,2.73])box(12.55,.055,.055,mid,y,-2.31,pale);
-    for(let post=0;post<6;post++)box(.055,.80,.055,mid-6+post*2.4,2.41,-2.31,pale);
+    // The pictured rail protects the gallery; it is not an invitation to
+    // walk through it. Preserve the existing full Kairo collision envelope.
+    const rail=new THREE.CylinderGeometry(.034,.034,12.55,8).rotateZ(Math.PI/2).translate(mid,2.88,-2.31);part(rail,pale);
+    for(let post=0;post<6;post++)box(.085,1.05,.085,mid-6+post*2.4,2.575,-2.31,red);
     // Two modest bronze lanterns per wing, suspended beneath existing eaves.
     for(const offset of [-2.4,2.4]){
       const x=mid+offset,z=-2.32;

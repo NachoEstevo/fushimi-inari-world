@@ -55,8 +55,8 @@ import {entryHeight} from './entry-profile.mjs';
 import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=25e';
 import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=25b';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
-import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs?v=48';
-import {refineRomonWings} from './romon-wings.mjs';
+import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs?v=70';
+import {refineRomonWings} from './romon-wings.mjs?v=70';
 import {buildAzumamaroHouses,azumamaroHouseIds} from './azumamaro-houses.mjs?v=47';
 import {buildAzumamaroCourtDetails} from './azumamaro-court-details.mjs?v=47';
 import {buildAzumamaroContext,azumamaroContextIds} from './azumamaro-context.mjs?v=46';
@@ -383,7 +383,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
       for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':['romon','naihaiden','honden'].includes(id)&&key==='stoneMat'?'entryStoneMat':key];break;}
     });
-    if(id==='romon')refineRomonWings(gltf.scene,legacy.materials);
+    if(id==='romon')document.body.dataset.romonWings=JSON.stringify(refineRomonWings(gltf.scene,legacy.materials));
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
   }
   const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';
