@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {okumiyaLayout as layout,okumiyaRailRuns,okumiyaRafter,okumiyaRoofY} from './okumiya-layout.mjs';
+import {okumiyaLayout as layout,okumiyaRailRuns,okumiyaRafter,okumiyaRoofY,okumiyaLatticeReturns,okumiyaBargeboard} from './okumiya-layout.mjs';
 
 const near=(a,b)=>Math.abs(a-b)<1e-6;
 const sourceBox=(object,w,h,d)=>object.children.find(c=>{
@@ -13,7 +13,7 @@ const sourceBox=(object,w,h,d)=>object.children.find(c=>{
 // stone base, material maps and interaction while correcting its finish.
 export function refineOkumiya(object,materials){
   if(object.userData.zone!=='okumiya'||!object.isGroup)return null;
-  if(object.userData.okumiyaDetail?.revision==='R68')return object.userData.okumiyaDetail;
+  if(object.userData.okumiyaDetail?.revision==='R69')return object.userData.okumiyaDetail;
 
   // Match the complete source signature before changing anything. A future
   // replacement asset must not receive an accidental second architectural skin.
@@ -118,6 +118,17 @@ export function refineOkumiya(object,materials){
   for(let i=0;i<latticeUV.count;i++)latticeUV.setXY(i,latticeUV.getX(i)*5.68/1.2,latticeUV.getY(i)*1.12/1.2);
   replaceGeometry(lattice,latticeGeo);
 
+  // Short lower-lattice corner returns are visible in IMG6628/6974.
+  // Reuse the front's source material and metric UVs, keeping the remaining
+  // side/rear white instead of restoring the old full lattice wrap.
+  for(const spec of okumiyaLatticeReturns()){
+    const geo=new THREE.BoxGeometry(.045,spec.height,spec.depth),uv=geo.attributes.uv,normal=geo.attributes.normal;
+    for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(Math.abs(normal.getX(i))>.5?spec.depth:.045)/1.2,uv.getY(i)*spec.height/1.2);
+    geo.translate(spec.x,spec.y,spec.z);part(geo,lattice.material);
+    box(.085,1.18,.08,spec.x,spec.y,spec.z-spec.depth/2,red);
+    for(const y of [.49,1.61])box(.085,.09,spec.depth+.05,spec.x,y,spec.z,red);
+  }
+
   for(const x of layout.frontBayCentres){
     box(1.56,1.48,.045,x,2.35,1.925,wood);
     for(let j=-8;j<=8;j++)box(.027,1.48,.043,x+j*.087,2.35,1.964,wood);
@@ -207,6 +218,24 @@ export function refineOkumiya(object,materials){
       const z=-2.82+i*6.2/32;return[x,okumiyaRoofY(x,z)+offset,z];
     }),.08,.07,'x',trim);
   }
+  // Broad pale gable fascia and the narrow red lower edge are distinct
+  // from the existing dark bark margins in both side photographs.
+  for(const side of [-1,1]){
+    const points=okumiyaBargeboard(side);
+    // Paint bands are thin outward-facing strips, not four-sided solid
+    // beams. This avoids adding hidden geometry beneath the existing fascia.
+    for(const [offset,height,mat]of [[0,.17,pale],[-.115,.055,red]]){
+      const vertices=[];
+      for(let i=1;i<points.length;i++){
+        const p=points[i-1],q=points[i],x=p[0]+side*.025;
+        const a=[x,p[1]+offset+height/2,p[2]],b=[x,p[1]+offset-height/2,p[2]],c=[x,q[1]+offset+height/2,q[2]],d=[x,q[1]+offset-height/2,q[2]];
+        for(const v of side>0?[a,c,b,b,c,d]:[a,b,c,b,d,c])vertices.push(...v);
+      }
+      sheet(vertices,mat);
+    }
+    // Small gilt round fittings are visible; engraving is deliberately omitted.
+    for(const z of [-1.65,layout.ridgeZ,1.15,2.77])part(new THREE.CircleGeometry(.066,12).rotateY(side*Math.PI/2).translate(side*3.94,okumiyaRoofY(side*3.9,z)-.23,z),gold);
+  }
   for(const x of layout.frontPostCentres){
     box(.42,.14,.45,x,3.06,2.03,red);box(.58,.13,.36,x,3.22,2.03,red);
     box(.26,.12,.31,x,2.94,2.07,red);box(.40,.08,.26,x,2.85,2.07,red);
@@ -275,7 +304,7 @@ export function refineOkumiya(object,materials){
     mesh.castShadow=true;mesh.receiveShadow=true;object.add(mesh);
   }
   const stats={
-    revision:'R68',sources:[
+    revision:'R69',sources:[
       'https://online.bunka.go.jp/heritages/detail/260092',
       'https://inari.jp/vr/',
       'https://fushimiinari-guide.com/okumiya/',
@@ -286,8 +315,8 @@ export function refineOkumiya(object,materials){
       'https://fushimiinari-guide.com/wp-content/uploads/IMG_6627_20210309.jpg'
     ],estimatedDimensions:true,retainedEnvelope:[7.8,6.2],roofRidgeLocalZ:layout.ridgeZ,
     materialBatches:counts.length,detailTriangles:counts.reduce((n,b)=>n+b.vertices/3,0),batches:counts,
-    features:{verandaFloor:layout.verandaFloor,roofRise:layout.roofRise,roofCrestY:crestY,lanterns:3,whiteBracketReliefs:2},
-    limits:'Source footprint, stone podium, interactive wall and coarse solid collider retained. Veranda height inferred from photos; decorative veranda is not a new walkable surface. Lantern and carving silhouettes are simplified; fine engraving and painted panels are omitted. No extra lights or per-frame updates.'
+    features:{verandaFloor:layout.verandaFloor,roofRise:layout.roofRise,roofCrestY:crestY,lanterns:3,whiteBracketReliefs:2,latticeCornerReturns:2,estimatedLatticeReturnDepth:.72,paleGableBands:2},
+    limits:'Source footprint, stone podium, interactive wall and coarse solid collider retained. Veranda height inferred from photos; decorative veranda is not a new walkable surface. Lantern and carving silhouettes are simplified; fine engraving and painted panels are omitted. Short lattice return depth and fascia band dimensions are photographic estimates. No extra lights or per-frame updates.'
   };
   object.userData.okumiyaDetail=stats;return stats;
 }

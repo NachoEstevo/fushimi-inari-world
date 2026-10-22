@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {refineOkumiya} from './okumiya-facade.mjs';
-import {okumiyaLayout,okumiyaRoofY} from './okumiya-layout.mjs';
+import {okumiyaLayout,okumiyaRoofY,okumiyaLatticeReturns,okumiyaBargeboard} from './okumiya-layout.mjs';
 
 function sourceFixture(){
   // Mirror the source asset signature, including the original interaction
@@ -30,7 +30,7 @@ test('Okumiya preserves the interaction target, exterior podium and shared sourc
   const f=sourceFixture(),wallGeo=f.wall.geometry,podiumGeo=f.podium.geometry,interaction=f.wall.userData.interactable;
   const podiumPosition=f.podium.position.clone(),latticeMaterial=f.lattice.material;
   const stats=refineOkumiya(f.group,f.materials);
-  assert.equal(stats.revision,'R68');assert.equal(f.wall.geometry,wallGeo);assert.equal(f.podium.geometry,podiumGeo);
+  assert.equal(stats.revision,'R69');assert.equal(f.wall.geometry,wallGeo);assert.equal(f.podium.geometry,podiumGeo);
   assert.deepEqual(f.podium.position,podiumPosition);assert.equal(f.wall.userData.interactable,interaction);assert.equal(f.wall.parent,f.group);
   assert.equal(f.lattice.material,latticeMaterial);assert.equal(f.roof.material.map,f.roofMaterial.map);
   assert.equal(f.roof.material.normalMap,f.roofMaterial.normalMap);assert.equal(f.roof.material.roughnessMap,f.roofMaterial.roughnessMap);
@@ -73,7 +73,7 @@ test('refined geometry is finite, nondegenerate and contained within the pavilio
   const bounds=new THREE.Box3().setFromObject(f.group);
   assert.ok(bounds.min.y>=-1e-6&&bounds.max.y<5.35);assert.ok(bounds.min.x>=-4.03&&bounds.max.x<=4.03);
   assert.ok(bounds.min.z>=-2.87&&bounds.max.z<=3.43);
-  assert.equal(detailMeshes,7);assert.ok(triangles<15000,`geometry budget exceeded: ${triangles}`);
+  assert.equal(detailMeshes,8);assert.ok(triangles<15000,`geometry budget exceeded: ${triangles}`);
 });
 
 test('the taller asymmetric roof retains both eave heights and uses metric bark UVs',()=>{
@@ -105,4 +105,16 @@ test('curved vermilion soffit stays below the bark shell at both gable overhangs
     assert.ok(red&&bark,`underside gap at ${x},${z}`);
     assert.ok(red.distance<bark.distance-.005,`soffit crosses bark shell at ${x},${z}`);
   }
+});
+
+test('photographed corner lattice stays near the front and never wraps the main side walls',()=>{
+ const returns=okumiyaLatticeReturns();assert.equal(returns.length,2);
+ for(const r of returns){assert.ok(Math.abs(r.x)-.023>okumiyaLayout.wallWidth/2);assert.ok(r.z-r.depth/2>1.2);assert.ok(Math.abs(r.z+r.depth/2-r.frontZ)<1e-8);assert.ok(r.y+r.height/2<=okumiyaLayout.verandaFloor+1e-8);}
+ const f=sourceFixture(),stats=refineOkumiya(f.group,f.materials);assert.equal(stats.features.latticeCornerReturns,2);assert.equal(stats.features.estimatedLatticeReturnDepth,.72);
+ const batch=f.group.children.find(m=>m.name==='Okumiya photo-backed detail batch'&&m.material===f.lattice.material);assert.ok(batch);
+ const box=new THREE.Box3().setFromObject(batch);assert.ok(box.min.z>1.2&&box.max.z<1.97);
+});
+
+test('pale gable fascia follows the unchanged roof with constant clearance',()=>{
+ for(const side of [-1,1])for(const [x,y,z]of okumiyaBargeboard(side)){assert.equal(x,side*3.9);assert.ok(Math.abs(okumiyaRoofY(x,z)-y-.23)<1e-8);}
 });

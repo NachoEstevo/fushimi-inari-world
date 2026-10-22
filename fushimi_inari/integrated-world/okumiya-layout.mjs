@@ -37,3 +37,14 @@ export function okumiyaRailRuns(){
     {axis:'z',fixed:3.08,start:-2.12,end:1.92}
   ];
 }
+
+// IMG6628 and6974 show lattice only around the projecting prayer-front
+// corners, not a wrap around the white main sanctuary. Depth is estimated.
+export function okumiyaLatticeReturns(){
+ return [-1,1].map(side=>({side,x:side*2.84,y:1.05,z:1.582,height:1.12,depth:.72,frontZ:1.942}));
+}
+
+// The white and vermilion gable-fascia bands follow the existing roof exactly.
+export function okumiyaBargeboard(side){
+ return Array.from({length:33},(_,i)=>{const z=-2.82+i*6.2/32;return[side*3.90,okumiyaRoofY(side*3.90,z)-.23,z];});
+}

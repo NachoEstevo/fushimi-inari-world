@@ -1,7 +1,7 @@
 import {sculptEntranceFoxes} from './precinct-life.mjs?v=32';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {refineTemizuyaCanopy} from './temizuya-canopy.mjs';
+import {refineTemizuyaCanopy} from './temizuya-canopy.mjs?v=69';
 
 // Refinements use the authored metre coordinates and preserve interaction roots.
 export function refineEntranceObjects(object,materials){

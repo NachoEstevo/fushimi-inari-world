@@ -31,7 +31,7 @@ import {buildAinomine} from './mountain-landmarks.mjs';
 import {refineKumatakasha} from './mountain-landmarks-kumataka.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
-import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=56';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=69';
 import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';
@@ -69,8 +69,9 @@ import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
-import {refineOkumiya} from './okumiya-facade.mjs?v=68-near-precinct';
+import {refineOkumiya} from './okumiya-facade.mjs?v=69-near-precinct';
 import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
+import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=69';
 import {refineTamayamaOkumiyaAccess} from './tamayama-okumiya-access.mjs?v=68-near-precinct';
 import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
@@ -421,6 +422,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   colliders.push(...twinColliders);
   const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.tamayamaForecourt=JSON.stringify(buildTamayamaForecourt(root,features,surfaces,legacy.materials));
   document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
   document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
   document.body.dataset.nearPrecinctAccess=JSON.stringify(nearPrecinctAccess);
@@ -533,7 +535,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   // Reviewed exterior positions on the mapped approaches. The nearest graph
   // node can fall beside a stair or inside the sanctuary's solid footprint.
-  for(const [id,x,z] of [['tamayama',100,-33.979],['okumiya',118.4,-15.941]]){
+  // Native walking review: the former points were clear of collisions but
+  // placed the camera against the lattice. Arrive on the public approach.
+  for(const [id,x,z] of [['tamayama',96.05,-33.979],['okumiya',114.75,-15.941]]){
     const anchor=byId[id];
     if(!anchor)continue;
     anchor.checkpoint=[x,walkHeight(x,z),z];
