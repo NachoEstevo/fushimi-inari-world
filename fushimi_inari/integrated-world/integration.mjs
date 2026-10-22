@@ -71,6 +71,7 @@ import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
+import {refineByakkoDetails,seatByakkoDetails} from './byakko-details.mjs';
 import {refineOkumiya} from './okumiya-facade.mjs?v=69-near-precinct';
 import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
 import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=69';
@@ -290,6 +291,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     refineNinomine(object,legacy.materials);
     kumatakaRefinement=refineKumatakasha(object,legacy.materials)??kumatakaRefinement;
     refineOkumiya(object,legacy.materials);
+    refineByakkoDetails(object,legacy.materials);
     if(object.userData.okumiyaDetail)okumiyaRefinement=object.userData.okumiyaDetail;
     refineTamayama(object,legacy.materials);
     refineGondenFacade(object,legacy.materials);
@@ -434,6 +436,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.entranceShrineConflicts=JSON.stringify(clearLegacyShrineConflicts(root,colliders));
   legacy.interactables=legacy.interactables.filter(o=>!o.userData.legacyShrineConflictRemoved);
   legacy.flickeringCandleMeshes=legacy.flickeringCandleMeshes.filter(o=>!o.userData.legacyShrineConflictRemoved);
+  document.body.dataset.byakkoDetails=JSON.stringify(seatByakkoDetails(root,surfaces,colliders));
   buildSanctuaryLanding(root,byId.naihaiden,legacy.materials,colliders);
   buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
   buildRomonCourtSideDetails(root,byId.romon,legacy.materials);
