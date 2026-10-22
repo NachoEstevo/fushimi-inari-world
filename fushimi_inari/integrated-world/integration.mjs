@@ -72,6 +72,7 @@ import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
 import {refineRomonCurtain} from './romon-curtain.mjs';
 import {refineByakkoDetails,seatByakkoDetails} from './byakko-details.mjs';
+import {refineNaihaiden} from './naihaiden-refinements.mjs';
 import {refineOkumiya} from './okumiya-facade.mjs?v=69-near-precinct';
 import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
 import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=69';
@@ -364,6 +365,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const id of ['romon','gehaiden','naihaiden','honden']){
     callbacks.progress?.(`Integrating ${id} with its original details…`);
     const gltf=await gltfLoader.loadAsync(`${id}.glb`);
+    if(id==='naihaiden')document.body.dataset.naihaidenDetail=JSON.stringify(refineNaihaiden(gltf.scene,legacy.materials));
     if(id==='gehaiden'){
       refineGehaiden(gltf.scene,legacy.materials);
       document.body.dataset.gehaidenRails=String(gltf.scene.userData.gehaidenBalustradeRemovalCount??0);
