@@ -56,7 +56,7 @@ import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grad
 import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=25b';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs?v=70';
-import {refineRomonWings} from './romon-wings.mjs?v=70';
+import {refineRomonWings} from './romon-wings.mjs?v=71';
 import {buildAzumamaroHouses,azumamaroHouseIds} from './azumamaro-houses.mjs?v=47';
 import {buildAzumamaroCourtDetails} from './azumamaro-court-details.mjs?v=47';
 import {buildAzumamaroContext,azumamaroContextIds} from './azumamaro-context.mjs?v=46';

@@ -23,3 +23,39 @@ export function isInheritedRomonBarrelTriangle(points,crest=false){
  }
  return false;
 }
+
+const wingRoofScale=2.15/3.8;
+export function romonWingRoofTop(x,z,corrected=false){
+ const mid=x<0?-12.5:12.5,u=Math.abs((x-mid)/6.9),v=Math.abs(z/2.9),onset=corrected?6.4/6.9:.38;
+ const hip=Math.max(0,(u-onset)/(1-onset));
+ // The photographed upper end is a gable, not a descending bark curtain.
+ // Keep hip fall only in the lower outer shoulders; the upper roof clears
+ // the pale gable face while retaining the same plan, ridge and eave bounds.
+ const t=Math.max(0,Math.min(1,(v-.65)/.35)),shoulder=corrected?t*t*(3-2*t):1;
+ const r=Math.min(1,Math.sqrt(v*v+hip*hip*.85*shoulder));
+ return 5.35+2.15*Math.pow(1-r,1.38)+.42*wingRoofScale*v*v*u*u;
+}
+export function isInheritedRomonWingRoofPoint(p){
+ if(Math.abs(p[0])<5.5999||Math.abs(p[0])>19.4001||Math.abs(p[2])>2.9001)return false;
+ const delta=romonWingRoofTop(p[0],p[2])-p[1];return Math.abs(delta)<.001||Math.abs(delta-.38*wingRoofScale)<.001;
+}
+
+// Exact original builder343 roof fittings; the central gate's fittings are
+// outside these per-component bounds. No broad gold/material deletion.
+export function inheritedRomonWingRoofFittings(kind){
+ const out=[],scale=wingRoofScale,ridge=13.8*.52,y=5.35+2.15+.14*scale;
+ const add=(x,cy,z,w,h,d)=>out.push({min:[x-w/2,cy-h/2,z-d/2],max:[x+w/2,cy+h/2,z+d/2]});
+ for(const side of [-1,1]){const mid=side*12.5;
+  if(kind==='blackRoof')add(mid,y,0,ridge,.42*scale,.52*scale);
+  if(kind==='goldRoof')add(mid,y+.42*scale*.52,0,ridge+.15*scale,.06*scale,.52*scale*1.06);
+  for(const end of [-1,1]){const x=mid+end*(ridge/2+.12*scale);
+   if(kind==='blackRoof'){add(x,y+.10*scale,0,.32*scale,.68*scale,.65*scale);add(x-end*.15,5.35+2.15*.62,0,.18,2.15*.38,5.8*.36);}
+   if(kind==='goldRoof'){add(x,y+.14*scale,(.34-.03)*scale,.24*scale,.24*scale,.06*scale);add(x-end*.22,5.35+2.15*.78,0,.22,.16*scale,5.8*.38);}
+  }
+  if(kind==='goldRoof')for(const offset of [-ridge*.38,0,ridge*.38])for(const face of [-1,1])add(mid+offset,y+.02*scale,-face*.52*scale*.51-.02*scale,.26*scale,.26*scale,.04*scale);
+ }
+ return out;
+}
+export function isInheritedRomonWingRoofFitting(points,kind){
+ return inheritedRomonWingRoofFittings(kind).some(b=>points.every(p=>p.every((v,i)=>v>=b.min[i]-.001&&v<=b.max[i]+.001)));
+}
