@@ -1,3 +1,7 @@
+import {clearRearPrecinctLegacyTrees} from './rear-precinct-tree-clearance.mjs?v=93-release';
+import {buildGondenRearLandscape} from './gonden-rear-landscape.mjs?v=93-release';
+import {buildMikoshikoPrecinct} from './mikoshiko-precinct.mjs?v=93-release';
+import {buildHondenRearBoundary} from './honden-rear-boundary.mjs?v=93-release';
 import {buildTamayamaSouthShinmesha} from './tamayama-south-shinmesha.mjs?v=91-final';
 import {integratedTerrainTriangles} from './terrain-triangles.mjs?v=90-shared';
 import {buildTamayamaStairLandscape} from './tamayama-stair-landscape.mjs?v=91-dense';
@@ -468,6 +472,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.nearPrecinctDrains=JSON.stringify(buildNearPrecinctDrains(root,features,surfaces,legacy.materials));
   document.body.dataset.tamayamaStairBorders=JSON.stringify(buildTamayamaStairBorders(root,features,surfaces,legacy.materials));
   document.body.dataset.sanctuaryContextR87=JSON.stringify(buildSanctuaryContextR87(root,features,surfaces,legacy.materials,colliders));
+  document.body.dataset.gondenRearLandscape=JSON.stringify(buildGondenRearLandscape(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  const mikoshiko=buildMikoshikoPrecinct(root,legacy.materials,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions});
+  // Full-ring terrain rises above the sourced facade; preserve legacy context
+  // until service-floor/east-bank registration is resolved (R93 native review).
+  const shinsenjo={built:false,builtIds:[],reason:'Pending registered floor and terrain levels: southeast ground exceeds proposed roof'};
+  document.body.dataset.rearPrecinctTreeClearance=JSON.stringify(clearRearPrecinctLegacyTrees(legacy,features,colliders,[...(mikoshiko.builtIds??[]),...(shinsenjo.builtIds??[])]));
+  document.body.dataset.mikoshikoPrecinct=JSON.stringify(mikoshiko);
+  document.body.dataset.shinsenjoPrecinct=JSON.stringify(shinsenjo);
+  document.body.dataset.hondenRearBoundary=JSON.stringify(buildHondenRearBoundary(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   document.body.dataset.gondenSurroundings=JSON.stringify(buildGondenSurroundings(root,features,surfaces,legacy.materials,colliders));
   document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
   document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
@@ -630,6 +643,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,renderedTerrainPositions,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+  return {root,spatial,ground,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+    excludesBuilding:b=>(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

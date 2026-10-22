@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=89';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=92';
+import {integrate} from './integration.mjs?v=93-release';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -50,7 +50,9 @@ try {
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   const terrainGeo=new THREE.BufferGeometry();
   const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
-  const pos=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
+  const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
+  const mikoshikoClipped=assembly.mikoshikoPrecinct.clipTerrain?.(pathClipped)??pathClipped;
+  const pos=assembly.shinsenjoPrecinct.clipTerrain?.(mikoshikoClipped)??mikoshikoClipped;
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
@@ -287,6 +289,17 @@ try {
   });
   $('summary').textContent=`${(width/1000).toFixed(2)} × ${(depth/1000).toFixed(2)} km study area · ${features.paths.length.toLocaleString('es')} mapped segments · ${landmarks.length} identified landmarks`;
   const walker=installWalking({camera,renderer,controls,ground,assembly,audio,onStart:()=>{walking=false;$('stop').disabled=true;}});
+  // Visible review destinations use existing exterior paths, never service interiors.
+  if(new URLSearchParams(location.search).get('audit')==='1'){
+    for(const [id,label,x,z,tx,tz] of [
+      ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
+      ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45]
+    ]){
+      const y=assembly.surfaces.height(x,z),target=[tx,y+1.5,tz];
+      const anchor={id,label,target,source:[...target],checkpoint:[x,y,z],lookAt:target};
+      assembly.spatial.anchors.push(anchor);assembly.spatial.byId[id]=anchor;
+    }
+  }
   for(const a of assembly.spatial.anchors){const option=document.createElement('option');option.value=a.id;option.textContent=a.label;$('place').append(option);}
   function visit(){
     walker.stop();walking=false;controls.enabled=true;

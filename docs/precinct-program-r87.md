@@ -164,3 +164,15 @@ The supplied brown building is the existing Gonden. Its retained interaction wal
 The [rear precinct reference register](gonden-rear-reference-r92.md) identifies Mikoshiko, the roofed vermilion votive enclosure, well/Shinsenjo context, mineral ground and dense background vegetation. These are research findings, not newly constructed structures. Blanket grass or forest cannot replace their architectural context. The mapped bridge 1385037575 is excluded by existing ground-path rules and needs a dedicated above-ground owner; its photographic design and relation to the screenshot remain unresolved. The separate short service approach must not be extended speculatively.
 
 343 repository tests pass. Native acceptance and sampled route comparison are recorded in the review. No new dependency, collider or per-frame update was introduced; measured performance and complete rear-precinct fidelity remain unverified.
+
+## R93 rear precinct implementation checkpoint
+
+Three source-bounded owners now add mapped Mikoshiko, a short roofed vermilion votive boundary north of it, and Gonden's narrow mineral/wooded rear margin. See [Mikoshiko](mikoshiko-r93.md), [boundary](honden-rear-boundary-r93.md), and [landscape](gonden-rear-landscape-r93.md). Photographic types and mapped footprints are sourced; heights, facade registration and short boundary endpoints are estimated. This is not exact precinct completion.
+
+[Shinsenjo](shinsenjo-precinct-r93.md) is prepared but deliberately NOT enabled. Native review found a sky gap after exact footprint terrain subtraction. Actual full-ring terrain reaches 50.164 m against 44.122 m access datum, above the proposed southeast roof. Raising the whole compound or inventing a huge retaining wall is unjustified. Existing context and trees remain; no Shinsenjo replacement, terrain cut, new collider or generic exclusion is active. Its module, focused tests and narrow tree-conflict helper are retained as a documented candidate pending floor/terrain registration.
+
+Mikoshiko subtracts only its mapped interior terrain, keeping outside planes and datum. The boundary's actual terrain relief is 0.242 m and has a low level footing. All three active owners build successfully. Visible audit-only destinations support direct exterior review.
+
+366 repository tests passed at the final candidate stage; release route and native findings are recorded in [review](review-r93.md). No dependency, animation loop or new light was added. Static material batches limit overhead; measured frame rate and complete perimeter/night inspection remain unverified.
+
+The [bridge investigation](rear-precinct-bridge-r93.md) found a 2021 accessibility/elevator photograph by Mikoshiko, but actual bridge deck/endpoints remain unregistered. No generic bridge or invented well placement was added. Exact current facade dimensions, Shinsenjo floor levels, well and bridge remain open reference tasks.
