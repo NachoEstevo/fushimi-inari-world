@@ -7,6 +7,9 @@ export function bindVisitorRig(model){
   return [name,{bone,rest:bone.quaternion.clone(),position:bone.position.clone(),scale:bone.scale.clone()}];
  }));
 }
+// AnimationMixer skips unchanged track values. Restore its previous output,
+// never the bind/T pose, before evaluating the next frame's additive gait.
+export function captureVisitorPose(rig){for(const joint of Object.values(rig)){joint.rest.copy(joint.bone.quaternion);joint.position.copy(joint.bone.position);joint.scale.copy(joint.bone.scale);}}
 export function resetVisitorRig(rig){for(const joint of Object.values(rig)){joint.bone.quaternion.copy(joint.rest);joint.bone.position.copy(joint.position);joint.bone.scale.copy(joint.scale);}}
 export function poseVisitorGait(rig,phase,weight){
  // Foot controls are siblings of Body in these exported rigs, not children

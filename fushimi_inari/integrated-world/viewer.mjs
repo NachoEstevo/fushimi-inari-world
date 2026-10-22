@@ -5,7 +5,7 @@ import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs?v=32';
 import {installFlashlight} from './flashlight.mjs';
-import {installVisitors} from './visitors.mjs?v=81';
+import {installVisitors} from './visitors.mjs?v=82';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';

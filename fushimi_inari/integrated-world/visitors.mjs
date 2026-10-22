@@ -1,4 +1,4 @@
-import {bindVisitorRig,resetVisitorRig,poseVisitorGait} from './visitor-rig.mjs';
+import {bindVisitorRig,resetVisitorRig,captureVisitorPose,poseVisitorGait} from './visitor-rig.mjs?v=82';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -19,6 +19,7 @@ export function installVisitors(assembly){
   p.mixer=new THREE.AnimationMixer(model);
   const idle=asset.animations.find(a=>/idle/i.test(a.name))??asset.animations[0];
   if(idle){const action=p.mixer.clipAction(idle);action.play();action.time=i*.63%idle.duration;action.timeScale=.9+i*.04;}
+  p.mixer.update(0);
   p.bones=bindVisitorRig(model);
  }).catch(error=>console.warn('Visitor asset unavailable',error))));
  let lastTime=null;
@@ -28,9 +29,10 @@ export function installVisitors(assembly){
    const s=p.state;p.root.visible=Math.hypot(s.x-camera.position.x,s.z-camera.position.z)<65;if(!p.root.visible||!p.mixer)continue;
    const blockers=people.filter(q=>q!==p).map(q=>q.state);blockers.push({x:camera.position.x,y:camera.position.y-1.7,z:camera.position.z});
    stepVisitor(s,dt,blockers);p.root.position.set(s.x,s.y+.03,s.z);p.root.rotation.y=s.yaw;
-   // Reset additive pose before the imported idle clip, avoiding accumulation.
+   // Restore the last mixer pose; static tracks may not be written again.
    resetVisitorRig(p.bones);
    p.mixer.update(dt);
+   captureVisitorPose(p.bones);
    p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,dt);
    poseVisitorGait(p.bones,s.phase,p.gait);
    if(s.state!=='walk')p.bones.Head?.bone.rotateY(Math.sin(time*.45+people.indexOf(p))*.14);
