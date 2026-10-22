@@ -1,34 +1,39 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
+import {planVisitorRoutes,createVisitorState,stepVisitor} from './visitor-navigation.mjs';
 
 export function installVisitors(assembly){
-  const people=[],reception=assembly.root.getObjectByName('Mapped shrine reception'),world=new THREE.Vector3();
-  // Authored waiting spots outside the existing counter, not a navigation simulation.
-  const specs=[
-    [1,14.0,Math.PI], [4.3,14.2,Math.PI], [7.1,14.4,2.5],
-    [8.2,15.5,-.8], [9.1,14.8,2.3]
-  ];
-  if(!reception)return {update(){},count:0};
-  for(const [i,[x,z,yaw]] of specs.entries()){
-    const p={root:new THREE.Group()};p.root.name=`Visitor ${i+1}`;
-    reception.localToWorld(world.set(x,0,z));world.y=assembly.walkHeight(world.x,world.z)+.03;
-    reception.worldToLocal(world);p.root.position.copy(world);p.root.rotation.y=yaw;reception.add(p.root);
-    people.push(p);
+ const routes=planVisitorRoutes(assembly),people=routes.map((route,i)=>{
+  const root=new THREE.Group();root.name=`Visitor ${i+1} · ${route.zone}`;assembly.root.add(root);
+  const state=createVisitorState(route,i);root.position.set(state.x,state.y+.03,state.z);return {root,state};
+ });
+ document.body.dataset.visitors=JSON.stringify({count:people.length,zones:routes.map(r=>r.zone),mode:'validated paths; pause, stroll and yield',radius:.48});
+ const loader=new GLTFLoader(),files=['Casual_Male','Kimono_Female','Casual_Female'];
+ const templates=files.map(file=>loader.loadAsync(`../assets/models/visitors/${file}.glb`));
+ const ready=Promise.all(people.map((p,i)=>templates[i%3].then(asset=>{
+  const model=clone(asset.scene),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=(i%2?1.64:1.76)/size.y;
+  model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;p.root.add(model);
+  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+  p.mixer=new THREE.AnimationMixer(model);
+  const idle=asset.animations.find(a=>/idle/i.test(a.name))??asset.animations[0];
+  if(idle){const action=p.mixer.clipAction(idle);action.play();action.time=i*.63%idle.duration;action.timeScale=.9+i*.04;}
+  p.bones=Object.fromEntries(['UpperLeg.L','UpperLeg.R','LowerLeg.L','LowerLeg.R','UpperArm.L','UpperArm.R','Head'].map(name=>{const bone=model.getObjectByName(name);return [name,bone?{bone,rest:bone.quaternion.clone()}:null];}));
+ }).catch(error=>console.warn('Visitor asset unavailable',error))));
+ let lastTime=null;
+ return {update(camera,time){
+  const dt=lastTime===null?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;
+  for(const p of people){
+   const s=p.state;p.root.visible=Math.hypot(s.x-camera.position.x,s.z-camera.position.z)<65;if(!p.root.visible||!p.mixer)continue;
+   const blockers=people.filter(q=>q!==p).map(q=>q.state);blockers.push({x:camera.position.x,y:camera.position.y-1.7,z:camera.position.z});
+   stepVisitor(s,dt,blockers);p.root.position.set(s.x,s.y+.03,s.z);p.root.rotation.y=s.yaw;
+   // Reset additive pose before the imported idle clip, avoiding accumulation.
+   for(const rig of Object.values(p.bones))if(rig)rig.bone.quaternion.copy(rig.rest);
+   p.mixer.update(dt);
+   p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,dt);
+   const swing=Math.sin(s.phase)*.30*p.gait;
+   for(const [name,angle]of [['UpperLeg.L',swing],['UpperLeg.R',-swing],['LowerLeg.L',Math.max(0,-Math.sin(s.phase))*.35*p.gait],['LowerLeg.R',Math.max(0,Math.sin(s.phase))*.35*p.gait],['UpperArm.L',-swing*.55],['UpperArm.R',swing*.55]])p.bones[name]?.bone.rotateX(angle);
+   if(s.state!=='walk')p.bones.Head?.bone.rotateY(Math.sin(time*.45+people.indexOf(p))*.14);
   }
-  const loader=new GLTFLoader(),files=['Casual_Male','Kimono_Female','Casual_Female'];
-  const templates=files.map(file=>loader.loadAsync(`../assets/models/visitors/${file}.glb`));
-  people.forEach((p,i)=>{templates[i%3].then(asset=>{
-    const model=clone(asset.scene),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=(i%2?1.64:1.76)/size.y;
-    const wrapper=new THREE.Group();model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;wrapper.add(model);
-    wrapper.position.copy(p.root.position);wrapper.rotation.copy(p.root.rotation);wrapper.name=p.root.name+' · Quaternius';
-    model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
-    p.root.parent.add(wrapper);p.root.removeFromParent();p.root=wrapper;p.mixer=new THREE.AnimationMixer(model);
-    const idle=asset.animations.find(a=>/idle/i.test(a.name))??asset.animations[0];if(idle){const action=p.mixer.clipAction(idle);action.play();action.time=i*.63%idle.duration;action.timeScale=.9+i*.04;}
-  }).catch(error=>console.warn('Visitor asset unavailable',error));});
-  let lastTime=null;
-  return {update(camera,time){const dt=lastTime===null?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;for(const p of people){
-    p.root.getWorldPosition(world);p.root.visible=world.distanceToSquared(camera.position)<85*85;if(!p.root.visible)continue;
-    p.mixer?.update(dt);
-  }},count:people.length};
+ },count:people.length,routes,ready};
 }
