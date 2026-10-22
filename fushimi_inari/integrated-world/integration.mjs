@@ -65,6 +65,7 @@ import {makeAzumamaroCourtGrade,makeNorthCourtGrade} from './entrance-ground.mjs
 import {clearAzumamaroLegacySugi} from './azumamaro-legacy-clearance.mjs?v=45b';
 import {buildAzumamaroSignage} from './azumamaro-signage.mjs?v=43';
 import {refineGehaiden} from './gehaiden-refinements.mjs?v=48';
+import {buildRomonSurroundingsR72} from './romon-surroundings-r72.mjs';
 import {buildEntranceBoundaries} from './entrance-boundaries.mjs';
 import {buildLateralEntryDetails} from './lateral-entry-details.mjs?v=47bb';
 import {clearWestStairPodium} from './entrance-stair-clearance.mjs';
@@ -436,6 +437,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
   buildRomonCourtSideDetails(root,byId.romon,legacy.materials);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.romonSurroundings=JSON.stringify(buildRomonSurroundingsR72(root,byId.romon,surfaces,legacy.materials));
   buildEntranceSidePlanting(root,byId.romon);
   buildOmotesandoShoulders(root,features,ground,surfaces,legacy.materials);
   buildEntranceMappedBoundaries(root,entranceBarriers,ground,legacy.materials,colliders);

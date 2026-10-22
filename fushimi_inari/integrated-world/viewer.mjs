@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=68-near-precinct';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=71-romon';
+import {integrate} from './integration.mjs?v=72-romon';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
