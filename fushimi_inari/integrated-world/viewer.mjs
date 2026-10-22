@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=68-near-precinct';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=84-garden';
+import {integrate} from './integration.mjs?v=85-ponds';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -49,12 +49,13 @@ try {
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   const terrainGeo=new THREE.BufferGeometry();
-  const pos=terrainTriangles(terrain,(c,r)=>{
+  const pos=assembly.officePonds.clipTerrain(terrainTriangles(terrain,(c,r)=>{
     const x=terrain.xmin+c*terrain.step,z=terrain.zmin+r*terrain.step;
     const nearby=assembly.spatial.anchors.some(a=>a.radius&&Math.hypot(x+5-a.target[0],z+5-a.target[2])<a.radius*1.5+10);
     const corridor=x>110&&x<1430&&z>-580&&z<330&&(assembly.pathDistance(x+5,z+5)?.distance??100)<8;
     return nearby||corridor;
-  },(x,z)=>assembly.surfaces.terrainHeight(x,z)-.06);
+  },(x,z)=>assembly.surfaces.terrainHeight(x,z)-.06));
+  document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
   const soilLoader=new THREE.TextureLoader();
@@ -142,7 +143,7 @@ try {
 
   const waterVertices=[];
   for(const w of features.water){
-    if(w.tags.natural!=='water'||w.points.length<4)continue;
+    if(w.tags.natural!=='water'||w.points.length<4||assembly.officePonds.builtIds.includes(w.id))continue;
     const ring=w.points.slice(0,-1),contour=ring.map(p=>new THREE.Vector2(p[0],p[2]));
     for(const triangle of THREE.ShapeUtils.triangulateShape(contour,[]))for(const j of triangle){
       const p=ring[j];waterVertices.push(p[0],ground(p[0],p[2])+.3,p[2]);
