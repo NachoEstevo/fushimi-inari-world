@@ -1,0 +1,752 @@
+{
+  "baseline": "9a700ee",
+  "scope": "Actual integrated path height and collision samples, both directions; not full manual traversal",
+  "connections": 24,
+  "unchanged": true,
+  "routes": [
+    {
+      "from": "entrance",
+      "to": "romon",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 269,
+          "maxJump": 0.1358135179358868,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 269,
+          "maxJump": 0.1358135179358868,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "romon",
+      "to": "temizuya",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 120,
+          "maxJump": 0.1358135179358868,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 120,
+          "maxJump": 0.1358135179358868,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "romon",
+      "to": "gehaiden",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 209,
+          "maxJump": 0.19091033935546875,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 209,
+          "maxJump": 0.19091033935546875,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "gehaiden",
+      "to": "naihaiden",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 53,
+          "maxJump": 0,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 53,
+          "maxJump": 0,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "naihaiden",
+      "to": "honden",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 312,
+          "maxJump": 0.13797310862653944,
+          "blocked": 50,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 45.23036,
+              "z": 13.12188,
+              "y": 44.06133178079813,
+              "jump": 0.015535209952751927,
+              "correction": 0.4954177679891007
+            },
+            {
+              "x": 45.46532,
+              "z": 13.181560000000001,
+              "y": 44.07686699075087,
+              "jump": 0.015535209952744822,
+              "correction": 0.7263763149455826
+            },
+            {
+              "x": 45.70028,
+              "z": 13.241240000000001,
+              "y": 44.092402200703624,
+              "jump": 0.015535209952751927,
+              "correction": 0.9573348619020645
+            },
+            {
+              "x": 45.93524,
+              "z": 13.300920000000001,
+              "y": 44.10364163900071,
+              "jump": 0.011239438297089066,
+              "correction": 1.1882934088585464
+            },
+            {
+              "x": 46.1702,
+              "z": 13.3606,
+              "y": 44.106866168925016,
+              "jump": 0.003224529924302999,
+              "correction": 1.4192519558150287
+            }
+          ]
+        },
+        {
+          "direction": "reverse",
+          "samples": 312,
+          "maxJump": 0.13797310862653944,
+          "blocked": 50,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 66.40371428571427,
+              "z": 11.498571428571427,
+              "y": 44.122249,
+              "jump": 0,
+              "correction": 0.4501958404827337
+            },
+            {
+              "x": 66.2575238095238,
+              "z": 11.700285714285714,
+              "y": 44.122249,
+              "jump": 0,
+              "correction": 0.6082188494850166
+            },
+            {
+              "x": 66.11133333333333,
+              "z": 11.902,
+              "y": 44.122249,
+              "jump": 0,
+              "correction": 0.7662418584872855
+            },
+            {
+              "x": 65.96514285714285,
+              "z": 12.103714285714286,
+              "y": 44.122249,
+              "jump": 0,
+              "correction": 0.9242648674895826
+            },
+            {
+              "x": 65.81895238095237,
+              "z": 12.305428571428571,
+              "y": 44.122249,
+              "jump": 0,
+              "correction": 1.0822878764918797
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "naihaiden",
+      "to": "gonden",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 310,
+          "maxJump": 0.32372904087807086,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 310,
+          "maxJump": 0.32372904087807086,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "gonden",
+      "to": "tamayama",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 241,
+          "maxJump": 0.15620095213757423,
+          "blocked": 24,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 76.7075,
+              "z": -33.7124,
+              "y": 44.91828096439931,
+              "jump": 0,
+              "correction": 0.4162499249249288
+            },
+            {
+              "x": 77.69,
+              "z": -33.7168,
+              "y": 45.049885025360155,
+              "jump": 0,
+              "correction": 0.4162499249249192
+            },
+            {
+              "x": 78.6725,
+              "z": -33.721199999999996,
+              "y": 45.313093147281855,
+              "jump": 0.13160406096084643,
+              "correction": 0.4162499249249096
+            },
+            {
+              "x": 79.655,
+              "z": -33.7256,
+              "y": 45.4446972082427,
+              "jump": 0.13160406096084643,
+              "correction": 0.4162499249249192
+            },
+            {
+              "x": 80.63749999999999,
+              "z": -33.730000000000004,
+              "y": 45.4446972082427,
+              "jump": 0,
+              "correction": 3.4587083458961643
+            }
+          ]
+        },
+        {
+          "direction": "reverse",
+          "samples": 241,
+          "maxJump": 0.15620095213757423,
+          "blocked": 24,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 85.304375,
+              "z": -33.7509,
+              "y": 48.02555833987809,
+              "jump": 0,
+              "correction": 0.5256274630919914
+            },
+            {
+              "x": 85.05875,
+              "z": -33.7498,
+              "y": 47.87374297919365,
+              "jump": 0.1518153606844379,
+              "correction": 0.7712549261839571
+            },
+            {
+              "x": 84.813125,
+              "z": -33.7487,
+              "y": 47.72192761850922,
+              "jump": 0.1518153606844308,
+              "correction": 1.016882389275937
+            },
+            {
+              "x": 84.5675,
+              "z": -33.747600000000006,
+              "y": 47.57011225782478,
+              "jump": 0.1518153606844379,
+              "correction": 1.2625098523679168
+            },
+            {
+              "x": 84.32187499999999,
+              "z": -33.746500000000005,
+              "y": 47.41829689714035,
+              "jump": 0.1518153606844308,
+              "correction": 1.5081373154598967
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "honden",
+      "to": "okumiya",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 376,
+          "maxJump": 0.15620095213757423,
+          "blocked": 75,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 76.7075,
+              "z": -33.7124,
+              "y": 44.91828096439931,
+              "jump": 0,
+              "correction": 0.4162499249249288
+            },
+            {
+              "x": 77.69,
+              "z": -33.7168,
+              "y": 45.049885025360155,
+              "jump": 0,
+              "correction": 0.4162499249249192
+            },
+            {
+              "x": 78.6725,
+              "z": -33.721199999999996,
+              "y": 45.313093147281855,
+              "jump": 0.13160406096084643,
+              "correction": 0.4162499249249096
+            },
+            {
+              "x": 79.655,
+              "z": -33.7256,
+              "y": 45.4446972082427,
+              "jump": 0.13160406096084643,
+              "correction": 0.4162499249249192
+            },
+            {
+              "x": 80.63749999999999,
+              "z": -33.730000000000004,
+              "y": 45.4446972082427,
+              "jump": 0,
+              "correction": 3.4587083458961643
+            }
+          ]
+        },
+        {
+          "direction": "reverse",
+          "samples": 376,
+          "maxJump": 0.15620095213757423,
+          "blocked": 75,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 114.70498076923077,
+              "z": -18.015076923076922,
+              "y": 52.28573527501524,
+              "jump": 0,
+              "correction": 0.3829999999999954
+            },
+            {
+              "x": 114.45796153846153,
+              "z": -18.007153846153845,
+              "y": 52.28573527501524,
+              "jump": 0,
+              "correction": 0.4275954823324985
+            },
+            {
+              "x": 114.2109423076923,
+              "z": -17.99923076923077,
+              "y": 52.223824989787275,
+              "jump": 0.06191028522796671,
+              "correction": 0.3829999999999954
+            },
+            {
+              "x": 113.96392307692308,
+              "z": -17.991307692307693,
+              "y": 52.223824989787275,
+              "jump": 0,
+              "correction": 0.3959046839569848
+            },
+            {
+              "x": 113.71690384615384,
+              "z": -17.983384615384615,
+              "y": 52.16191470455931,
+              "jump": 0.06191028522796671,
+              "correction": 0.517086269537781
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "okumiya",
+      "to": "byakko",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 45,
+          "maxJump": 0.04304996135120831,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 45,
+          "maxJump": 0.04304996135120831,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "okumiya",
+      "to": "senbon",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 372,
+          "maxJump": 0.03940629893987335,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 372,
+          "maxJump": 0.03940629893987335,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "senbon",
+      "to": "okusha",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "okusha",
+      "to": "kumataka",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "kumataka",
+      "to": "mitsu",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "mitsu",
+      "to": "yotsu",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "yotsu",
+      "to": "chaya_s",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 61,
+          "maxJump": 0.1304711851852005,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 61,
+          "maxJump": 0.1304711851852005,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "yotsu",
+      "to": "chaya_n",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 157,
+          "maxJump": 0.2417986516129531,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 157,
+          "maxJump": 0.2417986516129531,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "yotsu",
+      "to": "sannomine",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 708,
+          "maxJump": 0.15995922222222703,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 708,
+          "maxJump": 0.15995922222222703,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "sannomine",
+      "to": "ninomine",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 883,
+          "maxJump": 0.15949742857142724,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 883,
+          "maxJump": 0.15949742857142724,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "ninomine",
+      "to": "summit",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 642,
+          "maxJump": 0.17473483333333206,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 642,
+          "maxJump": 0.17473483333333206,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "summit",
+      "to": "mitsurugi",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 1359,
+          "maxJump": 0.1848982939453947,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1359,
+          "maxJump": 0.3548964628907072,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "mitsurugi",
+      "to": "gozendani",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 1279,
+          "maxJump": 0.1885461291824697,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1279,
+          "maxJump": 0.1885461291824697,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "gozendani",
+      "to": "yotsu",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 961,
+          "maxJump": 0.17576950000002967,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 961,
+          "maxJump": 0.17576950000002967,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "yotsu",
+      "to": "mitsu",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "mitsu",
+      "to": "okusha",
+      "directions": [
+        {
+          "direction": "forward",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    }
+  ]
+}

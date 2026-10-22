@@ -127,3 +127,14 @@ The long-standing Okusha ema-row exit pinch is corrected by preserving the exist
 Outstanding major work: Kumataka terrace registration; complete Okusha forecourt/source placement and back context; separately sourced Kyoya/Mitsutsuji side shrines; Yotsutsuji retaining embankment; summit/return compounds and minor branches. Native interactions, full manual route walks and measured performance remain separate acceptance gates.
 
 R88 release check: 307 repository tests pass. Actual transformed torii bounds were compared against the Mitsutsuji architecture: 27 nearby candidates, 13 omitted, 14 retained, zero retained-gate bounding-box intersections with emitted architecture triangles. No extra gate removal was needed after the native perspective ambiguity. The runtime exclusion now receives real scaled visual corners instead of estimating crossbeam width from pillar centres.
+
+
+## R89 continuation checkpoint
+
+Takeya now owns its mapped concave footprint and source-registered east-facing open frontage opposite Kumataka. Its previously unsupported repeated legacy stones inside that footprint were removed by exact source signatures and transformed polygon overlap, preserving the pavilion, other stones and interactions. Unseen roof form, bay dimensions and exact counter location remain inferred; see [Takeya](kumataka-takeya-frontage-r89.md).
+
+One registered Yotsutsuji annex edge now has ground-seated retaining masonry, with actual facade contact and unchanged courtyard/stair ownership. Mitsutsuji's north mineral margin follows authoritative path surfaces; exact buried terrain subtraction and shoulder ownership transfer remove the overlapping soil without changing central treads. Its outer edge meets the rendered terrain datum. See [Yotsutsuji](yotsutsuji-retaining-r89.md), [Mitsutsuji](mitsu-frontage-aprons-r89.md) and [sources](mountain-reference-register-r89.md).
+
+324 repository tests pass. All 24 actual integrated route-audit records match the prior checkpoint: no new blocked samples or changed jumps. Native short walking samples passed at Okusha, Mitsutsuji and Kumataka; Kumataka E interaction opened. Native review also found and prompted correction of an integration return error and legacy stone overlap. Final detailed status is in [independent review](review-r89.md). Full-itinerary walking and measured performance remain unverified.
+
+Kyoya is deliberately held: the mapped model ground changes 4.17 m along a photographed level facade. [Registration evidence](kyoya-frontage-r89.md) resolves identity, not the required street/floor datum. Outer Kumataka terraces also remain unregistered. Neither is claimed complete.

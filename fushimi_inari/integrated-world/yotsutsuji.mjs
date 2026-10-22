@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {pathSampler} from './spatial.mjs';
 import {toriiMaterials} from './torii-materials.mjs';
 import {yotsuForecourt} from './site-grading.mjs';
+import {yotsutsujiRetainingPlan,buildYotsutsujiRetaining,retainingBuilding,retainingEdgeIndex} from './yotsutsuji-retaining.mjs';
 
 // Footprints are OSM; floor datums are tied to mapped approaches. Building
 // heights, windows and roofs are reference-informed estimates, not a survey.
@@ -12,6 +13,8 @@ export const teaHouses=[
 ];
 export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   const group=new THREE.Group();group.name='Yotsutsuji mapped tea houses';root.add(group);
+  const retainingPlan=yotsutsujiRetainingPlan(features,ground,teaHouses.find(b=>b.id===retainingBuilding).floor);
+  let retainingEdge=null;
   const wood=new THREE.MeshStandardMaterial({color:0x493c2c,normalMap:legacy.materials.vermilionMat.normalMap,normalScale:new THREE.Vector2(.2,.2),roughness:.88});
   const glass=new THREE.MeshStandardMaterial({color:0x53685c,roughness:.38,metalness:.15});
   const box=(w,h,d,x,y,z,material,yaw=0)=>{
@@ -51,8 +54,10 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
       const b=points[(i+1)%points.length],dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz);
       const yaw=-Math.atan2(dz,dx),x=(a[0]+b[0])/2,z=(a[2]+b[2])/2;
       const front=spec.front==='north'?z<minZ+3:x<minX+1.5;
-      const bottom=Math.min(spec.floor-.3,ground(x,z)-.3);
-      box(len,spec.floor-bottom,.3,x,(bottom+spec.floor)/2,z,legacy.materials.stoneMat,yaw);
+      const retained=spec.id===retainingBuilding&&i===retainingEdgeIndex&&retainingPlan;
+      const bottom=retained?retainingPlan.bottom:Math.min(spec.floor-.3,ground(x,z)-.3);
+      if(retained)retainingEdge=buildYotsutsujiRetaining(group,retainingPlan,legacy.materials.stoneMat);
+      else box(len,spec.floor-bottom,.3,x,(bottom+spec.floor)/2,z,legacy.materials.stoneMat,yaw);
       box(len,spec.height,.22,x,spec.floor+spec.height/2,z,front?wood:legacy.materials.plasterMat,yaw);
       box(len+.25,.22,.5,x,spec.floor+spec.height,z,roofMat,yaw);
       // Close each gable to its actual roof profile.
@@ -146,5 +151,5 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
       gateCount++;
     }
   }
-  return {buildings:teaHouses.length,gates:gateCount,footprints:teaHouses.map(s=>s.id),status:'OSM footprints; reference-informed facades; inferred heights'};
+  return {buildings:teaHouses.length,gates:gateCount,footprints:teaHouses.map(s=>s.id),retainingEdge,status:'OSM footprints; reference-informed facades; inferred heights'};
 }

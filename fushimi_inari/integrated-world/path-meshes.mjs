@@ -85,7 +85,7 @@ export function buildPathMeshes(network,legacy,ground){
             quad(buckets.mountainRetaining,...wall);detail.retainingFaces++;
           }else quad(buckets.edge,foot(oa),foot(ob),up(ob,lip),up(oa,lip));
           // Narrow, uneven earth shoulder on mountain paths, below the curb.
-          if(s.ya>55&&!senbon){
+          if(s.ya>55&&!senbon&&!network.omitEarthShoulder?.(s,side)){
             const spread=.28+.10*Math.sin(s.distance*1.73+side);
             if(mountain){
               const na=lerp(startNormal,endNormal,part/cuts),nb=lerp(startNormal,endNormal,(part+1)/cuts);

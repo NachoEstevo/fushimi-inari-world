@@ -14,9 +14,9 @@ import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
-import {buildPathMeshes} from './path-meshes.mjs?v=68-near-precinct';
+import {buildPathMeshes} from './path-meshes.mjs?v=89';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=88-mountain';
+import {integrate} from './integration.mjs?v=89-clearance';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -50,12 +50,13 @@ try {
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   const terrainGeo=new THREE.BufferGeometry();
-  const pos=assembly.officePonds.clipTerrain(terrainTriangles(terrain,(c,r)=>{
+  const pondClipped=assembly.officePonds.clipTerrain(terrainTriangles(terrain,(c,r)=>{
     const x=terrain.xmin+c*terrain.step,z=terrain.zmin+r*terrain.step;
     const nearby=assembly.spatial.anchors.some(a=>a.radius&&Math.hypot(x+5-a.target[0],z+5-a.target[2])<a.radius*1.5+10);
     const corridor=x>110&&x<1430&&z>-580&&z<330&&(assembly.pathDistance(x+5,z+5)?.distance??100)<8;
     return nearby||corridor;
   },(x,z)=>assembly.surfaces.terrainHeight(x,z)-.06));
+  const pos=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
