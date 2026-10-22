@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {okushaArrival} from './okusha-arrival.mjs';
-// Existing Omokaru stones, ema, railings and interactions remain in their group.
+import {buildOkushaArchitecture} from './okusha-architecture.mjs';
+// Existing Omokaru stones and ema remain in their group; the hall interaction
+// moves with its visible replacement architecture, retaining the same mesh.
 export function buildOkushaCourt(root,features,anchor,m,colliders){
   const wood=new THREE.MeshStandardMaterial({color:'#4c3b2b',roughness:.9});
   const shutter=new THREE.MeshStandardMaterial({color:'#8c7860',roughness:.88});
@@ -23,40 +25,32 @@ export function buildOkushaCourt(root,features,anchor,m,colliders){
   for(let i=0;i<ap.count;i++)au.setXY(i,(ap.getX(i)+arrival.position.x)/2,(ap.getZ(i)+arrival.position.z)/2);
   au.needsUpdate=true;
   const original=root.children.find(o=>o.isGroup&&o.userData.zone==='okusha');
+  const architecture=buildOkushaArchitecture(root,features,anchor,m,colliders,original);
   if(original){
     let rackIndex=0;
     for(let i=colliders.length-1;i>=0;i--){const c=colliders[i];if(c.args.at(-1)==='ema_rack'&&Math.hypot(c.args[0]-anchor.target[0],c.args[1]-anchor.target[2])<35)colliders.splice(i,1);}
 
-    // Replace only the flat roof and opaque blockout shell, retaining detailed fittings.
+    // Remove only recognized hall-only fittings after the replacement succeeds.
+    // The official open pavilion has rope/shide instead of the old opaque maku.
     for(const child of [...original.children]){
       const p=child.geometry?.parameters;
       if(!p)continue;
       if(p.width===3.2&&p.height===2.1&&p.depth===.22){
-        child.position.set(-2+rackIndex++*3.5,1.05,8.3);child.rotation.y=0;
+        // The mapped northern exit crosses this inferred row between racks 2/3.
+        // Retain the three actual objects, opening a real gap around that path.
+        // Shifting the complete row merely moved the obstruction along the route.
+        const rackU=[-4.4,-.2,6.2][rackIndex]??(-2+rackIndex*3.5);rackIndex++;
+        child.position.set(rackU,1.05,8.3);child.rotation.y=0;
         original.updateMatrixWorld(true);const q=child.position.clone().applyMatrix4(original.matrixWorld);
         colliders.push({type:'box',args:[q.x,q.z,1.6,.25,anchor.yaw,q.y-1.05,q.y+1.4,'ema_rack']});
       }
 
       if(p.width===1.1&&p.height===1.85&&p.depth===11.5)child.position.x=-14.5;
-      if((p.width===5.2&&p.height===3.2)||(p.width===7&&p.height===.68)||(p.width===.42&&p.depth===6.4)||(p.width===18.5&&p.depth===16))child.removeFromParent();
+      if(architecture&&((p.width===5.2&&p.height===3.2)||(p.width===7&&p.height===.68)||
+        (p.width===.42&&p.depth===6.4)||(p.width===18.5&&p.depth===16)||
+        (p.width===6&&p.height===.68&&p.depth===5.2)||(p.width===4.2&&p.height===1.15)||
+        (p.width===.10&&p.height===.88&&p.depth===.46)||(p.width===.18&&p.height===1.05&&p.depth===4.8)))child.removeFromParent();
     }
-    box(original,.18,3.1,4.4,-8.3,2.15,-1.2,wood);
-    for(const z of [-3.4,1])box(original,5.2,3.1,.14,-5.8,2.15,z,wood);
-    for(const z of [-3.4,-1.2,1])box(original,.22,3.35,.22,-3.15,2.2,z,m.vermilionMat);
-    box(original,.25,.25,5,-3.15,3.9,-1.2,m.vermilionMat);
-    for(const side of [-1,1]){
-      const z0=-1.2,z1=z0+side*3.7;
-      for(let i=0;i<8;i++){
-        const a=i/8,b=(i+1)/8,ya=5.25-1.25*a+.25*a*a,yb=5.25-1.25*b+.25*b*b,za=z0+(z1-z0)*a,zb=z0+(z1-z0)*b;
-        sheet(original,[-9.5,ya,za,-1.8,ya,za,-9.5,yb,zb,-9.5,yb,zb,-1.8,ya,za,-1.8,yb,zb],roof);
-        const beam=box(original,.22,Math.hypot(zb-za,yb-ya)+.035,.22,-1.78,(ya+yb)/2,(za+zb)/2,roof);beam.rotation.x=Math.atan2(zb-za,yb-ya);
-      }
-    }
-    const plaster=m.plasterMat.clone();plaster.side=THREE.DoubleSide;
-    sheet(original,[-1.9,4.1,-4.9,-1.9,5.25,-1.2,-1.9,4.1,2.5],plaster);
-    box(original,8,.13,.16,-5.65,5.28,-1.2,roof);
-    for(const z of [-3.4,-1.2,1]){const boss=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),m.goldMat);boss.position.set(-2.98,3.88,z);original.add(boss);}
-
   }
   // These mapped buildings form the south edge; dimensions from their footprints.
   for(const id of ['way/301527739','way/301527730']){
@@ -77,4 +71,5 @@ export function buildOkushaCourt(root,features,anchor,m,colliders){
     box(g,w+1.2,.14,.16,0,4.2,0,roof);
     root.add(g);colliders.push({type:'box',args:[cx,cz,w/2,d/2,-.14,anchor.target[1],anchor.target[1]+4,'okusha_mapped_building']});
   }
+  return {architecture:architecture?.stats??null,builtIds:architecture?.builtIds??[]};
 }

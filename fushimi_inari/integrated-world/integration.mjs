@@ -1,3 +1,5 @@
+import {buildKumatakaLakesideRail} from './kumataka-lakeside-rail.mjs';
+import {buildMitsutsujiFrontages} from './mitsutsuji-frontages.mjs';
 import {buildNosatsushoPavilion} from './nosatsusho-pavilion.mjs';
 import {buildApproachContextR87} from './approach-context-r87.mjs';
 import {buildSanctuaryContextR87} from './sanctuary-context-r87.mjs';
@@ -44,7 +46,7 @@ import {bambooLOD} from './bamboo-details.mjs';
 import {buildAinomine} from './mountain-landmarks.mjs';
 import {refineKumatakasha} from './mountain-landmarks-kumataka.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
-import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
+import {buildOkushaCourt} from './okusha-details.mjs?v=88';
 import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=86';
 import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
@@ -58,7 +60,7 @@ import {heightAt,nearestNode} from '../geography/geo-core.mjs';
 import {makeSpatial,pathSampler,rigidPoint,rotateXZ,pathClearance} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs?v=68-near-precinct';
 import {buildSenbon} from './senbon.mjs?v=37';
-import {buildMountainTorii} from './mountain-torii.mjs?v=67-mountain';
+import {buildMountainTorii} from './mountain-torii.mjs?v=88-mountain';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=33';
 import {yotsuGrade} from './site-grading.mjs';
@@ -514,7 +516,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const mountainContextR87=refineMountainContextR87(ainomine);
   document.body.dataset.mountainContextR87=JSON.stringify(mountainContextR87?.stats??null);
   if(ainomine){anchors.push(ainomine.anchor);byId.ainomine=ainomine.anchor;}
-  const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{excludeGate:ainomine?.excludeGate});
+  const mitsutsujiFrontages=buildMitsutsujiFrontages(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.mitsutsujiFrontages=JSON.stringify(mitsutsujiFrontages);
+  const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{excludeGate:gate=>ainomine?.excludeGate?.(gate)||mitsutsujiFrontages.excludeGate?.(gate)});
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
   buildAzumamaroHouses(root,features,(x,z)=>surfaces.height(x,z),legacy.materials,colliders);
   const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
@@ -533,9 +537,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const poi=features.pois.find(p=>p.id===osm);
     if(poi){const a={id,label,osm,target:[...poi.point],radius:0};anchors.push(a);byId[id]=a;}
   }
+  document.body.dataset.kumatakaLakesideRail=JSON.stringify(buildKumatakaLakesideRail(root,legacy.materials));
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
-  buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders);
+  const okushaCourt=buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders);
+  document.body.dataset.okushaArchitecture=JSON.stringify(okushaCourt??null);
   const terraces=supportTerraces(root,legacy,ground);
   const precinctLife=installPrecinctLife(root,legacy,callbacks);
   for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
@@ -609,5 +615,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,officePonds,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

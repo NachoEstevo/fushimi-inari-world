@@ -7,6 +7,14 @@ import {toriiMaterials} from './torii-materials.mjs?v=29';
 import {pathClearance} from './spatial.mjs';
 import {toriiPosts,toriiClearsPaths} from './torii-clearance.mjs';
 
+// Eight transformed corners retain each station's actual orientation and scale.
+// Consumers project these points rather than guessing roof width from pillars.
+export function toriiVisualBoundsCorners(bounds,matrix){
+  const corners=[];
+  for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])corners.push(new THREE.Vector3(x,y,z).applyMatrix4(matrix).toArray());
+  return corners;
+}
+
 // Original large torii assets on connected mountain paths. The corridor
 // coverage follows the official pilgrimage route; individual gate stations
 // remain inferred until each segment is visually surveyed.
@@ -45,6 +53,17 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
     }
     g.computeVertexNormals();g.computeBoundingSphere();variants.set(key,g);return g;
   }
+  const visualBoundsByThickness=new Map();
+  function visualCornersFor(matrix,thickness){
+    if(!visualBoundsByThickness.has(thickness)){
+      const bounds=new THREE.Box3();
+      for(const source of [legacy.torii.geometry,legacy.torii.blackGeometry]){
+        const geometry=geometryFor(source,thickness);geometry.computeBoundingBox();bounds.union(geometry.boundingBox);
+      }
+      visualBoundsByThickness.set(thickness,bounds);
+    }
+    return toriiVisualBoundsCorners(visualBoundsByThickness.get(thickness),matrix);
+  }
   for(const [sectionIndex,section] of sections.entries()){
     const route=pathSampler(spatial.connected([section.from,section.to]));
     for(let d=5,index=0;d<route.total-5;index++){
@@ -60,7 +79,8 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
       const sx=scale*variation.width*profile.width,sy=scale*.96*variation.height*profile.height,sz=scale*variation.depth;
       const posts=toriiPosts(x,z,yaw,sx,sz,profile.thickness);
       if(!toriiClearsPaths(posts,nearestPath)){omittedForAccess++;continue;}
-      const reason=excludeGate?.({x,z,posts});
+      const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,sz));
+      const reason=excludeGate?.({x,z,posts,visualCorners:visualCornersFor(m,profile.thickness)});
       if(reason){
         // Reject the whole inferred station before geometry, inscriptions or
         // colliders are emitted. Remaining stations retain their positions.
@@ -68,7 +88,6 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
           from:section.from,to:section.to,point:[x,y,z],reason});
         continue;
       }
-      const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,sz));
       matrices.push({m,variation,thickness:profile.thickness,inscription:inscriptionVariant(sectionIndex,index),dateInscription:inscriptionDate(sectionIndex,index)});
       for(const p of posts){
         colliders.push({type:'cylinder',args:[p.x,p.z,p.radius,y,y+3.4*sy,'mountain_torii']});

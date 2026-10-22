@@ -1,0 +1,278 @@
+{
+  "baseline": "fc7a0fb integration and Okusha module loaded from git HEAD snapshots",
+  "method": "Actual integrated geometry and collision engine; texture/DOM stubs, no browser rendering. 0.25 m centerline samples both directions. Not a full manual walk.",
+  "connections": [
+    {
+      "from": "senbon",
+      "to": "okusha",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 378,
+          "maxJump": 0.12915910387680185,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "okusha",
+      "to": "kumataka",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 1,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 255.78199999999998,
+              "z": 58.76486956521739,
+              "y": 62.53497800000001,
+              "jump": 0,
+              "correction": 0.358812813643887
+            }
+          ]
+        },
+        {
+          "direction": "reverse",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 1,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 255.78199999999998,
+              "z": 58.76486956521739,
+              "y": 62.53497800000001,
+              "jump": 0,
+              "correction": 0.358812813643887
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1758,
+          "maxJump": 0.19839453333334234,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "kumataka",
+      "to": "mitsu",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 874,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "mitsu",
+      "to": "yotsu",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "yotsu",
+      "to": "mitsu",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 1228,
+          "maxJump": 0.23436948571426797,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    },
+    {
+      "from": "mitsu",
+      "to": "okusha",
+      "before": [
+        {
+          "direction": "forward",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 1,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 255.78199999999998,
+              "z": 58.764869565217396,
+              "y": 62.53497800000001,
+              "jump": 0,
+              "correction": 0.35881281364389406
+            }
+          ]
+        },
+        {
+          "direction": "reverse",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 1,
+          "invalid": 0,
+          "examples": [
+            {
+              "x": 255.78199999999998,
+              "z": 58.764869565217396,
+              "y": 62.53497800000001,
+              "jump": 0,
+              "correction": 0.35881281364389406
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "direction": "forward",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        },
+        {
+          "direction": "reverse",
+          "samples": 2631,
+          "maxJump": 0.21607381096653455,
+          "blocked": 0,
+          "invalid": 0,
+          "examples": []
+        }
+      ]
+    }
+  ]
+}

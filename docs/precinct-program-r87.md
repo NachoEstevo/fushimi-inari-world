@@ -114,3 +114,16 @@ Starting revision: `d18d897`; existing geography remains the canonical metre/axi
 - Next substantial packets: [Okusha, Mitsutsuji and Kumataka](mountain-next-packets-r87.md). Nōsatsusho registration is now resolved to a dedicated owner; broader Yashima/Teichoan site context and garden bank proportions remain open.
 
 Work runs in bounded implementation/review/correction cycles during the active session. No unattended scheduler was created, and this ledger must not be read as agents continuing after the session ends.
+
+
+## R88 continuation checkpoint
+
+Sol 6.1 implemented the structural Okusha packet and the two registered Mitama-tei frontages in Mitsutsuji, followed by independent geometry/collision review and native checkpoint smoke tests. See [Okusha](okusha-architecture-r88.md), [Mitsutsuji](mitsutsuji-r88.md), [R88 sources](mountain-reference-register-r88.md), and [review](review-r88.md).
+
+Kumataka's photographed outer terraces remain unregistered and unbuilt. The accepted bounded change is its existing lakeside rail, now an open slatted structure inside the previous envelope; see [rail scope](kumataka-lakeside-rail-r88.md). No hidden terrace polygon, new shrine or broad terrain grading was fabricated.
+
+The long-standing Okusha ema-row exit pinch is corrected by preserving the existing row and making the mapped route gap clear. [Before/after actual collision samples](audits/sector-delta-r88.json) report zero blocked samples in both directions on Okusha–Kumataka and Mitsutsuji–Okusha (previously one in each direction), with unchanged height jumps. Other audited routes did not regress. This is sampled evidence, not final all-width walking acceptance.
+
+Outstanding major work: Kumataka terrace registration; complete Okusha forecourt/source placement and back context; separately sourced Kyoya/Mitsutsuji side shrines; Yotsutsuji retaining embankment; summit/return compounds and minor branches. Native interactions, full manual route walks and measured performance remain separate acceptance gates.
+
+R88 release check: 307 repository tests pass. Actual transformed torii bounds were compared against the Mitsutsuji architecture: 27 nearby candidates, 13 omitted, 14 retained, zero retained-gate bounding-box intersections with emitted architecture triangles. No extra gate removal was needed after the native perspective ambiguity. The runtime exclusion now receives real scaled visual corners instead of estimating crossbeam width from pillar centres.
