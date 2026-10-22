@@ -1,3 +1,7 @@
+import {buildNosatsushoPavilion} from './nosatsusho-pavilion.mjs';
+import {buildApproachContextR87} from './approach-context-r87.mjs';
+import {buildSanctuaryContextR87} from './sanctuary-context-r87.mjs';
+import {refineMountainContextR87} from './mountain-context-r87.mjs';
 import {buildOfficePondSurfaces} from './office-pond-surfaces.mjs?v=86';
 import {buildOfficeGardenBanks} from './office-garden-banks.mjs?v=84';
 import {buildPrecinctNorthContext} from './precinct-north-context.mjs?v=84';
@@ -442,6 +446,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.precinctShrineCourts=JSON.stringify(buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
   document.body.dataset.nearPrecinctMineralCourts=JSON.stringify(buildNearPrecinctMineralCourts(root,features,surfaces,legacy.materials));
   const officePonds=buildOfficePondSurfaces(root,features,surfaces,legacy.materials);
+  const nosatsushoPavilion=buildNosatsushoPavilion(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.nosatsushoPavilion=JSON.stringify(nosatsushoPavilion);
   document.body.dataset.officeGardenBanks=JSON.stringify(buildOfficeGardenBanks(root,features,surfaces));
   const precinctNorthContext=buildPrecinctNorthContext(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.precinctNorthContext=JSON.stringify(precinctNorthContext);
@@ -450,6 +456,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.nearPrecinctEnclosures=JSON.stringify(buildNearPrecinctEnclosures(root,features,surfaces,legacy.materials,colliders));
   document.body.dataset.nearPrecinctDrains=JSON.stringify(buildNearPrecinctDrains(root,features,surfaces,legacy.materials));
   document.body.dataset.tamayamaStairBorders=JSON.stringify(buildTamayamaStairBorders(root,features,surfaces,legacy.materials));
+  document.body.dataset.sanctuaryContextR87=JSON.stringify(buildSanctuaryContextR87(root,features,surfaces,legacy.materials,colliders));
   document.body.dataset.gondenSurroundings=JSON.stringify(buildGondenSurroundings(root,features,surfaces,legacy.materials,colliders));
   document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
   document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
@@ -471,6 +478,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildOmotesandoShoulders(root,features,ground,surfaces,legacy.materials);
   document.body.dataset.omotesandoBollards=JSON.stringify(buildOmotesandoBollards(root,features,surfaces,legacy.materials,colliders));
   buildEntranceMappedBoundaries(root,entranceBarriers,ground,legacy.materials,colliders);
+  document.body.dataset.approachContextR87=JSON.stringify(buildApproachContextR87(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
   document.body.dataset.entranceUnderstory=JSON.stringify(buildEntranceHedgeUnderstory(root,entranceBarriers,surfaces));
   document.body.dataset.entranceShrineEnclosures=JSON.stringify(buildEntranceShrineEnclosures(root,entranceBarriers,ground,legacy.materials,colliders).ways);
   document.body.dataset.entranceRoadsideShrines=JSON.stringify(buildEntranceRoadsideShrines(root,features,surfaces,legacy.materials,colliders).records);
@@ -503,6 +511,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   const ainomine=buildAinomine(root,features,surfaces,legacy.materials,colliders);
+  const mountainContextR87=refineMountainContextR87(ainomine);
+  document.body.dataset.mountainContextR87=JSON.stringify(mountainContextR87?.stats??null);
   if(ainomine){anchors.push(ainomine.anchor);byId.ainomine=ainomine.anchor;}
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{excludeGate:ainomine?.excludeGate});
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
@@ -599,5 +609,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,officePonds,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
