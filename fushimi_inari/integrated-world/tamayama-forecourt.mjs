@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {tamayamaForecourtPlan} from './tamayama-forecourt-layout.mjs';
+import {tamayamaForecourtPlan} from './tamayama-forecourt-layout.mjs?v=76';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {pathOffset} from './path-frame.mjs';
 
@@ -49,6 +49,6 @@ export function buildTamayamaForecourt(root,features,network,materials){
   const material=materials.gravelMat.clone();material.polygonOffset=true;material.polygonOffsetFactor=-1;material.polygonOffsetUnits=-1;
   const mesh=new THREE.Mesh(geometry,material);mesh.name='Tamayama photographed mineral forecourt';mesh.receiveShadow=true;root.add(mesh);
   const record={area:plan.area,triangles:positions.length/9,materialBatches:1,grid,
-    provenance:'Commons20100714_Kyoto_Fushimi_Inari_1728 and guide IMG6591_20210308: mineral gravel around front lanterns; extent derived from current compound bases/fence/apron with photo-inferred.35m side/.9m front margins. Exact apron/pedestal/path/junction/building/water cutouts. Terrain/walking/colliders unchanged.'};
+    provenance:'Commons20100714_Kyoto_Fushimi_Inari_1728, guide IMG6591_20210308 and June2012 StreetView outputs/r76/tamayama-streetview.png: mineral gravel around front lanterns and forward of apron around crossing paving; extent derived from current compound bases/fence/apron with photo-inferred .35m side/2m front margins. Occluded distant court perimeter unverified. Exact apron/pedestal/path/junction/building/water cutouts. Terrain/walking/colliders unchanged.'};
   mesh.userData=record;return record;
 }

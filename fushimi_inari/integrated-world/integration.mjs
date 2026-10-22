@@ -1,3 +1,5 @@
+import {buildPrecinctShrineCourts} from './precinct-shrine-courts.mjs?v=76';
+import {buildGondenSurroundings} from './gonden-surroundings.mjs?v=76';
 import {clearEntranceStatues} from './entrance-statue-clearance.mjs?v=57';
 import {buildNorthCourtBuildings,northCourtBuildingIds} from './north-court-buildings.mjs?v=49b';
 import {buildNorthCourtPlanting} from './north-court-planting.mjs?v=51';
@@ -75,7 +77,7 @@ import {refineByakkoDetails,seatByakkoDetails} from './byakko-details.mjs';
 import {refineNaihaiden} from './naihaiden-refinements.mjs';
 import {refineOkumiya} from './okumiya-facade.mjs?v=69-near-precinct';
 import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
-import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=69';
+import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=76';
 import {refineTamayamaOkumiyaAccess} from './tamayama-okumiya-access.mjs?v=68-near-precinct';
 import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
@@ -429,6 +431,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   colliders.push(...twinColliders);
   const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.tamayamaForecourt=JSON.stringify(buildTamayamaForecourt(root,features,surfaces,legacy.materials));
+  document.body.dataset.precinctShrineCourts=JSON.stringify(buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
+  document.body.dataset.gondenSurroundings=JSON.stringify(buildGondenSurroundings(root,features,surfaces,legacy.materials,colliders));
   document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
   document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
   document.body.dataset.nearPrecinctAccess=JSON.stringify(nearPrecinctAccess);
