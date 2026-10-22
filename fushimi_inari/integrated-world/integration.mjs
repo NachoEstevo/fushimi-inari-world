@@ -1,3 +1,6 @@
+import {integratedTerrainTriangles} from './terrain-triangles.mjs?v=90-shared';
+import {buildTamayamaStairLandscape} from './tamayama-stair-landscape.mjs?v=90-final';
+import {buildTamayamaContinuationTorii} from './tamayama-continuation-torii.mjs?v=90-seated';
 import {buildMitsuFrontageAprons} from './mitsu-frontage-aprons.mjs?v=89-edge';
 import {buildKumatakaTakeyaFrontage} from './kumataka-takeya-frontage.mjs?v=89-clearance';
 import {buildKumatakaLakesideRail} from './kumataka-lakeside-rail.mjs';
@@ -93,7 +96,7 @@ import {refineByakkoDetails,seatByakkoDetails} from './byakko-details.mjs';
 import {refineNaihaiden} from './naihaiden-refinements.mjs';
 import {refineOkumiya} from './okumiya-facade.mjs?v=69-near-precinct';
 import {refineTamayama,buildTamayamaCompound} from './tamayama-compound.mjs?v=68-near-precinct';
-import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=76';
+import {buildTamayamaForecourt} from './tamayama-forecourt.mjs?v=90-seated';
 import {refineTamayamaOkumiyaAccess} from './tamayama-okumiya-access.mjs?v=68-near-precinct';
 import {refineGondenFacade} from './gonden-facade.mjs?v=65';
 import {okumiyaTerrainGrade,okumiyaLandingEdges} from './okumiya-grade.mjs?v=39b';
@@ -445,8 +448,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }).filter(Boolean);
   document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   colliders.push(...twinColliders);
+  const renderedTerrainPositions=integratedTerrainTriangles(terrain,anchors,pathDistance,surfaces.terrainHeight);
   const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.tamayamaForecourt=JSON.stringify(buildTamayamaForecourt(root,features,surfaces,legacy.materials));
+  document.body.dataset.tamayamaForecourt=JSON.stringify(buildTamayamaForecourt(root,features,surfaces,legacy.materials,{terrainPositions:renderedTerrainPositions}));
   document.body.dataset.precinctShrineCourts=JSON.stringify(buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
   document.body.dataset.nearPrecinctMineralCourts=JSON.stringify(buildNearPrecinctMineralCourts(root,features,surfaces,legacy.materials));
   const officePonds=buildOfficePondSurfaces(root,features,surfaces,legacy.materials);
@@ -469,6 +473,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.okumiyaRail=JSON.stringify(buildOkumiyaStairRail(root,surfaces,colliders));
   document.body.dataset.gondenAccessTorii=JSON.stringify(buildGondenAccessTorii(root,legacy,features,surfaces,colliders));
   document.body.dataset.tamayamaShoulders=JSON.stringify(buildTamayamaAccessShoulders(root,features,surfaces,legacy.materials));
+  document.body.dataset.tamayamaStairLandscape=JSON.stringify(buildTamayamaStairLandscape(root,features,surfaces,legacy.materials,colliders));
+  document.body.dataset.tamayamaContinuationTorii=JSON.stringify(buildTamayamaContinuationTorii(root,legacy,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions}));
   document.body.dataset.entranceShrineConflicts=JSON.stringify(clearLegacyShrineConflicts(root,colliders));
   legacy.interactables=legacy.interactables.filter(o=>!o.userData.legacyShrineConflictRemoved);
   legacy.flickeringCandleMeshes=legacy.flickeringCandleMeshes.filter(o=>!o.userData.legacyShrineConflictRemoved);
@@ -621,6 +627,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+  return {root,spatial,ground,renderedTerrainPositions,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
     excludesBuilding:b=>takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

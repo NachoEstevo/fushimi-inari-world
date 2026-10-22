@@ -25,3 +25,18 @@ test('actual mapped neighbourhood produces one bounded batch without changing wa
   assert.equal(buildTamayamaForecourt(root,features,network,{gravelMat:gravel}),null);
   assert.equal(root.children.length,2);
 });
+test('continuation mineral surface consumes actual rendered planes, preserving path holes and all source heights',()=>{
+  const features=tamayamaAccessFeatures(JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))));
+  const paths=features.paths.filter(p=>p.points.some(q=>q[0]>90&&q[0]<110&&q[2]>-45&&q[2]<-10)),network=makePathSurfaces({paths},()=>50.083474);
+  network.terrainHeight=()=>100;const before=JSON.stringify(network.segments),walking=network.height,terrain=network.terrainHeight;
+  const root=new THREE.Group(),shrine=new THREE.Group();shrine.userData={zone:'tamayama',tamayamaDetail:{}};shrine.position.set(103.331,50.083474,-33.979);shrine.rotation.y=-Math.PI/2;root.add(shrine);
+  const plane=(x,z)=>50+(x-97)*.05+(z+30)*.08,p=(x,z)=>[x,plane(x,z),z];
+  const positions=[...p(90,-45),...p(90,-10),...p(110,-45),...p(110,-45),...p(90,-10),...p(110,-10)],source=JSON.stringify(positions);
+  const record=buildTamayamaForecourt(root,features,network,{gravelMat:new THREE.MeshStandardMaterial()},{terrainPositions:positions});
+  assert.ok(record.continuationArea>45&&record.continuationArea<90);assert.ok(record.shrineArea>10&&record.shrineArea<20);assert.equal(record.materialBatches,1);assert.match(record.terrainRegistration,/shared rendered triangle/);
+  const mesh=root.getObjectByName('Tamayama photographed mineral forecourt'),a=mesh.geometry.attributes.position;
+  for(let i=0;i<a.count;i++)assert.ok(Math.abs(a.getY(i)-plane(a.getX(i),a.getZ(i))-.003)<1e-5,'mineral must follow actual rendered triangle, not raw100m height function');
+  const branch=features.paths.find(p=>p.id==='way/297888105'),q=branch.points[0],r=branch.points[1],dx=r[0]-q[0],dz=r[2]-q[2];
+  for(let i=0;i<a.count;i+=3){const x=(a.getX(i)+a.getX(i+1)+a.getX(i+2))/3,z=(a.getZ(i)+a.getZ(i+1)+a.getZ(i+2))/3;if(z> -29&&z< -25){const t=Math.max(0,Math.min(1,((x-q[0])*dx+(z-q[2])*dz)/(dx*dx+dz*dz)));assert.ok(Math.hypot(x-q[0]-t*dx,z-q[2]-t*dz)>=1.1299,'central source stair remains a hole');}}
+  assert.equal(JSON.stringify(positions),source);assert.equal(JSON.stringify(network.segments),before);assert.equal(network.height,walking);assert.equal(network.terrainHeight,terrain);
+});

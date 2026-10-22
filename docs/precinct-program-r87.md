@@ -138,3 +138,12 @@ One registered Yotsutsuji annex edge now has ground-seated retaining masonry, wi
 324 repository tests pass. All 24 actual integrated route-audit records match the prior checkpoint: no new blocked samples or changed jumps. Native short walking samples passed at Okusha, Mitsutsuji and Kumataka; Kumataka E interaction opened. Native review also found and prompted correction of an integration return error and legacy stone overlap. Final detailed status is in [independent review](review-r89.md). Full-itinerary walking and measured performance remain unverified.
 
 Kyoya is deliberately held: the mapped model ground changes 4.17 m along a photographed level facade. [Registration evidence](kyoya-frontage-r89.md) resolves identity, not the required street/floor datum. Outer Kumataka terraces also remain unregistered. Neither is claimed complete.
+
+
+## R90 Tamayama stair and right-turn checkpoint
+
+Actual June 2012 Street View south/west views distinguish the west descending main flight from the south continuation after turning right uphill. See [reference registration](tamayama-stair-reference-r90.md). Three mature broadleaf trees, a low narrow-stake fence and the photographed stone lantern now occupy the bounded south bank; existing stone borders and route profiles remain owned by their previous modules. Roots, counts and dimensions are photographic estimates.
+
+The distinct large continuation torii is now present, with observed front dedication glyphs only. Its feet and the bounded mineral continuation court consume the same rendered terrain triangles as the viewer. Native review discovered floating feet in the first version and confirmed contact after correction. The added mineral margin is 49.06 square metres; broader precinct grounds are not claimed complete. See [gate](tamayama-continuation-torii-r90.md), [landscape](tamayama-stair-landscape-r90.md), and [native review](review-r90.md).
+
+335 repository tests pass. All 24 integrated route records remain unchanged from R89; the new gate adds no collision corrections over 747 sampled positions. Native walking covered part of the west flight and crossed the south gate. Whole-route walking, night appearance and measured performance remain unverified. Static batches reuse existing materials; no new dependency or per-frame update was added.

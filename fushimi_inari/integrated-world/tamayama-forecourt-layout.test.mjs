@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {tamayamaForecourtPlan} from './tamayama-forecourt-layout.mjs';
+import {tamayamaForecourtPlan,tamayamaContinuationCourtPlan} from './tamayama-forecourt-layout.mjs';
+import fs from 'node:fs';
 import {TAMAYAMA_LAYOUT as L,tamayamaLocalSolids} from './tamayama-compound-layout.mjs';
 import {subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
@@ -41,4 +42,13 @@ test('compound world matrix owns the west-facing registration and its area is pr
   assert.ok(Math.abs(local.area-world.area)<1e-8);
   assert.equal(inside([103.331-1.85,-33.979+2.6],world.polygons),true);
   assert.equal(inside([103.331-1.9,-33.979],world.polygons),false);
+});
+test('south continuation court follows only its three registered ways and retains the treed bank',()=>{
+  const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))),before=JSON.stringify(features),plan=tamayamaContinuationCourtPlan(features);
+  assert.deepEqual(plan.sourceIds,['way/1133055117','way/297888105','way/1133055118']);assert.equal(plan.estimatedWidth,6.4);
+  assert.equal(inside([95.5,-27],plan.polygons),true);assert.equal(inside([100,-25],plan.polygons),true);
+  assert.equal(inside([92.6,-25.7],plan.polygons),false,'photographed treed bank stays outside mineral court');
+  assert.equal(inside([97,-36],plan.polygons),false);assert.equal(inside([98,-14],plan.polygons),false,'source terminal junction retained');
+  assert.equal(JSON.stringify(features),before);
+  const missing=tamayamaContinuationCourtPlan({...features,paths:features.paths.filter(p=>p.id!=='way/297888105')});assert.equal(missing.area,0);
 });

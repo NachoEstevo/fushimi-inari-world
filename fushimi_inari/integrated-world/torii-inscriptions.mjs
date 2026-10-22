@@ -21,7 +21,7 @@ function inkMaterial(){
 }
 
 // Curved ink conforms to the tapered post; no floating rectangular labels.
-export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRadius,bottomY,topY,small=false}){
+export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRadius,bottomY,topY,small=false,frontOnly=false}){
   const geometries=[];
   function patch(entry,side,front,tile){
     const low=front?(small?1.64:2.22):(small?.63:.86);
@@ -35,7 +35,7 @@ export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRa
   }
   for(const entry of entries)for(const side of [-1,1]){
     patch(entry,side,true,side===1?9:8);
-    patch(entry,side,false,side===1?entry.dateInscription:entry.inscription);
+    if(!frontOnly)patch(entry,side,false,side===1?entry.dateInscription:entry.inscription);
   }
   if(!geometries.length)return;
   const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());

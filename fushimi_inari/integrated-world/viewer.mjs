@@ -1,6 +1,5 @@
 import {createWaterAppearance} from './water-appearance.mjs';
 import {installCityPanorama} from './city-panorama.mjs';
-import {terrainTriangles} from './terrain-triangles.mjs?v=24';
 import {installExplorationMenu} from './exploration-menu.mjs?v=32';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
@@ -16,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=89';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=89-clearance';
+import {integrate} from './integration.mjs?v=90-seated';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -50,12 +49,7 @@ try {
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   const terrainGeo=new THREE.BufferGeometry();
-  const pondClipped=assembly.officePonds.clipTerrain(terrainTriangles(terrain,(c,r)=>{
-    const x=terrain.xmin+c*terrain.step,z=terrain.zmin+r*terrain.step;
-    const nearby=assembly.spatial.anchors.some(a=>a.radius&&Math.hypot(x+5-a.target[0],z+5-a.target[2])<a.radius*1.5+10);
-    const corridor=x>110&&x<1430&&z>-580&&z<330&&(assembly.pathDistance(x+5,z+5)?.distance??100)<8;
-    return nearby||corridor;
-  },(x,z)=>assembly.surfaces.terrainHeight(x,z)-.06));
+  const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
   const pos=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));

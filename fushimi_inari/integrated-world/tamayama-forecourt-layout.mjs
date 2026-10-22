@@ -23,3 +23,28 @@ export function tamayamaForecourtPlan(matrix,obstacles=[]){
   return {polygons,envelope,estimatedMargin:.35,estimatedFrontMargin:frontMargin,
     area:polygons.reduce((s,p)=>s+Math.abs(polygonArea(p)),0)};
 }
+
+// June2012 south180/west270 show continuous mineral court around the right-
+// turn access and its large torii. This is a bounded photographic width, not
+// a mapped lawn conversion or a new level floor. Stop at the source junctions.
+export function tamayamaContinuationCourtPlan(features,obstacles=[]){
+  const ids=['way/1133055117','way/297888105','way/1133055118'];
+  const paths=ids.map(id=>features.paths.find(p=>p.id===id));
+  if(paths.some(p=>!p||p.points.length<2))return {polygons:[],envelope:[],area:0,sourceIds:[]};
+  const points=[];
+  for(const [index,path]of paths.entries()){
+    const ring=path.points.map(p=>[p[0],p[2]]);
+    if(index&&Math.hypot(ring[0][0]-points.at(-1)[0],ring[0][1]-points.at(-1)[1])>.02)return {polygons:[],envelope:[],area:0,sourceIds:[]};
+    points.push(...(index?ring.slice(1):ring));
+  }
+  const half=3.2,left=[],right=[];
+  for(let i=0;i<points.length;i++){
+    const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.001)return {polygons:[],envelope:[],area:0,sourceIds:[]};
+    left.push([points[i][0]-dz/len*half,points[i][1]+dx/len*half]);right.push([points[i][0]+dz/len*half,points[i][1]-dx/len*half]);
+  }
+  const envelope=[...left,...[...right].reverse()];
+  let polygons=points.slice(1).map((_,i)=>[left[i],left[i+1],right[i+1],right[i]]);
+  for(const cut of obstacles)polygons=polygons.flatMap(p=>subtractConvex(p,cut));
+  polygons=polygons.filter(p=>Math.abs(polygonArea(p))>1e-8);
+  return {polygons,envelope,sourceIds:ids,estimatedWidth:half*2,area:polygons.reduce((s,p)=>s+Math.abs(polygonArea(p)),0)};
+}
