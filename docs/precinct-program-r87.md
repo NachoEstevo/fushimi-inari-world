@@ -156,3 +156,11 @@ Two vegetation review passes increase overlapping mature foliage and add irregul
 The second southern Shinme-sha now replaces its generic mapped building (305214599), with source-backed red/white facade, green lattice, simplified white horse, curved gable and terrain-seated stone support. It remains distinct from the smaller horse enclosure beside Tamayama. Read [references](tamayama-continuation-reference-r91.md), [pavilion](tamayama-south-shinmesha-r91.md), [bank](tamayama-stair-landscape-r91.md) and [review](review-r91.md).
 
 340 tests pass; all 24 actual integrated sampled route records remain unchanged from R90. Exact dimensions, current restoration state, complete perimeter walking and measured performance remain unverified.
+
+## R92 Gonden rear facade and rear-precinct reference audit
+
+The supplied brown building is the existing Gonden. Its retained interaction wall and gable closures now use white plaster, with six red posts defining five closed rear bays and a low veranda balustrade. Opposite-side framing continues the photographed rear corner; exact proportions remain fitted estimates. Placement, footprint, collision and front timber panels are unchanged. See [facade evidence](gonden-facade-r92.md) and [independent review](review-r92.md).
+
+The [rear precinct reference register](gonden-rear-reference-r92.md) identifies Mikoshiko, the roofed vermilion votive enclosure, well/Shinsenjo context, mineral ground and dense background vegetation. These are research findings, not newly constructed structures. Blanket grass or forest cannot replace their architectural context. The mapped bridge 1385037575 is excluded by existing ground-path rules and needs a dedicated above-ground owner; its photographic design and relation to the screenshot remain unresolved. The separate short service approach must not be extended speculatively.
+
+343 repository tests pass. Native acceptance and sampled route comparison are recorded in the review. No new dependency, collider or per-frame update was introduced; measured performance and complete rear-precinct fidelity remain unverified.

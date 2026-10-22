@@ -16,8 +16,10 @@ export function refineGondenFacade(object,materials){
   const roof=oldRoof.material.clone();roof.color.set('#524b3a');roof.roughness=.97;roof.metalness=0;roof.side=THREE.DoubleSide;
   const timber=new THREE.MeshStandardMaterial({color:'#65412c',roughness:.90});
   const red=materials.vermilionMat,black=materials.blackNemakiMat,gold=materials.goldMat,white=materials.plasterMat;
-  // Keep the interaction-bearing wall mesh; only its appearance changes.
-  wall.material=timber;
+  // IMG_6572_20210311 explicitly shows the rear's white plaster and five red
+  // structural bays. Keep the interaction-bearing wall, not the former brown
+  // placeholder finish on every unseen face. Front door panels remain timber.
+  wall.material=white;
   for(const dimensions of [[8.4,.75,6.6],[8.6,.28,.46],[7.4,1.05,.16],[7.5,.10,.20],[6.28,.95,4.28]])match(...dimensions)?.removeFromParent();
   const batches=new Map();
   const part=(geo,mat)=>{if(geo.index){const old=geo;geo=geo.toNonIndexed();old.dispose();}if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);};
@@ -49,7 +51,7 @@ export function refineGondenFacade(object,materials){
    const z=-2.1+4.2*i/24,q=-2.1+4.2*(i+1)/24,a=[x,3.77,z],b=[x,profile(z)-.10,z],c=[x,3.77,q],d=[x,profile(q)-.10,q];
    const points=x>0?[a,b,c,c,b,d]:[a,c,b,c,d,b];for(const p of points){gables.push(...p);gableUV.push(p[2],p[1]);}
   }
-  const closure=new THREE.BufferGeometry();closure.setAttribute('position',new THREE.Float32BufferAttribute(gables,3));closure.setAttribute('uv',new THREE.Float32BufferAttribute(gableUV,2));closure.computeVertexNormals();part(closure,timber);
+  const closure=new THREE.BufferGeometry();closure.setAttribute('position',new THREE.Float32BufferAttribute(gables,3));closure.setAttribute('uv',new THREE.Float32BufferAttribute(gableUV,2));closure.computeVertexNormals();part(closure,white);
   for(const z of [-3.05,3.55])box(8.4,.18,.17,0,profile(z)-.08,z,black);
   box(6.38,.24,.24,0,ridgeY+.10,ridgeZ,black);
   for(const x of [-2.05,-1.025,0,1.025,2.05]){const g=new THREE.CylinderGeometry(.052,.052,.025,12).rotateX(Math.PI/2).translate(x,ridgeY+.10,ridgeZ+.135);part(g,gold);}
@@ -83,8 +85,26 @@ export function refineGondenFacade(object,materials){
    for(const y of [3.02,3.38])box(.27,.035,.24,x,y,2.96,red);
    box(.35,.06,.31,x,3.44,2.96,black);
   }
+  // Photographed rear: six posts define five closed plaster bays. There is no
+  // rear door/window in this evidence, so none is reconstructed.
+  for(let i=0;i<6;i++)box(.14,2.98,.14,-3.1+i*1.24,2.28,-2.15,red);
+  for(const y of [.80,2.79,3.72])box(6.34,.12,.14,0,y,-2.15,red);
+  // The opposite gable's plain white/red structural treatment continues the
+  // visible rear corner; its finer carvings and openings remain unverified.
+  for(const z of [-2.03,0,2.03])box(.10,2.78,.13,-3.16,2.36,z,red);
+  for(const y of [1.02,2.79,3.71])box(.10,.13,4.22,-3.16,y,0,red);
+  box(.10,profile(-.6)-.30-3.77,.12,-3.16,(profile(-.6)-.30+3.77)/2,-.6,red);
+  for(const [a,b]of [[-2.03,-.60],[-.60,2.03]]){const count=Math.ceil((b-a)/.14);for(let i=0;i<count;i++){
+   const za=a+(b-a)*i/count,zb=a+(b-a)*(i+1)/count,ya=profile(za)-.30,yb=profile(zb)-.30;
+   part(new THREE.BoxGeometry(.10,Math.hypot(zb-za,yb-ya),.11).rotateX(Math.atan2(zb-za,yb-ya)).translate(-3.16,(ya+yb)/2,(za+zb)/2),red);
+  }}
+  // A low rear balustrade fits the retained 6.8 x 4.8m veranda, not a new
+  // footprint. Rounded decorative ends/embossed goldwork are not fabricated.
+  for(const y of [1.16,1.60])box(6.60,.075,.075,0,y,-2.36,red);
+  for(let i=0;i<=20;i++)box(.055,.52,.065,-3.25+i*6.5/20,1.35,-2.36,red);
+  for(const x of [-3.25,3.25])box(.10,.65,.10,x,1.34,-2.36,red);
   for(const [material,parts]of batches){const geo=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geo,material);mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);}
-  group.userData.gondenFacadeR65={references:['Pakutaso81550','Commons Fushimi Inari-taisha Gonden.jpg (2019)'],roofPlan:[8.4,6.6],estimatedRidgeHeight:ridgeY,estimatedBayWidth:1.24,frontBays:5,placementAndColliderUnchanged:true,limits:'Photographic proportions; unseen rear and carvings not reconstructed'};
+  group.userData.gondenFacadeR65={references:['Pakutaso81550','Commons Fushimi Inari-taisha Gonden.jpg (2019)','https://fushimiinari-guide.com/wp-content/uploads/IMG_6572_20210311.jpg','https://fushimiinari-guide.com/wp-content/uploads/IMG_6571_20210311.jpg'],roofPlan:[8.4,6.6],estimatedRidgeHeight:ridgeY,estimatedBayWidth:1.24,frontBays:5,rearBays:5,rearFinish:'Photographed white plaster/vermilion framing and low balustrade',placementAndColliderUnchanged:true,limits:'Photographic proportions; rear spacing fitted to inherited envelope. Opposite gable structural finish inferred from photographed rear corner; carvings, unseen openings and close neighbouring structure not reconstructed'};
  }
  return groups.length>0;
 }
