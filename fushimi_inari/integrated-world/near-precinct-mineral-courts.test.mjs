@@ -20,7 +20,7 @@ test('actual mapped public aprons are contiguous bounded mineral areas with exac
  }
  const network=makePathSurfaces(features,(x,z)=>50+.002*x+.001*z*z),before=JSON.stringify(network.segments),walking=network.height,ground=network.terrainHeight;
  const result=buildNearPrecinctMineralCourts(root,features,network,{gravelMat:new THREE.MeshStandardMaterial()});
- assert.equal(result.records.length,2);for(const r of result.records)assert.ok(r.area>25&&r.area<180,`${r.id} ${r.area}`);
+ assert.equal(result.records.length,3);for(const r of result.records)assert.ok(r.area>25&&r.area<250,`${r.id} ${r.area}`);
  for(const mesh of root.getObjectByName('Near precinct continuous mineral aprons R77').children){
   const p=mesh.geometry.attributes.position;
   for(let i=0;i<p.count;i++)assert.ok(Math.abs(p.getY(i)-ground(p.getX(i),p.getZ(i))-.012)<1e-5);
@@ -28,7 +28,7 @@ test('actual mapped public aprons are contiguous bounded mineral areas with exac
  }
  assert.equal(network.height,walking);assert.equal(network.terrainHeight,ground);assert.equal(JSON.stringify(network.segments),before);
  assert.equal(buildNearPrecinctMineralCourts(root,features,network,{gravelMat:new THREE.MeshStandardMaterial()}),result);
- const extents=nearPrecinctCourtEnvelopes(features);assert.ok(extents.every(e=>e.envelope.every(p=>p[0]>95&&p[0]<131&&p[1]>-39&&p[1]<-7)));
+ const extents=nearPrecinctCourtEnvelopes(features);assert.ok(extents.filter(e=>!e.id.startsWith('Gonden')).every(e=>e.envelope.every(p=>p[0]>95&&p[0]<131&&p[1]>-39&&p[1]<-7)));
  const upper=extents.find(e=>e.id.startsWith('Okumiya')),landing=features.paths.find(p=>p.id==='way/1392716577');
  assert.equal(Math.min(...upper.envelope.map(p=>p[0])),landing.points.at(-1)[0],'upper court cannot extend west onto lower approach skirt');
 });
@@ -44,4 +44,17 @@ test('mineral apron never drapes abrupt landing skirt or steep diagonal bank',()
   const n=b.clone().sub(a).cross(c.clone().sub(a));assert.ok(Math.hypot(n.x,n.z)/Math.abs(n.y)<=.3501);
   assert.ok(Math.max(a.x,b.x,c.x)<=1,'steep skirt and diagonal bank both excluded');
  }
+});
+
+test('Gonden gravel stays between mapped roof edges and below the stair landing',()=>{
+ const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url)));
+ const court=nearPrecinctCourtEnvelopes(features).find(p=>p.id.startsWith('Gonden'));
+ const office=features.buildings.find(b=>b.id==='way/105449708'),gonden=features.buildings.find(b=>b.id==='way/305214371');
+ assert.equal(Math.min(...court.envelope.map(p=>p[0])),Math.max(...office.points.map(p=>p[0])));
+ assert.equal(Math.max(...court.envelope.map(p=>p[0])),Math.min(...gonden.points.map(p=>p[0])));
+ assert.ok(court.envelope.every(p=>p[1]>-31),'do not coat the lower stair landing');
+ const network={segments:[{id:'way/105449728',a:[53,50,-21],b:[69,50,-21],width:2}],terrainHeight:()=>50};
+ const root=new THREE.Group();buildNearPrecinctMineralCourts(root,features,network,{gravelMat:new THREE.MeshStandardMaterial()});
+ const mesh=root.getObjectByName('Gonden office-side mineral court'),p=mesh.geometry.attributes.position;
+ for(let i=0;i<p.count;i+=3){const z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;assert.ok(Math.abs(z+21)>=1.94999,'gravel must not cover the authored 3.6m stone apron');}
 });

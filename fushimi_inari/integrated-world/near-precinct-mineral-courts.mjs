@@ -15,6 +15,14 @@ export function nearPrecinctCourtEnvelopes(features){
  const tamayama=building('way/305214602'),okumiya=building('way/301527733');
  const lane=path('way/1133055117'),upper=path('way/1392716577'),north=path('way/105449724');
  const result=[];
+ // IMG_6999_20210312 shows gravel between the office, central paving and
+ // Gonden, not lawn. Extents are conservatively inferred from mapped roofs;
+ // the broad staircase/landing at z=-33 remains outside this envelope.
+ const office=building('way/105449708'),gonden=building('way/305214371');
+ if(office&&gonden){
+  const a=bounds(office.points.map(p=>[p[0],p[2]])),b=bounds(gonden.points.map(p=>[p[0],p[2]]));
+  result.push({id:'Gonden office-side mineral court',envelope:rectangle(a[1],b[0],b[2]-2.4,b[3]+.4)});
+ }
  if(tamayama&&lane){
   const b=bounds(tamayama.points.map(p=>[p[0],p[2]]));
   const west=lane.points[0][0]-1.1;
@@ -41,8 +49,12 @@ export function buildNearPrecinctMineralCourts(root,features,network,materials){
   }
  });
  const group=new THREE.Group();group.name=name;const records=[];
+  // The sanctuary side paths have an existing 3.6m-wide authored apron.
+  // Exclude that full width as well as the narrower mapped walking corridor.
+  const apronIds=new Set(['way/105449677','way/105449728','way/751194635','way/751194637','way/1106589423']);
+  const cutNetwork={...network,segments:(network.segments??[]).map(s=>apronIds.has(s.id)?{...s,width:Math.max(3.6,s.width)}:s)};
  for(const plan of nearPrecinctCourtEnvelopes(features)){
-  const cuts=[...courtCuts(features,network,bounds(plan.envelope)),...occupied];
+  const cuts=[...courtCuts(features,cutNetwork,bounds(plan.envelope)),...occupied];
   const polygons=cuts.reduce((ps,c)=>ps.flatMap(p=>subtractConvex(p,c)),[plan.envelope]);
   // A mineral court belongs to gentle public ground, never the steep terrain
   // skirts between independently graded landings. Reject whole .25m cells
@@ -53,5 +65,5 @@ export function buildNearPrecinctMineralCourts(root,features,network,materials){
   group.add(mesh);records.push({id:plan.id,envelope:plan.envelope,area:renderedArea,plannedArea:polygons.reduce((a,p)=>a+Math.abs(polygonArea(p)),0)});
  }
  if(!group.children.length)return null;
- group.userData={records,grid:.25,maxSlope:.35,heightOffset:.012,walkingUnchanged:true,provenance:'Video iqK2tg-TxbY 345s mineral Tamayama court, 325s stone staircase and wooded edges. Apron limits conservatively inferred between mapped access lanes and shrine roof bounds; public paths, buildings, water and existing forecourt/collars excluded.',limits:'Material overlay only; exact historical boundary and walking experience unverified. Steep graded skirts excluded by cell sampling and final triangle slope; no extension along wooded staircase slopes.'};root.add(group);return group.userData;
+ group.userData={records,grid:.25,maxSlope:.35,heightOffset:.012,walkingUnchanged:true,provenance:'Gonden office-side photo IMG_6999_20210312 establishes gravel alongside paving; its limits are inferred from mapped roof edges. Video iqK2tg-TxbY 345s mineral Tamayama court, 325s stone staircase and wooded edges. Apron limits conservatively inferred between mapped access lanes and shrine roof bounds; public paths, buildings, water and existing forecourt/collars excluded.',limits:'Material overlay only; exact historical boundary and walking experience unverified. Steep graded skirts excluded by cell sampling and final triangle slope; no extension along wooded staircase slopes.'};root.add(group);return group.userData;
 }
