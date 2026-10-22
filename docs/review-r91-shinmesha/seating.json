@@ -1,0 +1,55 @@
+{
+  "stats": {
+    "built": true,
+    "id": "way/305214599",
+    "center": [
+      94.577,
+      -6.451
+    ],
+    "yaw": 0.043860850444320906,
+    "width": 5.085891268991098,
+    "depth": 4.768626217266352,
+    "heightStatus": "Estimated facade/roof proportions from October 2016 photograph; not surveyed",
+    "source": "https://plaza.rakuten.co.jp/asobikokoro2/diary/201610090000/",
+    "floor": 50.420073340013374,
+    "foundationBottom": 49.78196273602715,
+    "batches": 9,
+    "primitives": 368,
+    "triangles": 4032,
+    "builtIds": [
+      "way/305214599"
+    ]
+  },
+  "corners": [
+    {
+      "x": 97.008,
+      "z": -8.95,
+      "surface": 50.655893999999996,
+      "terrain": 50.655893999999996
+    },
+    {
+      "x": 97.218,
+      "z": -4.186,
+      "surface": 50.824412,
+      "terrain": 50.824412
+    },
+    {
+      "x": 92.146,
+      "z": -3.952,
+      "surface": 50.31868199999999,
+      "terrain": 50.31868199999999
+    },
+    {
+      "x": 91.927,
+      "z": -8.727,
+      "surface": 50.188489999999994,
+      "terrain": 50.188489999999994
+    },
+    {
+      "x": 97.008,
+      "z": -8.95,
+      "surface": 50.655893999999996,
+      "terrain": 50.655893999999996
+    }
+  ]
+}

@@ -25,12 +25,23 @@ export function buildTamayamaStairLandscape(root,features,surfaces,materials,col
     const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),delta=end.clone().sub(start);
     add(new THREE.CylinderGeometry(r*.82,r,delta.length(),sides).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize())).translate(...start.add(end).multiplyScalar(.5).toArray()),mat);
   };
-  const nearPath=(x,z,padding)=>features.paths.some(path=>path.points.slice(1).some((b,i)=>{
-    const a=path.points[i],dx=b[0]-a[0],dz=b[2]-a[2],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1)));
-    const half=flightIds.includes(path.id)?2.4:pathWidth(path.tags??{})/2;
-    return Math.hypot(x-a[0]-dx*t,z-a[2]-dz*t)<half+padding;
-  }));
-  const inBuilding=(x,z,padding)=>features.buildings.some(b=>{
+  // Cache only segments intersecting this bank neighbourhood. Low foliage
+  // checks many samples once at construction; no per-frame spatial work.
+  const walkSegments=features.paths.flatMap(path=>path.points.slice(1).map((b,i)=>{
+    const a=path.points[i],dx=b[0]-a[0],dz=b[2]-a[2],half=flightIds.includes(path.id)?2.4:pathWidth(path.tags??{})/2;
+    return {a,dx,dz,half,x0:Math.min(a[0],b[0]),x1:Math.max(a[0],b[0]),z0:Math.min(a[2],b[2]),z1:Math.max(a[2],b[2])};
+  })).filter(s=>s.x1+s.half>=77&&s.x0-s.half<=96&&s.z1+s.half>=-33&&s.z0-s.half<=-21);
+  const nearPath=(x,z,padding)=>walkSegments.some(s=>{
+    const radius=s.half+padding;
+    if(x<s.x0-radius||x>s.x1+radius||z<s.z0-radius||z>s.z1+radius)return false;
+    const t=Math.max(0,Math.min(1,((x-s.a[0])*s.dx+(z-s.a[2])*s.dz)/(s.dx*s.dx+s.dz*s.dz||1)));
+    return Math.hypot(x-s.a[0]-s.dx*t,z-s.a[2]-s.dz*t)<radius;
+  });
+  const bankBuildings=features.buildings.filter(b=>{
+    const xs=b.points.map(p=>p[0]),zs=b.points.map(p=>p[2]);
+    return Math.max(...xs)>=77&&Math.min(...xs)<=96&&Math.max(...zs)>=-33&&Math.min(...zs)<=-21;
+  });
+  const inBuilding=(x,z,padding)=>bankBuildings.some(b=>{
     let inside=false;for(let i=0,j=b.points.length-1;i<b.points.length;j=i++){
       const a=b.points[i],q=b.points[j];if((a[2]>z)!==(q[2]>z)&&x<(q[0]-a[0])*(z-a[2])/(q[2]-a[2])+a[0])inside=!inside;
       const dx=q[0]-a[0],dz=q[2]-a[2],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1)));if(Math.hypot(x-a[0]-dx*t,z-a[2]-dz*t)<padding)return true;
@@ -66,6 +77,21 @@ export function buildTamayamaStairLandscape(root,features,surfaces,materials,col
   // A small, deterministic set of mature broadleaf silhouettes belongs to
   // the photographed bank. Roots are explicitly inferred, never OSM trees.
   let seed=9017;const rand=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+  const sprays=(cx,cy,cz,rx,ry,rz,count,low=false)=>{
+    const positions=[],colors=[],uv=[];
+    for(let leaf=0;leaf<count;leaf++){
+      const az=rand()*Math.PI*2,v=rand()*2-1,rr=Math.cbrt(rand()),rrad=Math.sqrt(1-v*v)*rr;
+      const px=cx+Math.cos(az)*rrad*rx,py=cy+v*rr*ry,pz=cz+Math.sin(az)*rrad*rz,a=rand()*Math.PI*2,w=.48+rand()*.22;
+      if(low&&(px<79||px>94||pz<-30||pz>-23||nearPath(px,pz,.88)||inBuilding(px,pz,.88)))continue;
+      const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler((rand()-.5)*1.8,0,(rand()-.5)*1.8));
+      const u=new THREE.Vector3(Math.cos(a)*w,.03,Math.sin(a)*w).applyQuaternion(tilt),v3=new THREE.Vector3(-Math.sin(a)*w*.48,.045,Math.cos(a)*w*.48).applyQuaternion(tilt),center=new THREE.Vector3(px,py,pz),color=new THREE.Color().setHSL(.23+rand()*.055,.23+rand()*.12,.15+rand()*.12);
+      for(const p of [center.clone().sub(u),center.clone().add(v3),center.clone().add(u),center.clone().sub(u),center.clone().add(u),center.clone().sub(v3)]){positions.push(...p.toArray());colors.push(color.r,color.g,color.b);}
+      uv.push(0,0,0,1,1,1,0,0,1,1,1,0);
+    }
+    if(!positions.length)return 0;
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.computeVertexNormals();add(g,leaves);
+    return positions.length/18;
+  };
   for(const [index,[x,z]]of tamayamaBankRoots.entries()){
     if(nearPath(x,z,.45)||inBuilding(x,z,.5)){skipped.push({kind:'tree',point:[x,z],reason:'mapped public/building clearance'});continue;}
     if(colliders.some(c=>c.type==='cylinder'&&/tree/.test(String(c.args.at(-1)))&&Math.hypot(c.args[0]-x,c.args[1]-z)<2)){skipped.push({kind:'tree',point:[x,z],reason:'existing tree owner'});continue;}
@@ -75,18 +101,19 @@ export function buildTamayamaStairLandscape(root,features,surfaces,materials,col
     for(let arm=0;arm<7;arm++){
       const angle=arm*2.39996+index*.7,r=arm===0?0:1.1+(arm%3)*.28,cx=x+Math.cos(angle)*r,cz=z+Math.sin(angle)*r,cy=y+height*(.67+(arm%3)*.07);
       tube([x+.1,y+height*.48,z+.1],[cx,cy,cz],.065,bark);
-      const positions=[],colors=[],uv=[];
-      for(let leaf=0;leaf<110;leaf++){
-        const az=rand()*Math.PI*2,v=rand()*2-1,rr=Math.cbrt(rand()),rrad=Math.sqrt(1-v*v)*rr;
-        const px=cx+Math.cos(az)*rrad*1.9,py=cy+v*rr*1.35,pz=cz+Math.sin(az)*rrad*1.65,a=rand()*Math.PI*2,w=.25+rand()*.13;
-        const tilt=new THREE.Quaternion().setFromEuler(new THREE.Euler((rand()-.5)*1.8,0,(rand()-.5)*1.8));
-        const u=new THREE.Vector3(Math.cos(a)*w,.03,Math.sin(a)*w).applyQuaternion(tilt),v3=new THREE.Vector3(-Math.sin(a)*w*.48,.045,Math.cos(a)*w*.48).applyQuaternion(tilt),center=new THREE.Vector3(px,py,pz),color=new THREE.Color().setHSL(.23+rand()*.055,.23+rand()*.12,.15+rand()*.12);
-        for(const p of [center.clone().sub(u),center.clone().add(v3),center.clone().add(u),center.clone().sub(u),center.clone().add(u),center.clone().sub(v3)]){positions.push(...p.toArray());colors.push(color.r,color.g,color.b);}
-        uv.push(0,0,0,1,1,1,0,0,1,1,1,0);
-      }
-      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.computeVertexNormals();add(g,leaves);
+      sprays(cx,cy,cz,1.9,1.35,1.65,180);
     }
     pending.push({type:'cylinder',args:[x,z,.26+index*.035,y,y+height*.7,'tamayama_bank_tree']});trees.push({point:[x,y,z],height,rootSource:'photo-inferred bank root; not mapped tree node'});
+  }
+  // Source views show foliage down to the fence, not isolated high crowns.
+  // Irregular overlapping branch masses stay behind that fence. These are
+  // inferred low growth, not extra mapped trees or a clipped ornamental hedge.
+  const understory=[];
+  for(const [x,z,rx,rz,height]of [[82.2,-27.5,2.2,1.55,2.7],[85.9,-26.8,2.5,1.8,3.4],[89.4,-25.8,2.4,1.9,3.7],[92,-24.8,1.75,1.4,3.1]]){
+    const ground=surfaces.terrainHeight(x,z)-.06;
+    if(!Number.isFinite(ground))throw Error('Nonfinite Tamayama bank low foliage');
+    const cards=sprays(x,ground+height*.62,z,rx,height*.58,rz,640,true);
+    if(cards)understory.push({point:[x,ground,z],height,cards,source:'photo-inferred irregular low/middle branch mass'});
   }
   let lantern=null;
   const [lx,lz]=tamayamaBankLantern;
@@ -103,8 +130,8 @@ export function buildTamayamaStairLandscape(root,features,surfaces,materials,col
   }
   let triangles=0;
   for(const [material,parts]of batches){const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!Array.from(geometry.attributes.position.array).every(Number.isFinite))throw Error('Nonfinite Tamayama bank geometry');geometry.computeBoundingSphere();triangles+=geometry.attributes.position.count/3;const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=material!==leaves;mesh.receiveShadow=true;mesh.name='Batched Tamayama bank landscape';group.add(mesh);}
-  colliders.push(...pending);group.userData={trees,fence,lantern,skipped,triangles,drawBatches:group.children.length,newColliders:pending.length,
+  colliders.push(...pending);group.userData={trees,understory,fence,lantern,skipped,triangles,drawBatches:group.children.length,newColliders:pending.length,
     provenance:'June2012 GoogleStreetView MvihcVb0f466FBJebqyECg actual south180/west270 screenshots and video05:25. South/left-descending bank tied to OSM105449693/1133055112/1133055111/649175020, not the north shrine row. Fence extent, roots, botanical type, stone lantern station and all dimensions are photographic estimates.',
-    constraints:'Existing rough stone retaining borders, lower gate, big south continuation gate, shrine row and public step profiles retain their owners. No grass, hedges, temporary stalls, random boulder fill or new gate.'};
+    constraints:'Existing rough stone retaining borders, lower gate, big south continuation gate, shrine row and public step profiles retain their owners. No grass, ornamental hedges, temporary stalls, random boulder fill or new gate.'};
   root.add(group);return group.userData;
 }

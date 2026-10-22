@@ -147,3 +147,12 @@ Actual June 2012 Street View south/west views distinguish the west descending ma
 The distinct large continuation torii is now present, with observed front dedication glyphs only. Its feet and the bounded mineral continuation court consume the same rendered terrain triangles as the viewer. Native review discovered floating feet in the first version and confirmed contact after correction. The added mineral margin is 49.06 square metres; broader precinct grounds are not claimed complete. See [gate](tamayama-continuation-torii-r90.md), [landscape](tamayama-stair-landscape-r90.md), and [native review](review-r90.md).
 
 335 repository tests pass. All 24 integrated route records remain unchanged from R89; the new gate adds no collision corrections over 747 sampled positions. Native walking covered part of the west flight and crossed the south gate. Whole-route walking, night appearance and measured performance remain unverified. Static batches reuse existing materials; no new dependency or per-frame update was added.
+
+
+## R91 Tamayama background and southern continuation
+
+Two vegetation review passes increase overlapping mature foliage and add irregular low/middle growth inside the existing photographed bank. No trunks or colliders move; six static material batches are retained, with 16,284 triangles. Native west/south views confirm textured leaf cutouts, improved screening and a visible public route. This is bounded bank improvement, not completion of the broader distant forest.
+
+The second southern Shinme-sha now replaces its generic mapped building (305214599), with source-backed red/white facade, green lattice, simplified white horse, curved gable and terrain-seated stone support. It remains distinct from the smaller horse enclosure beside Tamayama. Read [references](tamayama-continuation-reference-r91.md), [pavilion](tamayama-south-shinmesha-r91.md), [bank](tamayama-stair-landscape-r91.md) and [review](review-r91.md).
+
+340 tests pass; all 24 actual integrated sampled route records remain unchanged from R90. Exact dimensions, current restoration state, complete perimeter walking and measured performance remain unverified.

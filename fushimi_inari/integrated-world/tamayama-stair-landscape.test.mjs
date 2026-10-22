@@ -17,7 +17,7 @@ test('bank remains south of west stair, clear of mapped routes, with one indepen
     const a=path.points[i-1],b=path.points[i],dx=b[0]-a[0],dz=b[2]-a[2],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1))),width=ids.has(path.id)?4.8:pathWidth(path.tags??{});
     assert.ok(Math.hypot(x-a[0]-dx*t,z-a[2]-dz*t)>width/2+.1,'new solid inside mapped public walking envelope');
   }}
-  assert.ok(record.triangles<9000);assert.equal(record.drawBatches,6);
+  assert.ok(record.triangles<18000);assert.equal(record.drawBatches,6);
 });
 test('finite static meshes and colliders do not alter canonical source geometry or existing surfaces',()=>{
   const before=JSON.stringify(features),{root,colliders,run}=make();run();assert.equal(JSON.stringify(features),before);
@@ -31,4 +31,32 @@ test('existing tree/lantern owners are preserved and prevent duplicates',()=>{
 test('idempotence and missing-source handoff prevent duplicated geometry/colliders',()=>{
   const {root,colliders,run}=make(),first=run(),count=colliders.length;assert.equal(run(),first);assert.equal(root.children.length,1);assert.equal(colliders.length,count);
   const missing=make({...features,paths:features.paths.filter(p=>p.id!=='way/105449693')});assert.equal(missing.run().reason,'Main stair source unavailable');assert.equal(missing.root.children.length,0);
+});
+
+
+test('source-backed lower branch layer fills bank without additional trunks or solid obstacles',()=>{
+  const {root,colliders,run}=make(),record=run();
+  assert.equal(record.understory.length,4);
+  assert.ok(record.understory.reduce((n,c)=>n+c.cards,0)>2200);
+  assert.deepEqual(record.trees.map(t=>[t.point[0],t.point[2]]),tamayamaBankRoots);
+  assert.equal(colliders.filter(c=>c.args.at(-1)==='tamayama_bank_tree').length,3);
+  assert.equal(record.newColliders,64);assert.equal(record.drawBatches,6);
+  const foliage=root.children[0].children.find(o=>o.geometry.attributes.color);
+  const p=foliage.geometry.attributes.position,c=foliage.geometry.attributes.color;
+  assert.equal(p.count,c.count);assert.equal(p.count,foliage.geometry.attributes.uv.count);
+  // Low growth must stay south of the public flight and west of the court;
+  // high mature crowns are permitted to overhang above walking headroom.
+  let low=0;
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i),y=p.getY(i),z=p.getZ(i),ground=48+(x-80)*.04-.06;
+    if(y-ground>3.5)continue;
+    low++;assert.ok(x>78.2&&x<94.8&&z>-30.8&&z<-22.2);
+    assert.ok(z>-31.1,'low branch intrudes onto main flight');
+    for(const path of features.paths)for(let j=1;j<path.points.length;j++){
+      const a=path.points[j-1],b=path.points[j],dx=b[0]-a[0],dz=b[2]-a[2],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1)));
+      const width=['way/105449693','way/1133055112','way/1133055111','way/649175020'].includes(path.id)?4.8:pathWidth(path.tags??{});
+      assert.ok(Math.hypot(x-a[0]-t*dx,z-a[2]-t*dz)>width/2+.1,'actual low leaf vertex enters mapped route');
+    }
+  }
+  assert.ok(low>5000,'low layer absent from actual geometry');
 });
