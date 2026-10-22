@@ -1,3 +1,4 @@
+import {receptionLevels} from './reception-levels.mjs';
 import {sculptEntranceFoxes} from './precinct-life.mjs?v=32';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -148,65 +149,69 @@ export function buildReception(root,features,ground,m,colliders){
   const g=new THREE.Group();g.name='Mapped shrine reception';g.position.set(a[0],ground(a[0],a[2]),a[2]);g.rotation.y=yaw;
   const wood=materialsWood(),dark=new THREE.MeshStandardMaterial({color:'#20221e',roughness:1});
   const vermilion=new THREE.MeshStandardMaterial({color:'#ad3826',roughness:.78});
-  const wings=[{x:14.66,z:3.9,w:29.32,d:7.8},{x:5.8,z:9.73,w:11.6,d:3.86}];
+  const levels=receptionLevels(a,yaw,ground);
+  let activeRise=null;
+  const raisedBox=(w,h,d,x,y,z,material,parent)=>box(w,h,d,x,y+(activeRise??(x>levels.split+.1?levels.rise:0)),z,material,parent);
+  const wings=[{x:5.8,z:3.9,w:11.6,d:7.8},{x:20.46,z:3.9,w:17.72,d:7.8},{x:5.8,z:9.73,w:11.6,d:3.86}];
   for(const wing of wings){
-    const {x,z,w,d}=wing;
+    const {x,z,w,d}=wing,rise=x>levels.split?levels.rise:0;activeRise=rise;
     if(z>8){
       // The service window is an actual opening, not a dark decal over a solid
       // building. Keep a shallow interior behind the rigged counter attendant.
-      box(w,3,.16,x,1.5,z-d/2+.08,m.plasterMat,g);
-      for(const side of [-1,1])box(.16,3,d,x+side*(w/2-.08),1.5,z,m.plasterMat,g);
+      raisedBox(w,3,.16,x,1.5,z-d/2+.08,m.plasterMat,g);
+      for(const side of [-1,1])raisedBox(.16,3,d,x+side*(w/2-.08),1.5,z,m.plasterMat,g);
       const front=z+d/2-.08;
-      box(1.4,3,.16,.7,1.5,front,m.plasterMat,g);
-      box(w-3.1,3,.16,(w+3.1)/2,1.5,front,m.plasterMat,g);
-      box(1.7,1.20,.16,2.25,.60,front,m.plasterMat,g);
-      box(1.7,.55,.16,2.25,2.725,front,m.plasterMat,g);
-      box(1.7,1.45,.08,2.25,1.85,10.85,dark,g);
-    }else box(w,3.0,d,x,1.5,z,m.plasterMat,g);
-    box(w+.18,.34,d+.18,x,.17,z,m.entryStoneMat,g);
+      raisedBox(1.4,3,.16,.7,1.5,front,m.plasterMat,g);
+      raisedBox(w-3.1,3,.16,(w+3.1)/2,1.5,front,m.plasterMat,g);
+      raisedBox(1.7,1.20,.16,2.25,.60,front,m.plasterMat,g);
+      raisedBox(1.7,.55,.16,2.25,2.725,front,m.plasterMat,g);
+      raisedBox(1.7,1.45,.08,2.25,1.85,10.85,dark,g);
+    }else raisedBox(w,3.0,d,x,1.5,z,m.plasterMat,g);
+    box(w+.18,.34+rise,d+.18,x,(.34+rise)/2,z,m.entryStoneMat,g);
     // Expand both axes: the former end faces were coplanar with the plaster.
-    box(w+.04,.65,d+.04,x,.65,z,vermilion,g);
+    raisedBox(w+.04,.65,d+.04,x,.65,z,vermilion,g);
     for(const side of [-1,1]){
       const ex=x+side*(w/2+.035);
-      for(const dz of [-d/2+.10,0,d/2-.10])box(.10,2.95,.12,ex,1.7,z+dz,wood,g);
-      for(const y of [1.02,2.65,3.05])box(.10,.12,d+.12,ex,y,z,wood,g);
+      for(const dz of [-d/2+.10,0,d/2-.10])raisedBox(.10,2.95,.12,ex,1.7,z+dz,wood,g);
+      for(const y of [1.02,2.65,3.05])raisedBox(.10,.12,d+.12,ex,y,z,wood,g);
       // Closed gable infill; avoids the exposed black underside at the ends.
-      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute([ex,3,z-d/2,ex,4.12,z,ex,3,z+d/2],3));geo.computeVertexNormals();
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute([ex,3+rise,z-d/2,ex,4.12+rise,z,ex,3+rise,z+d/2],3));geo.computeVertexNormals();
       const infill=new THREE.Mesh(geo,m.plasterMat);infill.material=m.plasterMat.clone();infill.material.side=THREE.DoubleSide;g.add(infill);
     }
     for(const side of [-1,1]){
       const ez=z+side*(d/2+.035);
-      box(w+.12,.14,.10,x,2.95,ez,wood,g);
+      raisedBox(w+.12,.14,.10,x,2.95,ez,wood,g);
       for(let px=x-w/2+.1;px<x+w/2;px+=2.4){
         if(z>8&&side===1&&px>1.4&&px<3.1)continue;
-        box(.10,2.9,.10,px,1.6,ez,wood,g);
+        raisedBox(.10,2.9,.10,px,1.6,ez,wood,g);
       }
-      box(w+1.05,.16,.12,x,3.12,z+side*(d/2+.6),wood,g);
+      raisedBox(w+1.05,.16,.12,x,3.12,z+side*(d/2+.6),wood,g);
     }
     const roof=new THREE.BufferGeometry(),v=[],uv=[];
     const corner=[[-w/2-.5,3.15,-d/2-.6],[w/2+.5,3.15,-d/2-.6],[-w/2-.5,4.15,0],[w/2+.5,4.15,0],[-w/2-.5,3.15,d/2+.6],[w/2+.5,3.15,d/2+.6]];
-    for(const i of [0,2,1,1,2,3,2,4,3,3,4,5]){const q=corner[i];v.push(q[0]+x,q[1],q[2]+z);uv.push(q[0]/2,q[2]/2);}
+    for(const i of [0,2,1,1,2,3,2,4,3,3,4,5]){const q=corner[i];v.push(q[0]+x,q[1]+rise,q[2]+z);uv.push(q[0]/2,q[2]/2);}
     roof.setAttribute('position',new THREE.Float32BufferAttribute(v,3));roof.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));roof.computeVertexNormals();
     const rm=m.roofMat.clone();rm.color.set('#66716a');rm.side=THREE.DoubleSide;g.add(new THREE.Mesh(roof,rm));
     const cx=a[0]+Math.cos(yaw)*x+Math.sin(yaw)*z,cz=a[2]-Math.sin(yaw)*x+Math.cos(yaw)*z;
-    colliders.push({type:'box',args:[cx,cz,w/2,d/2,yaw,g.position.y,g.position.y+4.2,'shrine_reception']});
+    colliders.push({type:'box',args:[cx,cz,w/2,d/2,yaw,g.position.y,g.position.y+rise+4.2,'shrine_reception']});
   }
+  activeRise=null;
   for(const [start,end,z] of [[.65,10.9,11.69],[12.3,28.6,7.84]]){
     const w=end-start;
     if(z>10){
-      for(const [a,b] of [[start,1.4],[3.1,end]])box(b-a,1.25,.045,(a+b)/2,1.82,z,dark,g);
-    }else box(w,1.25,.045,(start+end)/2,1.82,z,dark,g);
-    box(w+.2,.12,.47,(start+end)/2,1.15,z+.20,wood,g);
-    for(let x=start;x<end;x+=.24)box(.018,.28,.04,x,2.28,z+.06,wood,g);
-    box(w,.035,.045,(start+end)/2,2.12,z+.07,wood,g);
-    box(w,.14,.20,(start+end)/2,2.50,z+.05,vermilion,g);
-    for(let x=start;x<=end;x+=1.25)box(.075,2.4,.12,x,1.65,z+.03,vermilion,g);
+      for(const [a,b] of [[start,1.4],[3.1,end]])raisedBox(b-a,1.25,.045,(a+b)/2,1.82,z,dark,g);
+    }else raisedBox(w,1.25,.045,(start+end)/2,1.82,z,dark,g);
+    raisedBox(w+.2,.12,.47,(start+end)/2,1.15,z+.20,wood,g);
+    for(let x=start;x<end;x+=.24)raisedBox(.018,.28,.04,x,2.28,z+.06,wood,g);
+    raisedBox(w,.035,.045,(start+end)/2,2.12,z+.07,wood,g);
+    raisedBox(w,.14,.20,(start+end)/2,2.50,z+.05,vermilion,g);
+    for(let x=start;x<=end;x+=1.25)raisedBox(.075,2.4,.12,x,1.65,z+.03,vermilion,g);
     for(let x=start+.35;x<end;x+=1.7){
-      box(.65,.035,.34,x,1.24,z+.17,m.plasterMat,g);
-      box(.18,.08,.18,x+.16,1.30,z+.17,vermilion,g);
+      raisedBox(.65,.035,.34,x,1.24,z+.17,m.plasterMat,g);
+      raisedBox(.18,.08,.18,x+.16,1.30,z+.17,vermilion,g);
     }
   }
   const title=sign('授与所 · Shrine reception',6,.48);title.position.set(5.8,2.78,11.85);g.add(title);
   const counter=sign('御朱印 · Goshuin',2,.30);counter.position.set(2.2,2.25,11.85);g.add(counter);
-  root.add(g);return {id:footprint.id,detail:'inferred counter layout on mapped footprint'};
+  g.userData.receptionLevels=levels;root.add(g);return {id:footprint.id,levels,detail:'inferred counter layout on mapped footprint'};
 }
