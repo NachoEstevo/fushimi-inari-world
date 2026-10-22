@@ -1,4 +1,5 @@
-import {buildPrecinctNorthContext} from './precinct-north-context.mjs?v=83';
+import {buildOfficeGardenBanks} from './office-garden-banks.mjs?v=84';
+import {buildPrecinctNorthContext} from './precinct-north-context.mjs?v=84';
 import {buildNearPrecinctShrineRow} from './near-precinct-shrine-row.mjs';
 import {buildNearPrecinctEnclosures} from './near-precinct-enclosures.mjs';
 import {buildNearPrecinctDrains} from './near-precinct-drains.mjs';
@@ -439,6 +440,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.tamayamaForecourt=JSON.stringify(buildTamayamaForecourt(root,features,surfaces,legacy.materials));
   document.body.dataset.precinctShrineCourts=JSON.stringify(buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
   document.body.dataset.nearPrecinctMineralCourts=JSON.stringify(buildNearPrecinctMineralCourts(root,features,surfaces,legacy.materials));
+  document.body.dataset.officeGardenBanks=JSON.stringify(buildOfficeGardenBanks(root,features,surfaces));
   const precinctNorthContext=buildPrecinctNorthContext(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.precinctNorthContext=JSON.stringify(precinctNorthContext);
   const nearPrecinctShrineRow=buildNearPrecinctShrineRow(root,features,surfaces,legacy.materials,colliders);

@@ -4,6 +4,10 @@ import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
 export const precinctNorthContextIds=Object.freeze(['way/305214358']);
 const sourceUrls=['https://www.obayashi.co.jp/works/detail/work_1443.html','https://www.mokuei.co.jp/down/public017.pdf','https://www.kyoto-ga.jp/greenery/kyononiwa/2015/09/post_12.html'];
+// These two east-facing return edges border the mapped office garden ponds.
+// The Obayashi/garden exterior photographs attribute glazing to this frontage;
+// other office walls retain restrained plaster massing.
+const gardenFrontages=[{a:[70.27,-108.436],b:[70.699,-90.759],pond:'way/626313848'},{a:[67.36,-90.67],b:[67.926,-67.293],pond:'way/626313851'}];
 
 // A source-backed exterior context upgrade, not a detailed roof/facade survey.
 // The large concave OSM outline owns all geometry, including its courtyard void.
@@ -33,12 +37,14 @@ export function buildPrecinctNorthContext(root,features,surfaces,materials,colli
  }
  const roofY=(x,z)=>eave(x,z)+distance(x,z)*.38;
  const group=new THREE.Group();group.name=name;group.userData.sourceFeature=office.id;
- const plaster=new THREE.MeshStandardMaterial({color:'#c8c0a8',roughness:.96}),timber=new THREE.MeshStandardMaterial({color:'#514431',roughness:.95}),roofMaterial=new THREE.MeshStandardMaterial({color:'#64675e',roughness:.94,side:THREE.DoubleSide}),stone=materials.stoneMat??new THREE.MeshStandardMaterial({color:'#827e74',roughness:1});
+ const plaster=new THREE.MeshStandardMaterial({color:'#d2cbb7',roughness:.96}),timber=new THREE.MeshStandardMaterial({color:'#514431',roughness:.95}),roofMaterial=new THREE.MeshStandardMaterial({color:'#64675e',roughness:.94,side:THREE.DoubleSide}),stone=materials.stoneMat??new THREE.MeshStandardMaterial({color:'#827e74',roughness:1});
+ const glazing=new THREE.MeshStandardMaterial({color:'#536561',roughness:.40,metalness:.08}),eaveRoof=new THREE.MeshStandardMaterial({color:'#5c584a',roughness:.94});
  const batches=new Map(),part=(geo,mat)=>{if(geo.index){const old=geo;geo=geo.toNonIndexed();old.dispose();}if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);};
  const box=(w,h,d,x,y,z,mat,yaw)=>part(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(x,y,z),mat);
- const records=[],pendingColliders=[],openingSections=[];
+ const records=[],pendingColliders=[],openingSections=[],facadeRecords=[];
  for(let i=0;i<ring.length;i++){
   const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[2]-a[2]);if(length<.03)continue;const count=Math.ceil(length/1.5),yaw=Math.atan2(a[2]-b[2],b[0]-a[0]);
+  const garden=gardenFrontages.find(f=>Math.hypot(a[0]-f.a[0],a[2]-f.a[1])+Math.hypot(b[0]-f.b[0],b[2]-f.b[1])<.01&&(features.water??[]).some(w=>w.id===f.pond));
   // Split boundary sections at opening margins, rather than deleting several
   // whole 1.5m sections and exaggerating a two-metre mapped access.
   const breaks=Array.from({length:count+1},(_,k)=>k/count);
@@ -59,12 +65,30 @@ export function buildPrecinctNorthContext(root,features,surfaces,materials,colli
     box(sectionLength,height,.12,x,(top+ground)/2,z,plaster,yaw);
     box(sectionLength,.28,.16,x,ground+.14,z,stone,yaw);
     // Plain repeated timber posts follow photographs; no guessed doors or signs.
-    box(.09,height,.17,x,(top+ground)/2,z,timber,yaw);
+    if(!garden)box(.09,height,.17,x,(top+ground)/2,z,timber,yaw);
    }
    box(sectionLength,.11,.17,x,top-.10,z,timber,yaw);
    if(top>lintelBottom)pendingColliders.push({type:'box',args:[x,z,sectionLength/2,.10,yaw,lintelBottom,top,`precinct_office_${opening?'lintel_':''}${office.id}`]});
   }
   records.push({edge:i,length,sections:breaks.length-1});
+  if(garden){
+   const ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length,nx=uz,nz=-ux,bays=Math.max(2,Math.round(length/1.9)),bay=length/bays,facadeBase=datum((a[0]+b[0])/2,(a[2]+b[2])/2);
+   for(let k=0;k<bays;k++){
+    const t=(k+.5)/bays,x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t,base=facadeBase;
+    // Opaque green-grey glass supplies the observed reflected facade rhythm;
+    // no interior room, transparent view, opening or door is invented.
+    box(bay-.14,1.95,.025,x+nx*.084,base+1.65,z+nz*.084,glazing,yaw);
+    box(bay-.10,.40,.035,x+nx*.088,base+.43,z+nz*.088,timber,yaw);
+    for(const y of [.65,2.65,3.72])box(bay,.075,.07,x+nx*.09,base+y,z+nz*.09,timber,yaw);
+    for(const side of [-.5,.5])box(.085,3.45,.09,x+ux*bay*side+nx*.10,base+1.97,z+uz*bay*side+nz*.10,timber,yaw);
+    box(.035,1.95,.035,x+nx*.104,base+1.65,z+nz*.104,timber,yaw);
+    // Photographed shallow lower roof: inferred 0.44m projection/depth, not
+    // a new building footprint, walk surface or solid pedestrian obstacle.
+    const awning=new THREE.BoxGeometry(bay+.01,.045,.44).rotateX(-.18).rotateY(yaw).translate(x+nx*.18,base+2.92,z+nz*.18);part(awning,eaveRoof);
+    box(bay+.01,.065,.07,x+nx*.38,base+2.88,z+nz*.38,timber,yaw);
+   }
+   facadeRecords.push({edge:i,pond:garden.pond,source:'Obayashi 1443_01 and Kyoto-GA office garden exterior',endpoints:[garden.a,garden.b],base:facadeBase,bays,bayWidth:bay,windowHeight:1.95,lowerEaveDepth:.44,limits:'Garden-facing attribution and proportions inferred from photographs and mapped ponds; exact opening count not surveyed. One horizontal facade datum per frontage; foundations retain terrain seating'});
+  }
  }
  const contour=ring.map(p=>new THREE.Vector2(p[0],p[2])),triangles=THREE.ShapeUtils.triangulateShape(contour,[]),positions=[],uv=[];
  const triangle=(a,b,c)=>{
@@ -83,7 +107,7 @@ export function buildPrecinctNorthContext(root,features,surfaces,materials,colli
  // Share their normals before material batching expands triangles again;
  // this keeps the original roof positions/ring and removes faceted teeth.
  const smoothSkin=mergeVertices(skin,1e-5);skin.dispose();smoothSkin.computeVertexNormals();part(smoothSkin,roofMaterial);
- for(const [mat,parts]of batches){const geo=mergeGeometries(parts);parts.forEach(p=>p.dispose());const mesh=new THREE.Mesh(geo,mat);mesh.name=mat===roofMaterial?'Office concave roof context':'Office timber plaster and foundation context';mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);}
- group.userData={sourceFeature:office.id,builtIds:[office.id],roofTriangles:positions.length/9,edges:records.length,wallSections:records.reduce((s,r)=>s+r.sections,0),openings,openingSections,datum:{center:[cx,cy,cz],grade:[ax,az]},sources:sourceUrls,limits:'Exact mapped concave footprint; inferred 4.3m eaves over fitted terrain grade and inferred 0.38 pitch on clipped hipped roof. Photographs establish timber/plaster/dark roof vocabulary, not this simplified ridge network. Openings only preserve mapped path endpoints, not an asserted door/function. Garden, glazing, ornamental gables, storey transitions and private access unmodeled.'};
+ for(const [mat,parts]of batches){const geo=mergeGeometries(parts);parts.forEach(p=>p.dispose());const mesh=new THREE.Mesh(geo,mat);mesh.name=mat===roofMaterial?'Office concave roof context':mat===glazing?'Office photographed garden glazing':mat===eaveRoof?'Office photographed shallow garden eaves':'Office timber plaster and foundation context';mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);}
+ group.userData={sourceFeature:office.id,builtIds:[office.id],roofTriangles:positions.length/9,edges:records.length,wallSections:records.reduce((s,r)=>s+r.sections,0),openings,openingSections,gardenFacades:facadeRecords,materialBatches:batches.size,datum:{center:[cx,cy,cz],grade:[ax,az]},sources:sourceUrls,limits:'Exact mapped concave main roof footprint; inferred 4.3m eaves over fitted terrain grade and inferred 0.38 pitch on clipped hipped roof. Garden-facing lower glazing and shallow eaves attributed from photographs and mapped ponds; counts/proportions inferred. Openings only preserve mapped path endpoints, not an asserted door/function. Ornamental gables, storey transitions and private interiors unmodeled.'};
  colliders.push(...pendingColliders);root.add(group);return group.userData;
 }
