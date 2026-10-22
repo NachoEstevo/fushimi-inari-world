@@ -57,8 +57,14 @@ function refineBasin(g,m){
     envCtx.fillStyle='#edf3ef';envCtx.fillRect(80,35,100,25);envCtx.fillRect(310,55,65,18);
     const environment=new THREE.CanvasTexture(envCanvas);environment.colorSpace=THREE.SRGBColorSpace;environment.mapping=THREE.EquirectangularReflectionMapping;
     water.material=new THREE.MeshStandardMaterial({color:'#27372e',metalness:.15,roughness:.12,envMap:environment,envMapIntensity:1.25});
+    const waterTime={value:0};
+    water.material.userData.waterAppearance={
+      update(seconds){waterTime.value=seconds;},
+      setMode(mode){water.material.envMapIntensity=mode==='night'?.08:mode==='gold'?.85:1.25;}
+    };
+    water.material.customProgramCacheKey=()=> 'temizuya-water-r86';
     water.material.onBeforeCompile=shader=>{
-      shader.uniforms.waterTime={value:0};water.userData.shader=shader;
+      shader.uniforms.waterTime=waterTime;
       shader.vertexShader='varying vec2 basinUv;\nuniform float waterTime;\n'+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nobjectNormal.x+=.08*cos(position.x*31.0+waterTime*2.0);objectNormal.y+=.07*sin(position.y*24.0-waterTime*1.6);');
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nbasinUv=position.xy;transformed.z+=.003*sin(position.x*31.0+waterTime*2.0)*cos(position.y*24.0-waterTime*1.6);');
@@ -70,7 +76,6 @@ function refineBasin(g,m){
         ripple+=vec2(cos(basinUv.x*43.0+waterTime*1.5),sin(basinUv.y*37.0-waterTime))*.045;
         normal=normalize(normal+vec3(ripple,0.0));`);
     };
-    water.onBeforeRender=()=>{if(water.userData.shader)water.userData.shader.uniforms.waterTime.value=performance.now()/1000;};
     water.castShadow=false;
   }
   const wet=stone.clone();wet.color.set('#626b48');wet.roughness=.55;

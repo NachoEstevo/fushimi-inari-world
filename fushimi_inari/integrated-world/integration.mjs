@@ -1,4 +1,4 @@
-import {buildOfficePondSurfaces} from './office-pond-surfaces.mjs?v=85';
+import {buildOfficePondSurfaces} from './office-pond-surfaces.mjs?v=86';
 import {buildOfficeGardenBanks} from './office-garden-banks.mjs?v=84';
 import {buildPrecinctNorthContext} from './precinct-north-context.mjs?v=84';
 import {buildNearPrecinctShrineRow} from './near-precinct-shrine-row.mjs';
@@ -41,7 +41,7 @@ import {buildAinomine} from './mountain-landmarks.mjs';
 import {refineKumatakasha} from './mountain-landmarks-kumataka.mjs';
 import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=26c';
-import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=79';
+import {refineEntranceObjects,refineRomonShrubs,buildReception} from './entrance-refinements.mjs?v=86';
 import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
 import {refineRomonGold,refineRomonGables} from './precinct-details.mjs';
 import {buildPathMargins} from './path-margins.mjs';

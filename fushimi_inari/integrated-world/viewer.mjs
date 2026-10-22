@@ -1,3 +1,4 @@
+import {createWaterAppearance} from './water-appearance.mjs';
 import {installCityPanorama} from './city-panorama.mjs';
 import {terrainTriangles} from './terrain-triangles.mjs?v=24';
 import {installExplorationMenu} from './exploration-menu.mjs?v=32';
@@ -15,7 +16,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=68-near-precinct';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=85-ponds';
+import {integrate} from './integration.mjs?v=86-water';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -149,7 +150,9 @@ try {
       const p=ring[j];waterVertices.push(p[0],ground(p[0],p[2])+.3,p[2]);
     }
   }
-  scene.add(meshFrom(waterVertices,new THREE.MeshBasicMaterial({color:0x548f94,side:THREE.DoubleSide})));
+  const lakeWater=meshFrom(waterVertices,createWaterAppearance({kind:'lake'}));lakeWater.receiveShadow=true;scene.add(lakeWater);
+  const waterControllers=new Set();
+  scene.traverse(object=>{for(const material of (Array.isArray(object.material)?object.material:[object.material])){if(material?.userData.waterAppearance)waterControllers.add(material.userData.waterAppearance);}});
 
   const translations={'楼門':'Rōmon','本殿':'Honden','外拝殿':'Gehaiden','内拝殿':'Naihaiden','奥社奉拝所':'Okusha Hōhaisho','熊鷹社':'Kumatakasha','新池':'Shin-ike',
     '一ノ峰':'Ichinomine','二ノ峰':'Ninomine','三ノ峰':'Sannomine','御劔社':'Mitsurugisha','御膳谷奉拝所':'Gozendani Hōhaisho','眼力社':'Ganrikisha',
@@ -330,6 +333,7 @@ try {
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
     sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
     hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
+    for(const water of waterControllers)water.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
@@ -373,6 +377,7 @@ try {
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
     for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
 
+    for(const water of waterControllers)water.update(time/1000);
     sky.update();flashlight.update();visitors.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     for(const {object,bounds} of assembly.forestChunks)object.visible=camera.position.distanceTo(bounds.center)<bounds.radius+400;
     // The neighbourhood massing is an aerial backdrop, never a replacement for

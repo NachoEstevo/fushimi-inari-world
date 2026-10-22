@@ -1,3 +1,4 @@
+import {createWaterAppearance} from './water-appearance.mjs';
 import * as THREE from 'three';
 import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
@@ -24,7 +25,7 @@ export function buildOfficePondSurfaces(root,features,network,materials={}){
   plans.push({id,ring,triangles,cuts:triangles.map(p=>({ring:p,bounds:bounds(p)})),bounds:bounds(ring),waterLevel:Math.min(...samples)-.04});
  }
  const group=new THREE.Group();group.name=NAME;
- const waterMaterial=new THREE.MeshStandardMaterial({color:'#59756d',roughness:.28,metalness:.12,side:THREE.DoubleSide});
+ const waterMaterial=createWaterAppearance({kind:'pond'});
  const basinMaterial=materials.stoneMat?.clone()??new THREE.MeshStandardMaterial({color:'#737267',roughness:.98});basinMaterial.side=THREE.DoubleSide;
  const water=new THREE.Mesh(geometry([]),waterMaterial),basin=new THREE.Mesh(geometry([]),basinMaterial);water.name='Office pond level water';basin.name='Office pond basin and shoreline liner';water.receiveShadow=basin.receiveShadow=true;basin.castShadow=true;group.add(water,basin);
  const record={builtIds:plans.map(p=>p.id),ponds:plans.map(p=>({id:p.id,ring:p.ring,waterLevel:p.waterLevel,bedLevel:p.waterLevel-.35})),materialBatches:2,linerFinish:materials.stoneMat?'Existing stone material clone with metre-scale wall UVs':'Neutral stone fallback',terrainOffset:-.06,walkingUnchanged:true,shorelineSegments:0,
