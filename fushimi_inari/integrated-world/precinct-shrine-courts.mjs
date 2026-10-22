@@ -19,14 +19,14 @@ export function shrineCourtPlan(zone,matrix,cuts=[]){
   return {envelope,base,stone:subtract([border],[base,...cuts]),gravel:subtract([envelope],[border,...cuts]),reference:profile.reference};
 }
 
-function courtCuts(features,network,region,zone){
+export function courtCuts(features,network,region,zone){
   const cuts=[];
   for(const f of [...(features.buildings??[]),...(features.water??[])]){
     // These mapped outlines enclose the authored pavilion's overhanging roof,
     // not its ground plinth. The retained physical plinth is already cut in
     // shrineCourtPlan; cutting its own roof would erase photographed gravel
     // under the eaves. All neighbouring building and water outlines stay cut.
-    if(f.id===profiles[zone].roofFootprint)continue;
+    if(f.id===profiles[zone]?.roofFootprint)continue;
     const ring=f.points.map(p=>new THREE.Vector2(p[0],p[2]));
     if(ring.length<3||!overlap(bounds(ring.map(p=>[p.x,p.y])),region))continue;
     if(ring[0].equals(ring.at(-1)))ring.pop();
@@ -45,16 +45,27 @@ function courtCuts(features,network,region,zone){
   return cuts;
 }
 
-function surface(polygons,network,source,name){
+export function surface(polygons,network,source,name,{maxSlope=Infinity}={}){
   const positions=[],uv=[],grid=.25;
   for(const polygon of polygons){
     const b=bounds(polygon);
     for(let x=Math.floor(b[0]/grid)*grid;x<b[1];x+=grid)for(let z=Math.floor(b[2]/grid)*grid;z<b[3];z+=grid){
+      if(Number.isFinite(maxSlope)){
+        const samples=[[x,z],[x+grid,z],[x+grid,z+grid],[x,z+grid],[x+grid/2,z+grid/2]].map(([px,pz])=>[px,network.terrainHeight(px,pz),pz]);
+        let steep=false;
+        for(let a=0;a<samples.length;a++)for(let b=a+1;b<samples.length;b++)if(Math.abs(samples[a][1]-samples[b][1])/Math.hypot(samples[a][0]-samples[b][0],samples[a][2]-samples[b][2])>maxSlope)steep=true;
+        if(steep)continue;
+      }
       let p=clipConvex(polygon,[[x,z],[x+grid,z],[x+grid,z+grid],[x,z+grid]]);
       if(polygonArea(p)<0)p=p.toReversed();
       for(let i=1;i<p.length-1;i++){
         const tri=[p[0],p[i+1],p[i]];if(Math.abs(polygonArea(tri))<1e-9)continue;
-        for(const [px,pz] of tri){const y=network.terrainHeight(px,pz)+.012;if(!Number.isFinite(y))throw Error('Nonfinite shrine court height');positions.push(px,y,pz);uv.push(px/1.5,pz/1.5);}
+        const xyz=tri.map(([px,pz])=>[px,network.terrainHeight(px,pz)+.012,pz]);
+        if(xyz.some(p=>!p.every(Number.isFinite)))throw Error('Nonfinite shrine court height');
+        const a=xyz[0],b=xyz[1],c=xyz[2],dx=b[0]-a[0],dz=b[2]-a[2],ex=c[0]-a[0],ez=c[2]-a[2],det=dx*ez-ex*dz;
+        const gradient=Math.hypot(((b[1]-a[1])*ez-(c[1]-a[1])*dz)/det,(dx*(c[1]-a[1])-ex*(b[1]-a[1]))/det);
+        if(gradient>maxSlope)continue;
+        for(const [px,y,pz] of xyz){positions.push(px,y,pz);uv.push(px/1.5,pz/1.5);}
       }
     }
   }
