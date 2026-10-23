@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=89';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=93-release';
+import {integrate} from './integration.mjs?v=94b';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -351,6 +351,14 @@ try {
   installSeasons(assembly,canopy);
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
+  // Route initialization enables orbit controls; establish walking arrival last.
+  if(assembly.omotesandoArrival?.built){
+    const {position:[x,z],lookAt:[tx,tz]}=assembly.omotesandoArrival.spawn;
+    const y=assembly.walkHeight(x,z);
+    if(walker.teleport([x,y,z],[tx,y+1.7,tz]))document.body.dataset.startLocation='Omotesando pedestrian crossing';
+    else document.body.dataset.startLocation='Romon fallback: crossing unavailable';
+  }
+
 
   const recordRender=renderStats(renderer);
   let mapTimer=0;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {okushaArrival} from './okusha-arrival.mjs';
 import {buildOkushaArchitecture} from './okusha-architecture.mjs';
+import {buildSenbonRestFrontage} from './senbon-rest-r94.mjs';
 // Existing Omokaru stones and ema remain in their group; the hall interaction
 // moves with its visible replacement architecture, retaining the same mesh.
 export function buildOkushaCourt(root,features,anchor,m,colliders){
@@ -69,6 +70,7 @@ export function buildOkushaCourt(root,features,anchor,m,colliders){
     for(let i=0;i<=4;i++)box(g,.14,3,.14,-w/2+i*w/4,1.65,-d/2-.1,wood);
     for(const side of [-1,1]){const z=side*(d/2+.7);sheet(g,[-w/2-.5,3.05,z,w/2+.5,3.05,z,-w/2-.5,4.15,0,-w/2-.5,4.15,0,w/2+.5,3.05,z,w/2+.5,4.15,0],roof);}
     box(g,w+1.2,.14,.16,0,4.2,0,roof);
+    buildSenbonRestFrontage(g,{id,width:w,depth:d},m);
     root.add(g);colliders.push({type:'box',args:[cx,cz,w/2,d/2,-.14,anchor.target[1],anchor.target[1]+4,'okusha_mapped_building']});
   }
   return {architecture:architecture?.stats??null,builtIds:architecture?.builtIds??[]};
