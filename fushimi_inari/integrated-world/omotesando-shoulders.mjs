@@ -1,17 +1,18 @@
 import * as THREE from 'three';
-import {shoulderHeight,upwardShoulderTriangles,makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
+import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
+import {upwardShoulderTriangles,makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
 import {subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {pathWidth} from '../geography/geo-core.mjs';
 
 // Reference photograph supplied for this pass shows small grey cobble margins
-// beside the central slabs. Width2.8m per side is inferred, not surveyed.
+// beside the central slabs. Central4.8m plus1.6m margins per side is inferred, not surveyed.
 // No speculative lamps, trees, pits or walls are added with this surface pass.
 export function buildOmotesandoShoulders(root,features,ground,surfaces,materials){
   const path=features.paths.find(p=>p.id==='way/105449722');
   if(!path||path.points.length<2||!materials.precinctCobbles)return null;
   const xs=path.points.map(p=>p[0]),zs=path.points.map(p=>p[2]),margin=7.5;
   const bounds=[Math.min(...xs)-margin,Math.max(...xs)+margin,Math.min(...zs)-margin,Math.max(...zs)+margin];
-  const halfWidth=4,shoulderWidth=2.8,positions=[],uv=[];
+  const halfWidth=omotesandoContextSpecR95.centralSlabWidth/2,shoulderWidth=(omotesandoContextSpecR95.totalMappedWidth-omotesandoContextSpecR95.centralSlabWidth)/2,positions=[],uv=[];
   const polygonBounds=p=>[Math.min(...p.map(v=>v[0])),Math.max(...p.map(v=>v[0])),Math.min(...p.map(v=>v[1])),Math.max(...p.map(v=>v[1]))];
   const overlaps=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2];
   const cuts=[],addCut=p=>{const b=polygonBounds(p);if(overlaps(bounds,b))cuts.push({points:p,bounds:b});};
@@ -40,7 +41,7 @@ export function buildOmotesandoShoulders(root,features,ground,surfaces,materials
     for(const side of [-1,1])for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
       const vertex=(r,k)=>{
         const t=r/rows,off=k/cols*shoulderWidth,nx=n0[0]+(n1[0]-n0[0])*t,nz=n0[1]+(n1[1]-n0[1])*t,nlen=Math.hypot(nx,nz),x=a[0]+dx*t+side*nx/nlen*(halfWidth+off),z=a[2]+dz*t+side*nz/nlen*(halfWidth+off);
-        const ex=a[0]+dx*t+side*nx/nlen*halfWidth,ez=a[2]+dz*t+side*nz/nlen*halfWidth,y=shoulderHeight(off,surfaces.height(ex,ez),ground(x,z));
+        const y=surfaces.height(x,z);
         return {p:[x,y,z],uv:[(along+length*t)/2,side*(halfWidth+off)/2]};
       };
       const corners=[vertex(row,col),vertex(row+1,col),vertex(row+1,col+1),vertex(row,col+1)],order=upwardShoulderTriangles(corners);let emitted=false;
@@ -72,9 +73,9 @@ export function buildOmotesandoShoulders(root,features,ground,surfaces,materials
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
   const material=materials.precinctCobbles.clone();material.side=THREE.FrontSide;
   const mesh=new THREE.Mesh(geometry,material);mesh.name='Omotesando terrain-following cobble shoulders';mesh.receiveShadow=true;
-  mesh.userData={sourcePath:path.id,centralWidth:8,estimatedSideWidth:shoulderWidth,acceptedCells:accepted,rejectedCells:rejected,exactBoundaryClipping:true,provenance:'Supplied 2024 reference photo small grey cobble margins; inferred2.8m shoulder extent; exact mapped path/building/water polygon subtraction'};
-  // The narrow blend can sit above raw terrain near the slab edge. Register
-  // the exact rendered planes so feet follow that blend, rather than its DEM.
+  mesh.userData={sourcePath:path.id,centralWidth:halfWidth*2,totalPublicWidth:omotesandoContextSpecR95.totalMappedWidth,estimatedSideWidth:shoulderWidth,acceptedCells:accepted,rejectedCells:rejected,exactBoundaryClipping:true,provenance:'Supplied 2024 reference photo small grey cobble margins; inferred4.8m central slabs/1.6m cobble margins inside mapped8m public corridor; exact mapped path/building/water polygon subtraction'};
+  // Preserve the exact public-path grade and register emitted clipped planes.
+  // Surface width remains8m; only its visual slab/cobble partition changes.
   const previousHeight=surfaces.height.bind(surfaces),triangleHeight=makeShoulderTriangleHeight(geometry.attributes.position.array);
   surfaces.height=(x,z)=>triangleHeight(x,z)??previousHeight(x,z);
   mesh.userData.walkingHeightRegistered=true;

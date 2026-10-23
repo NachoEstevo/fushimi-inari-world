@@ -1,4 +1,6 @@
+import {partitionSanctuaryPathTrianglesR95} from './sanctuary-path-junction-r95.mjs';
 import * as THREE from 'three';
+import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite} from './surface-materials.mjs';
@@ -6,6 +8,7 @@ import {omotesandoPaving} from './omotesando-paving.mjs';
 import {outsideArrival} from './okusha-arrival.mjs';
 import {isMountainPathSegment,mountainShoulder,mountainPathUV,mountainTreadUV} from './mountain-path-layout.mjs';
 import {mountainPathMaterials} from './mountain-path-materials.mjs';
+import {partitionOkushaPathTrianglesR95} from './okusha-path-junction-r95.mjs';
 
 export function buildPathMeshes(network,legacy,ground){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRiser:[],mountainRetaining:[]};
@@ -38,8 +41,10 @@ export function buildPathMeshes(network,legacy,ground){
       quad(buckets.senbon,[...point(s.a,s.ya,-w),0,va],[...point(s.b,s.yb,-w),0,vb],[...point(s.b,s.yb,w),1,vb],[...point(s.a,s.ya,w),1,va]);
       for(const side of [-1,1])quad(buckets.earth,point(s.a,s.ya,side*w),point(s.b,s.yb,side*w),point(s.b,s.yb,side*s.width/2),point(s.a,s.ya,side*s.width/2));
     }else if(s.id==='way/105449722'&&!s.stair){
-      const u=s.width/1.6,va=s.distance/3.2,vb=(s.distance+len)/3.2;
-      quad(buckets.omotesando,[...point(s.a,s.ya,-s.width/2),0,va],[...point(s.b,s.yb,-s.width/2),0,vb],[...point(s.b,s.yb,s.width/2),u,vb],[...point(s.a,s.ya,s.width/2),u,va]);
+      const visualWidth=Math.min(s.width,omotesandoContextSpecR95.centralSlabWidth),u=visualWidth/1.6,va=s.distance/3.2,vb=(s.distance+len)/3.2;
+      // Source width8m describes the public corridor. Only its middle4.8m
+      // uses long slabs; the shoulder owner fills2.4..4m with fine cobbles.
+      quad(buckets.omotesando,[...point(s.a,s.ya,-visualWidth/2),0,va],[...point(s.b,s.yb,-visualWidth/2),0,vb],[...point(s.b,s.yb,visualWidth/2),u,vb],[...point(s.a,s.ya,visualWidth/2),u,va]);
     }else if(mountain){
       const uv=s.stair?mountainTreadUV(s):mountainPathUV(s,len);
       const corners=[point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2)];
@@ -146,6 +151,10 @@ export function buildPathMeshes(network,legacy,ground){
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
     restricted:new THREE.MeshStandardMaterial({color:0x766e5e,roughness:1}),
     rail:new THREE.MeshStandardMaterial({color:0x5b6667,metalness:.7,roughness:.4}),...mountainPathMaterials(legacy)};
+  // Junction curb caps can overlap each other at their common +.025 lip too.
+  // Their metric UVs/colors are generated below after this bounded partition.
+  buckets.edge=partitionOkushaPathTrianglesR95(buckets.edge);
+  buckets.earth=partitionOkushaPathTrianglesR95(buckets.earth);
   const riserTint=new THREE.Color('#b9b8af').toArray();
   for(const [key,bucket] of Object.entries(buckets)){
     if(key==='mountainPaving'||key==='mountainRiser')continue;
@@ -170,10 +179,21 @@ export function buildPathMeshes(network,legacy,ground){
       if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3)colors.push(...tint);}
       offset=end;
     }
-    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    let finalUV=uv;
+    if(key==='stone'||key==='precinct'){
+      // Partition after stone/mountainPaving merge so their shared Okusha
+      // frontier is owned once too. Preserve each original UV plane.
+      // Sanctuary paths below 55m use the precinct palette, not stone.
+      // Keep that owner/material while resolving its measured overlap too.
+      const okushaPartition=key==='stone'?partitionOkushaPathTrianglesR95(vertices,uv):{vertices,uv};
+      const partition=partitionSanctuaryPathTrianglesR95(okushaPartition.vertices,okushaPartition.uv);
+      geo.setAttribute('position',new THREE.Float32BufferAttribute(partition.vertices,3));
+      geo.computeVertexNormals();finalUV=partition.uv;
+    }
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(finalUV,2));
     const material=materials[key].clone();material.side=THREE.DoubleSide;
     if(colors){geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));material.vertexColors=true;}
-    group.add(spatialMeshes(geo,material));geo.dispose();
+    const cells=spatialMeshes(geo,material);if(key==='omotesando'){cells.name='Omotesando central slab ribbon';cells.userData={sourcePath:omotesandoContextSpecR95.path,visualWidth:omotesandoContextSpecR95.centralSlabWidth,publicWidth:omotesandoContextSpecR95.totalMappedWidth};}group.add(cells);geo.dispose();
   }
   group.userData.mountainPaths=detail;
   if(network.accessJunctions)group.userData.accessJunctions=network.accessJunctions;

@@ -3,11 +3,14 @@ import {pathSampler} from './spatial.mjs';
 import {toriiMaterials} from './torii-materials.mjs';
 import {yotsuForecourt} from './site-grading.mjs';
 import {yotsutsujiRetainingPlan,buildYotsutsujiRetaining,retainingBuilding,retainingEdgeIndex} from './yotsutsuji-retaining.mjs';
+import {buildYotsutsujiSupportsR95} from './yotsutsuji-support-r95.mjs';
 
 // Footprints are OSM; floor datums are tied to mapped approaches. Building
 // heights, windows and roofs are reference-informed estimates, not a survey.
 export const teaHouses=[
-  {id:'way/301527779',name:'Nishimura-tei',floor:164.35,height:5.7,front:'north'},
+  // 2013 courtyard photograph: two-storey main frontage faces west into
+  // the L-shaped court; its north wall follows the uphill branch stair.
+  {id:'way/301527779',name:'Nishimura-tei',floor:164.35,height:5.7,front:'west'},
   {id:'way/626313775',name:'Nishimura-tei · anexo',floor:163.45,height:5.4,front:'north'},
   {id:'way/626313685',name:'Okumura-tei',floor:171.7,height:3.2,front:'west'}
 ];
@@ -151,5 +154,6 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
       gateCount++;
     }
   }
-  return {buildings:teaHouses.length,gates:gateCount,footprints:teaHouses.map(s=>s.id),retainingEdge,status:'OSM footprints; reference-informed facades; inferred heights'};
+  const underside=buildYotsutsujiSupportsR95(group,surfaces,ground,legacy.materials.stoneMat);
+  return {buildings:teaHouses.length,gates:gateCount,footprints:teaHouses.map(s=>s.id),retainingEdge,underside,status:'OSM footprints; reference-informed facades; inferred heights'};
 }

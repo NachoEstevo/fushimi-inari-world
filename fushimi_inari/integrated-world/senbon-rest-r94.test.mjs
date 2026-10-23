@@ -16,6 +16,8 @@ test('mapped rest envelope closes real gable ends with finite, bounded static ba
   const p=boardMesh.geometry.attributes.position;
   for(const side of [-1,1])assert.ok(Array.from({length:p.count},(_,i)=>i).some(i=>Math.abs(p.getX(i)-side*6.025)<1e-5&&Math.abs(p.getY(i)-4.15)<1e-5));
   for(const mesh of r.group.children){assert.ok(mesh.castShadow&&mesh.receiveShadow);for(const v of mesh.geometry.attributes.position.array)assert.ok(Number.isFinite(v));}
+  const footing=r.group.children.find(m=>m.material===materials.entryStoneMat).geometry.attributes.position,ys=Array.from({length:footing.count},(_,i)=>footing.getY(i));
+  assert.ok(Math.abs(Math.min(...ys)-.12)<1e-6);assert.ok(Math.abs(Math.max(...ys)-.34)<1e-6);
 });
 test('augmentation is idempotent and refuses unmapped or malformed footprints',()=>{
   const g=new THREE.Group(),spec={id:'way/301527730',width:8,depth:5};

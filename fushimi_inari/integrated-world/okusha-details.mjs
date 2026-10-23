@@ -1,23 +1,18 @@
 import * as THREE from 'three';
 import {okushaArrival} from './okusha-arrival.mjs';
 import {buildOkushaArchitecture} from './okusha-architecture.mjs';
-import {buildSenbonRestFrontage} from './senbon-rest-r94.mjs';
+import {buildSenbonRestFrontage} from './senbon-rest-r94.mjs?v=95-release';
+import {buildOkushaCourtSurfacesR95} from './okusha-court-surface-r95.mjs';
 // Existing Omokaru stones and ema remain in their group; the hall interaction
 // moves with its visible replacement architecture, retaining the same mesh.
-export function buildOkushaCourt(root,features,anchor,m,colliders){
+export function buildOkushaCourt(root,features,anchor,m,colliders,network=null){
   const wood=new THREE.MeshStandardMaterial({color:'#4c3b2b',roughness:.9});
   const shutter=new THREE.MeshStandardMaterial({color:'#8c7860',roughness:.88});
   const roof=m.roofMat.clone();roof.color.set('#56615d');roof.side=THREE.DoubleSide;
   const box=(g,w,h,d,x,y,z,mat)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);o.position.set(x,y,z);o.receiveShadow=true;o.castShadow=h>.3;g.add(o);return o;};
   const sheet=(g,vertices,mat)=>{const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(vertices.flatMap((v,i)=>i%3===0?[v/2,vertices[i+2]/2]:[]),2));geo.computeVertexNormals();const o=new THREE.Mesh(geo,mat);o.receiveShadow=true;g.add(o);};
   const court=new THREE.Group();court.name='Connected Okusha arrival court';court.position.set(259,anchor.target[1],69);court.rotation.y=-.14;
-  const apron=box(court,38,.12,20,0,0,0,m.gravelMat);
-  // The gravel tile represents 1.5 m, not the full 38 m courtyard.
-  // Keep metric UVs on this mesh; changing the shared texture would affect other precincts.
-  const positions=apron.geometry.attributes.position,uv=apron.geometry.attributes.uv;
-  for(let i=0;i<positions.count;i++)uv.setXY(i,positions.getX(i)/1.5,positions.getZ(i)/1.5);
-  uv.needsUpdate=true;
-  box(court,15,.025,3,-2,.075,0,m.precinctPaving);
+  buildOkushaCourtSurfacesR95(court,features,m,network);
   root.add(court);
   const r=okushaArrival;
   const arrival=box(root,r.maxX-r.minX,.08,r.maxZ-r.minZ,(r.minX+r.maxX)/2,anchor.target[1]+.10,(r.minZ+r.maxZ)/2,m.precinctPaving);

@@ -36,7 +36,9 @@ export function buildSenbonRestFrontage(group,{id,width:w,depth:d},materials){
       parts.box(.045,2.54,d/bays-.018,side*(w/2+.012),1.61,z,board);
     }
     for(const y of [.36,2.94])parts.box(.09,.13,d,x,y,0,timber);
-    parts.box(.10,.20,d,x,.24,0,stone);
+    // Top stays .34; embed the underside below the court's .14 floor so two
+    // opposite-facing coplanar sheets cannot self-shadow along the footing.
+    parts.box(.10,.22,d,x,.23,0,stone);
     for(const sign of [-1,1]){
       const a=new THREE.Vector3(x,4.14,0),b=new THREE.Vector3(x,3.04,sign*d/2),delta=b.clone().sub(a);
       const geometry=new THREE.BoxGeometry(.13,delta.length(),.13);
@@ -51,7 +53,7 @@ export function buildSenbonRestFrontage(group,{id,width:w,depth:d},materials){
   }
   for(const sign of [-1,1])parts.box(w+1,.16,.14,0,3.005,sign*(d/2+.67),timber);
   // Continuous narrow mineral plinth seats the existing rear wall visually.
-  parts.box(w,.20,.10,0,.24,d/2+.025,stone);
+  parts.box(w,.22,.10,0,.23,d/2+.025,stone);
   parts.box(w,.14,.09,0,2.94,d/2+.025,timber);
   const stats=parts.flush();detail.userData.stats=stats;group.add(detail);
   return {group:detail,stats,id};
