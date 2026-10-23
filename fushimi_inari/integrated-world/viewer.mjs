@@ -1,4 +1,5 @@
-import {createWaterAppearance} from './water-appearance.mjs?v=97-release';
+import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
+import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=32';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
@@ -15,7 +16,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=96-release';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=97-release';
+import {integrate} from './integration.mjs?v=98-water2';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -350,6 +351,10 @@ try {
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
   installSeasons(assembly,canopy);
+  const pondReflections=installShinikeReflections({scene,renderer,
+    water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
+    forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
+  addEventListener('pagehide',event=>{if(!event.persisted)pondReflections.dispose();});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
   // Route initialization enables orbit controls; establish walking arrival last.
@@ -403,6 +408,8 @@ try {
       const b=mesh.geometry.boundingSphere;
       mesh.visible=camera.position.distanceTo(b.center)>b.radius+100;
     }
+    pondReflections.update(camera.position,[$('light').value,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked].join(':'));
+    document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');

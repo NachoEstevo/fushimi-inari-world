@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createWaterAppearance} from './water-appearance.mjs?v=97-release';
+import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 export const SHINIKE_ID='way/105449705';
@@ -81,6 +81,11 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
   for(const cut of plan.triangles){let p=clipConvex(projection,cut);if(Math.abs(polygonArea(p))<1e-8)continue;if(polygonArea(p)>0)p=p.toReversed();for(let i=1;i<p.length-1;i++)for(const q of [p[0],p[i],p[i+1]]){bankPositions.push(q[0],height(q),q[1]);bankUV.push(q[0]/2,q[1]/2);}}
  }
  const bankMaterial=materials.shinikeBankMat?.clone()??new THREE.MeshStandardMaterial({color:'#565d46',roughness:1});bankMaterial.side=THREE.DoubleSide;const bank=new THREE.Mesh(geometry(bankPositions,bankUV),bankMaterial);bank.name='Shin-ike bounded inward natural bank collar R97';bank.receiveShadow=bank.castShadow=true;group.add(bank);
- group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:2,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankSlope:'Inward toward centroid, inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset inferred. No external terrain, route, shrine pier, reflection pass or GPU work.'};
+ // A bounded opaque visual backing keeps modest alpha from revealing the
+ // terrain cut or sky. Its 0.6m offset is a rendering enclosure, not bathymetry.
+ const bedLevel=waterLevel-.6,bedPositions=waterPositions.map((v,i)=>i%3===1?bedLevel:v);
+ const bedMaterial=new THREE.MeshStandardMaterial({color:'#30382a',roughness:1,metalness:0,side:THREE.DoubleSide,transparent:false,opacity:1,depthWrite:true});
+ const bed=new THREE.Mesh(geometry(bedPositions),bedMaterial);bed.name='Shin-ike bounded dark silt visual backing R98';bed.receiveShadow=true;bed.userData.shinikeSubmergedBacking=true;group.add(bed);
+ group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:3,bedLevel,backingDepth:.6,backingTriangles:bedPositions.length/9,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankSlope:'Inward toward centroid, inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset inferred. No external terrain, route, shrine pier, reflection pass or GPU work.'};
  root.add(group);legacy.removeFromParent();const fallenLog=legacyFallenLog(root,plan);if(fallenLog){fallenLog.removeFromParent();group.userData.removedLegacyLogs=1;}return group.userData;
 }

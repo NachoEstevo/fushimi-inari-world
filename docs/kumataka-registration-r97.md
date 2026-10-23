@@ -22,7 +22,7 @@ Recognized architecture, shoreline and collision contracts are checked before mu
 
 A mineral court sits within the roof polygon at resolved floor plus 15 mm. It replaces the broad illustrative deck without flattening terrain or changing route heights. The existing base remains supported and partly buried. Unknown contracts or unsupported ground fail closed.
 
-The new rail follows the mapped western pond bank, projected to the pavilion's lake-side endpoints, with a short return reaching its building corner. There are 52 slats. Exact old deck, rail and shore meshes are removed after replacement geometry succeeds. New rail blockers preserve the public passage.
+The new rail follows the mapped western pond bank, projected to the pavilion's lake-side endpoints, with short returns reaching its northeast and southwest body corners. There are 63 slats after the R98 southwest closure. Exact old deck, rail and shore meshes are removed after replacement geometry succeeds. New rail blockers preserve the public passage.
 
 ## Water and architectural pier
 
@@ -42,10 +42,18 @@ Exactly eight legacy steles are removed: zero-based indices **7, 10, 11, 13, 14,
 
 ## Validation and limits
 
-Four architecture tests pass; the focused run including adjacent Takeya and R88 tests passes **15 tests total**. Checks cover registration, interaction identity, conditional cleanup, finite geometry, budgets, idempotence, failed-build isolation, water-report validation, pier support and corrected shelter bounds.
+Five architecture tests pass after the R98 southwest closure; the focused run including adjacent Takeya and R88 tests passes **16 tests total**. Checks cover registration, interaction identity, conditional cleanup, finite geometry, budgets, idempotence, failed-build isolation, water-report validation, pier support and corrected shelter bounds.
 
 The actual collision world samples arrival `626313754` and onward `301527750` at the center and ±0.65 m side lanes, using a 0.28 m player radius and displacement tolerance of 1e-6 m. The former failing point `[539.210063, -135.621878]` now has displacement below 1e-8 m; a vertical ray no longer hits pavilion architecture there. Pier-cap rays verify support under both rail segments.
 
-The integrated audit records **2,318 court/rail/pier triangles in three batches**, **72 entry timber triangles in one batch**, and a **four-triangle entry roof in one mesh**: 2,394 new triangles across five draws. Existing refined pavilion geometry is reused. No dependency, network texture, light or animation loop is added.
+The final-water test records **2,846 court/rail/pier triangles in three batches**, **72 entry timber triangles in one batch**, and a **four-triangle entry roof in one mesh**: 2,922 new triangles across five draws. The R98 return adds 528 triangles and one physical blocker to this registration packet. Existing refined pavilion geometry is reused; the separate swept-roof repair has its own budget. No dependency, network texture, light or animation loop is added.
 
 Syntax, whitespace and the scoped final diff were checked. Root owns combined rendered source comparison and native walking/interaction acceptance. Mapped registration and automated clearance do not prove surveyed historical dimensions, native appearance or hardware performance. This packet owner performed no renderer/browser work or commit.
+
+## R98 bounded southwest passage closure
+
+Fresh inspection of P3600705 shows the lake fence on the left/southeast and shrine wall on the right/northwest while looking southwest along the rear passage. Its visible perpendicular terminal fence therefore establishes a southwest return, which was absent from R97's main run and northeast return. See [Shin-ike boundary research](shinike-boundaries-r98.md).
+
+The added third segment runs from existing rail A `[543.787969, -129.901690]` to the accepted pavilion's transformed body corner at local `[-7.77, 0, -2.48]`, approximately `[543.030998, -131.420229]`. The run is about 1.70 m. The photograph supports the return's presence and orientation; its endpoint and dimensions are inferred from the registered body rather than surveyed fence linework.
+
+This segment reuses the existing red/black slat, stone-pier and collision builder. Water and floor levels, worship orientation, entry shelter and public paths remain unchanged. Actual projected pier bounds have zero positive-area intersection with both public paths expanded by the 0.28 m player radius. Rays hit the middle slat and pier cap while passing through the adjacent real slat gap; the matching return collider follows its center and orientation. No whole-pond perimeter or separately unregistered gray parapet is constructed. Root owns the fresh combined render and final visual acceptance.

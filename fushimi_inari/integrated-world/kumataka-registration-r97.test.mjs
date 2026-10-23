@@ -3,6 +3,7 @@ import {refineKumatakasha} from './mountain-landmarks-kumataka.mjs';
 import {buildKumatakaLakesideRail} from './kumataka-lakeside-rail.mjs';
 import {buildKumatakaRegistrationR97,kumatakaRegistrationPlanR97} from './kumataka-registration-r97.mjs';
 import {SpatialCollisionWorld} from './collision.mjs';
+import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url)));
 function fixture(){
   const root=new THREE.Group(),owner=new THREE.Group();owner.userData.zone='kumataka';owner.position.set(545.254396455114,65.89652051629592,-129.16842947649747);owner.rotation.y=-1.162212928391673;root.add(owner);
@@ -35,7 +36,7 @@ test('actual mapped roof controls pavilion front toward Takeya, not pond centroi
 });
 test('validated water owner supplies pier datum after the exact legacy plane is removed',()=>{
   const f=fixture();f.pond.removeFromParent();const water={built:true,builtIds:['way/105449705'],waterLevel:65.3145032521};
-  const r=buildKumatakaRegistrationR97(f.root,features,f.surfaces,f.materials,f.colliders,{water});assert.ok(r);assert.equal(r.pier.waterLevel,water.waterLevel);assert.equal(r.pier.bottom,water.waterLevel-.15);
+  const r=buildKumatakaRegistrationR97(f.root,features,f.surfaces,f.materials,f.colliders,{water});assert.ok(r);assert.equal(r.pier.waterLevel,water.waterLevel);assert.equal(r.pier.bottom,water.waterLevel-.15);assert.equal(r.triangles,2846);assert.equal(r.slats,63);
   const invalid=fixture(),before=[...invalid.owner.children];assert.equal(buildKumatakaRegistrationR97(invalid.root,features,invalid.surfaces,invalid.materials,invalid.colliders,{water:{...water,builtIds:['wrong']}}),null);assert.deepEqual(invalid.owner.children,before);
 });
 test('arrival and onward center and side walking lanes remain clear of registered pavilion and connected rail',()=>{
@@ -54,4 +55,20 @@ test('unrecognized architecture or unsupported grade leaves original owners and 
     assert.equal(buildKumatakaRegistrationR97(f.root,invalid==='source'?{...features,buildings:[]}:features,invalid==='ground'?{terrainHeight:()=>NaN}:f.surfaces,f.materials,f.colliders),null);
     assert.deepEqual(f.owner.children,children);assert.equal(JSON.stringify(f.colliders),collision);
   }
+});
+test('photographed southwest passage closure joins registered body and has supported physical slats outside public routes',()=>{
+  const f=fixture(),r=buildKumatakaRegistrationR97(f.root,features,f.surfaces,f.materials,f.colliders);assert.ok(r);assert.equal(r.pier.segments.length,3);
+  const [a,b]=r.pier.segments[2];assert.deepEqual(a,r.rail[0]);assert.ok(Math.hypot(b[0]-543.030998,b[1]+131.420229)<1e-5);
+  const dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz),nx=-dz/len,nz=dx/len;assert.ok(len>1.69&&len<1.71);
+  const footprint=[[a[0]+nx*.215,a[1]+nz*.215],[b[0]+nx*.215,b[1]+nz*.215],[b[0]-nx*.215,b[1]-nz*.215],[a[0]-nx*.215,a[1]-nz*.215]];
+  for(const path of features.paths.filter(p=>['way/626313754','way/301527750'].includes(p.id)))for(let i=1;i<path.points.length;i++){
+    const p=path.points[i-1],q=path.points[i],dx=q[0]-p[0],dz=q[2]-p[2],l=Math.hypot(dx,dz),half=(parseFloat(path.tags.width)||2)/2+.28,n=[-dz/l*half,dx/l*half];
+    const strip=[[p[0]+n[0],p[2]+n[1]],[q[0]+n[0],q[2]+n[1]],[q[0]-n[0],q[2]-n[1]],[p[0]-n[0],p[2]-n[1]]];assert.ok(Math.abs(polygonArea(clipConvex(footprint,strip)))<1e-6,'full pier width clears public route plus player buffer');
+  }
+  f.root.updateMatrixWorld(true);
+  const rayAt=(t,y)=>new THREE.Raycaster(new THREE.Vector3(a[0]+dx*t+nx*.4,y,a[1]+dz*t+nz*.4),new THREE.Vector3(-nx,0,-nz),0,.8).intersectObject(r.group,true);
+  assert.ok(rayAt(.5,r.floor+.8).length>0,'middle return slat is actual solid geometry');
+  assert.equal(rayAt(.55,r.floor+.8).length,0,'adjacent return slat gap remains physically open');
+  const collider=f.colliders.filter(c=>c.args.at(-1)==='kumataka_mapped_lakeside_rail').at(-1);assert.ok(Math.abs(collider.args[0]-(a[0]+b[0])/2)<1e-8&&Math.abs(collider.args[1]-(a[1]+b[1])/2)<1e-8);
+  const vertical=new THREE.Raycaster(new THREE.Vector3((a[0]+b[0])/2,80,(a[1]+b[1])/2),new THREE.Vector3(0,-1,0));assert.ok(vertical.intersectObject(r.group,true).some(h=>Math.abs(h.point.y-r.pier.top)<5e-5));
 });

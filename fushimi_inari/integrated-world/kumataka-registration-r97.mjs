@@ -84,8 +84,10 @@ export function buildKumatakaRegistrationR97(root,features,surfaces,materials,co
   const dx=pb[0]-pa[0],dz=pb[2]-pa[2],len2=dx*dx+dz*dz;
   const projection=q=>{const t=Math.max(0,Math.min(1,((q[0]-pa[0])*dx+(q[2]-pa[2])*dz)/len2));return [pa[0]+dx*t,pa[2]+dz*t];};
   const railA=projection(plan.ring[2]),railB=projection(plan.ring[3]);
-  pavilion.updateMatrix();const receiver=new THREE.Vector3(-7.77,0,2.48).applyMatrix4(pavilion.matrix);
-  const segments=[[railA,railB],[railB,[receiver.x,receiver.z]]],pending=[];
+  pavilion.updateMatrix();const receiver=new THREE.Vector3(-7.77,0,2.48).applyMatrix4(pavilion.matrix),southwestReceiver=new THREE.Vector3(-7.77,0,-2.48).applyMatrix4(pavilion.matrix);
+  // P3600705 looks southwest along the rear passage with lake on the left.
+  // Its photographed terminal fence is this bounded SW return, not the NE run.
+  const segments=[[railA,railB],[railB,[receiver.x,receiver.z]],[railA,[southwestReceiver.x,southwestReceiver.z]]],pending=[];
   let slats=0;
   for(const [a,b]of segments){
     const dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz),count=Math.max(2,Math.ceil(len/.18)),yaw=-Math.atan2(dz,dx),box=(w,h,d,x,y,z,m)=>p.put(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(x,y,z),m);
