@@ -1,4 +1,4 @@
-import {createWaterAppearance} from './water-appearance.mjs';
+import {createWaterAppearance} from './water-appearance.mjs?v=97-release';
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=32';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
@@ -15,7 +15,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=96-release';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=96-release';
+import {integrate} from './integration.mjs?v=97-release';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -52,7 +52,8 @@ try {
   const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
   const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
   const mikoshikoClipped=assembly.mikoshikoPrecinct.clipTerrain?.(pathClipped)??pathClipped;
-  const pos=assembly.shinsenjoPrecinct.clipTerrain?.(mikoshikoClipped)??mikoshikoClipped;
+  const shinsenjoClipped=assembly.shinsenjoPrecinct.clipTerrain?.(mikoshikoClipped)??mikoshikoClipped;
+  const pos=assembly.shinikeWater.clipTerrain?.(shinsenjoClipped)??shinsenjoClipped;
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
@@ -141,7 +142,7 @@ try {
 
   const waterVertices=[];
   for(const w of features.water){
-    if(w.tags.natural!=='water'||w.points.length<4||assembly.officePonds.builtIds.includes(w.id))continue;
+    if(w.tags.natural!=='water'||w.points.length<4||assembly.officePonds.builtIds.includes(w.id)||assembly.shinikeWater.builtIds.includes(w.id))continue;
     const ring=w.points.slice(0,-1),contour=ring.map(p=>new THREE.Vector2(p[0],p[2]));
     for(const triangle of THREE.ShapeUtils.triangulateShape(contour,[]))for(const j of triangle){
       const p=ring[j];waterVertices.push(p[0],ground(p[0],p[2])+.3,p[2]);

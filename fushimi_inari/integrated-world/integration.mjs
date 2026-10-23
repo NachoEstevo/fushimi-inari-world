@@ -1,3 +1,8 @@
+import {buildShinikeWaterR97} from './shinike-water-r97.mjs?v=97-release';
+import {repairShinikeVegetationR97} from './shinike-vegetation-r97.mjs?v=97-release';
+import {buildKumatakaRegistrationR97} from './kumataka-registration-r97.mjs?v=97-release';
+import {buildKumatakaRoofR97} from './kumataka-roof-r97.mjs?v=97-release';
+import {buildShinikeBankLandscapeR97} from './shinike-bank-landscape-r97.mjs?v=97-release';
 import {prepareGehaidenLanternCleanupR96} from './gehaiden-lantern-cleanup-r96.mjs?v=96-release';
 import {buildOmotesandoFrontageR96} from './omotesando-frontage-r96.mjs?v=96-release';
 import {buildOmotesandoNoticeR96} from './omotesando-notice-r96.mjs?v=96-release';
@@ -623,7 +628,16 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(poi){const a={id,label,osm,target:[...poi.point],radius:0};anchors.push(a);byId[id]=a;}
   }
   document.body.dataset.kumatakaLakesideRail=JSON.stringify(buildKumatakaLakesideRail(root,legacy.materials));
+  const shinikeWater=buildShinikeWaterR97(root,features,legacy.materials,{terrainPositions:renderedTerrainPositions});
+  document.body.dataset.shinikeWaterR97=JSON.stringify(shinikeWater);
+  const kumatakaRegistrationR97=buildKumatakaRegistrationR97(root,features,surfaces,legacy.materials,colliders,{water:shinikeWater});
+  document.body.dataset.kumatakaRegistrationR97=JSON.stringify(kumatakaRegistrationR97?(({group,...report})=>report)(kumatakaRegistrationR97):null);
+  const kumatakaRoofR97=buildKumatakaRoofR97(root);
+  document.body.dataset.kumatakaRoofR97=JSON.stringify(kumatakaRoofR97?(({group,...report})=>report)(kumatakaRoofR97):null);
+  const shinikeVegetation=repairShinikeVegetationR97(root,legacy,shinikeWater,colliders);
+  document.body.dataset.shinikeVegetationR97=JSON.stringify(shinikeVegetation);
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
+  document.body.dataset.shinikeBankLandscapeR97=JSON.stringify(buildShinikeBankLandscapeR97(root,features,surfaces,legacy,colliders,{terrainPositions:renderedTerrainPositions,water:shinikeWater}));
   document.body.dataset.omotesandoContextR95=JSON.stringify(buildOmotesandoContextR95(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
   document.body.dataset.senbonRestLandscapeR94=JSON.stringify(buildSenbonRestLandscape(root,features,ground,pathDistance,legacy.materials,colliders));
   document.body.dataset.upperAccessR94=JSON.stringify(buildUpperAccessR94(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
@@ -713,6 +727,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+  return {root,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+    excludesBuilding:b=>(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

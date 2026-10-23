@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
-const palettes={pond:{day:'#5a8171',gold:'#75846c',night:'#39555a'},lake:{day:'#4e7e87',gold:'#708b8d',night:'#314a58'}};
+const palettes={pond:{day:'#5a8171',gold:'#75846c',night:'#39555a'},lake:{day:'#4e7e87',gold:'#708b8d',night:'#314a58'},shinike:{day:'#626950',gold:'#79785a',night:'#383e34'}};
 
 // One material per desired kind, shared by all its water meshes. Standard
 // lighting/shadows remain authoritative; ripples never move vertices or levels.
 export function createWaterAppearance({kind='pond'}={}){
- if(!palettes[kind])throw new RangeError('Water kind must be pond or lake');
- const material=new THREE.MeshStandardMaterial({color:palettes[kind].day,roughness:kind==='pond'?.28:.24,metalness:.08,emissive:0x000000,side:THREE.DoubleSide});
- const uniforms={uWaTime:{value:0},uWaStrength:{value:1},uWaWaveA:{value:new THREE.Vector4(...(kind==='pond'?[2.7,1.9,.008,.65]:[1.05,.73,.021,.48]))},uWaWaveB:{value:new THREE.Vector4(...(kind==='pond'?[-1.5,3.1,.005,-.43]:[-.61,1.31,.012,-.31]))}};
+ if(!palettes[kind])throw new RangeError('Water kind must be pond, lake or shinike');
+ const material=new THREE.MeshStandardMaterial({color:palettes[kind].day,roughness:kind==='shinike'?.34:kind==='pond'?.28:.24,metalness:kind==='shinike'?.04:.08,emissive:0x000000,side:THREE.DoubleSide});
+ const uniforms={uWaTime:{value:0},uWaStrength:{value:1},uWaWaveA:{value:new THREE.Vector4(...(kind!=='lake'?[2.7,1.9,.008,.65]:[1.05,.73,.021,.48]))},uWaWaveB:{value:new THREE.Vector4(...(kind!=='lake'?[-1.5,3.1,.005,-.43]:[-.61,1.31,.012,-.31]))}};
  let mode='day';
- material.userData.waterAppearance={kind,uniforms,get mode(){return mode;},update(seconds){if(!Number.isFinite(seconds)||seconds<0)throw new RangeError('Water time must be finite nonnegative elapsed seconds');uniforms.uWaTime.value=seconds;},setMode(value){if(!palettes[kind][value])throw new RangeError('Water mode must be day, gold or night');mode=value;material.color.set(palettes[kind][value]);material.roughness=value==='night'?.34:kind==='pond'?.28:.24;uniforms.uWaStrength.value=value==='night'?.78:1;}};
+ material.userData.waterAppearance={kind,uniforms,get mode(){return mode;},update(seconds){if(!Number.isFinite(seconds)||seconds<0)throw new RangeError('Water time must be finite nonnegative elapsed seconds');uniforms.uWaTime.value=seconds;},setMode(value){if(!palettes[kind][value])throw new RangeError('Water mode must be day, gold or night');mode=value;material.color.set(palettes[kind][value]);material.roughness=value==='night'?(kind==='shinike'?.38:.34):kind==='shinike'?.34:kind==='pond'?.28:.24;uniforms.uWaStrength.value=value==='night'?.78:1;}};
  material.customProgramCacheKey=()=> 'water-appearance-r86-v1';
  material.onBeforeCompile=shader=>{
   if(!shader.vertexShader.includes('#include <project_vertex>')||!shader.fragmentShader.includes('#include <normal_fragment_maps>')||!shader.fragmentShader.includes('#include <color_fragment>'))throw Error('Water appearance requires Three r164 standard shader hooks');
