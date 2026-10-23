@@ -1,4 +1,4 @@
-import {partitionSanctuaryPathTrianglesR95} from './sanctuary-path-junction-r95.mjs';
+import {partitionWalkingTopsR96} from './path-top-ownership-r96.mjs';
 import * as THREE from 'three';
 import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
@@ -155,6 +155,7 @@ export function buildPathMeshes(network,legacy,ground){
   // Their metric UVs/colors are generated below after this bounded partition.
   buckets.edge=partitionOkushaPathTrianglesR95(buckets.edge);
   buckets.earth=partitionOkushaPathTrianglesR95(buckets.earth);
+  group.userData.walkingTopOwnershipR96=partitionWalkingTopsR96(buckets,uvBuckets);
   const riserTint=new THREE.Color('#b9b8af').toArray();
   for(const [key,bucket] of Object.entries(buckets)){
     if(key==='mountainPaving'||key==='mountainRiser')continue;
@@ -179,18 +180,7 @@ export function buildPathMeshes(network,legacy,ground){
       if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3)colors.push(...tint);}
       offset=end;
     }
-    let finalUV=uv;
-    if(key==='stone'||key==='precinct'){
-      // Partition after stone/mountainPaving merge so their shared Okusha
-      // frontier is owned once too. Preserve each original UV plane.
-      // Sanctuary paths below 55m use the precinct palette, not stone.
-      // Keep that owner/material while resolving its measured overlap too.
-      const okushaPartition=key==='stone'?partitionOkushaPathTrianglesR95(vertices,uv):{vertices,uv};
-      const partition=partitionSanctuaryPathTrianglesR95(okushaPartition.vertices,okushaPartition.uv);
-      geo.setAttribute('position',new THREE.Float32BufferAttribute(partition.vertices,3));
-      geo.computeVertexNormals();finalUV=partition.uv;
-    }
-    geo.setAttribute('uv',new THREE.Float32BufferAttribute(finalUV,2));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     const material=materials[key].clone();material.side=THREE.DoubleSide;
     if(colors){geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));material.vertexColors=true;}
     const cells=spatialMeshes(geo,material);if(key==='omotesando'){cells.name='Omotesando central slab ribbon';cells.userData={sourcePath:omotesandoContextSpecR95.path,visualWidth:omotesandoContextSpecR95.centralSlabWidth,publicWidth:omotesandoContextSpecR95.totalMappedWidth};}group.add(cells);geo.dispose();

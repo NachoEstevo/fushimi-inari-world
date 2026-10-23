@@ -1,3 +1,17 @@
+import {prepareGehaidenLanternCleanupR96} from './gehaiden-lantern-cleanup-r96.mjs?v=96-release';
+import {buildOmotesandoFrontageR96} from './omotesando-frontage-r96.mjs?v=96-release';
+import {buildOmotesandoNoticeR96} from './omotesando-notice-r96.mjs?v=96-release';
+import {buildRestBoundaryR96} from './restboundary-r96.mjs?v=96-release';
+import {buildShinkosuiWellR96} from './shinkosui-well-r96.mjs?v=96-release';
+import {refineGehaidenContextR96} from './gehaiden-context-r96.mjs?v=96-release';
+import {refineNaihaidenContextR96} from './naihaiden-context-r96.mjs?v=96-release';
+import {buildUpperEnclosureR96} from './upper-enclosure-r96.mjs?v=96-release';
+import {buildOmotesandoContextR96} from './omotesando-context-r96.mjs?v=96-release';
+import {refineRomonPrecinctR96} from './romon-precinct-r96.mjs?v=96-release';
+import {refineHondenServiceEnvelopeR96} from './sanctuary-context-r96.mjs?v=96-release';
+import {buildUpperAccessR96} from './upper-access-r96.mjs?v=96-release';
+import {buildSenbonRestR96} from './senbon-rest-r96.mjs?v=96-release';
+import {buildYotsutsujiContextR96} from './yotsutsuji-context-r96.mjs?v=96-release';
 import {buildMappedChojaR95,clearMisplacedSanctuaryProxiesR95} from './sanctuary-proxy-repair-r95.mjs?v=95-release';
 import {buildOkumiyaStairLanternsR95} from './okumiya-stair-lanterns-r95.mjs?v=95-release';
 import {buildGondenServiceR95} from './gonden-service-r95.mjs?v=95-release';
@@ -93,7 +107,7 @@ import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
 import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=25e';
-import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=25b';
+import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=96-release';
 import {separatedTemizuya,westStairHeight,westLandingTransition} from './entrance-layout.mjs';
 import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs?v=70';
 import {refineRomonWings} from './romon-wings.mjs?v=71';
@@ -136,6 +150,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   ]);
   const spatial=makeSpatial(terrain,features,spec);
   const legacy=await buildLegacy(renderer,callbacks);
+  const gehaidenLanternCleanupR96=prepareGehaidenLanternCleanupR96(legacy);
   legacy.materials.entryStoneMat=fineGranite();
   legacy.materials.gravelMat.copy(courtyardGravel());
   legacy.materials.precinctPaving=precinctPaving();
@@ -411,10 +426,16 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       refineGehaiden(gltf.scene,legacy.materials);
       document.body.dataset.gehaidenRails=String(gltf.scene.userData.gehaidenBalustradeRemovalCount??0);
     }
-    if(id==='honden')document.body.dataset.hondenEnclosureR95=JSON.stringify(refineHondenOpenEnclosure(gltf.scene,legacy.materials));
+    if(id==='honden'){document.body.dataset.hondenEnclosureR95=JSON.stringify(refineHondenOpenEnclosure(gltf.scene,legacy.materials));document.body.dataset.hondenEnvelopeR96=JSON.stringify(refineHondenServiceEnvelopeR96(gltf.scene,legacy.materials));}
     if(id==='naihaiden')document.body.dataset.naihaidenArchitectureR95=JSON.stringify(refineNaihaidenArchitecture(gltf.scene,legacy.materials));
     if(id==='naihaiden')document.body.dataset.naihaidenFrontR95=JSON.stringify(refineNaihaidenPrayerFront(gltf.scene,legacy.materials));
     if(id==='romon'||id==='gehaiden')document.body.dataset[id+'ArchitectureR95']=JSON.stringify(refineRomonGehaidenR95(gltf.scene,id,legacy.materials));
+    if(id==='gehaiden'){
+      const {removedElements,...report}=gehaidenLanternCleanupR96.commit(gltf.scene.userData.romonGehaidenR95);
+      document.body.dataset.gehaidenLanternCleanupR96=JSON.stringify(report);
+    }
+    if(id==='gehaiden')document.body.dataset.gehaidenContextR96=JSON.stringify(refineGehaidenContextR96(gltf.scene,legacy.materials));
+    if(id==='naihaiden')document.body.dataset.naihaidenContextR96=JSON.stringify(refineNaihaidenContextR96(gltf.scene,legacy.materials));
     if(id==='romon'){
       // Export manifest: these two materials contain only T00 approach slabs.
       // Terrain + mapped path surfaces now own the outdoor floor; a rigid slab
@@ -434,7 +455,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
         White_Shikku_Plaster:'plasterMat',Gold_Kanagu_Leaf:'goldMat',Copper_Patina_Green:'copperRoofMat'};
       for(const [tag,key] of Object.entries(tags))if(object.material.name.includes(tag)){object.material=legacy.materials[key==='flagstoneMat'?'precinctPaving':['romon','naihaiden','honden'].includes(id)&&key==='stoneMat'?'entryStoneMat':key];break;}
     });
-    if(id==='romon')document.body.dataset.romonWings=JSON.stringify(refineRomonWings(gltf.scene,legacy.materials));
+    if(id==='romon'){document.body.dataset.romonWings=JSON.stringify(refineRomonWings(gltf.scene,legacy.materials));document.body.dataset.romonPrecinctR96=JSON.stringify(refineRomonPrecinctR96(gltf.scene,legacy.materials));}
     gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);
   }
   const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';
@@ -489,6 +510,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.precinctNorthContext=JSON.stringify(precinctNorthContext);
   const nearPrecinctShrineRow=buildNearPrecinctShrineRow(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.nearPrecinctShrineRow=JSON.stringify(nearPrecinctShrineRow);
+  const shinkosuiWellR96=buildShinkosuiWellR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
+  document.body.dataset.shinkosuiWellR96=JSON.stringify(shinkosuiWellR96);
   const mappedChojaR95=buildMappedChojaR95(root,features,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
   document.body.dataset.mappedChojaR95=JSON.stringify(mappedChojaR95);
   document.body.dataset.sanctuaryProxyRepairR95=JSON.stringify(clearMisplacedSanctuaryProxiesR95(root,colliders,{anchors:spatial.anchors}));
@@ -549,9 +572,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.approachSlabs=JSON.stringify(clearLegacyApproachSlabs(root));
   document.body.dataset.entranceStatues=JSON.stringify(clearEntranceStatues(root,entranceBarriers,features,surfaces,colliders));
   const guardhouse=buildEntranceGuardhouseDetails(root,features,surfaces,legacy.materials,colliders);
-  const neighborhoodFeatures=guardhouse?{...features,buildings:features.buildings.filter(b=>b.id!==guardhouse.id)}:features;
+  const omotesandoNoticeR96=buildOmotesandoNoticeR96(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.omotesandoNoticeR96=JSON.stringify((({group,...report})=>report)(omotesandoNoticeR96));
+  const omotesandoFrontageR96=buildOmotesandoFrontageR96(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.omotesandoFrontageR96=JSON.stringify((({group,...report})=>report)(omotesandoFrontageR96));
+  const neighborhoodFeatures={...features,buildings:features.buildings.filter(b=>b.id!==guardhouse?.id&&!omotesandoFrontageR96.builtIds.includes(b.id)&&!omotesandoNoticeR96.builtIds.includes(b.id))};
   const entranceNeighborhood=buildEntranceNeighborhood(root,neighborhoodFeatures,surfaces.terrainHeight,legacy.materials,colliders,surfaces);
   if(guardhouse)entranceNeighborhood.builtIds.push(guardhouse.id);
+  entranceNeighborhood.builtIds.push(...omotesandoFrontageR96.builtIds);
+  entranceNeighborhood.builtIds.push(...omotesandoNoticeR96.builtIds);
   document.body.dataset.entranceNeighborhood=JSON.stringify({builtIds:entranceNeighborhood.builtIds,skipped:entranceNeighborhood.skippedLegacyShopOverlap});
   document.body.dataset.entranceTrees=JSON.stringify(buildEntranceMappedTrees(root,entranceContext,features,surfaces,colliders));
   const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
@@ -562,6 +591,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   document.body.dataset.yotsutsujiContextR95=JSON.stringify(buildYotsutsujiContextR95(root,features,legacy.materials));
+  document.body.dataset.yotsutsujiContextR96=JSON.stringify(buildYotsutsujiContextR96(root,features,ground,surfaces));
   const ainomine=buildAinomine(root,features,surfaces,legacy.materials,colliders);
   const mountainContextR87=refineMountainContextR87(ainomine);
   document.body.dataset.mountainContextR87=JSON.stringify(mountainContextR87?.stats??null);
@@ -601,9 +631,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const okumiyaStairLanternsR95=buildOkumiyaStairLanternsR95(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
   document.body.dataset.okumiyaStairLanternsR95=JSON.stringify(okumiyaStairLanternsR95);
   document.body.dataset.upperAccessR95=JSON.stringify(buildUpperAccessR95(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  document.body.dataset.upperEnclosureR96=JSON.stringify(buildUpperEnclosureR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  document.body.dataset.upperAccessR96=JSON.stringify(buildUpperAccessR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  document.body.dataset.omotesandoContextR96=JSON.stringify(buildOmotesandoContextR96(root,features,surfaces,legacy.materials,colliders));
   const margins=buildPathMargins(root,surfaces,ground,features,anchors);
   const okushaCourt=buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders,surfaces);
   document.body.dataset.okushaFrontageR95=JSON.stringify(buildSenbonRestR95(root,features,byId.okusha,legacy.materials));
+  document.body.dataset.okushaRestR96=JSON.stringify((({group,...report})=>report)(buildSenbonRestR96(root,features,byId.okusha,legacy.materials)));
+  const restBoundaryR96=buildRestBoundaryR96(root,features,legacy.materials,colliders,ground);
+  document.body.dataset.okushaBoundaryR96=JSON.stringify(restBoundaryR96?(({group,...report})=>report)(restBoundaryR96):null);
   document.body.dataset.okushaArchitecture=JSON.stringify(okushaCourt??null);
   const terraces=supportTerraces(root,legacy,ground);
   const precinctLife=installPrecinctLife(root,legacy,callbacks);
@@ -678,5 +714,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

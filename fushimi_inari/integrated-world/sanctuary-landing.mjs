@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {rigidPoint} from './spatial.mjs';
+import {partitionWalkingTopsR96} from './path-top-ownership-r96.mjs';
 
 // Connect the existing nine-step flight to the podium without floating aprons.
 // Dimensions derive from the preserved building; surface vocabulary is video-led.
@@ -38,7 +39,11 @@ export function buildSanctuaryApproaches(root,features,surfaces,materials){
       }
     }
   }
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.computeVertexNormals();
+  // Resolve this apron owner's intersecting mapped ribbons independently.
+  // Its existing lower datum stays separate from the public path top owner.
+  const buckets={precinct:positions},uvs={precinct:uv};
+  const ownership=partitionWalkingTopsR96(buckets,uvs);
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(buckets.precinct,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs.precinct,2));geo.computeVertexNormals();
   const mat=materials.precinctPaving.clone();mat.side=THREE.DoubleSide;materials.sanctuaryApronMat=mat;
-  const mesh=new THREE.Mesh(geo,mat);mesh.name='Mapped sanctuary side approach aprons';mesh.receiveShadow=true;root.add(mesh);
+  const mesh=new THREE.Mesh(geo,mat);mesh.name='Mapped sanctuary side approach aprons';mesh.receiveShadow=true;mesh.userData.apronOwnershipR96=ownership;root.add(mesh);
 }
