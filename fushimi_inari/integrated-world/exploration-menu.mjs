@@ -1,4 +1,4 @@
-export function installExplorationMenu({walker,controls,camera,assembly}){
+export function installExplorationMenu({walker,controls,camera,assembly,onNavigate=()=>{},cameraOwned=()=>false}){
   const $=id=>document.getElementById(id);
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Movement','Checkpoints','Routes','Environment'];
@@ -25,8 +25,8 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   function open(){if(menu.open)return;if(!$('stop').disabled)$('stop').click();walker.pause(true);controls.enabled=false;$('interaction').hidden=true;menu.showModal();$('menu-close').focus();}
   function close(){if(menu.open)menu.close();}
   trigger.onclick=open;$('menu-close').onclick=close;
-  $('mode-walk').onclick=()=>{walker.start();close();};$('mode-fly').onclick=()=>{walker.fly();close();};$('mode-orbit').onclick=()=>{walker.stop();close();};
-  menu.addEventListener('close',()=>{walker.pause(false);controls.enabled=!walker.active&&$('stop').disabled;trigger.focus();});
+  $('mode-walk').onclick=()=>{onNavigate();walker.start();close();};$('mode-fly').onclick=()=>{onNavigate();walker.fly();close();};$('mode-orbit').onclick=()=>{onNavigate();walker.stop();close();};
+  menu.addEventListener('close',()=>{walker.pause(cameraOwned());controls.enabled=!cameraOwned()&&!walker.active&&$('stop').disabled;trigger.focus();});
   menu.addEventListener('cancel',e=>{e.preventDefault();close();});
   menu.addEventListener('click',e=>{if(e.target===menu){const r=menu.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
   addEventListener('keydown',e=>{if(e.code!=='Escape')return;e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
@@ -35,7 +35,7 @@ export function installExplorationMenu({walker,controls,camera,assembly}){
   const title=document.querySelector('header h1');document.querySelector('header .eyebrow').textContent='Fushimi Inari Taisha';
   title.parentElement.insertAdjacentHTML('afterbegin','<svg class="place-mark" viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 5q14 4 28 0M4 10h24M5 17h22M9 11 7 33M23 11l2 22M16 11v6"/></svg>');
   let last=0;
-  return {update(time){if(time-last<350)return;last=time;
+  return {get active(){return menu.open;},update(time){if(time-last<350)return;last=time;
     const nearest=assembly.spatial.anchors.reduce((best,a)=>{const distance=Math.hypot(camera.position.x-a.target[0],camera.position.z-a.target[2]);return !best||distance<best.distance?{a,distance}:best;},null);
     title.textContent=camera.position.y>400?'Inariyama':nearest.distance<45?nearest.a.label:`Trail · ${nearest.a.label}`;
     $('menu-context').textContent=`${title.textContent} · ${Math.round(camera.position.y-1.7)} m ASL`;

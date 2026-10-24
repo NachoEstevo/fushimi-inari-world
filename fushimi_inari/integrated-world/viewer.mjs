@@ -1,7 +1,9 @@
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
-import {installExplorationMenu} from './exploration-menu.mjs?v=32';
+import {installExplorationMenu} from './exploration-menu.mjs?v=inari-arrival-1';
+import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
+import {installTrainArrivalUI} from './train-arrival-ui.mjs';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs?v=32';
@@ -15,9 +17,9 @@ import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=100-release';
-import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=102-release';
-import {installWalking} from './walking.mjs?v=35';
+import {installExplorationHUD} from './exploration-hud.mjs?v=inari-arrival-1';
+import {integrate} from './integration.mjs?v=inari-arrival-1';
+import {installWalking} from './walking.mjs?v=inari-arrival-1';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -38,6 +40,8 @@ try {
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
   $('world').append(renderer.domElement);
+  renderer.domElement.tabIndex=0;
+  renderer.domElement.setAttribute('aria-label','Explore Inariyama: WASD to move, drag to look');
   const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.2,12000);
   const sky=installSky(scene,camera);
   const controls=new OrbitControls(camera,renderer.domElement);
@@ -177,6 +181,12 @@ try {
   landmarkGroup.add(markers);landmarkGroup.visible=false;
   const graph=buildGraph(features.paths,terrain);
   let activeRoute=[],routeLine=null,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
+  let arrival=null,arrivalUI=null;
+  function interruptArrival(){
+    // If the requested destination is unavailable, remain on a safe platform.
+    if(arrival?.active)arrival.skip();
+    arrival?.cancel();
+  }
   const marker=new THREE.Mesh(new THREE.SphereGeometry(.35,12,8),new THREE.MeshBasicMaterial({color:0xf5f7dd}));
   marker.visible=false;scene.add(marker);
   function overview(){
@@ -233,7 +243,7 @@ try {
   }
   $('route').onclick=trace;
   $('itinerary').onchange=trace;$('branch').onchange=trace;
-  $('overview').onclick=()=>{walker.stop();overview();};
+  $('overview').onclick=()=>{interruptArrival();walker.stop();overview();};
   $('walk').onclick=()=>{
     if(!activeRoute.length)return;
     if(routeProgress>=activeRoute.length-1){routeProgress=0;travelled=0;}
@@ -282,7 +292,7 @@ try {
   map.onclick=e=>{
     const rect=map.getBoundingClientRect(),x=(e.clientX-rect.left)*map.width/rect.width,z=(e.clientY-rect.top)*map.height/rect.height;
     let best=null,d=18;for(const p of landmarks){const gap=Math.hypot(mx(p.point[0])-x,mz(p.point[2])-z);if(gap<d){d=gap;best=p;}}
-    if(best){$('itinerary').value='custom';$('destination').value=best.id;trace();controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}
+    if(best){interruptArrival();walker.stop();$('itinerary').value='custom';$('destination').value=best.id;trace();controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}
   };
   const raycaster=new THREE.Raycaster();
   renderer.domElement.addEventListener('dblclick',e=>{
@@ -305,6 +315,7 @@ try {
   }
   for(const a of assembly.spatial.anchors){const option=document.createElement('option');option.value=a.id;option.textContent=a.label;$('place').append(option);}
   function visit(){
+    interruptArrival();
     walker.stop();walking=false;controls.enabled=true;
     const a=assembly.spatial.byId[$('place').value],near=a.checkpoint??nearestNode(graph,a.target,80)?.node.point??a.target;
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
@@ -331,12 +342,16 @@ try {
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=anchor.checkpoint??(id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point);
     const target=anchor.lookAt??(['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)]);
+    interruptArrival();
     if(walker.teleport(point,target)){
       $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
       document.body.dataset.checkpoint=id;
     }else $('position').textContent='No clear access found at this checkpoint.';
   }});
-  const startGuided=$('walk').onclick;$('walk').onclick=()=>{walker.stop();startGuided();};
+  const startGuided=$('walk').onclick;$('walk').onclick=()=>{interruptArrival();walker.stop();startGuided();};
+  const toggleWalking=$('freewalk').onclick;$('freewalk').onclick=()=>{
+    if(arrival?.active){interruptArrival();walker.start();}else toggleWalking();
+  };
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
   $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sound: on':'Sound: off';document.getElementById('ambient-toggle').textContent=$('audio').textContent;};
   $('light').onchange=()=>{
@@ -344,11 +359,12 @@ try {
     sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
     sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
     hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
+    assembly.inariStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
-  const menu=installExplorationMenu({walker,controls,camera,assembly});
+  const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false});
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
   installSeasons(assembly,canopy);
@@ -358,12 +374,23 @@ try {
   addEventListener('pagehide',event=>{if(!event.persisted)pondReflections.dispose();});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').remove();trace();
-  // Route initialization enables orbit controls; establish walking arrival last.
-  if(assembly.omotesandoArrival?.built){
+  function startAtOmotesando(){
+    if(!assembly.omotesandoArrival?.built)return false;
     const {position:[x,z],lookAt:[tx,tz]}=assembly.omotesandoArrival.spawn;
     const y=assembly.walkHeight(x,z);
-    if(walker.teleport([x,y,z],[tx,y+1.7,tz]))document.body.dataset.startLocation='Omotesando pedestrian crossing';
-    else document.body.dataset.startLocation='Romon fallback: crossing unavailable';
+    return walker.teleport([x,y,z],[tx,y+1.7,tz]);
+  }
+  // Route initialization enables orbit controls; give arrival sole ownership last.
+  if(assembly.inariStation?.built&&assembly.inariStationRoute?.built){
+    arrival=createTrainArrivalExperience({sequenceOptions:assembly.inariStation.spec.arrival,
+      station:assembly.inariStation,camera,controls,walker,
+      onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
+      onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
+    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active});
+    arrival.start({reducedMotion:arrivalUI.reducedMotion});
+    document.body.dataset.startLocation='JR Inari train arrival · Platform 2';
+  }else{
+    document.body.dataset.startLocation=startAtOmotesando()?'Omotesando fallback: station unavailable':'Romon fallback: crossing unavailable';
   }
 
 
@@ -371,7 +398,9 @@ try {
   let mapTimer=0;
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
-    if(walking&&activeRoute.length>1){
+    if(arrival?.active){
+      arrival.update(dt,{paused:photo.active||menu.active});
+    }else if(walking&&activeRoute.length>1){
       let remaining=dt*Number($('speed').value);
       while(remaining>0&&routeProgress<activeRoute.length-1){
         const len=distance(activeRoute[routeProgress],activeRoute[routeProgress+1]),step=Math.min(remaining,len-travelled);

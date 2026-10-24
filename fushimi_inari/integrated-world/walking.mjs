@@ -137,7 +137,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){
       const x=point[0]+Math.cos(angle)*r,z=point[2]+Math.sin(angle)*r;
-      if(!assembly.surfaces.sample(x,z))continue;
+      if(!(assembly.isWalkable?.(x,z)??assembly.surfaces.sample(x,z)))continue;
       const y=assembly.walkHeight(x,z)+1.7,resolved=obstacles.resolvePlayer(x,y,z);
       if(Math.hypot(resolved.x-x,resolved.z-z)<.05)candidates.push([x,y,z]);
     }

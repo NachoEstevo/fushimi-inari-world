@@ -580,3 +580,24 @@ footer {
 button:active {
   transform:none}
 }
+
+#train-arrival {
+  position:fixed;left:50%;bottom:80px;transform:translateX(-50%);
+  z-index:15;width:min(410px,calc(100vw - 32px));box-sizing:border-box;
+  padding:18px 22px;background:#f5f4edee;color:#28362f;
+  border:1px solid #ffffff80;border-radius:8px;box-shadow:0 8px 36px #14291a26;
+}
+#train-arrival[hidden],.photo-mode #train-arrival {display:none}
+#arrival-phase {font-size:20px;line-height:1.2;margin:9px 0}
+#arrival-help {font-size:13px;line-height:1.5;margin:0 0 12px}
+.arrival-actions {display:flex;gap:8px}
+#train-arrival label,.arrival-settings label {display:flex;align-items:center;gap:8px;font-size:12px;margin-top:12px}
+#train-arrival input,.arrival-settings input {width:auto;margin:0}
+.arrival-settings {margin-top:24px;padding-top:20px;border-top:1px solid #bcc7b6}
+.arrival-settings h3 {font-size:18px;margin:0 0 6px}
+.arrival-settings p {font-size:13px;margin:0 0 12px}
+.train-arriving #crosshair {display:none}
+@media(max-width:700px){
+  #train-arrival{left:16px;transform:none;bottom:76px;width:calc(100vw - 32px);padding:14px 18px}
+  .train-arriving #navigation{display:none}
+}

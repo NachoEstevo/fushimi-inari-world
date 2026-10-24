@@ -26,7 +26,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     const option=document.createElement('option');option.value=a.id;option.textContent=a.label;select.append(option);
   }
   select.value='romon';
-  const ids=['romon','senbon','okusha','kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani'];
+  const ids=['inari_platform','omotesando_entry','romon','senbon','okusha','kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani'].filter(id=>assembly.spatial.byId[id]);
   for(const id of ids){
     const button=document.createElement('button');button.textContent=id==='yotsu'?'Yotsutsuji · Kyoto view':assembly.spatial.byId[id].label;
     button.setAttribute('aria-label',button.textContent);

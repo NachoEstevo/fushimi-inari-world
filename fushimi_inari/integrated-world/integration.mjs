@@ -1,3 +1,6 @@
+import {buildInariStationArrival} from './inari-station-arrival.mjs';
+import {buildInariStationRoute} from './inari-station-route.mjs';
+import {buildInariStationFrontage} from './inari-station-frontage.mjs';
 import {buildKumatakaRestFurnitureR102} from './kumataka-rest-furniture-r102.mjs?v=102-release';
 import {buildOkushaMappedSheltersR102} from './okusha-mapped-shelters-r102.mjs?v=102-release';
 import {buildEntranceDetailsR101} from './entrance-details-r101.mjs?v=101-release';
@@ -685,6 +688,36 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const kumatakaDetailsR101=buildKumatakaDetailsR101(root);
   document.body.dataset.kumatakaDetailsR101=JSON.stringify(kumatakaDetailsR101?(({group,...report})=>report)(kumatakaDetailsR101):null);
   document.body.dataset.entranceDetailsR101=JSON.stringify(buildEntranceDetailsR101(root,features));
+  // Replace only the identified legacy station after the complete public
+  // access builds successfully. Preserve the original interactive sign object.
+  let inariStation=null,inariStationRoute=null,inariBuildError=null;
+  const stationInteractionsBefore=legacy.interactables.length;
+  const stationOwners=[];root.traverse(o=>{if(o.userData.mappedStationPlaced)stationOwners.push(o);});
+  const stationSolids=colliders.filter(c=>c.args.at(-1)==='jr_inari_station');
+  const stationSigns=stationOwners[0]?.children.filter(o=>legacy.interactables.includes(o))??[];
+  if(stationOwners.length===1&&stationSolids.length===1&&stationSigns.length===1){
+    let candidate=null,route=null;const routeColliders=[];
+    try{
+      candidate=buildInariStationArrival(root,legacy.materials,features,surfaces);
+      route=candidate.built?buildInariStationRoute(root,features,surfaces,legacy.materials,routeColliders,candidate.spec):null;
+    }catch(error){candidate?.group?.removeFromParent();route?.group?.removeFromParent();candidate=null;route=null;inariBuildError=error.message;}
+    if(candidate?.built&&route?.built){
+      const sign=stationSigns[0],replacement=candidate.sign;
+      replacement.parent.add(sign);sign.position.copy(replacement.position);sign.rotation.set(0,Math.PI/2,0);sign.scale.set(1,1,1);
+      replacement.removeFromParent();candidate.sign=sign;
+      const stationMode=candidate.setMode;sign.material.emissive.set('#ffffff');sign.material.emissiveMap=sign.material.map;
+      candidate.setMode=mode=>{stationMode(mode);sign.material.emissiveIntensity=mode==='night'?.45:.08;};candidate.setMode('day');
+      stationOwners[0].removeFromParent();colliders.splice(colliders.indexOf(stationSolids[0]),1);
+      // The cinematic crosses this opening without walking physics. Once
+      // control is released the doors are closed, so this solid is always valid.
+      colliders.push(...candidate.colliders,...(candidate.closedDoorCollider?[candidate.closedDoorCollider]:[]),...routeColliders);
+      inariStation=candidate;inariStationRoute=route;
+    }else{candidate?.group?.removeFromParent();route?.group?.removeFromParent();}
+  }
+  document.body.dataset.inariStation=JSON.stringify(inariStation?{built:true,revision:inariStation.spec.revision,stats:inariStation.stats,provenance:inariStation.spec.provenance,interactablesBefore:stationInteractionsBefore,interactablesAfter:legacy.interactables.length}:{built:false,reason:inariBuildError??'station replacement ownership or access unavailable'});
+  document.body.dataset.inariStationRoute=JSON.stringify(inariStationRoute?{built:true,triangles:inariStationRoute.triangles,collidersAdded:inariStationRoute.collidersAdded,routePoints:inariStationRoute.routePoints}:{built:false});
+  const inariStationFrontage=buildInariStationFrontage(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.inariStationFrontage=JSON.stringify(inariStationFrontage?(({group,...report})=>report)(inariStationFrontage):null);
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
@@ -707,6 +740,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   });
   const floorRay=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
   function walkHeight(x,z,previous=ground(x,z)){
+    const stationFloor=inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z);
+    if(Number.isFinite(stationFloor))return stationFloor;
     const base=surfaces.height(x,z);
     floorRay.set(new THREE.Vector3(x,Math.max(base,previous)+.42,z),down);floorRay.far=2;
     const hit=floorRay.intersectObjects(walkSurfaces,false).find(hit=>hit.point.y>=base-.15&&hit.point.y<=Math.max(base,previous)+.24);
@@ -728,6 +763,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   const buckets=new Map(),retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes]);
   for(const object of legacy.interactables)object.traverse(child=>retained.add(child));
+  // A moving carriage and its sliding doors must retain their local transforms.
+  inariStation?.trainGroup.traverse(child=>retained.add(child));
+  inariStation?.thresholdGroup.traverse(child=>retained.add(child));
   root.traverse(object=>{
     if(!object.isMesh||object.isInstancedMesh||retained.has(object)||Array.isArray(object.material))return;
     object.geometry.computeBoundingSphere();
@@ -749,6 +787,12 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+  const registerCheckpoint=(id,label,point,lookAt)=>{
+    const anchor={id,label,source:[...point],target:[...point],checkpoint:[...point],lookAt};spatial.anchors.push(anchor);spatial.byId[id]=anchor;
+  };
+  if(inariStation){const pose=inariStation.spec.arrival.platformPose;registerCheckpoint('inari_platform','JR Inari · Platform 2',[pose.position[0],pose.position[1]-1.7,pose.position[2]],pose.target);}
+  if(omotesandoArrival.built){const {position:[x,z],lookAt:[tx,tz]}=omotesandoArrival.spawn;registerCheckpoint('omotesando_entry','Omotesando · First torii',[x,walkHeight(x,z),z],[tx,walkHeight(x,z)+1.7,tz]);}
+  inventory.anchors=spatial.anchors.length;
+  return {root,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+    excludesBuilding:b=>(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
