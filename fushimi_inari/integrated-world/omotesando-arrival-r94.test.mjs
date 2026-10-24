@@ -19,13 +19,42 @@ test('surface batches follow slopes, have upward tops and repeated build is idem
 });
 test('missing geography is explicit and invalid height fails visibly',()=>{assert.equal(omotesandoArrivalLayoutR94({paths:[]}),null);assert.throws(()=>buildOmotesandoArrivalR94(new THREE.Group(),features,{height:()=>NaN}),/Nonfinite/);});
 
-test('user-reviewed zebra rotates 90 degrees while road, gutter and curb axes stay unchanged',()=>{
+test('paint and in-road gutters seat on asphalt while outside curbs retain their approach height',()=>{
+ const l=omotesandoArrivalLayoutR94(features),root=new THREE.Group(),surface={height:()=>42,segments:[{id:l.roadId,a:[l.center[0],20,l.center[1]+20],b:[l.center[0],22,l.center[1]-20],ya:20,yb:22}]};
+ buildOmotesandoArrivalR94(root,features,surface);const p=root.children[0].children[0].geometry.attributes.position;
+ for(let i=0;i<p.count;i++)assert.ok(Math.abs(p.getY(i)-(21+(l.center[1]-p.getZ(i))*.05+.022))<1e-5);
+ const gutter=root.children[0].children[1].geometry.attributes.position;
+ for(let i=0;i<gutter.count;i++)assert.ok(Math.abs(gutter.getY(i)-(21+(l.center[1]-gutter.getZ(i))*.05+.014))<1e-5);
+ const curb=root.children[0].children[2].geometry.attributes.position;
+ for(let i=0;i<curb.count;i++)assert.ok(Math.abs(curb.getY(i)-42)<1e-5||Math.abs(curb.getY(i)-42.09)<1e-5);
+ assert.equal(surface.height(...l.center),42,'walking height is unchanged');
+});
+
+test('zebra bands follow the road and repeat across the pedestrian route, matching the station reference',()=>{
  const l=omotesandoArrivalLayoutR94(features);
  assert.ok(l.along[1]<-.99);assert.ok(l.across[0]>.99);
- for(const stripe of l.stripes){assert.equal(stripe.width,3.6);assert.equal(stripe.length,.43);const dx=stripe.center[0]-l.center[0],dz=stripe.center[1]-l.center[1];assert.ok(Math.abs(dx*l.across[0]+dz*l.across[1])<1e-8);}
- const first=l.stripes[0].center,last=l.stripes.at(-1).center;assert.ok(Math.abs((last[0]-first[0])*l.across[0]+(last[1]-first[1])*l.across[1])<1e-8);
- assert.equal(l.gutters[0].length,26);assert.equal(l.curbs[0].width,.16);
- const root=new THREE.Group();buildOmotesandoArrivalR94(root,features,{height:()=>0});const p=root.children[0].children[0].geometry.attributes.position;
- // Actual first band long edge is across the road rather than along it.
- const dx=p.getX(1)-p.getX(0),dz=p.getZ(1)-p.getZ(0);assert.ok(Math.abs(dx*l.across[0]+dz*l.across[1]-3.6)<1e-4);assert.ok(Math.abs(dx*l.along[0]+dz*l.along[1])<1e-4);
+ const project=(point,axis)=>(point[0]-l.center[0])*axis[0]+(point[1]-l.center[1])*axis[1];
+ const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-4,`${actual} != ${expected}`);
+ for(const [i,stripe] of l.stripes.entries()){
+  close(project(stripe.center,l.along),0);close(project(stripe.center,l.across),(i-2.5)*.9);
+  assert.equal(stripe.width,.43);assert.equal(stripe.length,3.6);
+ }
+ const root=new THREE.Group(),before=JSON.stringify(features);buildOmotesandoArrivalR94(root,features,{height:()=>0});
+ assert.equal(JSON.stringify(features),before,'road and walking path inputs remain unchanged');
+ const p=root.children[0].children[0].geometry.attributes.position;
+ const verticesPerBand=Math.ceil(3.6/.5)*6;assert.equal(p.count,6*verticesPerBand);
+ // Check the rendered vertices, not only layout metadata: each complete band
+ // spans 3.6 m along the road, .43 m across, within the flush curb opening.
+ for(let band=0;band<6;band++){
+  const u=[],v=[];
+  for(let i=band*verticesPerBand;i<(band+1)*verticesPerBand;i++){
+   const point=[p.getX(i),p.getZ(i)];u.push(project(point,l.across));v.push(project(point,l.along));close(p.getY(i),.022);
+  }
+  close(Math.max(...u)-Math.min(...u),.43);close(Math.max(...v)-Math.min(...v),3.6);
+  close((Math.max(...u)+Math.min(...u))/2,(band-2.5)*.9);
+  assert.ok(Math.max(...u)<l.roadWidth/2-.24);assert.ok(Math.min(...u)>-l.roadWidth/2+.24);
+  assert.ok(Math.max(...v)<2.5);assert.ok(Math.min(...v)>-2.5);
+ }
+ for(const gutter of l.gutters){close(Math.abs(project(gutter.center,l.across)),l.roadWidth/2-.12);close(project(gutter.center,l.along),0);assert.equal(gutter.length,26);assert.equal(gutter.width,.24);}
+ for(const curb of l.curbs){close(Math.abs(project(curb.center,l.across)),l.roadWidth/2+.04);close(Math.abs(project(curb.center,l.along)),7.75);assert.equal(curb.length,10.5);assert.equal(curb.width,.16);assert.equal(curb.height,.09);}
 });

@@ -168,6 +168,26 @@ export function buildKeihanJrCrossingDetail(root,features,surfaces,colliders=[],
  }
  const deviceStats=parts.flush();
 
+ // Pale control cabinets visible beside the east/south crossing in the
+ // supplied walk video at 1:04. Dimensions and placement are inferred;
+ // retain the mapped road envelope and train clearance unchanged.
+ const cabinets=new THREE.Group();cabinets.name='JR crossing control cabinets';group.add(cabinets);detailGroups.push(cabinets);
+ const cabinetParts=staticParts(cabinets);
+ for(const [x,z,w,h,d]of [[-198.3,-74.8,1.25,1.75,.62],[-196.95,-74.8,.54,.78,.42]]){
+  const samplePoints=[[x,z],...[-1,1].flatMap(a=>[-1,1].map(b=>[x+a*(w/2+.08),z+b*(d/2+.08)]))],supports=samplePoints.map(([px,pz])=>surfaces.height(px,pz)),ground=samplePoints.map(([px,pz])=>surfaces.terrainHeight?.(px,pz)??surfaces.height(px,pz)),bottom=Math.min(...supports,...ground)-.12,base=Math.max(...supports,...ground)+.13;
+  cabinetParts.box(w+.16,base-bottom,d+.16,x,(bottom+base)/2,z,palette.sleeper);
+  cabinetParts.box(w,h,d,x,base+h/2,z,palette.cream);
+  cabinetParts.box(w+.06,.055,d+.06,x,base+h+.0275,z,palette.steel);
+  const front=z-d/2-.012;
+  cabinetParts.box(w-.09,h-.12,.025,x,base+h/2,front,palette.steel);
+  cabinetParts.box(w-.13,h-.16,.016,x,base+h/2,front-.021,palette.cream);
+  for(const y of [base+h*.22,base+h*.78])cabinetParts.box(.035,.10,.035,x-w/2+.06,y,front-.028,palette.steel);
+  cabinetParts.box(.033,.12,.05,x+w/2-.14,base+h*.53,front-.034,palette.dark);
+  for(let i=0;i<5;i++)cabinetParts.box(w*.43,.018,.012,x,base+.18+i*.045,front-.033,palette.dark);
+ }
+ const cabinetStats=cabinetParts.flush();deviceStats.batches+=cabinetStats.batches;deviceStats.triangles+=cabinetStats.triangles;
+ cabinets.userData.reference='User walk video K0UC5GkHbaU at 1:04; cabinet forms observed, positions/dimensions inferred.';
+
  const trainGroup=new THREE.Group();trainGroup.name='JR Nara passing local · interpreted stainless green';trainGroup.userData.dynamic=true;group.add(trainGroup);
  const cars=[],trainStats={batches:0,triangles:0};
  for(let car=0;car<spec.train.cars;car++){

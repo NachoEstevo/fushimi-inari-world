@@ -1,0 +1,16 @@
+[
+  {
+    "file": "fushimi-arrival-ja.mp3",
+    "language": "Japanese",
+    "source": "User-provided file for station arrival, 2026-10-24",
+    "sha256": "8d69ca4aae20f1ed6bfed489c991bb9634d52909804ab3b624c4cfbe5709b6ec",
+    "modifications": "Original bytes preserved; playback volume adjusted. Japanese then English with 250 ms gap."
+  },
+  {
+    "file": "fushimi-arrival-en.mp3",
+    "language": "English",
+    "source": "User-provided file for station arrival, 2026-10-24",
+    "sha256": "330426deefbd6c8e36a654e21905aaaecdaf65299509d55aae1d44f8c7bbf087",
+    "modifications": "Original bytes preserved; playback volume adjusted. Japanese then English with 250 ms gap."
+  }
+]

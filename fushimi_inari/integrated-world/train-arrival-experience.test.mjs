@@ -4,14 +4,14 @@ import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
 
 const sequenceOptions={interiorPose:{position:[4,3,10],target:[8,3,10]},
   platformPose:{position:[9,3,10],target:[15,3,10]},travelDirection:[0,0,1],travelDistance:24};
-function setup({teleport=true,fallback=false}={}){
+function setup({teleport=true,fallback=false,options=sequenceOptions}={}){
   const calls={poses:0,looks:0,teleports:[],pauses:[],begins:0,states:[],fallbacks:0};
   const camera={position:{value:null,set(...value){this.value=value;calls.poses++;}},lookAt(...value){this.target=value;calls.looks++;}};
   const controls={enabled:true,target:{set(...value){this.value=value;}}};
   const station={offset:null,door:null,setTrainOffset(value){this.offset=[...value];},setDoorOpen(value){this.door=value;}};
   const walker={active:false,stop(){this.active=false;},pause(value){calls.pauses.push(value);},
     teleport(point,target){calls.teleports.push({point,target});this.active=teleport;return teleport;}};
-  const experience=createTrainArrivalExperience({sequenceOptions,station,camera,controls,walker,
+  const experience=createTrainArrivalExperience({sequenceOptions:options,station,camera,controls,walker,
     onBegin(){calls.begins++;},onFallback(){calls.fallbacks++;return fallback;},onState(state){calls.states.push(state);}});
   return {experience,calls,camera,controls,station,walker};
 }
@@ -120,4 +120,14 @@ test('an idle adapter never unpauses another mode or changes its camera',()=>{
   const {experience,calls,camera}=setup();experience.skip();experience.cancel();
   assert.equal(calls.poses,0);assert.equal(calls.teleports.length,0);assert.deepEqual(calls.pauses,[]);
   assert.equal(camera.position.value,null);
+});
+
+test('Keihan announcement lead time keeps doors closed through both voices with reduced motion too',()=>{
+ for(const reducedMotion of [false,true]){
+  const {experience,station}=setup({options:{...sequenceOptions,durations:{stopped:4},announcementLeadTime:10}});
+  experience.start({reducedMotion});
+  for(let i=0;i<97;i++){experience.update(.1);assert.equal(station.door,0);}
+  for(let i=0;i<20;i++)experience.update(.1);
+  assert.ok(station.door>0);
+ }
 });

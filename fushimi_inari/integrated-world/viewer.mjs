@@ -1,10 +1,11 @@
+import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details.mjs';
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=keihan-street-3';
-import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
+import {createTrainArrivalExperience} from './train-arrival-experience.mjs?v=recorded-immersion-9';
 import {buildStationApproachRoutes} from './station-approach-routes.mjs?v=keihan-street-3';
-import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs';
+import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs?v=recorded-immersion-5';
 import {advanceGuidedRoute} from './guided-route-motion.mjs';
 import {createWorldDetailChunks} from './world-detail-chunks.mjs';
 import {installKeihanStreetCommerce} from './keihan-street-commerce.mjs?v=keihan-street-3';
@@ -24,11 +25,11 @@ import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {blendKeihanStreetGround} from './keihan-street-ground.mjs?v=keihan-street-3';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
-import {buildPathMeshes} from './path-meshes.mjs?v=100-release';
+import {buildPathMeshes} from './path-meshes.mjs?v=recorded-immersion-7';
 import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-street-3';
-import {integrate} from './integration.mjs?v=keihan-street-3';
+import {integrate} from './integration.mjs?v=recorded-immersion-9';
 import {installWalking} from './walking.mjs?v=keihan-street-3';
-import {createAudio} from './audio.mjs';
+import {createAudio} from './audio.mjs?v=recorded-immersion-9';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {heightAt,buildGraph,nearestNode,shortestRoute,routeMetrics,resample,pathWidth,isRestricted,distance} from '../geography/geo-core.mjs';
@@ -118,6 +119,8 @@ try {
   const approachFloors=buildStationApproachSurfaceFixes(assembly,pathGroup,features);
   assembly.walkHeight=approachFloors.walkHeight;
   const streetCommerce=installKeihanStreetCommerce(assembly);
+  const observedStreet=buildKeihanStreetObservedDetails(assembly);
+  document.body.dataset.observedStreet=JSON.stringify(observedStreet.stats);
   document.body.dataset.streetCommerce=JSON.stringify(streetCommerce.stats);
   document.body.dataset.approachFloors=JSON.stringify(approachFloors.stats);
   document.body.dataset.apronTransitionsR100=JSON.stringify(assembly.apronTransitionsR100);
@@ -405,11 +408,15 @@ try {
   const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
   for(const mesh of assembly.staticBatches.meshes)detailChunks.add(mesh);
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
+  for(const group of observedStreet.detailGroups??[])detailChunks.add(group,{radius:100,margin:20});
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false,
     onRenderQuality:quality=>{renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?1.7:1.25));renderer.setSize(innerWidth,innerHeight);},
     onDetailDistance:value=>{detailDistance=value;}});
+  document.querySelector('label[for="ambient-volume"]')?.replaceChildren(document.createTextNode('Sound volume'));
+  document.getElementById('ambient-volume').addEventListener('input',event=>audio.setRecordedVolume(Number(event.target.value)/100));
+  document.getElementById('pane-3').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
   const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
@@ -451,7 +458,8 @@ try {
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     if(arrival?.active){
-      arrival.update(dt,{paused:photo.active||menu.active});
+      const holdDoors=arrival.snapshot.phase==='stopped'&&arrival.snapshot.phaseProgress>.94&&audio.arrivalSpeechActive();
+      arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active});
     }else if(walking&&activeRoute.length>1){
       const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
       routeProgress=motion.index;travelled=motion.travelled;
@@ -492,7 +500,7 @@ try {
     const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night');
+    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});
 
   }
   requestAnimationFrame(animate);

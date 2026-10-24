@@ -1,0 +1,8 @@
+{
+  "audio": "{\"enabled\":true,\"paused\":false,\"loaded\":[\"rolling\",\"gate\",\"doors\",\"crossing\"],\"loading\":[],\"failed\":[],\"activeLoops\":[],\"activeShots\":0,\"plays\":{\"rolling\":2,\"doors\":1,\"gate\":1,\"crossing\":1},\"mode\":\"credited field recordings\"}",
+  "camera": "-8.52,43.49,1.31",
+  "observed": "{\"triangles\":1262,\"drawBatches\":9,\"groups\":5,\"covers\":6,\"grates\":12,\"cableSpans\":1,\"panels\":1,\"collidersAdded\":0,\"pointLights\":0,\"textureAtlases\":1}",
+  "scripts": [
+    "http://127.0.0.1:8420/integrated-world/viewer.mjs?v=recorded-immersion-3"
+  ]
+}

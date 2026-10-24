@@ -10,6 +10,21 @@ import {makePathSurfaces} from './path-surfaces.mjs';
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url),'utf8'));
 const surfaces={height:()=>30.03};
 const fixture=(floor=surfaces)=>buildKeihanStation(new THREE.Group(),{},features,floor);
+
+test('ramp metal panels and lateral tactile guide reuse the original two top triangles with slope-aligned UVs',()=>{
+ const api=fixture(),meshes=[];api.group.traverse(o=>{if(o.isMesh&&o.material.name==='Keihan grooved ramp panels and tactile guide')meshes.push(o);});
+ assert.equal(meshes.length,1);const mesh=meshes[0],p=mesh.geometry.attributes.position,uv=mesh.geometry.attributes.uv,m=mesh.material;
+ assert.equal(p.count,6,'appearance adds no walking geometry');assert.ok(m.metalness<.4&&m.roughness>.5);assert.equal(m.map.wrapT,THREE.RepeatWrapping);assert.equal(m.map.wrapS,THREE.ClampToEdgeWrapping);assert.ok(m.bumpScale<=.004);
+ const a=api.spec.gate.rampHead,b=api.spec.gate.rampFoot,dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);
+ for(let i=0;i<p.count;i++){
+  const along=((p.getX(i)-a[0])*dx+(p.getZ(i)-a[2])*dz)/length,across=((p.getX(i)-a[0])*dz-(p.getZ(i)-a[2])*dx)/length;
+  assert.ok(Math.abs(uv.getX(i)-(across/2.5+.5))<1e-5);assert.ok(Math.abs(uv.getY(i)-along/.75)<3e-5);
+  assert.ok(Math.abs(p.getY(i)-(a[1]+(b[1]-a[1])*along/length))<1e-5);
+ }
+ const {width,height,data}=m.map.image,pixel=(u,y)=>{const i=(y*width+Math.floor(u*width))*4;return [...data.slice(i,i+3)];};
+ for(const y of [20,90,180]){const yellow=pixel(.78,y),metal=pixel(.40,y);assert.ok(yellow[0]>yellow[2]+90);assert.ok(Math.max(...metal)-Math.min(...metal)<20);}
+ assert.equal(width*height,512*256);assert.notDeepEqual(pixel(.40,13),pixel(.40,22),'transverse slots remain visible within each panel');
+});
 test('Keihan source identity, P2 direction and exact existing street junction remain independent of JR',()=>{
  const s=createKeihanStationSpec(features,surfaces);assert.equal(s.source.platform2,'way/223276787');assert.deepEqual(s.publicExit.position,[-301.277,30.03,-124.745]);assert.ok(s.track.direction[1]>.99&&s.track.direction[0]<0);assert.equal(s.train.carLength,18.7);assert.equal(s.train.carWidth,2.792);
  assert.ok(!s.builtIds.includes('way/952687107'));assert.equal(createKeihanStationSpec({...features,buildings:[]},surfaces),null);assert.equal(createKeihanStationSpec(features,{height:()=>NaN}),null);assert.equal(createKeihanStationSpec({...features,paths:[{id:'way/952687115'}]},surfaces),null);

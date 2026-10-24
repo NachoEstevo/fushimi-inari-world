@@ -50,6 +50,28 @@ test('ballast and sleepers do not put raised obstacles across the public road an
  }
 });
 
+test('observed control cabinets remain grounded beyond the crossing and train envelopes',()=>{
+ const root=new THREE.Group(),r=buildKeihanJrCrossingDetail(root,features,surfaces,[],{spec}),cabinets=r.group.getObjectByName('JR crossing control cabinets');
+ assert.ok(cabinets);assert.ok(r.detailGroups.includes(cabinets));assert.ok(cabinets.children.length<=4);
+ const bounds=new THREE.Box3().setFromObject(cabinets);
+ assert.ok(bounds.min.z>spec.roadBounds[3]+1,'cabinet must stay south of road and sidewalk');
+ for(const track of spec.tracks){const p=track.at(11).position;assert.ok(bounds.min.x-p[0]>spec.train.carWidth/2+1,'cabinet must clear train swept envelope');}
+ for(const x of [-198.3,-196.95])assert.ok(bounds.min.y<surfaces.height(x,-74.8),'foundation reaches ground');
+ assert.ok(bounds.max.y-surfaces.height(-198.3,-74.8)<2.2);
+});
+
+test('cabinet foundations reach a lower sloping DEM even when surface height selects the road',()=>{
+ const lower={...surfaces,height:()=>40,terrainHeight:(x,z)=>31+(x+198)*.2+(z+75)*.3},root=new THREE.Group(),r=buildKeihanJrCrossingDetail(root,features,lower,[],{spec}),cabinets=r.group.getObjectByName('JR crossing control cabinets');
+ for(const [x,z,w,d]of [[-198.3,-74.8,1.25,.62],[-196.95,-74.8,.54,.42]]){
+  const corners=[-1,1].flatMap(a=>[-1,1].map(b=>[x+a*(w/2+.08),z+b*(d/2+.08)]));
+  for(const [px,pz]of corners){
+   const vertices=[];cabinets.traverse(mesh=>{if(!mesh.isMesh)return;const p=mesh.geometry.attributes.position;for(let i=0;i<p.count;i++)if(Math.abs(p.getX(i)-px)<1e-4&&Math.abs(p.getZ(i)-pz)<1e-4)vertices.push(p.getY(i));});
+   assert.ok(vertices.length>0);assert.ok(Math.min(...vertices)<=lower.terrainHeight(px,pz),'each foundation corner must reach its terrain sample');
+   assert.ok(Math.max(...vertices)>=40,'foundation top retains upper support');
+  }
+ }
+});
+
 test('train approaches but waits north of the road for an existing occupant',()=>{
  const c=createJrCrossingController(spec);advance(c,60,onTrack);
  assert.equal(c.state.phase,'waiting');assert.equal(c.state.front,spec.train.stopFront);assert.equal(c.state.barrier,0);

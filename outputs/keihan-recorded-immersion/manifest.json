@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-24T14:59:09.445435+00:00",
+  "tests": 778,
+  "physicalSamples": 66468,
+  "physicalFailures": 0,
+  "note": "Physical assembly audited before subsequent audio-only timing edits. Final source hashes below. Native captures and event proof remain scoped to their named revisions.",
+  "sources": {
+    "fushimi_inari/integrated-world/audio.mjs": "835ead99aa2cb7c168e683853048857965bcd486bd8fc6df21fd423f9bbf444d",
+    "fushimi_inari/integrated-world/integration.mjs": "a385b89f0ba33959a2af973bf0039d5097461e2df7e727aa4df023a742c9b49b",
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.mjs": "e6b2c4d34a601cc1bb2966b7c59b2c4d5f2342a6c3dd294986fd6a3d9490387a",
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.test.mjs": "5d46f3754288c7bd9d7862b47b2dbb3a4d2b5386790402af5e289b31679d620c",
+    "fushimi_inari/integrated-world/keihan-ramp-material.mjs": "08c3b312fe3b74674843fb6af03ca9c59a121a544aa7eb2ab49dbe5df021aeed",
+    "fushimi_inari/integrated-world/keihan-station.mjs": "972339ddbb19d1d96590e244c7927c4fedb365f157fc908e0bdec611d809deed",
+    "fushimi_inari/integrated-world/keihan-station.test.mjs": "493e13c0acd769d5c4783cb273198116474ecac89df260b663793ddb99bd7257",
+    "fushimi_inari/integrated-world/keihan-street-observed-details.mjs": "902013ee1a04bbe01bd414fdf5b93f418af64f424ad84a726fcba882f380a3a4",
+    "fushimi_inari/integrated-world/keihan-street-observed-details.test.mjs": "ec4fd999b8f4ec1a05c7abf56f9f685e31e715a33bc1a3eff24ea46ad4b5d982",
+    "fushimi_inari/integrated-world/omotesando-arrival-r94.mjs": "283deeded42786f2e638f905da0256842b92cc460c85b743b4077ad0df4e6e88",
+    "fushimi_inari/integrated-world/omotesando-arrival-r94.test.mjs": "6ea74d2c48925c04d25eca3cc54c17bab86f1250a8219acd537522c5070e52da",
+    "fushimi_inari/integrated-world/omotesando-road-ribbon.test.mjs": "7e10918b5ef8d858d14a49db11f3042ba56d4d03c213f2842035d449cc269cfd",
+    "fushimi_inari/integrated-world/path-meshes.mjs": "230b85abac9b09bf9f7d19c9dde9449149480bf782726d65b45f1153f48ac936",
+    "fushimi_inari/integrated-world/recorded-audio.mjs": "ef16a1823cbff4429ac21b485b61760b6e853ad3e5ac9453ab27c82a1c15418d",
+    "fushimi_inari/integrated-world/recorded-audio.test.mjs": "71cd257dcdc0e1c9b9f840d93bdf82536827708622ec4a0e15d20ad8bef62615",
+    "fushimi_inari/integrated-world/recorded-sound-events.mjs": "88e1cf5990e1152f89d3716acb17d6559deac6ddd02ae512f03d8ac43d108af2",
+    "fushimi_inari/integrated-world/recorded-sound-events.test.mjs": "febe2baef9f2cbee55bf4f37008df8513d1a40217d7069ccdc424c7c0efdd0d5",
+    "fushimi_inari/integrated-world/viewer.mjs": "4cebe258b09a8711237aa0172862439bd1ed040ff76f5cc1a2d7dfac77837e3f",
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.mjs": "b16c815b57f4f39a271edb7cffa5c0dccb4f1248ade9437b94b5f64820d0f7ba",
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.test.mjs": "71ac840d29e64f434c1c75c4434574b3af8ea55cf67d35ad5ff10467e32611fa",
+    "fushimi_inari/integrated-world/keihan-station-spec.mjs": "8988c05c08893822dfab0246172f2a9f51b53b8198fbe35d850974c524822122",
+    "fushimi_inari/integrated-world/train-arrival-experience.mjs": "0f3144bf1f64748b93ed587f32f5775954c7e996a262a1c26b412fc3fbd2de8e",
+    "fushimi_inari/integrated-world/train-arrival-experience.test.mjs": "a89a8da007910136dc358906a22cf4ceb1e6adbe1bc50a4dd9daa52bddeff236"
+  },
+  "voiceTiming": "Native revision9 opening phase: zero active speech sources; JA then EN with250ms gap."
+}

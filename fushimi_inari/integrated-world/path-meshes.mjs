@@ -9,14 +9,41 @@ import {outsideArrival} from './okusha-arrival.mjs';
 import {isMountainPathSegment,mountainShoulder,mountainPathUV,mountainTreadUV} from './mountain-path-layout.mjs';
 import {mountainPathMaterials} from './mountain-path-materials.mjs';
 import {partitionOkushaPathTrianglesR95} from './okusha-path-junction-r95.mjs';
+import {subtractConvex} from './entrance-area-surfaces-layout.mjs';
+
+// Only the Omotesando ribbon yields to its mapped Hommachi road. Preserve
+// vertex height and UV interpolation; walking remains owned by the network.
+export function clipOmotesandoRoadRibbon(quad,segments){
+  let pieces=[[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]];
+  const roads=segments.filter(s=>s.id==='way/79699850'&&!s.stair);
+  for(let i=0;i<roads.length&&pieces.length;i++){
+    const s=roads[i],prev=roads[i-1],next=roads[i+1];
+    const connected=(other,end,p)=>other&&Math.hypot(other[end][0]-p[0],other[end][2]-p[2])<.001?other:null;
+    const na=pathOffset(s.a,s.b,connected(prev,'b',s.a)),nb=pathOffset(s.a,s.b,connected(next,'a',s.b),true);
+    const at=(p,n,side)=>[p[0]+n[0]*side*s.width/2,p[2]+n[1]*side*s.width/2];
+    const mask=[at(s.a,na,-1),at(s.b,nb,-1),at(s.b,nb,1),at(s.a,na,1)];
+    pieces=pieces.flatMap(tri=>{
+      if(Math.min(...tri.map(p=>p[0]))>=Math.max(...mask.map(p=>p[0]))||Math.max(...tri.map(p=>p[0]))<=Math.min(...mask.map(p=>p[0]))||Math.min(...tri.map(p=>p[2]))>=Math.max(...mask.map(p=>p[1]))||Math.max(...tri.map(p=>p[2]))<=Math.min(...mask.map(p=>p[1])))return [tri];
+      const [a,b,c]=tri,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
+      return subtractConvex(tri.map(p=>[p[0],p[2]]),mask).flatMap(poly=>{
+        const points=poly.map(([x,z])=>{
+          const u=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den,v=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den;
+          return a.map((value,k)=>k===0?x:k===2?z:u*value+v*b[k]+(1-u-v)*c[k]);
+        });
+        return points.slice(2).map((p,j)=>[points[0],points[j+1],p]);
+      });
+    });
+  }
+  return pieces;
+}
 
 export function buildPathMeshes(network,legacy,ground){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRiser:[],mountainRetaining:[]};
   const uvBuckets={senbon:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRetaining:[]};
   const uvByVertices=new Map(Object.entries(uvBuckets).map(([key,uv])=>[buckets[key],uv]));
   const detail={segments:0,treads:0,groundedShoulders:0,retainingFaces:0,scope:'Mountain stone paths east of x=255 m; entrance and Senbon unchanged'};
-  const quad=(out,a,b,c,d)=>{
-    for(const polygon of outsideArrival([a,b,c,d]))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
+  const quad=(out,...corners)=>{
+    for(const polygon of outsideArrival(corners))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
       out.push(...p.slice(0,3));const uv=uvByVertices.get(out);if(uv)uv.push(p[3],p[4]);
     }
   };
@@ -44,7 +71,8 @@ export function buildPathMeshes(network,legacy,ground){
       const visualWidth=Math.min(s.width,omotesandoContextSpecR95.centralSlabWidth),u=visualWidth/1.6,va=s.distance/3.2,vb=(s.distance+len)/3.2;
       // Source width8m describes the public corridor. Only its middle4.8m
       // uses long slabs; the shoulder owner fills2.4..4m with fine cobbles.
-      quad(buckets.omotesando,[...point(s.a,s.ya,-visualWidth/2),0,va],[...point(s.b,s.yb,-visualWidth/2),0,vb],[...point(s.b,s.yb,visualWidth/2),u,vb],[...point(s.a,s.ya,visualWidth/2),u,va]);
+      const ribbon=[[...point(s.a,s.ya,-visualWidth/2),0,va],[...point(s.b,s.yb,-visualWidth/2),0,vb],[...point(s.b,s.yb,visualWidth/2),u,vb],[...point(s.a,s.ya,visualWidth/2),u,va]];
+      for(const triangle of clipOmotesandoRoadRibbon(ribbon,network.segments))quad(buckets.omotesando,...triangle);
     }else if(mountain){
       const uv=s.stair?mountainTreadUV(s):mountainPathUV(s,len);
       const corners=[point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2)];

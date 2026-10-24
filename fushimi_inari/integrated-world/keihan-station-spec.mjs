@@ -42,7 +42,7 @@ export function createKeihanStationSpec(features,surfaces){
   gate:{center:gate,rampHead,rampFoot:gateFoot,width:4.5},
   publicExit:{position:exit,target:[-291.042,exit[1]+1.7,-114.169]},
   route:{platformDoor:[outside[0],platformFloor,outside[1]],turn:[outside[0],platformFloor,-160],gateApproach:[gate[0],platformFloor,-155.5],gate,rampHead,rampFoot:gateFoot,exit},
-  arrival:{interiorPose:{position:[inside[0],trainFloor+1.7,inside[1]],target:[wallLook[0],platformFloor+1.7,wallLook[1]]},platformPose:{position:[outside[0],platformFloor+1.7,outside[1]],target:[wallLook[0],platformFloor+1.7,wallLook[1]]},travelDirection:[direction[0],0,direction[1]],travelDistance:24},
+  arrival:{announcementLeadTime:10,durations:{stopped:4},interiorPose:{position:[inside[0],trainFloor+1.7,inside[1]],target:[wallLook[0],platformFloor+1.7,wallLook[1]]},platformPose:{position:[outside[0],platformFloor+1.7,outside[1]],target:[wallLook[0],platformFloor+1.7,wallLook[1]]},travelDirection:[direction[0],0,direction[1]],travelDistance:24},
   provenance:'Keihan official KH34 plan: P2 Osaka-bound east side, southern separate gate. User Oct2024 Street View. OSM platforms223276787/789 and existing east-gate buildings/footway. Inferred floor rise .90m, train alignment reconciled to unchanged platform edge, stopping position, ramp grade, detail dimensions; no surveyed/current assignment claim.'};
 }
 export function keihanTrainPlatformGap(spec,v){return platformEdgeAt(spec.track.origin,spec.track.east,spec.track.direction,v)-spec.train.bodyHalfWidth;}

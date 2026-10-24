@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {staticParts} from './mountain-landmarks-geometry.mjs';
-import {createKeihanStationSpec} from './keihan-station-spec.mjs';
+import {createKeihanStationSpec} from './keihan-station-spec.mjs?v=recorded-immersion-8';
+import {keihanRampMaterial} from './keihan-ramp-material.mjs';
 
 const NAME='Keihan Fushimi-Inari P2 arrival';
 const clamp=n=>Math.max(0,Math.min(1,Number.isFinite(n)?n:0));
@@ -33,11 +34,13 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
  const collider=(x,z,w,d,yaw,lo,hi,tag)=>colliders.push({type:'box',args:[x,z,w/2,d/2,yaw,lo,hi,tag]});
  const box=(w,h,d,x,y,z,material)=>parts.box(w,h,d,x,y,z,material);
  const wall=(a,b,bottom,height,thickness,material,tag)=>{const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),yaw=-Math.atan2(dz,dx),g=new THREE.BoxGeometry(length,height,thickness);g.rotateY(yaw);g.translate((a[0]+b[0])/2,bottom+height/2,(a[1]+b[1])/2);parts.put(g,material);if(tag)collider((a[0]+b[0])/2,(a[1]+b[1])/2,length,thickness,yaw,bottom,bottom+height,tag);};
- function slab(ring,height,bottom,material=p.floor){
+ function slab(ring,height,bottom,material=p.floor,topUV){
   const y=typeof height==='function'?height:()=>height;
   for(const face of THREE.ShapeUtils.triangulateShape(ring.map(q=>new THREE.Vector2(...q)),[])){
    const vertices=face.map(i=>[ring[i][0],y(...ring[i]),ring[i][1]]),[a,b,c]=vertices;
-   parts.sheet([...a,...c,...b],material);topTriangles.push([a,c,b].map(v=>v.map(Math.fround)));
+   const geometry=parts.sheet([...a,...c,...b],material);
+   if(topUV)geometry.setAttribute('uv',new THREE.Float32BufferAttribute([a,c,b].flatMap(topUV),2));
+   topTriangles.push([a,c,b].map(v=>v.map(Math.fround)));
   }
   for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];parts.sheet([a[0],bottom,a[1],a[0],y(...a),a[1],b[0],y(...b),b[1],a[0],bottom,a[1],b[0],y(...b),b[1],b[0],bottom,b[1]],p.stone);}
  }
@@ -66,7 +69,8 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
  const rampRing=[[head[0]-nx*rampWidth/2,head[2]-nz*rampWidth/2],[head[0]+nx*rampWidth/2,head[2]+nz*rampWidth/2],[foot[0]+nx*rampWidth/2,foot[2]+nz*rampWidth/2],[foot[0]-nx*rampWidth/2,foot[2]-nz*rampWidth/2]];
  slab([[-304.543,-152.207],[-299.854,-152.040],rampRing[1],rampRing[0]],spec.platformFloor,spec.railTop-.35);
  const rampY=(x,z)=>head[1]+(foot[1]-head[1])*Math.max(0,Math.min(1,((x-head[0])*dx+(z-head[2])*dz)/(length*length)));
- slab(rampRing,rampY,Math.min(head[1],foot[1])-.35,p.stone);
+ const rampMaterial=keihanRampMaterial(),rampUV=([x,y,z])=>[((x-head[0])*nx+(z-head[2])*nz)/rampWidth+.5,((x-head[0])*dx+(z-head[2])*dz)/length/rampMaterial.userData.panelLength];
+ slab(rampRing,rampY,Math.min(head[1],foot[1])-.35,rampMaterial,rampUV);
  for(const side of [-1,1]){const a=[head[0]+side*nx*1.33,head[1]+.92,head[2]+side*nz*1.33],b=[foot[0]+side*nx*1.33,foot[1]+.92,foot[2]+side*nz*1.33];parts.beam(a,b,.025,p.metal,.025,6);for(let t=.08;t<=.95;t+=.22){const x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t,y=rampY(x,z);box(.055,.94,.055,x,y+.47,z,p.metal);}collider((a[0]+b[0])/2,(a[2]+b[2])/2,length,.055,-Math.atan2(dz,dx),Math.min(head[1],foot[1]),Math.max(head[1],foot[1])+.96,'keihan-ramp-side-rail');}
  // Two source entrance roofs and vermilion cylindrical colonnade. The main
  // walking ramp is west of these posts; no flat slab hides its slope.

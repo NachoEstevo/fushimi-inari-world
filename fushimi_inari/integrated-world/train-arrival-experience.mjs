@@ -32,7 +32,9 @@ export function createTrainArrivalExperience({sequenceOptions,station,camera,con
     get active(){return owned&&sequence.getSnapshot().active;},
     get snapshot(){return snapshot();},
     start({reducedMotion=false}={}){
-      const next=createTrainArrivalSequence({...sequenceOptions,reducedMotion});
+      const durations={...sequenceOptions.durations};
+      if(reducedMotion&&sequenceOptions.announcementLeadTime)durations.stopped=Math.max(durations.stopped??1,sequenceOptions.announcementLeadTime);
+      const next=createTrainArrivalSequence({...sequenceOptions,durations,reducedMotion});
       onBegin();walker.stop();walker.pause(true);controls.enabled=false;
       sequence=next;owned=true;externalPaused=false;handoff=null;lastEmission=null;pendingSkip=false;
       const state=sequence.start();applyStation(state);applyPose(state.pose);

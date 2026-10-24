@@ -19,7 +19,7 @@ function fixture(){
 }
 test('the two actual route feet move onto their emitted top without new geometry or altered owners',()=>{
  const {group,assembly}=fixture(),before=group.children.map(m=>[m.geometry,m.geometry.attributes.position.array.slice()]),base=assembly.walkHeight,fix=buildStationApproachSurfaceFixes(assembly,group,features);
- assert.equal(fix.built,true);assert.equal(fix.stats.regions.length,4);
+ assert.equal(fix.built,true);assert.equal(fix.stats.regions.length,5);
  for(const {point:[x,y,z]}of witnesses){const ray=new THREE.Raycaster(new THREE.Vector3(x,y+.35,z),new THREE.Vector3(0,-1,0),0,.5),hit=ray.intersectObject(group,true)[0];assert.ok(hit);assert.ok(Math.abs(fix.walkHeight(x,z)-hit.point.y)<1e-8);assert.ok(fix.walkHeight(x,z)>y+.05);}
  assert.equal(assembly.walkHeight,base);assert.equal(group.children.length,before.length);
  group.children.forEach((m,i)=>{assert.equal(m.geometry,before[i][0]);assert.deepEqual(m.geometry.attributes.position.array,before[i][1]);});
@@ -40,8 +40,23 @@ test('overhead decorative tops and downward faces cannot become walking support'
 
 test('missing or disconnected junction sources withhold corrections and previous height reaches the canonical sampler',()=>{
  const {group,assembly}=fixture(),missing=buildStationApproachSurfaceFixes(assembly,group,{paths:[]});assert.equal(missing.built,false);assert.equal(missing.walkHeight,assembly.walkHeight);
- const paths=features.paths.map(p=>p.id==='way/626313859'?{...p,nodeIds:p.nodeIds.map(id=>id+90000000000)}:p),partial=buildStationApproachSurfaceFixes(assembly,group,{paths});assert.equal(partial.stats.regions.length,3);
+ const paths=features.paths.map(p=>p.id==='way/626313859'?{...p,nodeIds:p.nodeIds.map(id=>id+90000000000)}:p),partial=buildStationApproachSurfaceFixes(assembly,group,{paths});assert.equal(partial.stats.regions.length,4);
  const a={last:null,walkHeight(x,z,previous){this.last=previous;return 37.11516806106252;}},fix=buildStationApproachSurfaceFixes(a,group,features);fix.walkHeight(-63.7232962962963,5.8955370370370375,37);assert.equal(a.last,37);
+});
+
+test('Omotesando road ownership lowers the old approach sample only over emitted asphalt and within its mapped footprint',()=>{
+ const center=[-157.407,10.342],y=33.66807,group=new THREE.Group(),road=new THREE.Mesh(new THREE.PlaneGeometry(6,14).rotateX(-Math.PI/2).translate(center[0],y,center[1]),new THREE.MeshBasicMaterial());group.add(road);
+ const segment={id:'way/79699850',a:[center[0],y,center[1]-7],b:[center[0],y,center[1]+7],ya:y,yb:y,width:6};
+ const assembly={walkHeight:()=>33.72676,surfaces:{segments:[segment]}},fix=buildStationApproachSurfaceFixes(assembly,group,features);
+ for(const [x,z]of [[-154.85,10.46],[center[0]+2.999,center[1]],[center[0]-2.999,center[1]],[center[0],center[1]+4.299]]){
+  const ray=new THREE.Raycaster(new THREE.Vector3(x,34,z),new THREE.Vector3(0,-1,0)),hit=ray.intersectObject(group,true)[0];assert.ok(hit);assert.ok(Math.abs(fix.walkHeight(x,z)-hit.point.y)<1e-8);
+ }
+ for(const [x,z]of [[center[0]+3.001,center[1]],[center[0]-3.001,center[1]],[center[0],center[1]+4.301]])assert.equal(fix.walkHeight(x,z),assembly.walkHeight(x,z));
+ const high=buildStationApproachSurfaceFixes({...assembly,walkHeight:()=>50},group,features);assert.equal(high.walkHeight(...center),50,'station/building floor is not lowered');
+ const absent=buildStationApproachSurfaceFixes(assembly,new THREE.Group(),features);assert.equal(absent.walkHeight(...center),33.72676,'missing emitted asphalt does not invent support');
+ const disconnected={...features,paths:features.paths.map(p=>p.id==='way/105449722'?{...p,nodeIds:p.nodeIds.map(id=>id===749327076?-1:id)}:p)};
+ assert.equal(buildStationApproachSurfaceFixes(assembly,group,disconnected).walkHeight(...center),33.72676);
+ assert.equal(assembly.walkHeight(...center),33.72676,'base sampler is not mutated');
 });
 
 test('the additional Omotesando and Urasando witnesses use only their registered junction disks',()=>{

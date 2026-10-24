@@ -1,0 +1,5 @@
+{
+  "audio": "{\"enabled\":true,\"paused\":false,\"loaded\":[\"gate\",\"rolling\",\"doors\",\"crossing\"],\"loading\":[],\"failed\":[],\"activeLoops\":[\"crossing\"],\"activeShots\":0,\"plays\":{\"crossing\":1,\"rolling\":2},\"mode\":\"credited field recordings\"}",
+  "camera": "-220.50,34.19,-86.50",
+  "volume": "56"
+}

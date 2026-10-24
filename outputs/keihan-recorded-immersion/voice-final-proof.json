@@ -1,0 +1,19 @@
+{
+  "observedAtOpening": {
+    "phase": "opening",
+    "activeShots": 0,
+    "failed": [],
+    "japaneseStart": 57.462,
+    "japaneseDuration": 3.5526458333333335,
+    "englishStart": 61.26464583333334,
+    "englishDuration": 5.799166666666666,
+    "note": "Values returned by the immediately preceding native DOM observation; voice sources had ended when doors entered opening."
+  },
+  "current": {
+    "arrival": "{\"phase\":\"complete\",\"paused\":false,\"reducedMotion\":false,\"handoff\":\"walking\"}",
+    "audio": "{\"enabled\":true,\"paused\":false,\"loaded\":[\"gate\",\"announcementJa\",\"announcementEn\",\"rolling\",\"doors\",\"crossing\"],\"loading\":[],\"failed\":[],\"activeLoops\":[],\"activeShots\":0,\"plays\":{\"rolling\":2,\"announcementJa\":2,\"announcementEn\":2,\"doors\":2,\"gate\":1,\"crossing\":1},\"voiceSchedule\":[{\"id\":\"announcementJa\",\"at\":57.462,\"duration\":3.5526458333333335},{\"id\":\"announcementEn\",\"at\":61.26464583333334,\"duration\":5.799166666666666}],\"mode\":\"credited field recordings\"}",
+    "scripts": [
+      "http://127.0.0.1:8420/integrated-world/viewer.mjs?v=recorded-immersion-9"
+    ]
+  }
+}

@@ -1,5 +1,10 @@
+import {createRecordedAudio} from './recorded-audio.mjs?v=recorded-immersion-9';
 import {createAmbience} from './ambient-audio.mjs';
-export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null;
+export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null,recorded=null;
+    document.addEventListener('visibilitychange',()=>{
+      recorded?.pause(document.hidden);
+      if(audioCtx&&audioEnabled){if(document.hidden)audioCtx.suspend();else audioCtx.resume();}
+    });
     function initAmbientAudio() {
       if (audioCtx) return;
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -25,6 +30,8 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
       // Continuous legacy noise is replaced by intermittent breeze.
       whiteNoise.disconnect();filter.disconnect();gain.disconnect();
       ambience=createAmbience(audioCtx);
+      recorded=createRecordedAudio(audioCtx,{onStats:stats=>document.body.dataset.recordedAudio=JSON.stringify(stats)});
+      recorded.setVolume(Number(document.getElementById('ambient-volume')?.value??55)/100);
     }
 
     function playBellChime() {
@@ -79,6 +86,6 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
     }
 
 
-return {bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,update:(camera,night)=>ambience?.update(camera,night),toggle(){initAmbientAudio();audioEnabled=!audioEnabled;ambience.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
+return {arrivalSpeechActive:()=>recorded?.announcementActive??false,bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
+step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>recorded?.setVolume(value),toggle(){initAmbientAudio();audioEnabled=!audioEnabled;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
 }
