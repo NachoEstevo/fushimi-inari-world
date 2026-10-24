@@ -1,3 +1,4 @@
+import {buildKeihanVideoMerchandise} from './keihan-video-merchandise.mjs?v=video-shops-3';
 import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details.mjs';
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
@@ -27,7 +28,7 @@ import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=recorded-immersion-7';
 import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-street-3';
-import {integrate} from './integration.mjs?v=recorded-immersion-9';
+import {integrate} from './integration.mjs?v=video-shops-3';
 import {installWalking} from './walking.mjs?v=keihan-street-3';
 import {createAudio} from './audio.mjs?v=recorded-immersion-9';
 import * as THREE from 'three';
@@ -120,6 +121,8 @@ try {
   assembly.walkHeight=approachFloors.walkHeight;
   const streetCommerce=installKeihanStreetCommerce(assembly);
   const observedStreet=buildKeihanStreetObservedDetails(assembly);
+  const videoMerchandise=buildKeihanVideoMerchandise(assembly);
+  document.body.dataset.videoMerchandise=JSON.stringify(videoMerchandise.stats);
   document.body.dataset.observedStreet=JSON.stringify(observedStreet.stats);
   document.body.dataset.streetCommerce=JSON.stringify(streetCommerce.stats);
   document.body.dataset.approachFloors=JSON.stringify(approachFloors.stats);
@@ -408,6 +411,7 @@ try {
   const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
   for(const mesh of assembly.staticBatches.meshes)detailChunks.add(mesh);
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
+  for(const group of videoMerchandise.detailGroups??[])detailChunks.add(group,{radius:28,margin:8});
   for(const group of observedStreet.detailGroups??[])detailChunks.add(group,{radius:100,margin:20});
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);

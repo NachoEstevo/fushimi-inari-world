@@ -1,14 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {heightAt} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {entranceNeighborhoodLayout} from './entrance-neighborhood-layout.mjs';
-import {buildKeihanUrasando,keihanUrasandoLayout,URASANDO_TORII_SOURCES} from './keihan-urasando.mjs';
+import {buildKeihanUrasando,keihanUrasandoLayout,URASANDO_TORII_SOURCES,videoOpenBays} from './keihan-urasando.mjs';
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url))),terrain=JSON.parse(readFileSync(new URL('../geography/terrain.json',import.meta.url))),surfaces=makePathSurfaces(features,(x,z)=>heightAt(terrain,x,z));
 const make=()=>{const root=new THREE.Group(),colliders=[],result=buildKeihanUrasando(root,features,surfaces,{},colliders),world=new SpatialCollisionWorld();for(const c of colliders)c.type==='box'?world.addBox(...c.args):world.addCylinder(...c.args);root.updateMatrixWorld(true);return {root,colliders,result,world};};
+
+test('video-era display bays replace visible shutters without changing established collision ownership',()=>{
+ const {root,result:r,colliders}=make(),layout=keihanUrasandoLayout(features,surfaces);
+ assert.equal(createHash('sha256').update(JSON.stringify(colliders)).digest('hex'),'e26a2fe7ebc43157490218ac740f569e2b39caafbd766007375b5c601046cf31');
+ for(const s of layout.frontages.filter(s=>s.kind==='shutter-row'||s.kind==='entry-south')){
+  const bays=Math.max(2,Math.round(s.width/2.7)),bw=s.width/bays;
+  for(let i=0;i<bays;i++){
+   const [x,z]=s.at((i+.5)*bw,1),height=s.kind==='entry-south'?.5:1.4;
+   const hit=new THREE.Raycaster(new THREE.Vector3(x,s.floor+height,z),new THREE.Vector3(-s.n[0],0,-s.n[1]),0,2).intersectObject(root,true)[0];assert.ok(hit);
+   if(videoOpenBays[s.id]?.includes(i))assert.ok(hit.distance>1.7,'display must reach dark back, not a shutter/fence');
+   else if(s.kind==='shutter-row')assert.ok(hit.distance<1.1,'unselected shutter stays closed');
+  }
+ }
+ assert.ok(r.videoFacades.length>=5);assert.ok(r.videoFacades.every(s=>s.source.includes('inferred')));
+ assert.equal(r.drawBatches,8);assert.ok(r.triangles-17634<5000,'added facade geometry budget');
+});
+
+test('sloped awnings descend toward the street and meet their front valance',()=>{
+ const {root,result:r}=make(),cloth=root.getObjectByName('Urasando cloth'),layout=keihanUrasandoLayout(features,surfaces);
+ for(const record of r.videoFacades){
+  const s=layout.frontages.find(s=>s.id===record.id),sample=v=>{
+   const [x,z]=s.at(s.width/2,v),hit=new THREE.Raycaster(new THREE.Vector3(x,s.floor+3.2,z),new THREE.Vector3(0,-1,0),0,.5).intersectObject(cloth)[0];assert.ok(hit);return hit.point.y-s.floor;
+  };
+  const rear=sample(-.16),front=sample(.64);
+  assert.ok(rear-front>.18&&rear-front<.24,'roof must slope down toward outward-positive frontage axis');
+  assert.ok(Math.abs(front-(2.79+.14/2))<.03,'front canopy seats against existing valance top');
+ }
+});
 
 test('Urasando owns registered street rows through the stone torii, preserving specialized shrine owners',()=>{
  const {result:r}=make(),old=entranceNeighborhoodLayout(features);assert.equal(r.built,true);assert.equal(r.builtIds.length,14);assert.ok(r.builtIds.every(id=>old.records.some(b=>b.id===id)));assert.ok(!r.builtIds.includes('way/223276575'));assert.ok(!r.builtIds.includes('way/260121332'));assert.ok(!r.builtIds.includes('way/305213644'));assert.ok(!r.builtIds.includes('way/305214372'));

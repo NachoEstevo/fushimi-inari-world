@@ -33,6 +33,17 @@ function labelTexture(){
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
 
+// Original woven cloth: one static texture, shared across every canopy.
+function clothTexture(){
+ if(typeof document==='undefined')return null;
+ const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+ const ctx=canvas.getContext('2d');if(!ctx)return null;
+ ctx.fillStyle='#eee9dc';ctx.fillRect(0,0,128,128);
+ for(let i=0;i<128;i+=4){ctx.fillStyle=i%8?'#e8e2d4':'#ded6c7';ctx.fillRect(i,0,1,128);ctx.fillRect(0,i,128,1);}
+ ctx.fillStyle='#c9c0ae';ctx.fillRect(0,0,3,128);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(12,2);return texture;
+}
+
 export function buildKeihanFrontages(root,features,surfaces,materials={},colliders=[]){
  const name='Registered Keihan approach food storefronts',old=root.getObjectByName(name);
  if(old)return {group:old,...old.userData};
@@ -66,6 +77,7 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   glass:new THREE.MeshStandardMaterial({color:'#b1cec7',roughness:.35,metalness:.08,transparent:true,opacity:.44,depthWrite:false}),
   red:new THREE.MeshStandardMaterial({color:'#bd4834',roughness:.86}),
   food:new THREE.MeshStandardMaterial({color:'#ca9c53',roughness:.95}),
+  cloth:new THREE.MeshStandardMaterial({color:'#ffffff',map:clothTexture(),roughness:1,vertexColors:true}),
   labels:new THREE.MeshStandardMaterial({color:'#ffffff',map:labelTexture(),roughness:.88})
  };
  const batches=new Map(),pending=[];
@@ -75,7 +87,20 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   const {points,width:w,height:h,floor,at,yaw,kind}=s;
   const fb=(bw,bh,bd,u,y,v,mat,tint)=>{const [x,z]=at(u,v);box(bw,bh,bd,x,floor+y,z,mat,yaw,tint);};
   const blocker=(bw,bd,u,v,y0,y1,tag)=>{const [x,z]=at(u,v);pending.push({type:'box',args:[x,z,bw/2,bd/2,yaw,floor+y0,floor+y1,tag]});};
-  const shaped=(geometry,u,y,v,mat)=>{const [x,z]=at(u,v);geometry.rotateY(yaw);geometry.translate(x,floor+y,z);put(geometry,mat);};
+  const shaped=(geometry,u,y,v,mat,tint)=>{const [x,z]=at(u,v);geometry.rotateY(yaw);geometry.translate(x,floor+y,z);put(geometry,mat,tint);};
+  // The existing projection is retained; the cloth now falls away from the
+  // wall instead of reading as a thick horizontal slab. No clearance changes.
+  const awning=(bw,u,back,front,backY,frontY,tint)=>{
+   const depth=front-back,g=new THREE.BoxGeometry(bw,.035,depth),p=g.attributes.position;
+   for(let i=0;i<p.count;i++){const f=(depth/2-p.getZ(i))/depth;p.setY(i,p.getY(i)+backY+(frontY-backY)*f);}
+   g.computeVertexNormals();shaped(g,u,0,(back+front)/2,palette.cloth,tint);
+   fb(bw,.16,.035,u,frontY-.075,front,palette.cloth,tint);
+   fb(bw,.045,.045,u,backY-.04,back,palette.dark);
+   for(const du of [-bw/2+.05,bw/2-.05]){
+    const rib=new THREE.BoxGeometry(.025,.025,Math.hypot(depth,backY-frontY));rib.rotateX(-Math.atan2(backY-frontY,depth));
+    shaped(rib,u+du,(backY+frontY)/2-.035,(back+front)/2,palette.stone);
+   }
+  };
   const foundation=Math.min(floor-.2,...points.map(p=>p[1]-.2));
   // Preserve the complete source footprint; only the observed street edge is
   // open. The shallow display recess is backed and cannot reveal invented rooms.
@@ -108,8 +133,10 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
      if(i<2)for(let j=0;j<15;j++)fb(bw,.022,.025,u,.24+j*.145,.048,palette.dark);
     }
     for(const du of [-bw/2,bw/2])fb(.055,2.38,.07,u+du,1.27,.045,palette.stone);
-    fb(bw,.06,.52,u,2.63,.21,green?palette.plaster:palette.red,green?'#55745b':undefined);
-    fb(bw,.14,.05,u,2.57,.48,green?palette.plaster:palette.red,green?'#55745b':undefined);
+    awning(bw,u,-.05,.48,2.94,2.66,green?'#537568':'#a94736');
+    fb(bw,.25,.075,u,3.14,-.005,palette.timber);
+    for(const yy of [3.02,3.26])fb(bw,.025,.09,u,yy,.01,palette.food);
+    for(const du of [-bw/2,bw/2])fb(.085,2.45,.085,u+du,1.3,.015,palette.timber);
     fb(bw-.20,.96,.035,u,4.43,.015,palette.dark);
     for(let j=0;j<7;j++)fb(.04,1.02,.055,u-(bw-.25)/2+j*(bw-.25)/6,4.43,.05,palette.timber);
     for(const y of [3.94,4.92])fb(bw-.12,.04,.06,u,y,.05,palette.timber);
@@ -125,11 +152,15 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   for(const u of [.11,w-.11]){fb(.22,2.7,.34,u,1.35,-.17,palette.plaster);blocker(.22,.34,u,-.17,0,2.7,'keihan_store_jamb');}
   // Each canopy is above walking clearance. Products and cases remain inside
   // the mapped property instead of narrowing the public street with props.
-  fb(w+.18,.12,.92,w/2,2.82,.27,kind==='grill'?palette.food:palette.dark);
-  fb(w+.18,.15,.09,w/2,2.75,.72,kind==='grill'?palette.food:palette.dark);
+  awning(w+.18,w/2,-.19,.72,3.02,2.83,kind==='senbei'?'#66584a':kind==='soft-serve'?'#708572':'#e4cfa5');
+  for(const u of [.14,w-.14])fb(.065,2.56,.075,u,1.30,-.025,palette.timber);
+  fb(w-.24,.12,.10,w/2,2.64,-.035,palette.timber);
   if(kind!=='grill'){
    const sign=new THREE.PlaneGeometry(kind==='senbei'?2.25:1.25,kind==='senbei'?.66:.75),uv=sign.attributes.uv;
    for(let i=0;i<uv.count;i++)uv.setX(i,(uv.getX(i)+storeIndex)/2);
+   const sw=kind==='senbei'?2.25:1.25,sh=kind==='senbei'?.66:.75;
+   fb(sw+.18,sh+.16,.08,w/2,3.54,-.022,palette.timber);
+   for(const yy of [3.54-sh/2-.025,3.54+sh/2+.025])fb(sw+.14,.045,.09,w/2,yy,.015,palette.food);
    sign.rotateY(Math.PI);shaped(sign,w/2,3.54,.035,palette.labels);
   }
   // One light strip is geometry only; no per-store light or shadow capture.
@@ -143,7 +174,9 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    for(let row=0;row<2;row++)for(let col=0;col<5;col++){
     const x=u-bw*.39+col*bw*.195,y=.81+row*.20;
     if(kind==='senbei'){
-     fb(.15,.14,.09,x,y,-.20-row*.16,palette.food);fb(.17,.035,.11,x,y-.063,-.20-row*.16,palette.red);
+     const cracker=new THREE.CylinderGeometry(.071,.071,.025,10);cracker.rotateX(Math.PI/2);shaped(cracker,x,y,-.20-row*.16,palette.food);
+     for(const dx of [-.023,.023])fb(.017,.026,.008,x+dx,y-.006,-.182-row*.16,palette.timber);
+     fb(.17,.025,.11,x,y-.063,-.20-row*.16,palette.red);
     }else{
      const bowl=new THREE.CylinderGeometry(.065,.048,.055,8);shaped(bowl,x,y,-.21-row*.16,palette.plaster);
      shaped(new THREE.SphereGeometry(.052,8,4),x,y+.046,-.21-row*.16,col%2?palette.food:palette.plaster);
@@ -177,8 +210,11 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    // retains a passable pavement despite uncertain centimeter positioning.
    const coneU=.35,coneV=-.29;
    shaped(new THREE.CylinderGeometry(.19,.20,.12,10),coneU,.06,coneV,palette.plaster);
-   shaped(new THREE.ConeGeometry(.17,.45,12),coneU,.34,coneV,palette.food);
-   for(let i=0;i<5;i++)shaped(new THREE.SphereGeometry(.20-i*.032,10,6),coneU,.64+i*.105,coneV,palette.plaster);
+   shaped(new THREE.ConeGeometry(.17,.45,12).rotateZ(Math.PI),coneU,.34,coneV,palette.food);
+   // Tapered piped coil, with its center filled so the model is not a spring.
+   const coil=[];for(let i=0;i<=72;i++){const t=i/72,r=.135*(1-t),a=t*Math.PI*8;coil.push(new THREE.Vector3(Math.cos(a)*r,.59+t*.50,Math.sin(a)*r));}
+   shaped(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(coil),72,.052,6,false),coneU,0,coneV,palette.plaster);
+   shaped(new THREE.ConeGeometry(.14,.49,12),coneU,.825,coneV,palette.plaster);
    blocker(.43,.45,coneU,coneV,0,1.20,'keihan_store_soft_serve_model');
   }else{
    // Observed October 2024 food counter: cream awning, dark wood, red
@@ -219,6 +255,6 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   for(const s of stores){if(!s.publicRecess&&!s.machineRecess)continue;const a=s.points[s.edge],dx=x-a[0],dz=z-a[2],u=dx*s.t[0]+dz*s.t[1],v=dx*s.n[0]+dz*s.n[1];if(s.machineRecess&&u>=s.machineRecess.uMin&&u<=s.machineRecess.uMax&&v<=0&&v>=-s.machineRecess.depth)return s.floor;if(s.publicRecess&&u>=.22&&u<=s.width-.22&&v<=0&&v>=-s.publicRecess)return s.floor;}
   return null;
  };
- group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Two open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions.'};
+ group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://www.youtube.com/watch?v=K0UC5GkHbaU&t=35s','https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Two open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions. Cloth seams, sloped canopies and piped soft-serve/product forms use the user video as typological reference; its edited sequence does not establish these exact parcel details.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

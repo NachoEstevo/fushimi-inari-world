@@ -1,0 +1,4172 @@
+{
+  "checkedAt": "2026-10-24T15:22:39.620Z",
+  "sourceMode": "immutable HEAD source snapshot",
+  "commit": "ec669c32638a005e6657e6765bbce7101791592f",
+  "runtime": {
+    "node": "v22.13.0",
+    "three": "164"
+  },
+  "sourceHashes": {
+    "fushimi_inari/geography/geo-core.mjs": "1f9df775b43b36fc8e83e41039402d12119f811a5d2e8c534aabe1fa3d8205cb",
+    "fushimi_inari/geography/geo-core.test.mjs": "d5c04a6be4bb58d248f8306eabf095c370ed6c5d02d94bc9f2dd2e6613b60a5c",
+    "fushimi_inari/geography/viewer.mjs": "af8a00e43b515842611c5110f8d7a1e5c3e98197f3d0f310d5e2c06091387a2a",
+    "fushimi_inari/integrated-world/activity-state.mjs": "3a82a3a227a3eee77d436aefc423fd162ae2314b3b93ab71bd0d96b3e52e9c28",
+    "fushimi_inari/integrated-world/activity-state.test.mjs": "f923444fd4f39408c4af05cb4dfefed9d560f04bbcf2bc43b0317584ec69a754",
+    "fushimi_inari/integrated-world/ambient-audio.mjs": "1e569e50f8554f3ceafd253a7cbbad6a41fb9d3dc22cf3cec32980f3229fc810",
+    "fushimi_inari/integrated-world/approach-context-r87.mjs": "7d0989995ac6f9a58e82cae43dcf7313e789ae8927c2b5177682a8de68d02089",
+    "fushimi_inari/integrated-world/approach-context-r87.test.mjs": "c98f4af28a76bbaccb238bccb9597fa66a12bec0479a67d0fcb72756eba32628",
+    "fushimi_inari/integrated-world/approach-lip.test.mjs": "d2f0d4ba7e55f6fc05a7c16c5ca0ee7b8772656a8282d40a0c5cde5e45b2d956",
+    "fushimi_inari/integrated-world/audio.mjs": "14fcb13a18e2064b988bbca46d7fcc5b53f70f454f74712571950dfa6ffcd34b",
+    "fushimi_inari/integrated-world/azumamaro-architecture.mjs": "4b4aa27907c8d258f7012eeb347256c4ff8df0133bcf7fbf7f42bd2ff102b155",
+    "fushimi_inari/integrated-world/azumamaro-context.mjs": "620ff19f8b9d0215978ba360815f10f4e3a1537e95de0a10c5e1142b300ba059",
+    "fushimi_inari/integrated-world/azumamaro-court-details.mjs": "0f42952928d3b2687dc3bc68564a478b88308af63586c2bab56202163bca7071",
+    "fushimi_inari/integrated-world/azumamaro-houses.mjs": "f4cc5bd6eb1ebfe6cb3c54bcd629558c9bcaeacf7635c4c6b53d6881c62d5e9b",
+    "fushimi_inari/integrated-world/azumamaro-legacy-clearance.mjs": "69dcee30ca054dd13f2600902ad666c7e342fa4a2f3bfb9429edae1bccc1c87a",
+    "fushimi_inari/integrated-world/azumamaro-legacy-clearance.test.mjs": "518dfebd5068a3c2b4204423d1ba15c6be89504f4eb04b7b4fc02e04f44eaae9",
+    "fushimi_inari/integrated-world/azumamaro-planting.mjs": "8896f530c409aab13247ea66ffb3086ee4b70c046063dc4164f6767b40abf769",
+    "fushimi_inari/integrated-world/azumamaro-signage.mjs": "f9fbb84d3d9c88e2d9e6328c33ac659fb5b623b00ec1acb4bdb46d13af5fdee8",
+    "fushimi_inari/integrated-world/bamboo-details.mjs": "b60935ade54111ec151f9dc80e73ff63b6b236a1bd5e4d3cd04f1a686885f4b3",
+    "fushimi_inari/integrated-world/bamboo-profile.mjs": "1f20476073fa6fb7171930d759e97181f58447943acddad2fb420d9d042ae2ac",
+    "fushimi_inari/integrated-world/bamboo-profile.test.mjs": "0ced4fa48b2db49ba820dde7efddaeef4982596984fafb9c9f45a76cba2cda86",
+    "fushimi_inari/integrated-world/byakko-details.mjs": "76f58ec31d44bcf078a80d5daf2e1a886bf7216416f0a62d0917de075bde1f57",
+    "fushimi_inari/integrated-world/byakko-details.test.mjs": "f87fc60f6c7a9103defa0001e993cbbc059e108f78846a8c6f33adc77cabeadc",
+    "fushimi_inari/integrated-world/candle-flame-instances.mjs": "6c663cd54dfbbc3c975bc114e358e9c22898ca1cbe5a3fd8e26bb14532c49b85",
+    "fushimi_inari/integrated-world/candle-flame-instances.test.mjs": "5e169fc86289233763cbf791f1bf3d0e39301cfa2e7ebd38266a87df2b60de95",
+    "fushimi_inari/integrated-world/city-panorama.mjs": "c4ac542615fdfc1e16a9e81d6c68d46538eca0e8bb3f3755746e0e4155345351",
+    "fushimi_inari/integrated-world/collision.mjs": "355db4a3a97c5321306eb77c10d12dbaa461d80f1d3d2af06a67df85baaf492c",
+    "fushimi_inari/integrated-world/collision.test.mjs": "34773251539c4e8d306fc1af7821a5f397b0f2ebc43baaa43825dadb5dc23e81",
+    "fushimi_inari/integrated-world/court-clipping.mjs": "bc45975aed37ad07e909c0a6d3944c85584513d4bf5cf53c7b85bab5b09d538d",
+    "fushimi_inari/integrated-world/court-clipping.test.mjs": "9aa8c1695f1210c5821b5e9ccc6e5660e089d3eae89ed8086f043fdb9ff3db8c",
+    "fushimi_inari/integrated-world/courtyard-ground.mjs": "34b51936dbefef438610315b8c4e223691a69233cb419084773f7fa0317a0410",
+    "fushimi_inari/integrated-world/courtyard-shop.mjs": "c45231d863398459e02666d9bbdef52b923b46d994643dd2ff63872f8f0cb6f1",
+    "fushimi_inari/integrated-world/distant-canopy.mjs": "47aecd082c987950bf810bba69b0608f5b6013e46e55a911b6e3677e6012400f",
+    "fushimi_inari/integrated-world/entrance-area-surfaces-layout.mjs": "687bf9daf8254f7a06e82556ee62b9bde0e297f845b0c69c42fee7794552e460",
+    "fushimi_inari/integrated-world/entrance-area-surfaces-layout.test.mjs": "ddc3c29822daa64d236505abc448e4cc1a4630b5b5bc923793ba0bbdaacc7c7e",
+    "fushimi_inari/integrated-world/entrance-area-surfaces.mjs": "1c539aeb1058254c7536b4ffc60dc85db241dee7b18d6f380d65cdef48062d3c",
+    "fushimi_inari/integrated-world/entrance-bicycle-gate.mjs": "1466745c25bbc3d2ba79274fde675dc156a5fe3adb0ada2d61913640b9d69658",
+    "fushimi_inari/integrated-world/entrance-bicycle-surface-collar.mjs": "14cc805f700ca60c7a065c22fab333cc6fd2b4f071836bff0b163f6e0829e466",
+    "fushimi_inari/integrated-world/entrance-boundaries.mjs": "7bdb4537807c45cc2fe0b38c4ce1c73c5f4f67f18927c2eba1531ba7ca0fc5d7",
+    "fushimi_inari/integrated-world/entrance-court-monument.mjs": "527d56406638f04b8cacf128f43c028529a02e96790c5f002f92c79526fee3c1",
+    "fushimi_inari/integrated-world/entrance-details-r101.mjs": "ec768ba59c99a103d4680e94b47a1fa22bf8957d665fb92c78d5f2f88fc85ce3",
+    "fushimi_inari/integrated-world/entrance-details-r101.test.mjs": "66ec06bf56fc3f89da0ab81ee1795805b7f0e184aee4e3fa3ea1a21dfed386c4",
+    "fushimi_inari/integrated-world/entrance-gishikiden-access-surface.mjs": "c4f2bf4d5415a58bb2ac657aa180bc42418fb75ba941328afebe287f0a23dff3",
+    "fushimi_inari/integrated-world/entrance-ground.mjs": "0c0e35d2a87fe8f2a4e9c5f67f3114ae4ecbd66ab813e6161c8543de7e919087",
+    "fushimi_inari/integrated-world/entrance-ground.test.mjs": "cab5ca8df2f9fc5a6adb1e98e468d72da14f87666f0a4e5ccb966fe8cdedc524",
+    "fushimi_inari/integrated-world/entrance-guardhouse-details.mjs": "e0092f104f80eeceb2ecfa822ae6744e42c2d2264ce6c27e69de7415ade2050a",
+    "fushimi_inari/integrated-world/entrance-hedge-understory.mjs": "e7c0eb39266038f81d4ae122c2e64eea77a7944da6304df65558255b173c22c5",
+    "fushimi_inari/integrated-world/entrance-layout.mjs": "10366de4f919e75ad9593a6215bb6be87f2ca67aaf38d1e8e9aadb787e24e9a5",
+    "fushimi_inari/integrated-world/entrance-layout.test.mjs": "d4fd3025e40eda27f89e0e9eb67d3ad7877670ee448201639aab214b4b351ff4",
+    "fushimi_inari/integrated-world/entrance-legacy-shrine-conflicts.mjs": "2f3a356dfdf9c04fe8e3e19251114df66100a6e217f4fb1612e2850dccb7a22e",
+    "fushimi_inari/integrated-world/entrance-mapped-boundaries.mjs": "b57de436c12cafea0db9b81b6a43509c9a1b43e44d505b322a32f41e38d5b22c",
+    "fushimi_inari/integrated-world/entrance-mapped-trees.mjs": "1910561ea59bd82d8c33f7fe28fabe0eb80942302b6c00b8ed3b6296e746177f",
+    "fushimi_inari/integrated-world/entrance-neighborhood-layout.mjs": "dd8fb72924e39ed26f42615f564146296f2519ec3a4f34c3a3fa1888a3dda1fd",
+    "fushimi_inari/integrated-world/entrance-neighborhood.mjs": "8d48c6a02df27d0049d40fb078a468e368904c499dfbf4eca0e7160b47006156",
+    "fushimi_inari/integrated-world/entrance-neighborhood.test.mjs": "59714c033105a9cee844588366a5a2f47f53548317078ab2dd67f32db511510d",
+    "fushimi_inari/integrated-world/entrance-refinements.mjs": "248846b8f7b868600756c7957cd687e984d2dea3b7bf44da9981c950eab0e9e6",
+    "fushimi_inari/integrated-world/entrance-roadside-basin.mjs": "ad605902b97222ff2aa2d705bca3cdd36e6f8e94e9dff75394ed14cd630eb744",
+    "fushimi_inari/integrated-world/entrance-roadside-shrines.mjs": "b45d107d9edd128cbb241e8aea119b66a8058b98c08a14c4b79d7cddbcd642ff",
+    "fushimi_inari/integrated-world/entrance-shrine-court-details.mjs": "a37eacc48316c07aef74e9549ef583388861acfb66e0e5f85b7f4192667b42fe",
+    "fushimi_inari/integrated-world/entrance-shrine-court-trees.mjs": "11efd4c8cb418a0780b0762a8b0dced42a55767390e52f198667caca979ca6da",
+    "fushimi_inari/integrated-world/entrance-shrine-court.mjs": "5b39364f9906e63f6e81196c1407a4d960b87b55282fd8b45cd50ac4e0fea5ba",
+    "fushimi_inari/integrated-world/entrance-shrine-enclosures.mjs": "96e2653bb7f5a30caa3f844a430b2710128ee4cdc0ca19c395e517739c80cfbe",
+    "fushimi_inari/integrated-world/entrance-side-planting.mjs": "a18d398b2b0b13e9355f6935ca9adccd5b81b379aa2619c4e17784c674cfdff5",
+    "fushimi_inari/integrated-world/entrance-stair-clearance.mjs": "547825c28b64cb1e92d763cadba19c95fe1d718fe68583e349fe650cd42166c9",
+    "fushimi_inari/integrated-world/entrance-statue-clearance-layout.mjs": "d794ea0c505bacfe9d0ff9ae84c09b1ccc83bfff8fc99a9b86590742b1800e3f",
+    "fushimi_inari/integrated-world/entrance-statue-clearance.mjs": "bf18d01b70483d91ee80b2e81d86e972b57f6d1fd07eb74907b8956b99bbd1cc",
+    "fushimi_inari/integrated-world/entrance-statue-clearance.test.mjs": "399f1df33afb2f822535ef8aa8af4aee4ec3a4a338fee76bbfbee36b277c9509",
+    "fushimi_inari/integrated-world/entrance-unsupported-props.mjs": "f496da2521d6b2532e3df29a2b86fa70c1ca7615f8fbdb4f6a4dd496fa6cf49f",
+    "fushimi_inari/integrated-world/entrance-unsupported-props.test.mjs": "7c30ce1c8823d3e9d70393b05dbb9200cbce55050a4bb2d5a9184bf76407abec",
+    "fushimi_inari/integrated-world/entry-profile.mjs": "3b712e587e4e09b1d1a880761ca15571f7817a5be75d68de75fa1512edba1115",
+    "fushimi_inari/integrated-world/entry-profile.test.mjs": "75ef72bfbbfa36bc7d4004c81c0974f8c934216c777a1a0ef770e742b9dbc7e2",
+    "fushimi_inari/integrated-world/evergreen-canopy.mjs": "6bf08942121b8b7dbae4309e73798a249e87c7c3973695b91ed02cc07daab708",
+    "fushimi_inari/integrated-world/exploration-hud.mjs": "ac5de0e6f2ab550000a5d3bb8496d0f4d28ef5db00bc3906b71b35a6b3f5baa8",
+    "fushimi_inari/integrated-world/exploration-menu.mjs": "5b23980be6e5b1e442bb3a7af412540e96b99ac1119b3a96d452939b08aed471",
+    "fushimi_inari/integrated-world/first-torii-alignment-layout.mjs": "b3b79bcb56d9be2d4c32c75e303351c06f1b37d800b1241edd244ca141688727",
+    "fushimi_inari/integrated-world/first-torii-alignment.mjs": "8a9231b6a887643ee5a5c479372ae28366988041af592459b00a1af0c0cb5aeb",
+    "fushimi_inari/integrated-world/first-torii-alignment.test.mjs": "01814b18b7dff1d52c8d09cda422fb8e8260ceb2172e1e3e9833f665ee1fd77a",
+    "fushimi_inari/integrated-world/first-torii-source.mjs": "030dd2f84a5c64bb6fd4489b24430c1b3d67f0d51bb4cf2692508ab9b635732c",
+    "fushimi_inari/integrated-world/flashlight.mjs": "ee7d7ad11fd899d0ab468e2a0ff2917ef13b983ff25d1891f54c1eea87860854",
+    "fushimi_inari/integrated-world/flight-motion.mjs": "fd5dec85c0df0076f722c4dc790b0fe7e7307891d6d792df8c443f9b10ff5f90",
+    "fushimi_inari/integrated-world/flight-motion.test.mjs": "5ad24116ff9807ce7b88c9a971d929547c49b7cbce685e15f664854a99c8a318",
+    "fushimi_inari/integrated-world/forest-lod.mjs": "4d08d301faf704d59fd5f3c4c2ff0c54c0a7f8f3ee3961830aa6414c619ce5c5",
+    "fushimi_inari/integrated-world/forest.mjs": "34f8e7ae5237c659a73e3935565209c387576637d5e10cd2c49c89f3580ad947",
+    "fushimi_inari/integrated-world/gehaiden-context-r96.mjs": "604b53a0f9a54c5512a79cff14eb92920f597053cc02098dffde23cf0d6e0f4a",
+    "fushimi_inari/integrated-world/gehaiden-context-r96.test.mjs": "9bd2671112ba903a8fdd869535f090a7b2b453e063b06af886a25a705da3369a",
+    "fushimi_inari/integrated-world/gehaiden-lantern-cleanup-r96.mjs": "e038fa34fb13e30a37e028d91dca06da31b9cd05ad1f373a836254129f63ee3b",
+    "fushimi_inari/integrated-world/gehaiden-lantern-cleanup-r96.test.mjs": "159c3090694f5ad1f3b47809303b03cca0ad9c2f84d605bba7189daf612998d6",
+    "fushimi_inari/integrated-world/gehaiden-refinements.mjs": "57597ae26d4ff484f7493a90f1ee478f9f3875460390edafd379e99b8360a2c5",
+    "fushimi_inari/integrated-world/gonden-access-torii-layout.mjs": "16cbe0d0db0cf4dc2af5e0192142f00df3ffe076826505565104ca7bbe1c3d4f",
+    "fushimi_inari/integrated-world/gonden-access-torii.mjs": "d903386d7fdbc433f601b249bae9cc0745ce05f0b042c4651041b903cbe18a33",
+    "fushimi_inari/integrated-world/gonden-access-torii.test.mjs": "475bde1d25fc192cee37f0447c33cab7433942d1f783b98895803317aa059e73",
+    "fushimi_inari/integrated-world/gonden-facade.mjs": "de59534e08eff2b337cf67bed6ab407041e4eda0af0608958ab25a81cbd500ae",
+    "fushimi_inari/integrated-world/gonden-facade.test.mjs": "a9b6222372caa56fc5a37bbd21e17bb68806c95988bbacb9e14d7b16fd96c635",
+    "fushimi_inari/integrated-world/gonden-rear-landscape.mjs": "a30c6dba0aacfbc35a483e6145cd4cc025c6ca8880b5ef1fb96cb158d9c5ef1f",
+    "fushimi_inari/integrated-world/gonden-rear-landscape.test.mjs": "4dc6887fe69cf917cfd903639f757688caeee90c7f2ab55bf2941dd72ad0d604",
+    "fushimi_inari/integrated-world/gonden-service-r95.mjs": "2ecae1a39fc02509f0837b6d21944bb8c13878572ae7c3c181640d535d4a9b58",
+    "fushimi_inari/integrated-world/gonden-service-r95.test.mjs": "ef8a7724219be355f43c1a57e85cdcf7a355fde060e7131b0769b7fd0be15c24",
+    "fushimi_inari/integrated-world/gonden-surroundings.mjs": "b75987d698e65dc32316d0ef3f0c76768617450fc5ad5454e5d1e7cddaa59b1b",
+    "fushimi_inari/integrated-world/gonden-surroundings.test.mjs": "db536642c37aa55a4178ab95686ca427ff8fadcc465862cd74157f1a8537d6a7",
+    "fushimi_inari/integrated-world/ground-cover.mjs": "23851804af6b6b1fb3900dece5d84e03a1f4f3e77a78968a5dca53c08111afa4",
+    "fushimi_inari/integrated-world/ground-cover.test.mjs": "8f0a8f89126e213061180e5ff99e2ed1fbc618930001fa8a948a162c06bef954",
+    "fushimi_inari/integrated-world/guided-route-motion.mjs": "049ba785fc22f3ed9e89256ab62fc93bd0b34a15a74e161a686439e4cd360a83",
+    "fushimi_inari/integrated-world/guided-route-motion.test.mjs": "f97ad3075be0d8d0d6b98aed28cb14f0aa0b910075d594995e3e7f7923df857b",
+    "fushimi_inari/integrated-world/honden-rear-boundary.mjs": "df28cb7bd600a6849df532f5ff0f019f5ff3a6d973c94cac643c617c6efd534d",
+    "fushimi_inari/integrated-world/honden-rear-boundary.test.mjs": "196c494e7d8f49a280899a0ef9d43b6b83b28829acb928798b1373fb79aa3aca",
+    "fushimi_inari/integrated-world/inari-station-arrival-spec.mjs": "667c525c04de96d7de3040d4564e128a57d74099af7573a28fd3d176c46bfd5f",
+    "fushimi_inari/integrated-world/inari-station-arrival.mjs": "b1263de2b3b403dc6d837a489c6223a9f2c35d42e3a4bb8853ef55002e5a5858",
+    "fushimi_inari/integrated-world/inari-station-arrival.test.mjs": "a65ecbaff38efd485b020cabc0ada626f0f57b7ccce7946760f444fd85f37e3e",
+    "fushimi_inari/integrated-world/inari-station-frontage.mjs": "2146aee5f72a0c520612545986abaac24663efdf46421df29561b4c3d6ca38cf",
+    "fushimi_inari/integrated-world/inari-station-frontage.test.mjs": "75a22434f78a87447701bd3f1264cc60673dec3236526f6a7b948e888cbfeb94",
+    "fushimi_inari/integrated-world/inari-station-route.mjs": "bb1fdeddeef823bb42ab32bfea3b4c9d902f3cb71c981f1cd15a045e7aee2306",
+    "fushimi_inari/integrated-world/inari-station-route.test.mjs": "df3cb8ff98a142de9f2fdaa746a519b79d8c1056f8dfca932cba650ad3f5b988",
+    "fushimi_inari/integrated-world/integration.mjs": "0946c3f2ac4bd18d1f89ec6e803561394d6aae4fd24956de41a040909e24002a",
+    "fushimi_inari/integrated-world/interaction-english.mjs": "575f5cddf267a9031d8961bd422a58c5d5791ecf821d5f601ca5e0f855e6e5cb",
+    "fushimi_inari/integrated-world/keihan-approach.mjs": "d14fa740e9d67eef3e1e410d14d1275d4eb202d84f1344a66d9b6ed6d6948a5e",
+    "fushimi_inari/integrated-world/keihan-approach.test.mjs": "b228014af3190a8c2502a92873c1cd280e4c731374c7ec65da0e319f51501a78",
+    "fushimi_inari/integrated-world/keihan-frontages.mjs": "3a00cd305fb6b0a55041019c30ca828cb72f6e135b87e9cca539a7d100a25256",
+    "fushimi_inari/integrated-world/keihan-frontages.test.mjs": "d323de8c5534aec0218b62579a9eeb7ebf273a733940e4526417fba74e3a0f7b",
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.mjs": "e6b2c4d34a601cc1bb2966b7c59b2c4d5f2342a6c3dd294986fd6a3d9490387a",
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.test.mjs": "5d46f3754288c7bd9d7862b47b2dbb3a4d2b5386790402af5e289b31679d620c",
+    "fushimi_inari/integrated-world/keihan-ramp-material.mjs": "08c3b312fe3b74674843fb6af03ca9c59a121a544aa7eb2ab49dbe5df021aeed",
+    "fushimi_inari/integrated-world/keihan-station-spec.mjs": "2a1c5aa169fb51b7ba8e6f7c7fc8aeaf561c0f174688bd402ddd0510dc73a2d6",
+    "fushimi_inari/integrated-world/keihan-station.mjs": "09fc47bf4b36ea52070d5b9ac3f2b96771ca955d6afb9ef794964c3ce21f4bed",
+    "fushimi_inari/integrated-world/keihan-station.test.mjs": "493e13c0acd769d5c4783cb273198116474ecac89df260b663793ddb99bd7257",
+    "fushimi_inari/integrated-world/keihan-street-commerce.mjs": "c7996956407018ec47b8ac9dea8effc4bae03b43d9717a3b6d13d672df7189c7",
+    "fushimi_inari/integrated-world/keihan-street-commerce.test.mjs": "bf26e2bde76c94accc80ddf2899f594ee7946e8eb138723d75a096f0e18a29e0",
+    "fushimi_inari/integrated-world/keihan-street-context.mjs": "4166d248634f41ca09db73628d7c288f2d096efdeacabeb551205655f3649f89",
+    "fushimi_inari/integrated-world/keihan-street-context.test.mjs": "88707920fd7f64bc965d4fee6472b080168fa9782fb86938e423bb8cfa60dd19",
+    "fushimi_inari/integrated-world/keihan-street-ground.mjs": "308d2c556678048cb4287e289d76c781fcc988d8710037be448782ed92718d18",
+    "fushimi_inari/integrated-world/keihan-street-ground.test.mjs": "ec2f16dade273dd46e3403c06b8b2f440f682b562e5c640f68324a121e8728b9",
+    "fushimi_inari/integrated-world/keihan-street-life.mjs": "b082b354e62172056adff608ed23819d6132e27fac0e40ac05fb3477b2b240ec",
+    "fushimi_inari/integrated-world/keihan-street-life.test.mjs": "84e699d9de035c0f27b3f2cb8761ec9d665d73178737a35f761df97ff38926fe",
+    "fushimi_inari/integrated-world/keihan-street-observed-details.mjs": "902013ee1a04bbe01bd414fdf5b93f418af64f424ad84a726fcba882f380a3a4",
+    "fushimi_inari/integrated-world/keihan-street-observed-details.test.mjs": "ec4fd999b8f4ec1a05c7abf56f9f685e31e715a33bc1a3eff24ea46ad4b5d982",
+    "fushimi_inari/integrated-world/keihan-urasando.mjs": "a1b12a6b1e4f93cdc9da19ef94c9e94812f48697253193dd4431c3ed6f0d00a4",
+    "fushimi_inari/integrated-world/keihan-urasando.test.mjs": "9721701e9391900c5d0990f8b13f17caae5f4c045f1b1b43615a5cf70ed4a26d",
+    "fushimi_inari/integrated-world/kumataka-details-r101.mjs": "2e4358fbb925d84eb2f10981d8b43853bd39a99780b652128063e2d942b09767",
+    "fushimi_inari/integrated-world/kumataka-details-r101.test.mjs": "4d094a2fb2da3e1c0c010fe7a3112839dad25cda36afae3a711877ca9bb3205d",
+    "fushimi_inari/integrated-world/kumataka-lakeside-rail.mjs": "b84535f60a3179567fc21f71f99618b6d41b76ebc35737aded1a0756efa08a31",
+    "fushimi_inari/integrated-world/kumataka-lakeside-rail.test.mjs": "5129a9a540679d28cb79801c02f27a075b0f5abfc2596f515f4a544968d3769e",
+    "fushimi_inari/integrated-world/kumataka-registration-r97.mjs": "0844cfa2e140d35cd4124e74ff40631503835073260e7121b14ad77bfcc78cca",
+    "fushimi_inari/integrated-world/kumataka-registration-r97.test.mjs": "f22f1423e73701ea6acdd82e657c26a072e1e68aace0f71ccf2cf2d04b751e7d",
+    "fushimi_inari/integrated-world/kumataka-rest-furniture-r102.mjs": "ff7bba6717d08fab77fa4f50c8c94e4d0e6cb50d5dcb297f77e2e2f2e9f38215",
+    "fushimi_inari/integrated-world/kumataka-rest-furniture-r102.test.mjs": "d71879a06ca57562d10637d833a1435bc888922db7d87188e12db380620c9fef",
+    "fushimi_inari/integrated-world/kumataka-roof-r97.mjs": "33bd5bde19d254592d27d12b419cde70f2e770e8800ab999fb899f6058cf4f2c",
+    "fushimi_inari/integrated-world/kumataka-roof-r97.test.mjs": "1028fedf626cfb59a21d5f6120c69fd3a306cd2ddbb54c53c237c93b3b06f72b",
+    "fushimi_inari/integrated-world/kumataka-takeya-frontage.mjs": "d28f21c3504cf57bd3f3afc966e067efffe22ab20aa658188e0a1c9762863634",
+    "fushimi_inari/integrated-world/kumataka-takeya-frontage.test.mjs": "59606547a54372887f8fe03056ae21e6afe1b7a34dca7d092e9ad619896f96b4",
+    "fushimi_inari/integrated-world/lateral-entry-details.mjs": "c076b948923901bc871b9a0a9448243b27043f5ab60d7fea120038dca302a2f6",
+    "fushimi_inari/integrated-world/leaf-cluster.mjs": "a13ee9b07267a713f7232719a149889e6c01d72dafe451916149ae2585ff0554",
+    "fushimi_inari/integrated-world/legacy-approach-slabs.mjs": "8ce8750a9c482837396b44075eb6ea7b0e28fc444510ef9e62881a1a86657c28",
+    "fushimi_inari/integrated-world/legacy-approach-slabs.test.mjs": "3228c4bef6957b0f7cbaf7d28bbdfc36910e3ea3221770382ba3f1e1605ce03a",
+    "fushimi_inari/integrated-world/legacy-builders.mjs": "bfbbe0b6535c7eecf030af8cfab860d818aa5ba9d8bd535d117c3ab434c0cac9",
+    "fushimi_inari/integrated-world/mikoshiko-apron-transitions-r100.mjs": "707ba6fef87ee32823aea53a791f13cd1e95f6af22c5af287591e3310fb687a9",
+    "fushimi_inari/integrated-world/mikoshiko-apron-transitions-r100.test.mjs": "681cc449fb73b6221f517f9019b0fe887c5f01c5fb1567d5327fbbc1501f1b93",
+    "fushimi_inari/integrated-world/mikoshiko-details-r99.mjs": "c97e2828ed9f75a794c50a65f1d05b8751b43cef6f6f2a340ee1a73adb0305ed",
+    "fushimi_inari/integrated-world/mikoshiko-details-r99.test.mjs": "472b080aba98d4d31beeb1f556622feb6a78dea8c64af9a7300a06dc32829e04",
+    "fushimi_inari/integrated-world/mikoshiko-precinct.mjs": "755852d5e75a4df3be9530cbfcaa874089ca3d8de7c07f089bc128c8a105c04f",
+    "fushimi_inari/integrated-world/mikoshiko-precinct.test.mjs": "46fb54802f311dcf633908f276d8951895bef09f97f2956601c42f65d671946a",
+    "fushimi_inari/integrated-world/mitsu-frontage-aprons.mjs": "7a9a5ad719477a25099c216f2fad04563bc13ab36d7eb13cad649a8ad7aad6fa",
+    "fushimi_inari/integrated-world/mitsu-frontage-aprons.test.mjs": "d67dd25d5205e213eaba7407f1c9763293817600b7876644cf1bfabf0159d553",
+    "fushimi_inari/integrated-world/mitsutsuji-frontages.mjs": "156b1f0721ab1c0ec483373cfe371a42d43696f5cb1499e656fb9f75e17195e3",
+    "fushimi_inari/integrated-world/mitsutsuji-frontages.test.mjs": "2802c6fd19820f1442cd2e066fe51ddb0f6c9ad69f7e721e4bf9933fc06ccd2c",
+    "fushimi_inari/integrated-world/mountain-context-r87.mjs": "5ed6a7be720b2daefdcea59a47e100340c7e644b8d786c4132e315f6d2e25d57",
+    "fushimi_inari/integrated-world/mountain-context-r87.test.mjs": "4c2ecdef28c1ae83788b21185ce8511e295af3236a2a7d7bd0f094083fe451ee",
+    "fushimi_inari/integrated-world/mountain-landmarks-geometry.mjs": "50ffb0a4ccec1bd149b706d312b5ccf2a19b1bc99029d6322312bb784df5926d",
+    "fushimi_inari/integrated-world/mountain-landmarks-kumataka.mjs": "4756ee7baeb746888f4b5826ffd8baf84e45cc2f596c61e5b80762fbad251be9",
+    "fushimi_inari/integrated-world/mountain-landmarks-kumataka.test.mjs": "c129eb58eb5d3bd448196b86057ae496111703ea67cec49b3a4a688875eb453d",
+    "fushimi_inari/integrated-world/mountain-landmarks-layout.mjs": "9465cb143427fde109d36d7bba9a0e91ce2cfd8193125c5a44002f4048a45bae",
+    "fushimi_inari/integrated-world/mountain-landmarks.mjs": "32aad9976fe83eeca2c802a4397bba807f76aa715fd48fbcc5cc3e5588b371e7",
+    "fushimi_inari/integrated-world/mountain-landmarks.test.mjs": "5c3fe65d75e0c563ceb33ef318b51a70ad00690ac1b8ec0bf55b272a6e64d589",
+    "fushimi_inari/integrated-world/mountain-path-layout.mjs": "766193bf7692bf2c886627cc3f6655daedc3f87ddea24bcf05d2151570171944",
+    "fushimi_inari/integrated-world/mountain-path-layout.test.mjs": "7df6dee4cf3e184e5d0710e4c42b594f5e326b95a3d9fb702148269d7d9d4ce0",
+    "fushimi_inari/integrated-world/mountain-path-materials.mjs": "ea85f51222cf06ae2717ef0ef1ebf6bae363a748941aea41d0d52507ab5ab14c",
+    "fushimi_inari/integrated-world/mountain-torii-profile.mjs": "724091c7ea55e48cb080ffa33af8dc92fe74c5c9b51506e3ebe3e9933bc7e7f5",
+    "fushimi_inari/integrated-world/mountain-torii-profile.test.mjs": "1b6ed257d5db7b752058d20d7639aa869642f4f6ae5203eb54788251ccfa7b39",
+    "fushimi_inari/integrated-world/mountain-torii-visual-bounds.test.mjs": "6c45be148c5ffc0ff16fc7e96241b49b5a1126cdcfe0ed80f08fd3c37aacb7d9",
+    "fushimi_inari/integrated-world/mountain-torii.mjs": "0fea5e38ed8a8efcb625138f0f551d01c920cc33a7f22e4dfcf5813cb59fd679",
+    "fushimi_inari/integrated-world/naihaiden-context-r96.mjs": "74e60772ecd1ebc1dc9a0112fe648875677f0b27be1519624f438419cdb22b32",
+    "fushimi_inari/integrated-world/naihaiden-context-r96.test.mjs": "adae6f1feef790395b3d88104e87608fd4f620a6fb58ee07219713db86d8e3d7",
+    "fushimi_inari/integrated-world/naihaiden-refinements.mjs": "d4a7d38fe5026ee96b24af47a1bd1811c1f2705e4fc76fef662efd82e45dc16f",
+    "fushimi_inari/integrated-world/naihaiden-refinements.test.mjs": "12afd081d6895e26535fb86a6ded8b73f7c440c8ac82c9dd5d49565d7ab2eef1",
+    "fushimi_inari/integrated-world/near-precinct-drains.mjs": "02bf8c986bac289209171fbb0ec2dcd4edd3eaedad402d8504789f9a13136481",
+    "fushimi_inari/integrated-world/near-precinct-drains.test.mjs": "cb11b59cb2f26d914ab743f75cd8f7d86dd0c9c119eb2e3511fa56af454f752d",
+    "fushimi_inari/integrated-world/near-precinct-enclosures.mjs": "765eddde81d5c0e19614b9f0e85cfcfdcda58738ef2ac8e0a4d4105428b88dbf",
+    "fushimi_inari/integrated-world/near-precinct-enclosures.test.mjs": "1fdbf229b33faa5a02b9bb41e205ec7034eead3419ee358bfadc6456ac63d2e0",
+    "fushimi_inari/integrated-world/near-precinct-mineral-courts.mjs": "ee7d639546edec8ba266f833cb3b86dfe6d75dd7d1f93f4f0b1a9e93d5e46ed8",
+    "fushimi_inari/integrated-world/near-precinct-mineral-courts.test.mjs": "fe86b2616cdbc0da176cdbed3ea68250167bf144c79d185b25b570c178f7b662",
+    "fushimi_inari/integrated-world/near-precinct-shrine-row.mjs": "f37f3052fd1d626886151630a7c9dbb4a217efaacc4ba8b19d017dfc052339b9",
+    "fushimi_inari/integrated-world/near-precinct-shrine-row.test.mjs": "fd5c2f8a5fbedb05fd6f1790a767aedc59f51e03c752451e15890a5e4e39e38e",
+    "fushimi_inari/integrated-world/ninomine-details.mjs": "a957953f4163f0335b517c4bc617cdf9370572e49ed6863ef88c40091ed584a1",
+    "fushimi_inari/integrated-world/north-court-buildings.mjs": "24b9d9edc1186501748b2ff2f76d39ca520eb7a6520efbb92b3b82ca52e99534",
+    "fushimi_inari/integrated-world/north-court-planting-layout.mjs": "2933a1501c2a999e2d28cca4d519f4449bd8a6914e36e86ee76824e741bca866",
+    "fushimi_inari/integrated-world/north-court-planting.mjs": "ae6af8ff016ceea3755a2401d77ab33b3a0343c63d3f36bf6b62a9e4dc90be3d",
+    "fushimi_inari/integrated-world/north-court-planting.test.mjs": "99e669a565c7b90eb2a3cfacb79c028768edba74c708ad7dec68d4e681739de1",
+    "fushimi_inari/integrated-world/nosatsusho-pavilion.mjs": "da689eb3f178708fcf30e1ebcc529e63d8b7b94eccdd47497bef410858dc5534",
+    "fushimi_inari/integrated-world/nosatsusho-pavilion.test.mjs": "98e2ca9466b769c5005be8134fe25a604f5e2e290e1d216888934c746b3c3157",
+    "fushimi_inari/integrated-world/office-garden-banks.mjs": "9179004a129a7c02c193abcf83e43e366586fb03ef66f791007512a8dbe8b0dc",
+    "fushimi_inari/integrated-world/office-garden-banks.test.mjs": "98fd198a29a81fc834e1ddca8acf20cb0d505a32413f9b4f11c0d9e1076fc683",
+    "fushimi_inari/integrated-world/office-pond-surfaces.mjs": "0f19793a0a172d8f59164a62fcae13e3e6f473d76fc50b3843d4cc93af06d6a3",
+    "fushimi_inari/integrated-world/office-pond-surfaces.test.mjs": "abab1b3c297afa44946cb5021e2d3c6d9d93a707f25da172c0bb1d90fbcfa5e6",
+    "fushimi_inari/integrated-world/okumiya-facade.mjs": "53bb0befaffc5fad2bb6e632273d5581a33f85ca989be9d721c6b9227c42f23e",
+    "fushimi_inari/integrated-world/okumiya-facade.test.mjs": "c07d064f9425751b8b39018c047d52924481260029c1d845527ca5c03a0a9752",
+    "fushimi_inari/integrated-world/okumiya-grade.mjs": "0f9d759ad7bffc3f2fc0fe1f6621eaf813c05f61ccfc0844a35abbf9580a764d",
+    "fushimi_inari/integrated-world/okumiya-grade.test.mjs": "9cc5ed5ad6d26eae4ec5430d936f902a273ac9412a3217d2368ed53de7a1df97",
+    "fushimi_inari/integrated-world/okumiya-layout.mjs": "f01e42c728d4634b0c9cb4ff743796a33e2afee8d84023be2140565b8ad019f3",
+    "fushimi_inari/integrated-world/okumiya-stair-lanterns-r95.mjs": "f2c596d4c7d6196f478d832548e9de25ec39da92162ab1a4bf21dc0986f3c03f",
+    "fushimi_inari/integrated-world/okumiya-stair-lanterns-r95.test.mjs": "9f41d52f376f229f1422d3ebada65d2fcc8865e1549f61eac13782e5938dfecf",
+    "fushimi_inari/integrated-world/okusha-architecture.mjs": "13d6f30a2a96e8fb89f3b7927e0fff269f04037e649230b883ef61b185187285",
+    "fushimi_inari/integrated-world/okusha-architecture.test.mjs": "930c281f5b46570dfa9b6538fb651d2dcc284f168ad08870d1ea92c52b1d6bce",
+    "fushimi_inari/integrated-world/okusha-arrival.mjs": "b9770ea2a76a43bdca8b8fdcb3f96fa3b6508f105956eb0916404ab934f07167",
+    "fushimi_inari/integrated-world/okusha-arrival.test.mjs": "8d583e96242c92fe4f42c532cf5dbedf42f594fa40f5325ec7d4945a519a3221",
+    "fushimi_inari/integrated-world/okusha-court-surface-r95.mjs": "cdd98ed4701e285974a043f2f6166e4094a70291d1e39e9a2fb044a583197146",
+    "fushimi_inari/integrated-world/okusha-court-surface-r95.test.mjs": "401ce1837bdc9dadd8c6194520427bd171ab79caebacaff8db5c3569d313640c",
+    "fushimi_inari/integrated-world/okusha-court.mjs": "875a5ec85b746ca380fc3bdf1530cf5faf1b6cab66d3436d7833c7b207fb68cb",
+    "fushimi_inari/integrated-world/okusha-court.test.mjs": "87c75217f4e8eabfe7d9fd1813cd3536e9bcd4d5330036ae19e3e5f1a09dfc79",
+    "fushimi_inari/integrated-world/okusha-details-r101.mjs": "739496f4f4953f95d35b0b2b1d2b20e41fe19fc7c779f3b353f51503ec97dd6d",
+    "fushimi_inari/integrated-world/okusha-details-r101.test.mjs": "bd3d318d573d8ccf398e0ee08a250d579287f3f54486e6b191b80712d8374335",
+    "fushimi_inari/integrated-world/okusha-details.mjs": "89001b73d9b23b869c944064eb4235d5ee1d070cf4c473d0dc48c6b17c0baf93",
+    "fushimi_inari/integrated-world/okusha-mapped-shelters-r102.mjs": "3646c07315a2fb8185576b38d19ad4c7b68cc5952c2279d7cbcb2c0406c9c311",
+    "fushimi_inari/integrated-world/okusha-mapped-shelters-r102.test.mjs": "4c99a8315c7991459129a2de50b1e20336c9943b123d4ae59be442a57805bb5a",
+    "fushimi_inari/integrated-world/okusha-path-junction-r95.mjs": "a407bc3467c054d26234c1d2fbd2d8242f034eb199e69683a18929210960a196",
+    "fushimi_inari/integrated-world/okusha-path-junction-r95.test.mjs": "3e50644dba1934a133baa98131f61a14bfd13f85c6d3f4cb05fa249256a20124",
+    "fushimi_inari/integrated-world/omotesando-arrival-r94.mjs": "eff672c9ad44002c5acdaa32fb40343c736ebb71519a6ee180ea89791e6afeb2",
+    "fushimi_inari/integrated-world/omotesando-arrival-r94.test.mjs": "7db15c7c87f4912fa8a6c6e05b76c4e0212712261f97668d7190ac167a921e22",
+    "fushimi_inari/integrated-world/omotesando-bollards.mjs": "240f2efd9e14cf520701275194f68610ea1562a8632dcb5593bedd59f35ddb3d",
+    "fushimi_inari/integrated-world/omotesando-bollards.test.mjs": "de9d13f202bbdf3fec44783619c73aa15a40de860f13bea379881f9e60515ad7",
+    "fushimi_inari/integrated-world/omotesando-context-r95.mjs": "0c384a52d72b6056d2ae300ef738a2c796ce2fe13da349dcdfde817ad3a52625",
+    "fushimi_inari/integrated-world/omotesando-context-r95.test.mjs": "3f5412e1a919258fb608989b7d1f7cb9a72573a662d391eb5770bf96fb237f0a",
+    "fushimi_inari/integrated-world/omotesando-context-r96.mjs": "b7422c5e9040d29d17a68dad716ad5700d10e8f4d7488fcb58993b83c70e146a",
+    "fushimi_inari/integrated-world/omotesando-context-r96.test.mjs": "b218f026f48381e95dfb3630cf83d989e3030cb9190e0fb55a7b45249ec0d48b",
+    "fushimi_inari/integrated-world/omotesando-frontage-r96.mjs": "353b091ce2b911f0a996f2cb9266ceb2e42b7c36ceea3d1446cf5566dca1dcc3",
+    "fushimi_inari/integrated-world/omotesando-frontage-r96.test.mjs": "37f50e9f1dfdac9385b2285509d614e1d1e119a21557b4b83da8b2c632fa627f",
+    "fushimi_inari/integrated-world/omotesando-notice-r96.mjs": "986885ec1188ab85f0f286ae3146b4fd954687e6c05a02871ac9d2295fed74e7",
+    "fushimi_inari/integrated-world/omotesando-notice-r96.test.mjs": "f60e71230144de39bb1c554b73729ae30f4c24771df9fae9a2d1322fc851a974",
+    "fushimi_inari/integrated-world/omotesando-paving.mjs": "c4d279bba8b0f56bcc3d7a72fdddf99a2ba4d15afb04f69fa81954fdf58762b8",
+    "fushimi_inari/integrated-world/omotesando-road-ribbon.test.mjs": "7e10918b5ef8d858d14a49db11f3042ba56d4d03c213f2842035d449cc269cfd",
+    "fushimi_inari/integrated-world/omotesando-shoulders-layout.mjs": "a4977476357f5e18b14c751ffc2b23ef7e6da7ea73dfeb0a19dc6ec8b9c98911",
+    "fushimi_inari/integrated-world/omotesando-shoulders.mjs": "15f1d3bb25cf0fade390cb189ce0122b9c8301dd07d1d3a1fc74e4881afe5fc0",
+    "fushimi_inari/integrated-world/omotesando-shoulders.test.mjs": "4ec7fc1d1f414e866affe99ecd4c82d40d7aa4fd37808751a282798962031b1a",
+    "fushimi_inari/integrated-world/orbit-clearance.mjs": "c5688f2722fc995e118d6dbec9e58955087c80669dbc2c61b5e275c1fdb7be26",
+    "fushimi_inari/integrated-world/orbit-clearance.test.mjs": "7417ae0752f1404996597a1191b1b95f7d47e7f42f82f079f870935aa83b5555",
+    "fushimi_inari/integrated-world/panorama-policy.mjs": "cd8ed2fca0a84a360409a0db3bd5e0e7b53bb4a0cbd38f59d27e40714975023f",
+    "fushimi_inari/integrated-world/panorama-policy.test.mjs": "9ddad4a0ee99e6d4bbb32c5329908cc679b5702d7c9aa9962ee2e9245fd478a1",
+    "fushimi_inari/integrated-world/path-frame.mjs": "f128c9f316496ec4d70b2f033619973cc13047b8748b1ba374e792931888c806",
+    "fushimi_inari/integrated-world/path-frame.test.mjs": "4f25b20eb1062403f685f9dabdbfe1d770c15ab072c75fc0e3ea907f9d9e4fd8",
+    "fushimi_inari/integrated-world/path-junction.test.mjs": "37d527adde31f5ee411b1fabafb9b7ae811d19b5e21b77d0a5b6823a9b9a6475",
+    "fushimi_inari/integrated-world/path-margins.mjs": "2c23b0a5d05d14ce9d574be55f49d6357eb354c5cfd240c586ef71503c921b98",
+    "fushimi_inari/integrated-world/path-meshes.mjs": "230b85abac9b09bf9f7d19c9dde9449149480bf782726d65b45f1153f48ac936",
+    "fushimi_inari/integrated-world/path-plane-partition-r95.mjs": "74873ad86d68a0121a33a23758e1f7558a7f624ebe18c0cc5a91ceb8ed13eed4",
+    "fushimi_inari/integrated-world/path-surfaces.mjs": "de2ddbfd04b1046541af2e95b8d0b0e318f5eb611f158b9a53c3363645c40aed",
+    "fushimi_inari/integrated-world/path-top-ownership-r96.mjs": "5b63d59069b02ac6445555e89f34962eaec749e69fcec4730308c0e09be1fe77",
+    "fushimi_inari/integrated-world/path-top-ownership-r96.test.mjs": "1f99395fb60600bf670eeadee30abbe7637662098e050352e2c3f2f0a3fdc416",
+    "fushimi_inari/integrated-world/photo-mode.mjs": "d44698dfbbc10df4e325dfd7f1ae34655dedea3e43c5f319d1e8f317bf29c476",
+    "fushimi_inari/integrated-world/precinct-details.mjs": "45c78cdf61bbe6f625a515eda03436829fb67096f11cdbc125183ffcd85f2a97",
+    "fushimi_inari/integrated-world/precinct-grade.mjs": "5aff8085d8acb24857c59c02c48ccda975cca5a31c38185aa587a1fabc541429",
+    "fushimi_inari/integrated-world/precinct-grade.test.mjs": "8462fea55f37f1b58c55f575da2c410efb5554d8197952e82038f7c63acd0a36",
+    "fushimi_inari/integrated-world/precinct-life.mjs": "592b75a033841754abaa507a2ac0e303c0fe92ecee0c87b8ee52f4f5b35841bd",
+    "fushimi_inari/integrated-world/precinct-models.mjs": "51a0fecaceb43c86db2700a6ffcdf8860f56e7bd45cbb304e6cfcccd15b3dbd3",
+    "fushimi_inari/integrated-world/precinct-north-context.mjs": "99629586b1e1e2ae5b9bca1b738150374ebde719c5f855fe7ba7576118b5843b",
+    "fushimi_inari/integrated-world/precinct-north-context.test.mjs": "fbb794f4e3d3e9eec7edfa663e2376b52d77add68ef13a0e9df7e072c567bb6f",
+    "fushimi_inari/integrated-world/precinct-shrine-courts.mjs": "8c61bc34d75bdc4f66f345cb1796f4e1f33c6b28fb182168b31b922efedb099d",
+    "fushimi_inari/integrated-world/precinct-shrine-courts.test.mjs": "d9028e2122cf92c9f97196b55e6cfa2cd35dade6dc3c57f24bb25add5d83f8d1",
+    "fushimi_inari/integrated-world/profile-audit.test.mjs": "8ddb601ac1f866267b94cc696d703d96d98732080acdf99a82bc67d3d48addfe",
+    "fushimi_inari/integrated-world/r94-route-audit.mjs": "7b0fb141665ca7bf540f72fa9ffddb50c409a0a234331bc0a95672f8af8858e3",
+    "fushimi_inari/integrated-world/r94-route-audit.test.mjs": "f82fe793f62943094711af929b0f3d7b3fd8e146e67652acc0a7cf7cb3f79ee7",
+    "fushimi_inari/integrated-world/rear-precinct-tree-clearance.mjs": "6f4e24a4550f862b63df14bc90818fba458e681a281b193074f51a653f15f652",
+    "fushimi_inari/integrated-world/rear-precinct-tree-clearance.test.mjs": "447d67f78510b77cb453fdde8c6c94fcd42373f7347d3da2d596d793dc3d47cf",
+    "fushimi_inari/integrated-world/reception-attendant.mjs": "6a7b0b996a24a6a07ec57a7cfb1ddfdebdd271de62aa01745064c153db1006e1",
+    "fushimi_inari/integrated-world/reception-levels.mjs": "464e029552a9f0d2d3ed6f54f37e654b066c775792a6b1ca98ab094453cda2fb",
+    "fushimi_inari/integrated-world/reception-levels.test.mjs": "25b61e47424d7c92b1729af26c38bdef2b2a397259b9578b26f7059573a7f302",
+    "fushimi_inari/integrated-world/recorded-audio.mjs": "b54fc517c1abb9362685af3325818f702fe7b06a0d0b0fff778ceb9b0a3962ec",
+    "fushimi_inari/integrated-world/recorded-audio.test.mjs": "4132069cc879314b411a5d717159fbbac6d3e8f254753e7ffade4b3efba2e5fe",
+    "fushimi_inari/integrated-world/recorded-sound-events.mjs": "88e1cf5990e1152f89d3716acb17d6559deac6ddd02ae512f03d8ac43d108af2",
+    "fushimi_inari/integrated-world/recorded-sound-events.test.mjs": "febe2baef9f2cbee55bf4f37008df8513d1a40217d7069ccdc424c7c0efdd0d5",
+    "fushimi_inari/integrated-world/render-stats.mjs": "1a9e8a9cdbc86f769c0fee6e1b0cec968ed798dd22bd2e5ba1bfb83437e192da",
+    "fushimi_inari/integrated-world/restboundary-r96.mjs": "51e61688eecbb34ed989f55af88fc3a661f9c34384ab02cff3c1cf5cf17e3d67",
+    "fushimi_inari/integrated-world/restboundary-r96.test.mjs": "af2c5360e5b5576e95d21055fb32c29eec5538957b284c9dccffe22b1bdab05b",
+    "fushimi_inari/integrated-world/romon-court-side-details.mjs": "1b93285ae9f6e8a8e1b5bf579d9022f4e44236e32e63cf1294b686527d055751",
+    "fushimi_inari/integrated-world/romon-curtain.mjs": "00f7e1046b91c8e0eefd54dd6d752c344b4c5cfc3db4807eb9f0a53f808e446e",
+    "fushimi_inari/integrated-world/romon-gehaiden-r95.mjs": "7b2f105972b83a6c6a4493b6d7db2d91cb883fa1eaef39d2d3e0d1124d4bad38",
+    "fushimi_inari/integrated-world/romon-gehaiden-r95.test.mjs": "f24236eb4901fb7a0cb5432bb303c609fb136ed0d52bc64c540ea8f69d59c7af",
+    "fushimi_inari/integrated-world/romon-gehaiden-roofs-r95.mjs": "047c178951c11c88f5dffe92463e46789264594859a270aa9fc594bc94962b12",
+    "fushimi_inari/integrated-world/romon-precinct-r94.mjs": "93c0706c052a459157b4b6b3cdd3b2b3c06e40241189b51d9606fc2f8dd3e45a",
+    "fushimi_inari/integrated-world/romon-precinct-r94.test.mjs": "53cd03a05280712facea232ac64840d11b63f23bea956eb0ed55e9b8dc521493",
+    "fushimi_inari/integrated-world/romon-precinct-r96.mjs": "ab0b830e85576a4b951f5347720f38eca9138290a30c0efbe0f182200529eba1",
+    "fushimi_inari/integrated-world/romon-precinct-r96.test.mjs": "557431842d4547cc970429ff40d64fda98b7014274befbdaf83574fe0bc13d29",
+    "fushimi_inari/integrated-world/romon-surroundings-r72.mjs": "9d9f89d354ca1e6d35da0856e4eee0df6c22b4a6ba599c94042daaccb0c74d2e",
+    "fushimi_inari/integrated-world/romon-surroundings-r72.test.mjs": "5f7fd231563c23208311a03df05bcb3addeabc8bcccb1c81b18dcf2005664be3",
+    "fushimi_inari/integrated-world/romon-wings-layout.mjs": "0045c01906311829ece60e20b4cca0c6f9340e8f43f2cbe33ec700559e137e70",
+    "fushimi_inari/integrated-world/romon-wings.mjs": "01c961aa3b90bb34db6232f84282ba735be3f34cd351e8acb436b56d9b1b5aee",
+    "fushimi_inari/integrated-world/romon-wings.test.mjs": "bcafa80becf45723696496e2c3ddda97333de31adf9f1c44db2103ab2484bcb4",
+    "fushimi_inari/integrated-world/roof-profile.mjs": "0fe114bba6b96c72f3f47979b83d551076c9813415a6164b2a7c007ba87cb2ce",
+    "fushimi_inari/integrated-world/roof-profile.test.mjs": "376f7f103c4ac6a1dd21f1001da0b8f5259d3ffc7a30207828617694b00bd171",
+    "fushimi_inari/integrated-world/route-spec.mjs": "2d0d70ff5ac78242dc010963fa781e327d053dc9991048d19a5fd6bd7716932c",
+    "fushimi_inari/integrated-world/route-spec.test.mjs": "6d11427a17e3a73061d01258708a4d693e629c3edbfe1791cd25c33de69b3642",
+    "fushimi_inari/integrated-world/sanctuary-context-r87.mjs": "84149cf828776d5fdaa2c353604317a541eeba7566c7c4f6251b50e39b05b2a9",
+    "fushimi_inari/integrated-world/sanctuary-context-r87.test.mjs": "6cfbe7b3dd6c4f1661b80c5bac51e55c8334f92e7697b07e0a45dacc5a87fb25",
+    "fushimi_inari/integrated-world/sanctuary-context-r94.mjs": "a7d718cb372c6c4ed459f6056cf34d561913b7234958233cd4eaf4092eb8349f",
+    "fushimi_inari/integrated-world/sanctuary-context-r94.test.mjs": "c02019624307e30c47aabe97ca6353dba73d2bfd332a38b499d742e30ed76507",
+    "fushimi_inari/integrated-world/sanctuary-context-r95.mjs": "0002120e0a84573d690d4178f09d32135d01588eef2d20a228c99ca000ef2510",
+    "fushimi_inari/integrated-world/sanctuary-context-r95.test.mjs": "0478483acac2c5d7d36309162bd148811a966313b7ad2b8810647f20e6031c06",
+    "fushimi_inari/integrated-world/sanctuary-context-r96.mjs": "d02bb39988cced7d6099cae3fd5acae27d1787f71fb5aa78103d84ba14cb0a4a",
+    "fushimi_inari/integrated-world/sanctuary-context-r96.test.mjs": "a65cc307df32847116539b0c6776188c379a7c6d6bd1fce9d65e0397c8531a6e",
+    "fushimi_inari/integrated-world/sanctuary-landing-r96.test.mjs": "8ed14d489090dadc409d76a38782be74eabcbe882600f96fcada2e8ea4830aee",
+    "fushimi_inari/integrated-world/sanctuary-landing.mjs": "a952e6fcf0543e41e92e468b7f5f1a80ea6ad50938c251de60fbe4c3c820561e",
+    "fushimi_inari/integrated-world/sanctuary-path-junction-r95.mjs": "f50e2ac8dd5c868e253c8ffe60b5b2a3ac78aa38ec1dcad7a1cb0f66073b194e",
+    "fushimi_inari/integrated-world/sanctuary-path-junction-r95.test.mjs": "d16c5e5ee34edfb7ed0a554ed80ba47335e7635cbbe2347914cfb6b40ecdf101",
+    "fushimi_inari/integrated-world/sanctuary-proxy-repair-r95.mjs": "00ebfb047604eed82c4b76f7aed37b46629302dce20444d321953a56de9d9fc7",
+    "fushimi_inari/integrated-world/sanctuary-proxy-repair-r95.test.mjs": "906e54eb49dc52ff24a41a89ff2487ebf6aea33dfeacbb8f1d1e38389b813301",
+    "fushimi_inari/integrated-world/sanctuary-terrain-support.mjs": "7fc2fb95d976c21a3727277ea40d3a2b802e7bac8f4560278dbc4eb3d32556ca",
+    "fushimi_inari/integrated-world/sanctuary-terrain-support.test.mjs": "f141f669bdc32851204de9053954e9b9d28f592a7a52c9299352475f674e04ba",
+    "fushimi_inari/integrated-world/season-palette.mjs": "5afbd679cb18febf985f7063df3bf91797073fd07be08fb00f175f8fbac97b2a",
+    "fushimi_inari/integrated-world/season-palette.test.mjs": "4f098ddb0327c23e3ee36fed982fd3bf344c7dedea18094fad4729e77b66f6a6",
+    "fushimi_inari/integrated-world/seasons.mjs": "20ea6bdb1887173ad9720bc675a9ea686b517a97c2d09855633724256e6467f3",
+    "fushimi_inari/integrated-world/sector-audit.mjs": "be0d54ebdfa7e3524d005d4062553194725077b4442f787e8e4caa922248390c",
+    "fushimi_inari/integrated-world/sector-audit.test.mjs": "52b2c151419810d5b84ba853f95bdac9b98c23a21fc0f5bf51a6e24c98a24d3f",
+    "fushimi_inari/integrated-world/senbon-layout.mjs": "8fa8e894c5d50af58c0d5619eced01fbef8aa4f13b8d2140baff53b23e8e2fb1",
+    "fushimi_inari/integrated-world/senbon-layout.test.mjs": "8d15691f4f92b3556d0464ca231a5cee5824343c688b57da5e3a467b349b3461",
+    "fushimi_inari/integrated-world/senbon-rest-landscape-r94.mjs": "f3e18738256d7fe792b6f2ae7630c2bc08b67c0438cc679cf2b023e88530174a",
+    "fushimi_inari/integrated-world/senbon-rest-landscape-r94.test.mjs": "bab78a4b93cdef3451e2356c738e13689787906c6eb198b0ffd8606f4c5b3b6a",
+    "fushimi_inari/integrated-world/senbon-rest-r94.mjs": "068ad17d80c6aef5b473a61b3e60231e551923e0074bd92a25c1abe0f6846181",
+    "fushimi_inari/integrated-world/senbon-rest-r94.test.mjs": "a074aed27b3e790a4e5e3f737919aed64ee504ad58cec545c10119e015c58a1a",
+    "fushimi_inari/integrated-world/senbon-rest-r95.mjs": "dbbca0d56c8ee22f495adc0c28ac13eddb379b76697decde92d17091406e9ac9",
+    "fushimi_inari/integrated-world/senbon-rest-r95.test.mjs": "dd73de96d8fa2fae025de5f6df5cb2369b2a77b3565f76eedc67d195f9038de5",
+    "fushimi_inari/integrated-world/senbon-rest-r96.mjs": "d4116c4e7eec2d9140316e819a66e5610e2a23dcdb12650b35689f5109a0af9d",
+    "fushimi_inari/integrated-world/senbon-rest-r96.test.mjs": "fec0ba9a88a73f1d524febb0ff07e7d74284a6d14b74d55f24ced5d13bc3c1ce",
+    "fushimi_inari/integrated-world/senbon.mjs": "d443a91569f7f428c2c94458fb3e4e7c2c1757ccbe9b53acb61efe1e3fa170de",
+    "fushimi_inari/integrated-world/shinike-bank-landscape-r97.mjs": "7310e814d2069b00f74700bad33d6eebcbb72152522ee50b8a271511aca2982a",
+    "fushimi_inari/integrated-world/shinike-bank-landscape-r97.test.mjs": "473fa012f8ff3ba17275ac6cb9d45d08af47d4439214b2cebb09d8628987f9b4",
+    "fushimi_inari/integrated-world/shinike-reflections.mjs": "e655445e33d53b8d3face4635f691749204e6a3fd3a3a447bca66f7dbf12aafd",
+    "fushimi_inari/integrated-world/shinike-reflections.test.mjs": "2df4157b6e3e516ef31293dd575a4b507801ca3f041c189411c9f1e898ce0675",
+    "fushimi_inari/integrated-world/shinike-vegetation-r97.mjs": "7eac50d10d2344dda9c84dffbb88be00be4b6f24d75f09a8ae7d34abed2b14af",
+    "fushimi_inari/integrated-world/shinike-vegetation-r97.test.mjs": "e15d57fb7872584adf91b31473e0039964a84b51056d2859eafea48571dca088",
+    "fushimi_inari/integrated-world/shinike-water-r97.mjs": "6c20c36674999e7555a85a9d3769db48f6af92cd2d9d1a62c7e867fc32798760",
+    "fushimi_inari/integrated-world/shinike-water-r97.test.mjs": "c5ac58104cff0576849fc64d7fbb9ff94618f213255f8e95bbcc3ca8e0f67922",
+    "fushimi_inari/integrated-world/shinkosui-well-r96.mjs": "6697bbaa5808dd6239ef7d3763a6da16d638acec9e80963c940b62d37a7aeed7",
+    "fushimi_inari/integrated-world/shinkosui-well-r96.test.mjs": "d9c32dca158fd8cafe85092687ea2f5d04956d425d16a6df0b429ba9e2efcf67",
+    "fushimi_inari/integrated-world/shinsenjo-north-court-r99.mjs": "98717dc2179664b51d78744aca81bcdd289da05c72d63dc4c2d5b3bc158b5d2f",
+    "fushimi_inari/integrated-world/shinsenjo-north-court-r99.test.mjs": "45afb13e749ad9c325cf7ab9899a1383278db6d5184e57f7841eee13e0a5a96a",
+    "fushimi_inari/integrated-world/shinsenjo-precinct.mjs": "7b0a9afb1a6f5a30fefab908cfa184b7ac2c53f7a11ecf60d01e746e0c562d79",
+    "fushimi_inari/integrated-world/shinsenjo-precinct.test.mjs": "19595ab14159b7cf9e66b947815c0c954de1ec5bd2518b4f71db37aac3ccab2a",
+    "fushimi_inari/integrated-world/shrine-finishes.mjs": "ecf52af6b7ca0da67587d44560f7a6137b1ab5e88401ebacc2e8dfc1a4445e58",
+    "fushimi_inari/integrated-world/shrine-lanterns.mjs": "7a30c1c6b9eb1fc3c5e242a3c741dec41ce4eff0c0a7942fd9d153d7e8dc735c",
+    "fushimi_inari/integrated-world/shrine-offerings.mjs": "7cb3351eafe5ba3c2c02fe1a1ea2722567142b7b6891a2017decf8f488bf5a24",
+    "fushimi_inari/integrated-world/shrine-roofs.mjs": "c7dede54241e194e2a04e5a27662aab2ba36d176012f42ed74be0cd19bc2062b",
+    "fushimi_inari/integrated-world/site-grading.mjs": "ae8002daf5cdcaa8f03a1304af75c55f175ec4904d8ba5081bcfe426c9492944",
+    "fushimi_inari/integrated-world/site-grading.test.mjs": "fe0708114456ba610706eac9d65b43ecdbac5960552aafa89d032235c73e266f",
+    "fushimi_inari/integrated-world/sky.mjs": "d216e349f66d5bbea339914c34e7cb11fa8f2d3c16e3d78d865f41197a895bf4",
+    "fushimi_inari/integrated-world/source-component-boxes.mjs": "8c2d8e1cc3084a1376966052430963b359f82c6cbac283e81977a7237228d4e2",
+    "fushimi_inari/integrated-world/spatial-mesh.mjs": "6d8d5b5767ffe8f0eb820e6a27fb7e72d4b59892b2cb897e309ea033b0f81ad0",
+    "fushimi_inari/integrated-world/spatial-static-batches.mjs": "4c2a86bff93619a94f5d9da10f21937601797ca5a41274441c95d8824798af56",
+    "fushimi_inari/integrated-world/spatial-static-batches.test.mjs": "93584934fa5841f84a4221f54d8498d207eaa593595c770e5ada66431da2deac",
+    "fushimi_inari/integrated-world/spatial.mjs": "cfce842ae9a785687ee46c7ee9ff4db93423cdd92c52581e9003f80d27161a29",
+    "fushimi_inari/integrated-world/spatial.test.mjs": "3ecbc206cb654b5449176d566467878b50ef811412cd78a4c671f3bcd7c4cd15",
+    "fushimi_inari/integrated-world/stair-profile.mjs": "fe7d3f6b5726fde858f35f623121a09afbe1f0ec0d60be361b5367411e4b3b3c",
+    "fushimi_inari/integrated-world/stair-profile.test.mjs": "3fd4d0fcfd1aea72465ff7236bd0ebf4ed1a2e7666d58fd95d18a89d85f0557a",
+    "fushimi_inari/integrated-world/station-approach-routes.mjs": "27ff3e8ac24aad86a61cd2828b854e8f3aaf735de3631758152756d6fb86a7d5",
+    "fushimi_inari/integrated-world/station-approach-routes.test.mjs": "fec4963e0fae0f55b7cafd7b24968909182af5fbe6bf37157e5f980020291d40",
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.mjs": "b16c815b57f4f39a271edb7cffa5c0dccb4f1248ade9437b94b5f64820d0f7ba",
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.test.mjs": "71ac840d29e64f434c1c75c4434574b3af8ea55cf67d35ad5ff10467e32611fa",
+    "fushimi_inari/integrated-world/station-placement-layout.mjs": "b2ecda62c45590d3162fc9609f1bc98b90c959d0f15de1ae5411f439ed4617b6",
+    "fushimi_inari/integrated-world/station-placement.mjs": "2dfbcfb81ac07125bce6b07ab84d6a94a35f8e19e0c5065bf77913a6d712f184",
+    "fushimi_inari/integrated-world/station-placement.test.mjs": "a34a54a653127548ee69067294aca7159675bbc2e6940eff3b7bf57deeff2618",
+    "fushimi_inari/integrated-world/surface-materials.mjs": "ee26a6fdc037bd1ef901c0e2b492774a280988150b650dd47c71f23422b08768",
+    "fushimi_inari/integrated-world/tamayama-access-shoulders.mjs": "786fb560b9db11112d7963a584f3afbdc2a23d49ca2efb0be1712b9710ae8692",
+    "fushimi_inari/integrated-world/tamayama-access-support.mjs": "2b37935ddbf8bdd08439dbb0b41b12a9698d8237f96ebac0ea14f2ea5a8dd6e7",
+    "fushimi_inari/integrated-world/tamayama-access-support.test.mjs": "7bb9f0e7e38f8f23b54d72cc40064636086339d97f6dac59009a19c33eeacae4",
+    "fushimi_inari/integrated-world/tamayama-access-width.mjs": "aa0c84d224510e43666fc1caa9f31c95ef0b76dae51f27ee9d954efbcd614732",
+    "fushimi_inari/integrated-world/tamayama-access-width.test.mjs": "274226df99b587f455386689fa57754030c7dc85e7b3fc5a29955a9d052e5eaf",
+    "fushimi_inari/integrated-world/tamayama-compound-layout.mjs": "fb4a5460a1b7e4f451759312286d56fedd913521f85fa3fdc906fef6f8a5efd1",
+    "fushimi_inari/integrated-world/tamayama-compound.mjs": "a7f23b170eed5abc4253ede60a59345a5ccb3ff6b69f3fddb0c470783c94f51b",
+    "fushimi_inari/integrated-world/tamayama-compound.test.mjs": "3244c89cf7abed3ef52f9c93e286c710cdfbcc7b8e8eea063c85c197008f313c",
+    "fushimi_inari/integrated-world/tamayama-continuation-torii.mjs": "978083822172836588ef8a8c683e4ae1b0f7d9d6a481c621e17351050d451a77",
+    "fushimi_inari/integrated-world/tamayama-continuation-torii.test.mjs": "da0a219cceefaac0b2135b7f77fbd6e88904b18fedeecd14acffa2cbb7683870",
+    "fushimi_inari/integrated-world/tamayama-forecourt-layout.mjs": "70b408e94759b80a8e552e5246ac431b381785059d5e1b3ff4e7edfd8df8e4bf",
+    "fushimi_inari/integrated-world/tamayama-forecourt-layout.test.mjs": "9d437176b5a11ac06dc3221342322ce36814a8911a0d168260f00040e492ba96",
+    "fushimi_inari/integrated-world/tamayama-forecourt.mjs": "d4188bea2f2a396e401d364f299e04e349f10bd1c37fac0dcf3a9ed47c5d8396",
+    "fushimi_inari/integrated-world/tamayama-forecourt.test.mjs": "b801fd785b5c8e8cda4a43dc23a1d6f5ea05763f3ea056249b5623ae5c2a8aa6",
+    "fushimi_inari/integrated-world/tamayama-okumiya-access.mjs": "9e9e199cf2996b656b35ae516b877a1ea1d306d1cf8755f00a6a6bfbe5609817",
+    "fushimi_inari/integrated-world/tamayama-okumiya-access.test.mjs": "3e43f50fe0b70b7dd7fd9928ee49690610e886b7c341266f1735155b24b4b9ad",
+    "fushimi_inari/integrated-world/tamayama-shoulders-layout.mjs": "b416ea6f1fa8b18ca80249742f124e4b61c54a148dd29a33a056858c618c1e5b",
+    "fushimi_inari/integrated-world/tamayama-shoulders-layout.test.mjs": "9dc394b8d0dc9a31b29be32c4c522181dae07d2be1e5e808d98d64cd890e8936",
+    "fushimi_inari/integrated-world/tamayama-south-shinmesha.mjs": "76d329d1a75818dcdaf7ba9f6cf23b9d1f437e29af0fb819293cf68e85688a9b",
+    "fushimi_inari/integrated-world/tamayama-south-shinmesha.test.mjs": "195902ff50ff6e78ac49c8234a83fc5dea7ff918cd0fe55293b93c3d01b591b3",
+    "fushimi_inari/integrated-world/tamayama-stair-borders.mjs": "6f9052f1294fb0ee838d5853d16aede47171e208a729687afb96285d21c17f61",
+    "fushimi_inari/integrated-world/tamayama-stair-borders.test.mjs": "c11c19cc2b2b6910a439887d39a6232edd1bf8355f9c8f7577f84a7ecd1619a5",
+    "fushimi_inari/integrated-world/tamayama-stair-landscape.mjs": "6deeb5c578f3e5ed00f10e0ad8dc20d2b1b6e85b52e0d03994e775580d3b1441",
+    "fushimi_inari/integrated-world/tamayama-stair-landscape.test.mjs": "a045780c1098003c5878c89cc3feac282d64d7e4dfdac4b53234cb63bbb539c4",
+    "fushimi_inari/integrated-world/tamayama-stair-layout.mjs": "550e61e4c8f9a87697582e2344b1863ddd8441389da6a19b47ee3b0c507e1f5b",
+    "fushimi_inari/integrated-world/tamayama-stair-rail.mjs": "6172d2ff31c3656e1c498759b18364cee1017e68d29d084f1babbd28c9f63db1",
+    "fushimi_inari/integrated-world/tamayama-stair-rail.test.mjs": "eb59732a355f618f3791ee0eab3f9a29eb43b21ad53ec47c8c10064779a38a27",
+    "fushimi_inari/integrated-world/temizuya-canopy.mjs": "476a523886c5bcdc9993ef64bfed9518d67f7a4fc4c178c89e0873feaead78d4",
+    "fushimi_inari/integrated-world/temizuya-canopy.test.mjs": "763dec19d636d56cc952becb8c6afa35b095cc94eef0bd190d49a5d0f5693b10",
+    "fushimi_inari/integrated-world/temizuya-details.mjs": "98e79f721457230ae4773f27fe6d83517935937fccf6ce635ce95697dd222d7a",
+    "fushimi_inari/integrated-world/terrace-foundations.mjs": "a86a71e1471c59e352f0f214d830128325f099fc927af47533992736da6114c1",
+    "fushimi_inari/integrated-world/terrace-vegetation.mjs": "c09d07f566420247f0c2b8b7d6920e51243e4e350b478bdd15a673cda3abbaac",
+    "fushimi_inari/integrated-world/terrain-triangles.mjs": "9f5cbfdefdfca7577cfa17e69d12fc6509c825940fe0654329caf729089b764b",
+    "fushimi_inari/integrated-world/terrain-triangles.test.mjs": "d052c97ce13150ba8cc655548de48358a6e1546d93dadf35a3a4156957aba399",
+    "fushimi_inari/integrated-world/torii-clearance.mjs": "e6d3ad978d8291048c44bf86787e6b206d2c5bd96a89543cc0821e4b40c27f93",
+    "fushimi_inari/integrated-world/torii-inscriptions.mjs": "fbc8f5164232d43d72671390c1f4eb277eee601c2b351da4cbf9f580d7c37a5a",
+    "fushimi_inari/integrated-world/torii-materials.mjs": "e1f34977b698ba7f5c988c877826baccea343ef415c0dba73250ab195f7e3045",
+    "fushimi_inari/integrated-world/torii-variation.mjs": "710adaa6bdc218c9655bfc71f31d4115ead7432b1768c4e81920c2500c86494d",
+    "fushimi_inari/integrated-world/torii-variation.test.mjs": "c5f3bd95346ae9c64a8f27858c65cedc836adeaea4327ef166c68f0d9c84ffce",
+    "fushimi_inari/integrated-world/train-arrival-experience.mjs": "3e6a24dcabb32341a5ee1dd7482bbdf3b20c464f8da50d6211c81884e48a631a",
+    "fushimi_inari/integrated-world/train-arrival-experience.test.mjs": "f3600c3e97f8adc3aa9f0ac0892c285ad906310b409ee836e6ff20686fc10d28",
+    "fushimi_inari/integrated-world/train-arrival-sequence.mjs": "30610b7812e3a5c5c6a7cadb7e1eebef35fba835830b7de6c496886baa795e3f",
+    "fushimi_inari/integrated-world/train-arrival-sequence.test.mjs": "fb315aed0d69a6bb12f7f73b7451f656fba3fbaa077fb94ddb76e5c4386a08e0",
+    "fushimi_inari/integrated-world/train-arrival-ui.mjs": "d3cabba6a21734aba8ea4fe44d0f0517539c772c463a60eb3cf1cd4cc99fe4a3",
+    "fushimi_inari/integrated-world/upper-access-r94.mjs": "e890ed3491ec27631e92d43c88141f12a169dae95f81f9cd735035c00f449263",
+    "fushimi_inari/integrated-world/upper-access-r94.test.mjs": "ef54c55b3ddde5bda4d84f1516dc5da6525e636dd7eeab2364c0730dbaed6124",
+    "fushimi_inari/integrated-world/upper-access-r95.mjs": "3b3bda1b8a3ab507776a4df0b636e4e4139f51d1f12870f2f80b234e0d0935fd",
+    "fushimi_inari/integrated-world/upper-access-r95.test.mjs": "74ea338e5feccf6d17c2c9e175fa29015b691c91e1ef77dad7114242e75af212",
+    "fushimi_inari/integrated-world/upper-access-r96.mjs": "1dfad434040f122853b15448462aa9e42a25b383aab46b9e18ab014acffa6561",
+    "fushimi_inari/integrated-world/upper-access-r96.test.mjs": "041c4fb9942f51273ff357dd6948fabd15c5470c8100a4d101a3bc29833aa149",
+    "fushimi_inari/integrated-world/upper-enclosure-r96.mjs": "e4a6fd6aec51f1f5a11cce1138a177ecd9327385593ee0b2938d95275c1517ec",
+    "fushimi_inari/integrated-world/upper-enclosure-r96.test.mjs": "8ab3732606a7ea2226e219f5744a96c15b67addd8fb063ccc169e31ab59d832f",
+    "fushimi_inari/integrated-world/viewer.mjs": "a1575a65174b71ad0a0b9a86be28c8a0de522a7f3334616dfc900e961350e08d",
+    "fushimi_inari/integrated-world/visitor-assets.test.mjs": "a5ba503729577ffd5507e4d6d951e031cdcef356cb1be7463f0a844cffba5234",
+    "fushimi_inari/integrated-world/visitor-navigation.mjs": "a226904b8250f8d1e1ee84f1544335fba816819b76846dba94c17205e737faa6",
+    "fushimi_inari/integrated-world/visitor-navigation.test.mjs": "a63208700bf5f34e57accd18862dfad185cbb50bd23411e1e353044c8492ad89",
+    "fushimi_inari/integrated-world/visitor-rig.mjs": "de75ebab7bd7d7429be81d0b04fc6cda40453a5f6a0c0daa2a51c703607daef1",
+    "fushimi_inari/integrated-world/visitor-rig.test.mjs": "58b2d2812bff963c9639aee8fa1e4126c7e91026e4b2fbbb8315cf7588ba0546",
+    "fushimi_inari/integrated-world/visitors.mjs": "2217bc34ee510f695b68f1378de75cd5a8ac13447f228e7ccad625d6c0299490",
+    "fushimi_inari/integrated-world/walking-motion.mjs": "265df95a45372695cb7dc9c193bf776979a178f2b07a98e623253400962087e7",
+    "fushimi_inari/integrated-world/walking-motion.test.mjs": "b02ffa76de711f8b29bd660ec9c8a49aec63abbd851c7ed9c4b68dd2d769066d",
+    "fushimi_inari/integrated-world/walking-teleport.test.mjs": "7c2a1f51d27e06e0e380c24b97b02cc3be744b0ebfc8b82733ea9a64e8a4c58a",
+    "fushimi_inari/integrated-world/walking.mjs": "03832378f8e6444946bac2a1a51d0f163c56b8461b1923b49adf0ebeca287e8b",
+    "fushimi_inari/integrated-world/water-appearance.mjs": "bbaa418ac3ae177d46df2921b28529815f514bd93636763744c87a2ee3ec5048",
+    "fushimi_inari/integrated-world/water-appearance.test.mjs": "187c46d88c19c139843cbbe847d3386f91cdbd70c946d7339c6aa24b8ae56994",
+    "fushimi_inari/integrated-world/world-detail-chunks.mjs": "ac1651315f3071541d30c67e1733f0913934e95d484eaed48f036c7094d35296",
+    "fushimi_inari/integrated-world/world-detail-chunks.test.mjs": "60d345311ffe10fb43f6171909051d87553460284e7960d0c09d1c70bdbb6a2a",
+    "fushimi_inari/integrated-world/yotsutsuji-context-r95.mjs": "cee8c424ccecdd8395935c10867e74fa83799d81aceeba1b6f0086f9dc31d3cb",
+    "fushimi_inari/integrated-world/yotsutsuji-context-r95.test.mjs": "fe87766d15decaa1e466110face0acb9a05496c794a4c683043d0c3a788a920e",
+    "fushimi_inari/integrated-world/yotsutsuji-context-r96.mjs": "bfcbcfaea8411031954f5bcc12bcb2a78aa1587acdffc1345e73b2aef8531216",
+    "fushimi_inari/integrated-world/yotsutsuji-context-r96.test.mjs": "731c5fb79442f85a38868be8e5bb4b2af1fa506525efeb484b8e6f39017bbafa",
+    "fushimi_inari/integrated-world/yotsutsuji-retaining.mjs": "4d7ec9fb04fe6e18971b4c859156a7832927f2e851f3cdd929cfaf3815ad2383",
+    "fushimi_inari/integrated-world/yotsutsuji-retaining.test.mjs": "cfe9bf38cbf84ac77f776fc804ceff2dc1392175424ea6c5497fdb9bf6e4b0d4",
+    "fushimi_inari/integrated-world/yotsutsuji-support-r95.mjs": "23f0b460ee5533bc84b6d159c3411e4d3823044ea41fdf16e26d227e41c19770",
+    "fushimi_inari/integrated-world/yotsutsuji-support-r95.test.mjs": "2e239bfdfff684112851f111b1259058344bedf0616be323d50adce729aa7a19",
+    "fushimi_inari/integrated-world/yotsutsuji.mjs": "6c59ccb924493d5cc589a8e32443ec5b0ed74a6fc9cb8f05e68895b525fe0751",
+    "fushimi_inari/integration-demo/demo.mjs": "b188f84ac0ec931b9302078a6047dab7a263cf5a48891fee27ad01bff8a750b5"
+  },
+  "dataHashes": {
+    "fushimi_inari/geography/features.json": "e790c1dc28f52fb3686ce6a8d6dc3fc4680a37bc4fb558a4fefe58e3e6123f47",
+    "fushimi_inari/geography/terrain.json": "7407acab88cf322ded9bf8aa8de57a805ea10d937a8f9e36f0d71b96cdd80da3"
+  },
+  "workingTreeContentDifferencesFromSnapshotAtEnd": [
+    "fushimi_inari/integrated-world/integration.mjs",
+    "fushimi_inari/integrated-world/keihan-frontages.mjs",
+    "fushimi_inari/integrated-world/keihan-frontages.test.mjs",
+    "fushimi_inari/integrated-world/keihan-urasando.mjs",
+    "fushimi_inari/integrated-world/keihan-urasando.test.mjs",
+    "fushimi_inari/integrated-world/viewer.mjs"
+  ],
+  "scope": "CPU assembly with prebatch owner capture, paths/final walking sampler, commerce, observed/video details, candle instances and current near-detail policy; no WebGL/GPU/FPS or visual acceptance. Viewer terrain/canopy/city/sky/water and additional street visitors are excluded; the existing reception-attendant asset replacement is awaited in both snapshots. Source-owner candidates are before static-sector merging and before residency; main/shadow totals use the postbatch assembly. GLTF image decoding is stubbed; missing GLTF maps are not a VRAM estimate. Canvas atlas dimensions are real authored dimensions, pixels are not rendered. mapSlots counts per-mesh material references, not distinct texture identities. Working content comparison ignores LF/CRLF differences.",
+  "assemblyMs": 21771.055,
+  "ownersBeforeBatch": {
+    "keihanStation": {
+      "built": true,
+      "name": "Keihan Fushimi-Inari P2 arrival",
+      "builtIds": [
+        "way/626177630",
+        "way/626177631",
+        "way/952687116",
+        "way/626177632"
+      ],
+      "bounds": [
+        31.1400146484375,
+        7.449999233512877,
+        186.03719869390474
+      ],
+      "reported": {
+        "station": {
+          "batches": 13,
+          "primitives": 341,
+          "triangles": 4380
+        },
+        "rail": {
+          "batches": 3,
+          "primitives": 458,
+          "triangles": 5496
+        },
+        "train": {
+          "batches": 9,
+          "primitives": 976,
+          "triangles": 11904
+        },
+        "staticTopTriangles": 18,
+        "colliders": 32
+      },
+      "geometry": {
+        "meshes": 40,
+        "drawCandidates": 40,
+        "triangles": 21948,
+        "instances": 40,
+        "geometries": 40,
+        "geometryBytes": 2106696,
+        "materials": 21,
+        "textureIdentities": 9,
+        "mapSlots": {
+          "map": 8,
+          "emissiveMap": 7,
+          "bumpMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1536,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          }
+        ],
+        "shadowMeshes": 34,
+        "transparentMeshes": 3
+      }
+    },
+    "keihanApproach": {
+      "built": true,
+      "name": "Keihan Inari-shinmichi bridge and Urasando approach",
+      "builtIds": [],
+      "bounds": [
+        149.21826171875,
+        8.366140365600586,
+        115
+      ],
+      "reported": {
+        "drawBatches": 7,
+        "triangles": 4852
+      },
+      "geometry": {
+        "meshes": 7,
+        "drawCandidates": 7,
+        "triangles": 4852,
+        "instances": 7,
+        "geometries": 7,
+        "geometryBytes": 349344,
+        "materials": 7,
+        "textureIdentities": 0,
+        "mapSlots": {},
+        "textureSizes": [],
+        "shadowMeshes": 2,
+        "transparentMeshes": 0
+      }
+    },
+    "keihanFrontages": {
+      "built": true,
+      "name": "Registered Keihan approach food storefronts",
+      "builtIds": [
+        "way/305213552",
+        "way/305213538",
+        "way/305213554",
+        "way/305213533",
+        "way/305213560"
+      ],
+      "bounds": [
+        119.127685546875,
+        9.796194076538086,
+        52.49299621582031
+      ],
+      "reported": {
+        "drawBatches": 8,
+        "triangles": 10272
+      },
+      "geometry": {
+        "meshes": 8,
+        "drawCandidates": 8,
+        "triangles": 10272,
+        "instances": 8,
+        "geometries": 8,
+        "geometryBytes": 1092096,
+        "materials": 8,
+        "textureIdentities": 1,
+        "mapSlots": {
+          "map": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 7,
+        "transparentMeshes": 1
+      }
+    },
+    "keihanStreetContext": {
+      "built": true,
+      "name": "Mapped Keihan street neighborhood",
+      "builtIds": [
+        "way/162036111",
+        "way/162036114",
+        "way/295577531",
+        "way/295577536",
+        "way/295577544",
+        "way/295577545",
+        "way/295577547",
+        "way/296201566",
+        "way/305213530",
+        "way/305213531",
+        "way/305213532",
+        "way/305213534",
+        "way/305213535",
+        "way/305213537",
+        "way/305213539",
+        "way/305213540",
+        "way/305213541",
+        "way/305213542",
+        "way/305213543",
+        "way/305213544",
+        "way/305213545",
+        "way/305213546",
+        "way/305213547",
+        "way/305213548",
+        "way/305213549",
+        "way/305213550",
+        "way/305213551",
+        "way/305213553",
+        "way/305213555",
+        "way/305213556",
+        "way/305213557",
+        "way/305213558",
+        "way/305213559",
+        "way/305213561",
+        "way/305213562",
+        "way/305214362",
+        "way/305214363",
+        "way/305214374",
+        "way/305214380",
+        "way/305214832",
+        "way/305214838",
+        "way/305214842",
+        "way/305218188",
+        "way/305218189",
+        "way/305218193",
+        "way/305218194",
+        "way/305218196",
+        "way/305218198",
+        "way/305218200",
+        "way/626177640",
+        "way/768795455",
+        "way/768795458",
+        "way/768795461",
+        "way/776230251",
+        "way/776238684",
+        "way/777222943",
+        "way/792897574",
+        "way/792897575",
+        "way/792897576",
+        "way/792897577",
+        "way/792897578",
+        "way/795552031",
+        "way/795552032",
+        "way/795552033",
+        "way/795552034",
+        "way/795552035",
+        "way/795552036",
+        "way/795552037",
+        "way/795552038",
+        "way/795552039",
+        "way/795552040",
+        "way/831207319",
+        "way/831207320",
+        "way/831207335",
+        "way/831207336",
+        "way/831207338",
+        "way/831207339",
+        "way/831207340",
+        "way/831207341",
+        "way/831207343",
+        "way/831207344",
+        "way/831207345",
+        "way/831207351",
+        "way/831207352",
+        "way/831207353",
+        "way/831207354",
+        "way/831207355",
+        "way/831207356",
+        "way/831207357",
+        "way/831207358",
+        "way/831207359",
+        "way/831207360",
+        "way/831207363",
+        "way/831207364",
+        "way/831207365",
+        "way/831207431",
+        "way/831207432",
+        "way/831207433",
+        "way/831207434",
+        "way/831207435",
+        "way/952687117",
+        "way/952687118",
+        "way/952687119",
+        "way/952687120",
+        "way/952687121",
+        "way/1051323250",
+        "way/1073487978",
+        "way/1073487979",
+        "way/1073487980",
+        "way/1073487981",
+        "way/1494164552",
+        "way/1543933819",
+        "way/1544363240"
+      ],
+      "bounds": [
+        205.67300415039062,
+        14.68316650390625,
+        311.0239567756653
+      ],
+      "reported": {
+        "drawBatches": 6,
+        "triangles": 30476
+      },
+      "geometry": {
+        "meshes": 6,
+        "drawCandidates": 6,
+        "triangles": 30476,
+        "instances": 6,
+        "geometries": 6,
+        "geometryBytes": 3219312,
+        "materials": 6,
+        "textureIdentities": 0,
+        "mapSlots": {},
+        "textureSizes": [],
+        "shadowMeshes": 6,
+        "transparentMeshes": 0
+      }
+    },
+    "keihanUrasando": {
+      "built": true,
+      "name": "Mapped Urasando merchant corridor",
+      "builtIds": [
+        "way/296201563",
+        "way/305214377",
+        "way/295577541",
+        "way/296201558",
+        "way/296201560",
+        "way/305214369",
+        "way/305214378",
+        "way/305213645",
+        "way/305213646",
+        "way/305213643",
+        "way/305213640",
+        "way/305213641",
+        "way/305213638",
+        "way/305213639"
+      ],
+      "bounds": [
+        134.71905899047852,
+        10.49959945678711,
+        83.2345199584961
+      ],
+      "reported": {
+        "drawBatches": 8,
+        "triangles": 17634
+      },
+      "geometry": {
+        "meshes": 8,
+        "drawCandidates": 8,
+        "triangles": 17634,
+        "instances": 8,
+        "geometries": 8,
+        "geometryBytes": 1312848,
+        "materials": 8,
+        "textureIdentities": 0,
+        "mapSlots": {},
+        "textureSizes": [],
+        "shadowMeshes": 7,
+        "transparentMeshes": 0
+      }
+    },
+    "keihanRail": {
+      "built": true,
+      "name": "JR Nara crossing · mapped approach detail",
+      "builtIds": [],
+      "bounds": [
+        26.529281616210938,
+        9.890672405734747,
+        263.42429089546204
+      ],
+      "reported": {
+        "tracks": {
+          "batches": 40,
+          "triangles": 51588,
+          "sleepers": 730
+        },
+        "devices": {
+          "batches": 7,
+          "primitives": 34,
+          "triangles": 864
+        },
+        "train": {
+          "batches": 22,
+          "triangles": 4744
+        },
+        "cars": 2,
+        "colliders": 2,
+        "lightsAdded": 0
+      },
+      "geometry": {
+        "meshes": 79,
+        "drawCandidates": 79,
+        "triangles": 57892,
+        "instances": 79,
+        "geometries": 79,
+        "geometryBytes": 5549560,
+        "materials": 16,
+        "textureIdentities": 1,
+        "mapSlots": {
+          "map": 10
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 128
+          }
+        ],
+        "shadowMeshes": 25,
+        "transparentMeshes": 0
+      }
+    }
+  },
+  "postBuilders": {
+    "commerce": {
+      "built": true,
+      "name": "Keihan commerce r104",
+      "builtIds": [],
+      "bounds": [
+        115.06659997558589,
+        5.5763924796222355,
+        91.57499997615815
+      ],
+      "reported": {
+        "machines": 4,
+        "foodCounters": 3,
+        "drawBatches": 43,
+        "triangles": 16030,
+        "collidersAdded": 2,
+        "textureAtlases": 1,
+        "pointLights": 0
+      },
+      "geometry": {
+        "meshes": 43,
+        "drawCandidates": 43,
+        "triangles": 16030,
+        "instances": 43,
+        "geometries": 43,
+        "geometryBytes": 1822544,
+        "materials": 13,
+        "textureIdentities": 1,
+        "mapSlots": {
+          "map": 7
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          }
+        ],
+        "shadowMeshes": 28,
+        "transparentMeshes": 0
+      }
+    },
+    "observedDetails": {
+      "built": true,
+      "name": "Observed Inari-shinmichi street details",
+      "builtIds": [],
+      "bounds": [
+        121.52890014648438,
+        6.152387617296135,
+        32.916893005371094
+      ],
+      "reported": {
+        "triangles": 1262,
+        "drawBatches": 9,
+        "groups": 5,
+        "covers": 6,
+        "grates": 12,
+        "cableSpans": 1,
+        "panels": 1,
+        "collidersAdded": 0,
+        "pointLights": 0,
+        "textureAtlases": 1
+      },
+      "geometry": {
+        "meshes": 9,
+        "drawCandidates": 9,
+        "triangles": 1262,
+        "instances": 9,
+        "geometries": 9,
+        "geometryBytes": 103776,
+        "materials": 3,
+        "textureIdentities": 1,
+        "mapSlots": {
+          "map": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 2,
+        "transparentMeshes": 0
+      }
+    }
+  },
+  "totalBeforeVisibility": {
+    "meshes": 4214,
+    "drawCandidates": 4214,
+    "triangles": 50827523,
+    "instances": 250013,
+    "geometries": 2163,
+    "geometryBytes": 231874676,
+    "materials": 770,
+    "textureIdentities": 122,
+    "mapSlots": {
+      "normalMap": 1702,
+      "map": 2801,
+      "roughnessMap": 369,
+      "bumpMap": 208,
+      "envMap": 1,
+      "emissiveMap": 8
+    },
+    "textureSizes": [
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 341
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 640
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 768,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 1536
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 64,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 768
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 384,
+        "height": 1408
+      },
+      {
+        "name": "Takeya observed vertical name noren",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 2048,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 82
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 154
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 128,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 192
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 192
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 320
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 192
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "data",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1536,
+        "height": 640
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 160
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "image",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 640
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 2048,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 128
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 256,
+        "height": 512
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "name": "",
+        "kind": "canvas",
+        "width": 1024,
+        "height": 256
+      }
+    ],
+    "shadowMeshes": 2399,
+    "transparentMeshes": 11
+  },
+  "staticBatching": {
+    "mergedBatches": 276,
+    "sourceMeshes": 4650,
+    "resultMeshes": 801
+  },
+  "candleStats": {
+    "flames": 196,
+    "instancedFlames": 196,
+    "batches": 14,
+    "fallbackFlames": 0,
+    "instancedWax": 112,
+    "waxBatches": 8,
+    "removedDrawCalls": 286,
+    "updates": 1
+  },
+  "views": {
+    "stationStreet": {
+      "pose": {
+        "position": [
+          -301.277,
+          31.839095000000004,
+          -124.745
+        ],
+        "target": [
+          -291.042,
+          32.09338162737374,
+          -114.169
+        ]
+      },
+      "main": {
+        "meshes": 660,
+        "drawCandidates": 660,
+        "triangles": 1296353,
+        "instances": 56158,
+        "geometries": 575,
+        "geometryBytes": 60310644,
+        "materials": 240,
+        "textureIdentities": 67,
+        "mapSlots": {
+          "map": 270,
+          "bumpMap": 62,
+          "normalMap": 131,
+          "roughnessMap": 95,
+          "emissiveMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 768,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 1536
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 192
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 192
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 192
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 264,
+        "transparentMeshes": 6
+      },
+      "shadow": {
+        "meshes": 51,
+        "drawCandidates": 51,
+        "triangles": 78280,
+        "instances": 51,
+        "geometries": 51,
+        "geometryBytes": 7552600,
+        "materials": 36,
+        "textureIdentities": 6,
+        "mapSlots": {
+          "map": 3,
+          "normalMap": 1,
+          "roughnessMap": 1,
+          "bumpMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 51,
+        "transparentMeshes": 1
+      },
+      "residency": {
+        "registered": 1935,
+        "active": 163,
+        "dormant": 1772,
+        "cells": 301,
+        "checked": 1935,
+        "nearMetres": 220,
+        "farMetres": 260,
+        "rangeScale": 1,
+        "mode": "spatial render activation; collision data retained"
+      },
+      "sourceOwnerCandidates": {
+        "keihanStation": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanApproach": {
+          "meshes": 7,
+          "drawCandidates": 7,
+          "triangles": 4852,
+          "instances": 7,
+          "geometries": 7,
+          "geometryBytes": 349344,
+          "materials": 7,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 2,
+          "transparentMeshes": 0
+        },
+        "keihanFrontages": {
+          "meshes": 8,
+          "drawCandidates": 8,
+          "triangles": 10272,
+          "instances": 8,
+          "geometries": 8,
+          "geometryBytes": 1092096,
+          "materials": 8,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 1
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 256
+            }
+          ],
+          "shadowMeshes": 7,
+          "transparentMeshes": 1
+        },
+        "keihanStreetContext": {
+          "meshes": 6,
+          "drawCandidates": 6,
+          "triangles": 30476,
+          "instances": 6,
+          "geometries": 6,
+          "geometryBytes": 3219312,
+          "materials": 6,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 6,
+          "transparentMeshes": 0
+        },
+        "keihanUrasando": {
+          "meshes": 8,
+          "drawCandidates": 8,
+          "triangles": 17634,
+          "instances": 8,
+          "geometries": 8,
+          "geometryBytes": 1312848,
+          "materials": 8,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 7,
+          "transparentMeshes": 0
+        },
+        "keihanRail": {
+          "meshes": 34,
+          "drawCandidates": 34,
+          "triangles": 22784,
+          "instances": 34,
+          "geometries": 34,
+          "geometryBytes": 2179712,
+          "materials": 11,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 13,
+          "transparentMeshes": 0
+        },
+        "commerce": {
+          "meshes": 29,
+          "drawCandidates": 29,
+          "triangles": 11574,
+          "instances": 29,
+          "geometries": 29,
+          "geometryBytes": 1339552,
+          "materials": 9,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 5
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 1024
+            }
+          ],
+          "shadowMeshes": 20,
+          "transparentMeshes": 0
+        },
+        "observedDetails": {
+          "meshes": 9,
+          "drawCandidates": 9,
+          "triangles": 1262,
+          "instances": 9,
+          "geometries": 9,
+          "geometryBytes": 103776,
+          "materials": 3,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 1
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 256
+            }
+          ],
+          "shadowMeshes": 2,
+          "transparentMeshes": 0
+        }
+      }
+    },
+    "foodCounter": {
+      "pose": {
+        "position": [
+          -249.8885205120501,
+          33.22715988316714,
+          -99.3372493292058
+        ],
+        "target": [
+          -249.6945,
+          32.81548757588374,
+          -101.93
+        ]
+      },
+      "main": {
+        "meshes": 329,
+        "drawCandidates": 329,
+        "triangles": 505539,
+        "instances": 329,
+        "geometries": 329,
+        "geometryBytes": 58657412,
+        "materials": 62,
+        "textureIdentities": 14,
+        "mapSlots": {
+          "map": 153,
+          "normalMap": 54,
+          "roughnessMap": 54,
+          "emissiveMap": 2,
+          "bumpMap": 28
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 160
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1536,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 56,
+        "transparentMeshes": 2
+      },
+      "shadow": {
+        "meshes": 41,
+        "drawCandidates": 41,
+        "triangles": 61790,
+        "instances": 41,
+        "geometries": 41,
+        "geometryBytes": 5949400,
+        "materials": 30,
+        "textureIdentities": 4,
+        "mapSlots": {
+          "map": 2,
+          "normalMap": 1,
+          "roughnessMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 41,
+        "transparentMeshes": 0
+      },
+      "residency": {
+        "registered": 1935,
+        "active": 256,
+        "dormant": 1679,
+        "cells": 301,
+        "checked": 1935,
+        "nearMetres": 220,
+        "farMetres": 260,
+        "rangeScale": 1,
+        "mode": "spatial render activation; collision data retained"
+      },
+      "sourceOwnerCandidates": {
+        "keihanStation": {
+          "meshes": 23,
+          "drawCandidates": 23,
+          "triangles": 21504,
+          "instances": 23,
+          "geometries": 23,
+          "geometryBytes": 2064332,
+          "materials": 14,
+          "textureIdentities": 2,
+          "mapSlots": {
+            "map": 2,
+            "emissiveMap": 2
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 160
+            },
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1536,
+              "height": 640
+            }
+          ],
+          "shadowMeshes": 22,
+          "transparentMeshes": 1
+        },
+        "keihanApproach": {
+          "meshes": 3,
+          "drawCandidates": 3,
+          "triangles": 1665,
+          "instances": 3,
+          "geometries": 3,
+          "geometryBytes": 119880,
+          "materials": 3,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanFrontages": {
+          "meshes": 8,
+          "drawCandidates": 8,
+          "triangles": 10272,
+          "instances": 8,
+          "geometries": 8,
+          "geometryBytes": 1092096,
+          "materials": 8,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 1
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 256
+            }
+          ],
+          "shadowMeshes": 7,
+          "transparentMeshes": 1
+        },
+        "keihanStreetContext": {
+          "meshes": 6,
+          "drawCandidates": 6,
+          "triangles": 30476,
+          "instances": 6,
+          "geometries": 6,
+          "geometryBytes": 3219312,
+          "materials": 6,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 6,
+          "transparentMeshes": 0
+        },
+        "keihanUrasando": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanRail": {
+          "meshes": 44,
+          "drawCandidates": 44,
+          "triangles": 34852,
+          "instances": 44,
+          "geometries": 44,
+          "geometryBytes": 3345272,
+          "materials": 11,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 10
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 512,
+              "height": 128
+            }
+          ],
+          "shadowMeshes": 12,
+          "transparentMeshes": 0
+        },
+        "commerce": {
+          "meshes": 5,
+          "drawCandidates": 5,
+          "triangles": 2202,
+          "instances": 5,
+          "geometries": 5,
+          "geometryBytes": 269136,
+          "materials": 5,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 1
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 1024
+            }
+          ],
+          "shadowMeshes": 4,
+          "transparentMeshes": 0
+        },
+        "observedDetails": {
+          "meshes": 5,
+          "drawCandidates": 5,
+          "triangles": 774,
+          "instances": 5,
+          "geometries": 5,
+          "geometryBytes": 68640,
+          "materials": 3,
+          "textureIdentities": 1,
+          "mapSlots": {
+            "map": 1
+          },
+          "textureSizes": [
+            {
+              "name": "",
+              "kind": "canvas",
+              "width": 1024,
+              "height": 256
+            }
+          ],
+          "shadowMeshes": 2,
+          "transparentMeshes": 0
+        }
+      }
+    },
+    "urasandoEntrance": {
+      "pose": {
+        "position": [
+          -151.505,
+          36.365885,
+          -87.319
+        ],
+        "target": [
+          -124.95,
+          36.943886292102626,
+          -84.325
+        ]
+      },
+      "main": {
+        "meshes": 1543,
+        "drawCandidates": 1543,
+        "triangles": 2703282,
+        "instances": 63505,
+        "geometries": 1099,
+        "geometryBytes": 112900108,
+        "materials": 419,
+        "textureIdentities": 86,
+        "mapSlots": {
+          "map": 736,
+          "normalMap": 576,
+          "roughnessMap": 191,
+          "bumpMap": 145,
+          "envMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 341
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 768,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 768
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 384,
+            "height": 1408
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 82
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 154
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 2048,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 904,
+        "transparentMeshes": 1
+      },
+      "shadow": {
+        "meshes": 58,
+        "drawCandidates": 58,
+        "triangles": 113759,
+        "instances": 191,
+        "geometries": 58,
+        "geometryBytes": 10163616,
+        "materials": 46,
+        "textureIdentities": 5,
+        "mapSlots": {
+          "map": 3,
+          "bumpMap": 1,
+          "normalMap": 1,
+          "roughnessMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 58,
+        "transparentMeshes": 0
+      },
+      "residency": {
+        "registered": 1935,
+        "active": 501,
+        "dormant": 1434,
+        "cells": 301,
+        "checked": 1935,
+        "nearMetres": 220,
+        "farMetres": 260,
+        "rangeScale": 1,
+        "mode": "spatial render activation; collision data retained"
+      },
+      "sourceOwnerCandidates": {
+        "keihanStation": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanApproach": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanFrontages": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanStreetContext": {
+          "meshes": 6,
+          "drawCandidates": 6,
+          "triangles": 30476,
+          "instances": 6,
+          "geometries": 6,
+          "geometryBytes": 3219312,
+          "materials": 6,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 6,
+          "transparentMeshes": 0
+        },
+        "keihanUrasando": {
+          "meshes": 8,
+          "drawCandidates": 8,
+          "triangles": 17634,
+          "instances": 8,
+          "geometries": 8,
+          "geometryBytes": 1312848,
+          "materials": 8,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 7,
+          "transparentMeshes": 0
+        },
+        "keihanRail": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "commerce": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "observedDetails": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        }
+      }
+    },
+    "innerMerchantLane": {
+      "pose": {
+        "position": [
+          -124.95,
+          36.943886292102626,
+          -84.325
+        ],
+        "target": [
+          -84.756,
+          39.22814,
+          -75.096
+        ]
+      },
+      "main": {
+        "meshes": 1528,
+        "drawCandidates": 1528,
+        "triangles": 2762330,
+        "instances": 63887,
+        "geometries": 1083,
+        "geometryBytes": 108174044,
+        "materials": 425,
+        "textureIdentities": 83,
+        "mapSlots": {
+          "map": 730,
+          "normalMap": 578,
+          "roughnessMap": 186,
+          "bumpMap": 139,
+          "envMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 341
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 320
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "data",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 768
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 384,
+            "height": 1408
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 82
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 1024,
+            "height": 154
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 128,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 640
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 2048,
+            "height": 1024
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 128
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 256,
+            "height": 512
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 916,
+        "transparentMeshes": 1
+      },
+      "shadow": {
+        "meshes": 46,
+        "drawCandidates": 46,
+        "triangles": 157241,
+        "instances": 3901,
+        "geometries": 42,
+        "geometryBytes": 10079088,
+        "materials": 45,
+        "textureIdentities": 5,
+        "mapSlots": {
+          "map": 3,
+          "bumpMap": 1,
+          "normalMap": 1,
+          "roughnessMap": 1
+        },
+        "textureSizes": [
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "image",
+            "width": 64,
+            "height": 64
+          },
+          {
+            "name": "",
+            "kind": "canvas",
+            "width": 512,
+            "height": 256
+          }
+        ],
+        "shadowMeshes": 46,
+        "transparentMeshes": 0
+      },
+      "residency": {
+        "registered": 1935,
+        "active": 533,
+        "dormant": 1402,
+        "cells": 301,
+        "checked": 1935,
+        "nearMetres": 220,
+        "farMetres": 260,
+        "rangeScale": 1,
+        "mode": "spatial render activation; collision data retained"
+      },
+      "sourceOwnerCandidates": {
+        "keihanStation": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanApproach": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanFrontages": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "keihanStreetContext": {
+          "meshes": 6,
+          "drawCandidates": 6,
+          "triangles": 30476,
+          "instances": 6,
+          "geometries": 6,
+          "geometryBytes": 3219312,
+          "materials": 6,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 6,
+          "transparentMeshes": 0
+        },
+        "keihanUrasando": {
+          "meshes": 7,
+          "drawCandidates": 7,
+          "triangles": 17622,
+          "instances": 7,
+          "geometries": 7,
+          "geometryBytes": 1311984,
+          "materials": 7,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 7,
+          "transparentMeshes": 0
+        },
+        "keihanRail": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "commerce": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        },
+        "observedDetails": {
+          "meshes": 0,
+          "drawCandidates": 0,
+          "triangles": 0,
+          "instances": 0,
+          "geometries": 0,
+          "geometryBytes": 0,
+          "materials": 0,
+          "textureIdentities": 0,
+          "mapSlots": {},
+          "textureSizes": [],
+          "shadowMeshes": 0,
+          "transparentMeshes": 0
+        }
+      }
+    }
+  },
+  "plannedAddedDecorativeBudget": {
+    "triangles": 15000,
+    "maxVisibleBatches": 20
+  },
+  "risks": [
+    "Shared material batches span several storefronts; keep new small merchandise in bounded per-store groups.",
+    "detailRadius metadata is not consumed by createWorldDetailChunks.add; register explicit ranges.",
+    "Existing grill detail spans frontages, commerce and observed fascia; avoid duplicate products/surfaces.",
+    "Video-open display bays retain the existing entrance blockers; they are not new walkable shop interiors."
+  ]
+}

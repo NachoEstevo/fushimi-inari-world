@@ -1,0 +1,3952 @@
+TAP version 13
+# Romon-summit {
+#   length: 1652.883182023294,
+#   ascent: 200.51145119999993,
+#   descent: 11.20636919999994
+# }
+# Full circuit {
+#   length: 3914.3159917937737,
+#   ascent: 261.370834331996,
+#   descent: 261.37083433199604
+# }
+# Subtest: DEM interpolation preserves corners and the actual mesh triangles
+ok 1 - DEM interpolation preserves corners and the actual mesh triangles
+  ---
+  duration_ms: 0.9945
+  ...
+# Subtest: source coverage includes real eastward summit and official elevation agreement within DEM resolution
+ok 2 - source coverage includes real eastward summit and official elevation agreement within DEM resolution
+  ---
+  duration_ms: 0.9369
+  ...
+# Subtest: Romon to summit route uses connected OSM nodes without fabricated links
+ok 3 - Romon to summit route uses connected OSM nodes without fabricated links
+  ---
+  duration_ms: 9.1002
+  ...
+# Subtest: alternative route via Gozendani exists and differs from direct route
+ok 4 - alternative route via Gozendani exists and differs from direct route
+  ---
+  duration_ms: 15.0817
+  ...
+# Subtest: route endpoints are not silently connected across disconnected components
+ok 5 - route endpoints are not silently connected across disconnected components
+  ---
+  duration_ms: 0.2391
+  ...
+# Subtest: walking respects access overrides and does not project tunnels/bridges onto ground
+ok 6 - walking respects access overrides and does not project tunnels/bridges onto ground
+  ---
+  duration_ms: 0.1492
+  ...
+# Subtest: resampled route stays on the same terrain used by the viewer, with meter-scale spacing
+ok 7 - resampled route stays on the same terrain used by the viewer, with meter-scale spacing
+  ---
+  duration_ms: 6.3646
+  ...
+# Subtest: full circuit connects all named stops and closes at Romon
+ok 8 - full circuit connects all named stops and closes at Romon
+  ---
+  duration_ms: 15.4311
+  ...
+# Subtest: crossing paths without shared OSM node IDs remain unconnected
+ok 9 - crossing paths without shared OSM node IDs remain unconnected
+  ---
+  duration_ms: 0.6574
+  ...
+# Subtest: an activity cannot stack triggers and can restart after completion
+ok 10 - an activity cannot stack triggers and can restart after completion
+  ---
+  duration_ms: 0.7885
+  ...
+# Subtest: two omitted source walls keep endpoints and intervening gap, with finite terrain-seated batches
+ok 11 - two omitted source walls keep endpoints and intervening gap, with finite terrain-seated batches
+  ---
+  duration_ms: 11.2045
+  ...
+# Subtest: mapped paths and existing boundary owners suppress conflicting sections
+ok 12 - mapped paths and existing boundary owners suppress conflicting sections
+  ---
+  duration_ms: 3.9777
+  ...
+# Subtest: repeated build preserves existing mesh/collider ownership and does not duplicate
+ok 13 - repeated build preserves existing mesh/collider ownership and does not duplicate
+  ---
+  duration_ms: 1.8713
+  ...
+# Subtest: mapped building and water footprints retain their full boundary clearance
+ok 14 - mapped building and water footprints retain their full boundary clearance
+  ---
+  duration_ms: 3.1229
+  ...
+# Subtest: malformed ground fails visibly rather than emitting invalid geometry
+ok 15 - malformed ground fails visibly rather than emitting invalid geometry
+  ---
+  duration_ms: 1.0213
+  ...
+# Subtest: actual Azumamaro paths share low rendered, terrain and walking levels and open junctions
+ok 16 - actual Azumamaro paths share low rendered, terrain and walking levels and open junctions
+  ---
+  duration_ms: 51.5365
+  ...
+# Subtest: ordinary paths and stairs keep their established surface and roadbed profiles
+ok 17 - ordinary paths and stairs keep their established surface and roadbed profiles
+  ---
+  duration_ms: 2.5731
+  ...
+# Subtest: removes only entrance sugi, paired crowns and matching blocker, preserving maple and woodland
+ok 18 - removes only entrance sugi, paired crowns and matching blocker, preserving maple and woodland
+  ---
+  duration_ms: 1.534
+  ...
+# Subtest: photo-audited boundary includes the two nearest sugi and keeps the next woodland trunk
+ok 19 - photo-audited boundary includes the two nearest sugi and keeps the next woodland trunk
+  ---
+  duration_ms: 0.3202
+  ...
+# Subtest: bamboo nodes fit within every culm with distinct, non-uniform internodes
+ok 20 - bamboo nodes fit within every culm with distinct, non-uniform internodes
+  ---
+  duration_ms: 2.0677
+  ...
+# Subtest: geometry and texture share the same node heights, with real radial relief
+ok 21 - geometry and texture share the same node heights, with real radial relief
+  ---
+  duration_ms: 1.3531
+  ...
+# Subtest: both bamboo levels have finite indexed vertices, unit normals and closed culm caps
+ok 22 - both bamboo levels have finite indexed vertices, unit normals and closed culm caps
+  ---
+  duration_ms: 8.6452
+  ...
+# Subtest: distant geometry preserves the cluster envelope with a bounded triangle budget
+ok 23 - distant geometry preserves the cluster envelope with a bounded triangle budget
+  ---
+  duration_ms: 10.8973
+  ...
+# Subtest: every foliage branch is attached to a node and stays below its culm tip
+ok 24 - every foliage branch is attached to a node and stays below its culm tip
+  ---
+  duration_ms: 0.4765
+  ...
+# Subtest: photo case replaces only exact cone pair and preserves shrine identity and interaction
+ok 25 - photo case replaces only exact cone pair and preserves shrine identity and interaction
+  ---
+  duration_ms: 30.6918
+  ...
+# Subtest: unknown asset is untouched; incomplete placeholder signature is preserved
+ok 26 - unknown asset is untouched; incomplete placeholder signature is preserved
+  ---
+  duration_ms: 17.041
+  ...
+# Subtest: mapped accessory clears paths and its collider follows the seated transformed base
+ok 27 - mapped accessory clears paths and its collider follows the seated transformed base
+  ---
+  duration_ms: 74.7317
+  ...
+# Subtest: fourteen flames become one draw with shared geometry, material and untouched house children
+ok 28 - fourteen flames become one draw with shared geometry, material and untouched house children
+  ---
+  duration_ms: 6.6341
+  ...
+# Subtest: instance transforms match the old absolute Y flicker for every phase and transformed parent
+ok 29 - instance transforms match the old absolute Y flicker for every phase and transformed parent
+  ---
+  duration_ms: 2.4651
+  ...
+# Subtest: initial authored transforms are retained until the first animation update
+ok 30 - initial authored transforms are retained until the first animation update
+  ---
+  duration_ms: 0.7441
+  ...
+# Subtest: different parents, materials and rendering flags never merge ownership
+ok 31 - different parents, materials and rendering flags never merge ownership
+  ---
+  duration_ms: 1.709
+  ...
+# Subtest: fixed frustum bounds contain every flicker phase, including offset flame geometry
+ok 32 - fixed frustum bounds contain every flicker phase, including offset flame geometry
+  ---
+  duration_ms: 2.1634
+  ...
+# Subtest: hidden, child-owning and singleton flames remain in place and follow the original loop
+ok 33 - hidden, child-owning and singleton flames remain in place and follow the original loop
+  ---
+  duration_ms: 0.4106
+  ...
+# Subtest: interactive, transparent and per-object callback flames retain their original render owner
+ok 34 - interactive, transparent and per-object callback flames retain their original render owner
+  ---
+  duration_ms: 0.4348
+  ...
+# Subtest: dispose restores original identities and last frame pose without disposing shared assets
+ok 35 - dispose restores original identities and last frame pose without disposing shared assets
+  ---
+  duration_ms: 1.3203
+  ...
+# Subtest: one instance buffer update per changed timestamp; invalid times and disposed controllers do nothing
+ok 36 - one instance buffer update per changed timestamp; invalid times and disposed controllers do nothing
+  ---
+  duration_ms: 0.7683
+  ...
+# Subtest: authored wax preserves all vertices, material, flags, fixed bounds and original identity on disposal
+ok 37 - authored wax preserves all vertices, material, flags, fixed bounds and original identity on disposal
+  ---
+  duration_ms: 4.9027
+  ...
+# Subtest: wax instance ray hits retain the same interactive ancestor and distance
+ok 38 - wax instance ray hits retain the same interactive ancestor and distance
+  ---
+  duration_ms: 4.1294
+  ...
+# Subtest: wax conversion rejects incomplete, ambiguous, interactive or changed authored construction
+ok 39 - wax conversion rejects incomplete, ambiguous, interactive or changed authored construction
+  ---
+  duration_ms: 5.5689
+  ...
+# Subtest: wax never merges different candle houses even when their assets are shared
+ok 40 - wax never merges different candle houses even when their assets are shared
+  ---
+  duration_ms: 2.3368
+  ...
+# Subtest: rotated collision boxes use Three.js Y rotation, not the opposite XZ convention
+ok 41 - rotated collision boxes use Three.js Y rotation, not the opposite XZ convention
+  ---
+  duration_ms: 1.6133
+  ...
+# Subtest: torii keep the central passage clear and prevent crossing a column
+ok 42 - torii keep the central passage clear and prevent crossing a column
+  ---
+  duration_ms: 0.2506
+  ...
+# mapped court: 1689 polygons, 3378 triangles, 259.004 square metres
+# Subtest: diagonal corridor clips exact edges without whole-cell soil gaps or overlaps
+ok 43 - diagonal corridor clips exact edges without whole-cell soil gaps or overlaps
+  ---
+  duration_ms: 8.7822
+  ...
+# Subtest: building and water holes remain empty, overlapping holes do not remove extra paving
+ok 44 - building and water holes remain empty, overlapping holes do not remove extra paving
+  ---
+  duration_ms: 2.6821
+  ...
+# Subtest: actual mapped branch joins at its rendered curb and remains within geometry budget
+ok 45 - actual mapped branch joins at its rendered curb and remains within geometry budget
+  ---
+  duration_ms: 63.5485
+  ...
+# Subtest: clips source triangles to exact grid-cell edges
+ok 46 - clips source triangles to exact grid-cell edges
+  ---
+  duration_ms: 1.3382
+  ...
+# Subtest: subtracts building/path footprint without overlapping remaining pieces
+ok 47 - subtracts building/path footprint without overlapping remaining pieces
+  ---
+  duration_ms: 0.3723
+  ...
+# Subtest: retains source on disjoint cutout, removes fully covered source and supports reversed winding
+ok 48 - retains source on disjoint cutout, removes fully covered source and supports reversed winding
+  ---
+  duration_ms: 2.1713
+  ...
+# Subtest: three source-backed families attach once to existing owners with bounded batch budget
+ok 49 - three source-backed families attach once to existing owners with bounded batch budget
+  ---
+  duration_ms: 186.0038
+  ...
+# Subtest: apartment details occupy the actual south wall above the hedge and outside mapped circulation
+ok 50 - apartment details occupy the actual south wall above the hedge and outside mapped circulation
+  ---
+  duration_ms: 125.6935
+  ...
+# Subtest: Romon equipment follows source transform; low bottle stays inside existing north gallery collider
+ok 51 - Romon equipment follows source transform; low bottle stays inside existing north gallery collider
+  ---
+  duration_ms: 82.6368
+  ...
+# Subtest: missing, ambiguous or changed source owners refuse before either owner receives geometry
+ok 52 - missing, ambiguous or changed source owners refuse before either owner receives geometry
+  ---
+  duration_ms: 616.2504
+  ...
+# Subtest: malformed source polygon or facade record fails without creating partial equipment
+ok 53 - malformed source polygon or facade record fails without creating partial equipment
+  ---
+  duration_ms: 128.5211
+  ...
+# Subtest: north shop public apron follows mapped fronts and leaves rear land and stairs intact
+ok 54 - north shop public apron follows mapped fronts and leaves rear land and stairs intact
+  ---
+  duration_ms: 47.7471
+  ...
+# Subtest: service lane removes the artificial crest while retaining endpoint and bounded shoulders
+ok 55 - service lane removes the artificial crest while retaining endpoint and bounded shoulders
+  ---
+  duration_ms: 136.4485
+  ...
+# Subtest: Azumamaro mineral shoulders join the canonical court without changing far terrain
+ok 56 - Azumamaro mineral shoulders join the canonical court without changing far terrain
+  ---
+  duration_ms: 36.7342
+  ...
+# Subtest: mapped court release starts behind its enclosing buildings with continuous slopes
+ok 57 - mapped court release starts behind its enclosing buildings with continuous slopes
+  ---
+  duration_ms: 46.7034
+  ...
+# Subtest: Azumamaro grading preserves mapped stairs and is inactive without its mapped approach
+ok 58 - Azumamaro grading preserves mapped stairs and is inactive without its mapped approach
+  ---
+  duration_ms: 0.2787
+  ...
+# Subtest: localized mineral apron preserves the central court, gardens and distant terrain
+ok 59 - localized mineral apron preserves the central court, gardens and distant terrain
+  ---
+  duration_ms: 0.3883
+  ...
+# Subtest: mapped paths, building footprints and water remain excluded
+ok 60 - mapped paths, building footprints and water remain excluded
+  ---
+  duration_ms: 0.454
+  ...
+# Subtest: apron follows the translated and rotated Romon frame
+ok 61 - apron follows the translated and rotated Romon frame
+  ---
+  duration_ms: 0.1481
+  ...
+# Subtest: material extension retains the courtyard hook and cache identity
+ok 62 - material extension retains the courtyard hook and cache identity
+  ---
+  duration_ms: 1.2901
+  ...
+# Subtest: pavilion clears inherited corridor roof and retains mapped lateral offset
+ok 63 - pavilion clears inherited corridor roof and retains mapped lateral offset
+  ---
+  duration_ms: 6.1024
+  ...
+# Subtest: terrace wall runs leave the central 9.2m stair and western 4m stair open
+ok 64 - terrace wall runs leave the central 9.2m stair and western 4m stair open
+  ---
+  duration_ms: 0.2044
+  ...
+# Subtest: west stairs meet forecourt and upper terrace without a podium-height jump
+ok 65 - west stairs meet forecourt and upper terrace without a podium-height jump
+  ---
+  duration_ms: 0.3338
+  ...
+# Subtest: upper landing remains level beyond the mapped stair endpoint
+ok 66 - upper landing remains level beyond the mapped stair endpoint
+  ---
+  duration_ms: 0.4632
+  ...
+# Subtest: planted tiers are set back with a continuous retaining level
+ok 67 - planted tiers are set back with a continuous retaining level
+  ---
+  duration_ms: 0.2478
+  ...
+# Subtest: landing transition joins both datums and leaves unrelated courtyard untouched
+ok 68 - landing transition joins both datums and leaves unrelated courtyard untouched
+  ---
+  duration_ms: 0.361
+  ...
+# Subtest: permanent context retains only actual bounded footprint identities and unchanged polygons
+ok 69 - permanent context retains only actual bounded footprint identities and unchanged polygons
+  ---
+  duration_ms: 14.5585
+  ...
+# Subtest: metadata heights take precedence, storey conversion and fallback remain explicit
+ok 70 - metadata heights take precedence, storey conversion and fallback remain explicit
+  ---
+  duration_ms: 0.3798
+  ...
+# Subtest: photographed Minami detail is limited to the uniquely closest NE public edge
+ok 71 - photographed Minami detail is limited to the uniquely closest NE public edge
+  ---
+  duration_ms: 5.6331
+  ...
+# Subtest: only the photographed Gishikiden receives the explicit16m massing estimate
+ok 72 - only the photographed Gishikiden receives the explicit16m massing estimate
+  ---
+  duration_ms: 2.0784
+  ...
+# Subtest: Gishikiden entrance edges are exactly shared by the mapped open canopy
+ok 73 - Gishikiden entrance edges are exactly shared by the mapped open canopy
+  ---
+  duration_ms: 0.4002
+  ...
+# Subtest: only the three retained southern shop assets exclude mapped overlaps
+ok 74 - only the three retained southern shop assets exclude mapped overlaps
+  ---
+  duration_ms: 0.3154
+  ...
+# Subtest: moves whole pedestal to public side even when its center is behind the wall
+ok 75 - moves whole pedestal to public side even when its center is behind the wall
+  ---
+  duration_ms: 1.0348
+  ...
+# Subtest: preserves a clear statue and does not close a wall gap
+ok 76 - preserves a clear statue and does not close a wall gap
+  ---
+  duration_ms: 0.8466
+  ...
+# Subtest: clears both a wall and a hedge without moving either boundary
+ok 77 - clears both a wall and a hedge without moving either boundary
+  ---
+  duration_ms: 0.2667
+  ...
+# Subtest: only the fourteen source row lanterns, six associated lights and matching blockers are omitted
+ok 78 - only the fourteen source row lanterns, six associated lights and matching blockers are omitted
+  ---
+  duration_ms: 2.1498
+  ...
+# Subtest: Romon approach reaches the preserved podium at both door edges
+ok 79 - Romon approach reaches the preserved podium at both door edges
+  ---
+  duration_ms: 1.8009
+  ...
+# Subtest: first torii source retains both actual raw OSM way endpoints, not first-point POI
+ok 80 - first torii source retains both actual raw OSM way endpoints, not first-point POI
+  ---
+  duration_ms: 5.5934
+  ...
+# Subtest: gate retains mapped midpoint and heading while narrowing the over-wide visual span
+ok 81 - gate retains mapped midpoint and heading while narrowing the over-wide visual span
+  ---
+  duration_ms: 0.3238
+  ...
+# Subtest: flight ascends and descends independently of terrain
+ok 82 - flight ascends and descends independently of terrain
+  ---
+  duration_ms: 1.6342
+  ...
+# Subtest: flight follows camera pitch and normalizes diagonal boost
+ok 83 - flight follows camera pitch and normalizes diagonal boost
+  ---
+  duration_ms: 0.237
+  ...
+# Subtest: flight bounds stale frames and invalid speed
+ok 84 - flight bounds stale frames and invalid speed
+  ---
+  duration_ms: 0.1563
+  ...
+# Subtest: production stage, soffit and all 16 woven borders are repaired within existing envelope
+ok 85 - production stage, soffit and all 16 woven borders are repaired within existing envelope
+  ---
+  duration_ms: 685.8427
+  ...
+# Subtest: unprepared or altered R95 woven source refuses before touching stage or other materials
+ok 86 - unprepared or altered R95 woven source refuses before touching stage or other materials
+  ---
+  duration_ms: 383.021
+  ...
+# Subtest: exact twelve legacy triplets are removed after real owner exists, across later mapping
+ok 87 - exact twelve legacy triplets are removed after real owner exists, across later mapping
+  ---
+  duration_ms: 7.1012
+  ...
+# Subtest: unknown or ambiguous source declines all deletion
+ok 88 - unknown or ambiguous source declines all deletion
+  ---
+  duration_ms: 7.5639
+  ...
+# Subtest: single access gate uses the lower mapped stair endpoint and crosses its axis
+ok 89 - single access gate uses the lower mapped stair endpoint and crosses its axis
+  ---
+  duration_ms: 1.7736
+  ...
+# Subtest: missing or degenerate mapped stair prevents unsupported gate placement
+ok 90 - missing or degenerate mapped stair prevents unsupported gate placement
+  ---
+  duration_ms: 0.2391
+  ...
+# Subtest: photographed rear has five white closed bays and six red posts while preserving wall interaction identity
+ok 91 - photographed rear has five white closed bays and six red posts while preserving wall interaction identity
+  ---
+  duration_ms: 61.9696
+  ...
+# Subtest: opposite side no longer has a plain brown slab and all added structural details fit inherited roof and veranda
+ok 92 - opposite side no longer has a plain brown slab and all added structural details fit inherited roof and veranda
+  ---
+  duration_ms: 19.8471
+  ...
+# Subtest: refinement remains idempotent and unrelated buildings do not match legacy Gonden signature
+ok 93 - refinement remains idempotent and unrelated buildings do not match legacy Gonden signature
+  ---
+  duration_ms: 18.3012
+  ...
+# Subtest: bounded static rear gap and roots seat on actual rendered terrain planes
+ok 94 - bounded static rear gap and roots seat on actual rendered terrain planes
+  ---
+  duration_ms: 34.3675
+  ...
+# Subtest: public corridor remains empty including mineral overlay and boundary
+ok 95 - public corridor remains empty including mineral overlay and boundary
+  ---
+  duration_ms: 0.9903
+  ...
+# Subtest: does not duplicate an existing tree solid
+ok 96 - does not duplicate an existing tree solid
+  ---
+  duration_ms: 9.1096
+  ...
+# Subtest: missing terrain sampler or unsupported tilt cannot mutate scene
+ok 97 - missing terrain sampler or unsupported tilt cannot mutate scene
+  ---
+  duration_ms: 0.6739
+  ...
+# Subtest: mineral texture uses world metre UVs and foliage uses cutout spray UV/color attributes
+ok 98 - mineral texture uses world metre UVs and foliage uses cutout spray UV/color attributes
+  ---
+  duration_ms: 7.1906
+  ...
+# Subtest: exact mapped overlap ignores high bounding-box exterior and preserves all input
+ok 99 - exact mapped overlap ignores high bounding-box exterior and preserves all input
+  ---
+  duration_ms: 47.7579
+  ...
+# Subtest: sloping source plane identifies roof burial with actual intersection witness
+ok 100 - sloping source plane identifies roof burial with actual intersection witness
+  ---
+  duration_ms: 14.0202
+  ...
+# Subtest: missing or duplicated terrain cannot produce a registration clearance
+ok 101 - missing or duplicated terrain cannot produce a registration clearance
+  ---
+  duration_ms: 34.0682
+  ...
+# Subtest: actual raw DEM is a separate diagnostic and does not authorize a new floor
+ok 102 - actual raw DEM is a separate diagnostic and does not authorize a new floor
+  ---
+  duration_ms: 16.7698
+  ...
+# Subtest: source pickets reuse seated boundary without extending ownership or duplicating
+ok 103 - source pickets reuse seated boundary without extending ownership or duplicating
+  ---
+  duration_ms: 20.3521
+  ...
+# Subtest: absent or route-suppressed prior boundary adds no floating fence
+ok 104 - absent or route-suppressed prior boundary adds no floating fence
+  ---
+  duration_ms: 0.3255
+  ...
+# Subtest: side props seat on world ground with matching transformed solid bounds and no lights
+ok 105 - side props seat on world ground with matching transformed solid bounds and no lights
+  ---
+  duration_ms: 11.8668
+  ...
+# Subtest: mapped walking corridor prevents side furniture rather than narrowing route
+ok 106 - mapped walking corridor prevents side furniture rather than narrowing route
+  ---
+  duration_ms: 0.5829
+  ...
+# Subtest: uneven or missing ground prevents floating furniture
+ok 107 - uneven or missing ground prevents floating furniture
+  ---
+  duration_ms: 0.538
+  ...
+# Subtest: existing lantern prevents duplicate and unrelated solids are retained
+ok 108 - existing lantern prevents duplicate and unrelated solids are retained
+  ---
+  duration_ms: 2.3769
+  ...
+# Subtest: tilted transforms fail before scene or collider mutation
+ok 109 - tilted transforms fail before scene or collider mutation
+  ---
+  duration_ms: 0.8012
+  ...
+# Subtest: photo-visible wall cladding preserves interaction mesh and existing front facade
+ok 110 - photo-visible wall cladding preserves interaction mesh and existing front facade
+  ---
+  duration_ms: 5.0591
+  ...
+# Subtest: every rotated gable roofline beam corner stays below the inherited roof envelope
+ok 111 - every rotated gable roofline beam corner stays below the inherited roof envelope
+  ---
+  duration_ms: 6.1921
+  ...
+# Subtest: vegetation leaves urban entrance, trail tread and exposed banks bare
+ok 112 - vegetation leaves urban entrance, trail tread and exposed banks bare
+  ---
+  duration_ms: 1.181
+  ...
+# Subtest: outlook and woodland margins retain green ground cover with bounded transitions
+ok 113 - outlook and woodland margins retain green ground cover with bounded transitions
+  ---
+  duration_ms: 0.3136
+  ...
+# Subtest: bounded precinct ground keeps buildings, mapped full-width paths, water and parking bare
+ok 114 - bounded precinct ground keeps buildings, mapped full-width paths, water and parking bare
+  ---
+  duration_ms: 47.1284
+  ...
+# Subtest: aesthetic vegetation is present near shrines but does not change distant city or summit
+ok 115 - aesthetic vegetation is present near shrines but does not change distant city or summit
+  ---
+  duration_ms: 1.8641
+  ...
+# Subtest: tour preserves corners rather than testing a diagonal shortcut
+ok 116 - tour preserves corners rather than testing a diagonal shortcut
+  ---
+  duration_ms: 18.1368
+  ...
+# Subtest: a closed crossing stops tour progress and reopening resumes from that point
+ok 117 - a closed crossing stops tour progress and reopening resumes from that point
+  ---
+  duration_ms: 0.2609
+  ...
+# Subtest: closed final segment cannot signal arrival or jump to endpoint
+ok 118 - closed final segment cannot signal arrival or jump to endpoint
+  ---
+  duration_ms: 0.1268
+  ...
+# Subtest: zero length corners terminate and arrival clamps to the last point
+ok 119 - zero length corners terminate and arrival clamps to the last point
+  ---
+  duration_ms: 0.7842
+  ...
+# Subtest: real mapped anchors permit bounded run north of Mikoshiko with static batches and no sanctuary replacement
+ok 120 - real mapped anchors permit bounded run north of Mikoshiko with static batches and no sanctuary replacement
+  ---
+  duration_ms: 85.5913
+  ...
+# Subtest: mapped corridor rejects complete run rather than cutting opening or changing route
+ok 121 - mapped corridor rejects complete run rather than cutting opening or changing route
+  ---
+  duration_ms: 15.963
+  ...
+# Subtest: existing solid and unsupported relief prevent duplicate or floating boundary
+ok 122 - existing solid and unsupported relief prevent duplicate or floating boundary
+  ---
+  duration_ms: 68.6394
+  ...
+# Subtest: missing anchors do not assign an invented location
+ok 123 - missing anchors do not assign an invented location
+  ---
+  duration_ms: 0.2572
+  ...
+# Subtest: real east approach at z1.7 remains clear and background paths exclude planting
+ok 124 - real east approach at z1.7 remains clear and background paths exclude planting
+  ---
+  duration_ms: 58.0271
+  ...
+# Subtest: rendered triangle relief gets a bounded low foundation, never coarse-height floating or a tall retaining wall
+ok 125 - rendered triangle relief gets a bounded low foundation, never coarse-height floating or a tall retaining wall
+  ---
+  duration_ms: 141.1387
+  ...
+# Subtest: arrival uses mapped JR station, true SE rail tangent, P2 east side and separate lower exit
+ok 126 - arrival uses mapped JR station, true SE rail tangent, P2 east side and separate lower exit
+  ---
+  duration_ms: 2.6363
+  ...
+# Subtest: visible stair surfaces connect mapped P2 to gate with six bounded downward risers
+ok 127 - visible stair surfaces connect mapped P2 to gate with six bounded downward risers
+  ---
+  duration_ms: 1.0625
+  ...
+# Subtest: builder owns independent geometry, deterministic doors/offset/mode and retains source input
+ok 128 - builder owns independent geometry, deterministic doors/offset/mode and retains source input
+  ---
+  duration_ms: 240.0975
+  ...
+# Subtest: door-to-public-exit path remains physically supported and collision clear for player radius
+ok 129 - door-to-public-exit path remains physically supported and collision clear for player radius
+  ---
+  duration_ms: 175.6949
+  ...
+# Subtest: open doorway has a clear swept human opening and closed eye-level glass has no opaque backing
+ok 130 - open doorway has a clear swept human opening and closed eye-level glass has no opaque backing
+  ---
+  duration_ms: 88.9845
+  ...
+# Subtest: every navigation height on egress is backed by an actual mesh within five centimeters
+ok 131 - every navigation height on egress is backed by an actual mesh within five centimeters
+  ---
+  duration_ms: 395.2411
+  ...
+# Subtest: lower stair is physically cut from P2 slab, with no solid above the descending feet
+ok 132 - lower stair is physically cut from P2 slab, with no solid above the descending feet
+  ---
+  duration_ms: 373.7982
+  ...
+# Subtest: new source equipment preserves three walking lanes through gates and exterior street route
+ok 133 - new source equipment preserves three walking lanes through gates and exterior street route
+  ---
+  duration_ms: 423.1327
+  ...
+# Subtest: hall foundation reaches local support while preserving top and derived selected-door poses
+ok 134 - hall foundation reaches local support while preserving top and derived selected-door poses
+  ---
+  duration_ms: 57.8651
+  ...
+# Subtest: selected-door lateral shift derives from mapped edge and the whole selected car clears P2 at foot height
+ok 135 - selected-door lateral shift derives from mapped edge and the whole selected car clears P2 at foot height
+  ---
+  duration_ms: 470.6875
+  ...
+# Subtest: hall and two external tongues have one horizontal top owner at off-diagonal lane samples
+ok 136 - hall and two external tongues have one horizontal top owner at off-diagonal lane samples
+  ---
+  duration_ms: 83.6574
+  ...
+# Subtest: upper stair landing has exactly one mapped P2 top with no decorative duplicate
+ok 137 - upper stair landing has exactly one mapped P2 top with no decorative duplicate
+  ---
+  duration_ms: 76.107
+  ...
+# Subtest: only the real mio footprint is replaced and businesses retain their observed order
+ok 138 - only the real mio footprint is replaced and businesses retain their observed order
+  ---
+  duration_ms: 224.1394
+  ...
+# Subtest: store floor follows existing paved street segments rather than off-road terrain
+ok 139 - store floor follows existing paved street segments rather than off-road terrain
+  ---
+  duration_ms: 54.1779
+  ...
+# Subtest: both shallow public recesses have a visible floor and a bounded walking sampler
+ok 140 - both shallow public recesses have a visible floor and a bounded walking sampler
+  ---
+  duration_ms: 26.1542
+  ...
+# Subtest: Daily lower frame closes the source-visible base instead of exposing a slot above paving
+ok 141 - Daily lower frame closes the source-visible base instead of exposing a slot above paving
+  ---
+  duration_ms: 19.5569
+  ...
+# Subtest: registered shop equipment and walls preserve the complete station-to-crossing walking lane
+ok 142 - registered shop equipment and walls preserve the complete station-to-crossing walking lane
+  ---
+  duration_ms: 113.8206
+  ...
+# Subtest: changed or missing source envelope withholds generic-building exclusion
+ok 143 - changed or missing source envelope withholds generic-building exclusion
+  ---
+  duration_ms: 18.1102
+  ...
+# Subtest: real east exit route turns north along Hommachi before using the preserved crossing
+ok 144 - real east exit route turns north along Hommachi before using the preserved crossing
+  ---
+  duration_ms: 19.3475
+  ...
+# Subtest: new paving is disjoint, outside mapped building interiors and existing road tops
+ok 145 - new paving is disjoint, outside mapped building interiors and existing road tops
+  ---
+  duration_ms: 29.7684
+  ...
+# Subtest: existing street segments own pavement levels even if off-road DEM changes
+ok 146 - existing street segments own pavement levels even if off-road DEM changes
+  ---
+  duration_ms: 72.5774
+  ...
+# Subtest: visible tops support continuous outbound and return walks with no rail collision
+ok 147 - visible tops support continuous outbound and return walks with no rail collision
+  ---
+  duration_ms: 242.872
+  ...
+# Subtest: ramp stays walkable between observed rails and has matching visual support
+ok 148 - ramp stays walkable between observed rails and has matching visual support
+  ---
+  duration_ms: 70.7624
+  ...
+# Subtest: the reported exact landing/riser corners have real ray support without an offset patch
+ok 149 - the reported exact landing/riser corners have real ray support without an offset patch
+  ---
+  duration_ms: 50.3814
+  ...
+# Subtest: crossing-mouth seal follows the actual road miters without any road-top overlap
+ok 150 - crossing-mouth seal follows the actual road miters without any road-top overlap
+  ---
+  duration_ms: 47.6005
+  ...
+# Subtest: incomplete source and inconsistent public levels do not silently invent a path
+ok 151 - incomplete source and inconsistent public levels do not silently invent a path
+  ---
+  duration_ms: 3.219
+  ...
+# Subtest: Keihan route starts at the exact east gate, crosses canal and JR tracks, and joins Urasando
+ok 152 - Keihan route starts at the exact east gate, crosses canal and JR tracks, and joins Urasando
+  ---
+  duration_ms: 255.1417
+  ...
+# Subtest: new bridge and connection pavement has one owner and excludes every existing rendered path quad
+ok 153 - new bridge and connection pavement has one owner and excludes every existing rendered path quad
+  ---
+  duration_ms: 113.9126
+  ...
+# Subtest: physical corridor supports both directions and shoulder offsets with no collision
+ok 154 - physical corridor supports both directions and shoulder offsets with no collision
+  ---
+  duration_ms: 337.0123
+  ...
+# Subtest: bridge floor sampler matches downward rays and rail colliders block canal-side exits
+ok 155 - bridge floor sampler matches downward rays and rail colliders block canal-side exits
+  ---
+  duration_ms: 270.4235
+  ...
+# Subtest: offset pedestrian bridge has its full mapped span and joins on both ends
+ok 156 - offset pedestrian bridge has its full mapped span and joins on both ends
+  ---
+  duration_ms: 271.5988
+  ...
+# Subtest: canal terrain opening removes its polygon while preserving original outside planes
+ok 157 - canal terrain opening removes its polygon while preserving original outside planes
+  ---
+  duration_ms: 126.934
+  ...
+# Subtest: static approach stays bounded, idempotent and fails closed without mapped bridge
+ok 158 - static approach stays bounded, idempotent and fails closed without mapped bridge
+  ---
+  duration_ms: 112.0621
+  ...
+# Subtest: named shops and observed anonymous facades retain source footprints and bounded static detail
+ok 159 - named shops and observed anonymous facades retain source footprints and bounded static detail
+  ---
+  duration_ms: 387.0835
+  ...
+# Subtest: shop floors derive from the paved street, independently of off-road DEM fallback
+ok 160 - shop floors derive from the paved street, independently of off-road DEM fallback
+  ---
+  duration_ms: 61.5573
+  ...
+# Subtest: the clear central entries have one physical floor and the sampler is bounded
+ok 161 - the clear central entries have one physical floor and the sampler is bounded
+  ---
+  duration_ms: 64.4522
+  ...
+# Subtest: frontage cases block entry into display volumes while the street route remains clear
+ok 162 - frontage cases block entry into display volumes while the street route remains clear
+  ---
+  duration_ms: 46.3691
+  ...
+# Subtest: the counters have physical fronts and the remaining anonymous shutters block entry
+ok 163 - the counters have physical fronts and the remaining anonymous shutters block entry
+  ---
+  duration_ms: 40.025
+  ...
+# Subtest: unnamed counter and row registrations carry dated provenance without invented identities
+ok 164 - unnamed counter and row registrations carry dated provenance without invented identities
+  ---
+  duration_ms: 51.8363
+  ...
+# Subtest: the observed soft-serve model has a physical plinth touching its shop floor
+ok 165 - the observed soft-serve model has a physical plinth touching its shop floor
+  ---
+  duration_ms: 43.6016
+  ...
+# Subtest: missing or changed registration withholds replacements without mutating scene or colliders
+ok 166 - missing or changed registration withholds replacements without mutating scene or colliders
+  ---
+  duration_ms: 33.1408
+  ...
+# Subtest: fabric canopies slope toward the street and preserve head clearance in one static batch
+ok 167 - fabric canopies slope toward the street and preserve head clearance in one static batch
+  ---
+  duration_ms: 43.7919
+  ...
+# Subtest: crossing traces retain both mapped nodes and meet the accepted station rails exactly
+ok 168 - crossing traces retain both mapped nodes and meet the accepted station rails exactly
+  ---
+  duration_ms: 2.8079
+  ...
+# Subtest: changed crossing registration fails before objects or colliders are attached
+ok 169 - changed crossing registration fails before objects or colliders are attached
+  ---
+  duration_ms: 1.6413
+  ...
+# Subtest: new train and track details are bounded batches, preserve identities and add no lights
+ok 170 - new train and track details are bounded batches, preserve identities and add no lights
+  ---
+  duration_ms: 298.9021
+  ...
+# Subtest: ballast and sleepers do not put raised obstacles across the public road and sidewalk
+ok 171 - ballast and sleepers do not put raised obstacles across the public road and sidewalk
+  ---
+  duration_ms: 164.5822
+  ...
+# Subtest: observed control cabinets remain grounded beyond the crossing and train envelopes
+ok 172 - observed control cabinets remain grounded beyond the crossing and train envelopes
+  ---
+  duration_ms: 236.798
+  ...
+# Subtest: cabinet foundations reach a lower sloping DEM even when surface height selects the road
+ok 173 - cabinet foundations reach a lower sloping DEM even when surface height selects the road
+  ---
+  duration_ms: 105.4648
+  ...
+# Subtest: train approaches but waits north of the road for an existing occupant
+ok 174 - train approaches but waits north of the road for an existing occupant
+  ---
+  duration_ms: 1.1267
+  ...
+# Subtest: warning blocks swept entry, permits retreat and prevents a newly occupied crossing from committing
+ok 175 - warning blocks swept entry, permits retreat and prevents a newly occupied crossing from committing
+  ---
+  duration_ms: 0.5048
+  ...
+# Subtest: train passes completely before entry reopens, with no teleport across the protected street
+ok 176 - train passes completely before entry reopens, with no teleport across the protected street
+  ---
+  duration_ms: 1.2795
+  ...
+# Subtest: background time is bounded, distant animation freezes, and reset cannot occur beside the departing train
+ok 177 - background time is bounded, distant animation freezes, and reset cannot occur beside the departing train
+  ---
+  duration_ms: 1.7063
+  ...
+# Subtest: a bridge visitor gets a second train after a bounded dwell without leaving the street
+ok 178 - a bridge visitor gets a second train after a bounded dwell without leaving the street
+  ---
+  duration_ms: 1.0757
+  ...
+# Subtest: the repeating lifecycle cannot reset near the tail or the future spawn formation
+ok 179 - the repeating lifecycle cannot reset near the tail or the future spawn formation
+  ---
+  duration_ms: 5.0763
+  ...
+# Subtest: ramp metal panels and lateral tactile guide reuse the original two top triangles with slope-aligned UVs
+ok 180 - ramp metal panels and lateral tactile guide reuse the original two top triangles with slope-aligned UVs
+  ---
+  duration_ms: 391.9248
+  ...
+# Subtest: Keihan source identity, P2 direction and exact existing street junction remain independent of JR
+ok 181 - Keihan source identity, P2 direction and exact existing street junction remain independent of JR
+  ---
+  duration_ms: 1.6202
+  ...
+# Subtest: all seven actual car envelopes clear the unchanged P2 footprint after heading reconciliation
+ok 182 - all seven actual car envelopes clear the unchanged P2 footprint after heading reconciliation
+  ---
+  duration_ms: 496.0538
+  ...
+# Subtest: both continuous ramp side rails physically stop lateral body motion
+ok 183 - both continuous ramp side rails physically stop lateral body motion
+  ---
+  duration_ms: 41.607
+  ...
+# Subtest: handoff faces the east wall with the south gate to the right rather than cutting a false exit through it
+ok 184 - handoff faces the east wall with the south gate to the right rather than cutting a false exit through it
+  ---
+  duration_ms: 53.2545
+  ...
+# Subtest: source objects remain immutable, duplicate builds reuse ownership, and geometry stays bounded
+ok 185 - source objects remain immutable, duplicate builds reuse ownership, and geometry stays bounded
+  ---
+  duration_ms: 122.9463
+  ...
+# Subtest: selected door leaves and train offset are deterministic and preserve closed state on replay
+ok 186 - selected door leaves and train offset are deterministic and preserve closed state on replay
+  ---
+  duration_ms: 66.4279
+  ...
+# Subtest: automatic doorway has a clear human opening, transparent closed window and a sourced platform gap
+ok 187 - automatic doorway has a clear human opening, transparent closed window and a sourced platform gap
+  ---
+  duration_ms: 40.8985
+  ...
+# Subtest: automatic egress and right-turn gate ramp are supported, collision clear and have bounded grades
+ok 188 - automatic egress and right-turn gate ramp are supported, collision clear and have bounded grades
+  ---
+  duration_ms: 1910.2209
+  ...
+# Subtest: the right-turn exit sign is on the passenger face of the outer wall
+ok 189 - the right-turn exit sign is on the passenger face of the outer wall
+  ---
+  duration_ms: 63.0595
+  ...
+# Subtest: ramp head has one top on both sides of the diagonal join, without coplanar slabs
+ok 190 - ramp head has one top on both sides of the diagonal join, without coplanar slabs
+  ---
+  duration_ms: 60.7862
+  ...
+# Subtest: drink selection requires collection before another dispense and has bounded product selection
+ok 191 - drink selection requires collection before another dispense and has bounded product selection
+  ---
+  duration_ms: 0.945
+  ...
+# Subtest: four supported machines and three counter groups are batched without lights; installing twice is inert
+ok 192 - four supported machines and three counter groups are batched without lights; installing twice is inert
+  ---
+  duration_ms: 520.9387
+  ...
+# Subtest: platform machines preserve original equipment clearance and all cabinets meet their support
+ok 193 - platform machines preserve original equipment clearance and all cabinets meet their support
+  ---
+  duration_ms: 297.1177
+  ...
+# Subtest: ray hits resolve to the machine ancestor and actions update visible selection and tray
+ok 194 - ray hits resolve to the machine ancestor and actions update visible selection and tray
+  ---
+  duration_ms: 359.7738
+  ...
+# Subtest: new street colliders preserve the mapped centerline and one-metre lateral lanes
+ok 195 - new street colliders preserve the mapped centerline and one-metre lateral lanes
+  ---
+  duration_ms: 233.9622
+  ...
+# Subtest: vendor reservations stay behind counters and machine placement requires a registered recess
+ok 196 - vendor reservations stay behind counters and machine placement requires a registered recess
+  ---
+  duration_ms: 133.2328
+  ...
+# Subtest: walking neighborhood retains complete mapped footprints without taking other owners
+ok 197 - walking neighborhood retains complete mapped footprints without taking other owners
+  ---
+  duration_ms: 444.9959
+  ...
+# Subtest: new walls leave mapped street and station exit walking lanes clear
+ok 198 - new walls leave mapped street and station exit walking lanes clear
+  ---
+  duration_ms: 335.6215
+  ...
+# Subtest: wall collider centres hit actual mapped wall faces at body height
+ok 199 - wall collider centres hit actual mapped wall faces at body height
+  ---
+  duration_ms: 1053.2703
+  ...
+# Subtest: street-facing datums use paved streets and solid shells reach underlying terrain
+ok 200 - street-facing datums use paved streets and solid shells reach underlying terrain
+  ---
+  duration_ms: 235.7102
+  ...
+# Subtest: missing street datum does not remove aerial buildings or mutate the scene
+ok 201 - missing street datum does not remove aerial buildings or mutate the scene
+  ---
+  duration_ms: 0.2786
+  ...
+# Subtest: Hommachi faces point toward its north-south road and preserve corner frontages
+ok 202 - Hommachi faces point toward its north-south road and preserve corner frontages
+  ---
+  duration_ms: 150.4015
+  ...
+# Subtest: existing east-side Hommachi owners receive finish only, with no duplicate envelope or collider
+ok 203 - existing east-side Hommachi owners receive finish only, with no duplicate envelope or collider
+  ---
+  duration_ms: 442.0884
+  ...
+# Subtest: mineral shoulder follows every mapped corner and fades at a bounded distance
+ok 204 - mineral shoulder follows every mapped corner and fades at a bounded distance
+  ---
+  duration_ms: 2.8625
+  ...
+# Subtest: missing or substantially expanded source trace leaves the material unchanged
+ok 205 - missing or substantially expanded source trace leaves the material unchanged
+  ---
+  duration_ms: 1.2651
+  ...
+# Subtest: appearance hook preserves courtyard and entrance shader stages and uses one bounded loop
+ok 206 - appearance hook preserves courtyard and entrance shader stages and uses one bounded loop
+  ---
+  duration_ms: 13.7839
+  ...
+# Subtest: blending cannot reintroduce terrain into the clipped canal or alter physical support
+ok 207 - blending cannot reintroduce terrain into the clipped canal or alter physical support
+  ---
+  duration_ms: 2.928
+  ...
+# Subtest: street routes preserve public support, offsets and sampled capsule clearance
+ok 208 - street routes preserve public support, offsets and sampled capsule clearance
+  ---
+  duration_ms: 8.0454
+  ...
+# Subtest: patrols fail closed on unsupported, steep, private or disconnected surfaces and railway corridor
+ok 209 - patrols fail closed on unsupported, steep, private or disconnected surfaces and railway corridor
+  ---
+  duration_ms: 11.4389
+  ...
+# Subtest: staff stands on shop floor behind counter; moving a wall into its recess omits the attendant
+ok 210 - staff stands on shop floor behind counter; moving a wall into its recess omits the attendant
+  ---
+  duration_ms: 1.2949
+  ...
+# Subtest: distance hysteresis avoids flicker and excludes high aerial cameras
+ok 211 - distance hysteresis avoids flicker and excludes high aerial cameras
+  ---
+  duration_ms: 0.2746
+  ...
+# Subtest: existing skinned assets load only near the street, pause when distant, and yield to the camera
+ok 212 - existing skinned assets load only near the street, pause when distant, and yield to the camera
+  ---
+  duration_ms: 224.5295
+  ...
+# Subtest: Casual_Male: vendor hands reach forward above the counter in a rotated shop frame
+ok 213 - Casual_Male: vendor hands reach forward above the counter in a rotated shop frame
+  ---
+  duration_ms: 118.5537
+  ...
+# Subtest: Casual_Female: vendor hands reach forward above the counter in a rotated shop frame
+ok 214 - Casual_Female: vendor hands reach forward above the counter in a rotated shop frame
+  ---
+  duration_ms: 137.7096
+  ...
+# Subtest: Kimono_Female: vendor hands reach forward above the counter in a rotated shop frame
+ok 215 - Kimono_Female: vendor hands reach forward above the counter in a rotated shop frame
+  ---
+  duration_ms: 114.4117
+  ...
+# Subtest: four photographed detail families are source registered, bounded and idempotent
+ok 216 - four photographed detail families are source registered, bounded and idempotent
+  ---
+  duration_ms: 494.1059
+  ...
+# Subtest: surface decorations follow the assembled floor per vertex, face upward and add no step
+ok 217 - surface decorations follow the assembled floor per vertex, face upward and add no step
+  ---
+  duration_ms: 436.4994
+  ...
+# Subtest: grates occupy the outer gutter band and covers stay on mapped street surfaces
+ok 218 - grates occupy the outer gutter band and covers stay on mapped street surfaces
+  ---
+  duration_ms: 403.0777
+  ...
+# Subtest: service cables attach to existing food-store elevations and remain above head clearance
+ok 219 - service cables attach to existing food-store elevations and remain above head clearance
+  ---
+  duration_ms: 408.3887
+  ...
+# Subtest: missing or malformed street ownership fails before scene mutation
+ok 220 - missing or malformed street ownership fails before scene mutation
+  ---
+  duration_ms: 559.2911
+  ...
+# Subtest: video-era display bays replace visible shutters without changing established collision ownership
+ok 221 - video-era display bays replace visible shutters without changing established collision ownership
+  ---
+  duration_ms: 261.8271
+  ...
+# Subtest: sloped awnings descend toward the street and meet their front valance
+ok 222 - sloped awnings descend toward the street and meet their front valance
+  ---
+  duration_ms: 60.2649
+  ...
+# Subtest: Urasando owns registered street rows through the stone torii, preserving specialized shrine owners
+ok 223 - Urasando owns registered street rows through the stone torii, preserving specialized shrine owners
+  ---
+  duration_ms: 128.8869
+  ...
+# Subtest: corridor centre and player shoulder offsets stay clear in both directions through both torii
+ok 224 - corridor centre and player shoulder offsets stay clear in both directions through both torii
+  ---
+  duration_ms: 146.4988
+  ...
+# Subtest: Sando public recess has a real floor while closed shutter interiors remain unowned
+ok 225 - Sando public recess has a real floor while closed shutter interiors remain unowned
+  ---
+  duration_ms: 56.8407
+  ...
+# Subtest: mapped torii are emitted once, keep their exact axes, and have physical posts
+ok 226 - mapped torii are emitted once, keep their exact axes, and have physical posts
+  ---
+  duration_ms: 48.2271
+  ...
+# Subtest: rows stay within a fixed static budget and do not add seasonal festival decorations
+ok 227 - rows stay within a fixed static budget and do not add seasonal festival decorations
+  ---
+  duration_ms: 51.0922
+  ...
+# Subtest: missing source fails closed and repeated calls do not duplicate shells or colliders
+ok 228 - missing source fails closed and repeated calls do not duplicate shells or colliders
+  ---
+  duration_ms: 66.51
+  ...
+# Subtest: merchandise uses only registered visually open bays and preserves parcel identity
+ok 229 - merchandise uses only registered visually open bays and preserves parcel identity
+  ---
+  duration_ms: 492.5996
+  ...
+# Subtest: all geometry stays inside shallow recess, under noren and off the walking corridor
+ok 230 - all geometry stays inside shallow recess, under noren and off the walking corridor
+  ---
+  duration_ms: 260.4722
+  ...
+# Subtest: static shared batches stay bounded, and re-entry never duplicates or changes colliders
+ok 231 - static shared batches stay bounded, and re-entry never duplicates or changes colliders
+  ---
+  duration_ms: 271.6527
+  ...
+# Subtest: fox eye pigment is in front of the convex mask and readable from the street
+ok 232 - fox eye pigment is in front of the convex mask and readable from the street
+  ---
+  duration_ms: 197.6409
+  ...
+# Subtest: missing owners or unsupported bays fail closed without manufacturing a location
+ok 233 - missing owners or unsupported bays fail closed without manufacturing a location
+  ---
+  duration_ms: 220.0074
+  ...
+# Subtest: source-confirmed entry fittings use three bounded static batches and preserve accepted owners
+ok 234 - source-confirmed entry fittings use three bounded static batches and preserve accepted owners
+  ---
+  duration_ms: 51.4557
+  ...
+# Subtest: actual registered detail footprint clears full public paving plus player radius
+ok 235 - actual registered detail footprint clears full public paving plus player radius
+  ---
+  duration_ms: 6.3139
+  ...
+# Subtest: unrecognized source contracts fail before adding partial fittings
+ok 236 - unrecognized source contracts fail before adding partial fittings
+  ---
+  duration_ms: 1.5791
+  ...
+# Subtest: replaces only exact rail/cap, retains shoreline/pavilion/steles and inherited transform, and is idempotent
+ok 237 - replaces only exact rail/cap, retains shoreline/pavilion/steles and inherited transform, and is idempotent
+  ---
+  duration_ms: 51.8616
+  ...
+# Subtest: all finite nondegenerate replacement geometry remains inside exact inherited local envelope
+ok 238 - all finite nondegenerate replacement geometry remains inside exact inherited local envelope
+  ---
+  duration_ms: 23.2429
+  ...
+# Subtest: paling has true open gaps and visible solid slats from both sides
+ok 239 - paling has true open gaps and visible solid slats from both sides
+  ---
+  duration_ms: 68.514
+  ...
+# Subtest: unrecognized source group leaves all objects intact rather than inventing a fence or terrace
+ok 240 - unrecognized source group leaves all objects intact rather than inventing a fence or terrace
+  ---
+  duration_ms: 0.6391
+  ...
+# Subtest: actual mapped roof controls pavilion front toward Takeya, not pond centroid
+ok 241 - actual mapped roof controls pavilion front toward Takeya, not pond centroid
+  ---
+  duration_ms: 147.1992
+  ...
+# Subtest: validated water owner supplies pier datum after the exact legacy plane is removed
+ok 242 - validated water owner supplies pier datum after the exact legacy plane is removed
+  ---
+  duration_ms: 91.8087
+  ...
+# Subtest: arrival and onward center and side walking lanes remain clear of registered pavilion and connected rail
+ok 243 - arrival and onward center and side walking lanes remain clear of registered pavilion and connected rail
+  ---
+  duration_ms: 84.3811
+  ...
+# Subtest: unrecognized architecture or unsupported grade leaves original owners and colliders intact
+ok 244 - unrecognized architecture or unsupported grade leaves original owners and colliders intact
+  ---
+  duration_ms: 66.2654
+  ...
+# Subtest: photographed southwest passage closure joins registered body and has supported physical slats outside public routes
+ok 245 - photographed southwest passage closure joins registered body and has supported physical slats outside public routes
+  ---
+  duration_ms: 55.3378
+  ...
+# Subtest: three real mapped bench types retain exact coordinates with bounded two-batch geometry and grounded supports
+ok 246 - three real mapped bench types retain exact coordinates with bounded two-batch geometry and grounded supports
+  ---
+  duration_ms: 216.2119
+  ...
+# Subtest: complete bench footprints exclude actual pond, mapped roofs and public route player envelopes
+ok 247 - complete bench footprints exclude actual pond, mapped roofs and public route player envelopes
+  ---
+  duration_ms: 32.5893
+  ...
+# Subtest: existing physical owners suppress matching furniture without moving POIs or mutating prior colliders
+ok 248 - existing physical owners suppress matching furniture without moving POIs or mutating prior colliders
+  ---
+  duration_ms: 16.295
+  ...
+# Subtest: unknown ownership, invalid water and unsupported wet or nonfinite terrain fail closed
+ok 249 - unknown ownership, invalid water and unsupported wet or nonfinite terrain fail closed
+  ---
+  duration_ms: 3.9469
+  ...
+# Subtest: all twelve actual leg bottoms follow rendered triangle interpolation rather than the higher raw sampler
+ok 250 - all twelve actual leg bottoms follow rendered triangle interpolation rather than the higher raw sampler
+  ---
+  duration_ms: 18.3282
+  ...
+# Subtest: actual colliderless legacy stele withholds intersecting mapped bench without moving or deleting either owner
+ok 251 - actual colliderless legacy stele withholds intersecting mapped bench without moving or deleting either owner
+  ---
+  duration_ms: 18.0181
+  ...
+# Subtest: legacy stone exclusion requires the exact visible source contract and overlapping height
+ok 252 - legacy stone exclusion requires the exact visible source contract and overlapping height
+  ---
+  duration_ms: 82.4634
+  ...
+# Subtest: proven rear-gable sightline is closed by actual roof geometry while interaction identity survives
+ok 253 - proven rear-gable sightline is closed by actual roof geometry while interaction identity survives
+  ---
+  duration_ms: 105.6613
+  ...
+# Subtest: both curved slopes have complete overhead coverage and upward-wound finite top skin
+ok 254 - both curved slopes have complete overhead coverage and upward-wound finite top skin
+  ---
+  duration_ms: 81.4484
+  ...
+# Subtest: unregistered or unrecognized roof owner is unchanged
+ok 255 - unregistered or unrecognized roof owner is unchanged
+  ---
+  duration_ms: 19.3008
+  ...
+# Subtest: claims only verified Takeya owner and retains full concave source ring, correct east frontage and idempotence
+ok 256 - claims only verified Takeya owner and retains full concave source ring, correct east frontage and idempotence
+  ---
+  duration_ms: 120.9233
+  ...
+# Subtest: main roof preserves exact projected mapped area; all geometry is finite/nondegenerate and bounded in cost
+ok 257 - main roof preserves exact projected mapped area; all geometry is finite/nondegenerate and bounded in cost
+  ---
+  duration_ms: 46.0021
+  ...
+# Subtest: mapped public arrival/onward remain clear in both directions; source route grades and callbacks unchanged
+ok 258 - mapped public arrival/onward remain clear in both directions; source route grades and callbacks unchanged
+  ---
+  duration_ms: 31.7671
+  ...
+# Subtest: source-supported broad opening is real geometry with a bounded inner stop, not an opaque facade wall
+ok 259 - source-supported broad opening is real geometry with a bounded inner stop, not an opaque facade wall
+  ---
+  duration_ms: 70.4189
+  ...
+# Subtest: missing identity, unresolved source datum or conflicting owner produces no partial geometry/blockers/exclusion
+ok 260 - missing identity, unresolved source datum or conflicting owner produces no partial geometry/blockers/exclusion
+  ---
+  duration_ms: 0.5763
+  ...
+# Subtest: observed two-character name uses one shared cloth texture and stays on one panel without a new batch
+ok 261 - observed two-character name uses one shared cloth texture and stays on one panel without a new batch
+  ---
+  duration_ms: 32.0125
+  ...
+# Subtest: actual transformed legacy repeated stones overlapping mapped Takeya are cleared, preserving other owners and colliders
+ok 262 - actual transformed legacy repeated stones overlapping mapped Takeya are cleared, preserving other owners and colliders
+  ---
+  duration_ms: 25.667
+  ...
+# Subtest: cleanup removes exact three slabs and nine stripes while preserving architecture
+ok 263 - cleanup removes exact three slabs and nine stripes while preserving architecture
+  ---
+  duration_ms: 1.7255
+  ...
+# Subtest: similar geometry outside exact source station is preserved
+ok 264 - similar geometry outside exact source station is preserved
+  ---
+  duration_ms: 0.2015
+  ...
+# Subtest: 3D half-plane clipping preserves partially exposed vertical triangles with degenerate XZ projection
+ok 265 - 3D half-plane clipping preserves partially exposed vertical triangles with degenerate XZ projection
+  ---
+  duration_ms: 2.1734
+  ...
+# Subtest: only existing west court face under actual apron is removed; all unrelated attributes remain exact
+ok 266 - only existing west court face under actual apron is removed; all unrelated attributes remain exact
+  ---
+  duration_ms: 23.0529
+  ...
+# Subtest: curb hook clips real boundary fragments but preserves stairs, unregistered sources and other levels
+ok 267 - curb hook clips real boundary fragments but preserves stairs, unregistered sources and other levels
+  ---
+  duration_ms: 1.47
+  ...
+# Subtest: missing or changed apron level refuses before mutating source geometry
+ok 268 - missing or changed apron level refuses before mutating source geometry
+  ---
+  duration_ms: 0.749
+  ...
+# Subtest: registered north detail lot reuses three owner materials and preserves footprint/doors/fence/colliders
+ok 269 - registered north detail lot reuses three owner materials and preserves footprint/doors/fence/colliders
+  ---
+  duration_ms: 152.451
+  ...
+# Subtest: actual detail vertices stay within wall/eave envelope with one high shutter only at north end
+ok 270 - actual detail vertices stay within wall/eave envelope with one high shutter only at north end
+  ---
+  duration_ms: 11.2196
+  ...
+# Subtest: every actual low detail vertex clears protected public routes and shoulders
+ok 271 - every actual low detail vertex clears protected public routes and shoulders
+  ---
+  duration_ms: 16.3112
+  ...
+# Subtest: missing/shifted owner or absent original palette fails closed without partial geometry
+ok 272 - missing/shifted owner or absent original palette fails closed without partial geometry
+  ---
+  duration_ms: 26.9684
+  ...
+# Subtest: each white projecting bracket physically engages existing R93 eave receiver
+ok 273 - each white projecting bracket physically engages existing R93 eave receiver
+  ---
+  duration_ms: 27.8116
+  ...
+# Subtest: registered footprint preserves width, depth, provenance and source data
+ok 274 - registered footprint preserves width, depth, provenance and source data
+  ---
+  duration_ms: 80.6249
+  ...
+# Subtest: finite static architecture, idempotence and actual triangle foundation
+ok 275 - finite static architecture, idempotence and actual triangle foundation
+  ---
+  duration_ms: 38.562
+  ...
+# Subtest: both directions and route shoulder remain open around court
+ok 276 - both directions and route shoulder remain open around court
+  ---
+  duration_ms: 17.354
+  ...
+# Subtest: invalid input makes no partial architecture
+ok 277 - invalid input makes no partial architecture
+  ---
+  duration_ms: 0.6054
+  ...
+# Subtest: terrain cut removes only mapped building interior, preserving original exterior slopes
+ok 278 - terrain cut removes only mapped building interior, preserving original exterior slopes
+  ---
+  duration_ms: 27.6285
+  ...
+# Subtest: north collar remains outside existing curb, preserving tread and central walking height
+ok 279 - north collar remains outside existing curb, preserving tread and central walking height
+  ---
+  duration_ms: 4.8532
+  ...
+# Subtest: actual emitted triangle planes match walking heights and face upwards
+ok 280 - actual emitted triangle planes match walking heights and face upwards
+  ---
+  duration_ms: 17.2937
+  ...
+# Subtest: mapped building/water footprints and transverse routes cut exact collar fragments
+ok 281 - mapped building/water footprints and transverse routes cut exact collar fragments
+  ---
+  duration_ms: 35.5227
+  ...
+# Subtest: idempotent build does not wrap height twice and requires authoritative path sections
+ok 282 - idempotent build does not wrap height twice and requires authoritative path sections
+  ---
+  duration_ms: 1.4794
+  ...
+# Subtest: terrain ownership clips only buried paving cells and preserves original DEM planes outside
+ok 283 - terrain ownership clips only buried paving cells and preserves original DEM planes outside
+  ---
+  duration_ms: 0.8418
+  ...
+# Subtest: shared path builder transfers only selected north earth shoulders, preserving other geometry
+ok 284 - shared path builder transfers only selected north earth shoulders, preserving other geometry
+  ---
+  duration_ms: 151.6097
+  ...
+# Subtest: registered gift and cafe replace exactly their two footprints, retaining Kyoya ownership
+ok 285 - registered gift and cafe replace exactly their two footprints, retaining Kyoya ownership
+  ---
+  duration_ms: 97.7969
+  ...
+# Subtest: public lane and stair mouths retain at least 1.7m clear centre corridor
+ok 286 - public lane and stair mouths retain at least 1.7m clear centre corridor
+  ---
+  duration_ms: 21.4329
+  ...
+# Subtest: photographed canopy stays in overlap and clears real terrain walking envelope
+ok 287 - photographed canopy stays in overlap and clears real terrain walking envelope
+  ---
+  duration_ms: 16.4045
+  ...
+# Subtest: rebuild is idempotent, and absent/malformed source cannot suppress generic buildings
+ok 288 - rebuild is idempotent, and absent/malformed source cannot suppress generic buildings
+  ---
+  duration_ms: 25.3066
+  ...
+# Subtest: nonfinite ground cannot yield partially registered ownership
+ok 289 - nonfinite ground cannot yield partially registered ownership
+  ---
+  duration_ms: 0.8779
+  ...
+# Subtest: roof context stays in original envelope and above approach headroom
+ok 290 - roof context stays in original envelope and above approach headroom
+  ---
+  duration_ms: 81.3037
+  ...
+# Subtest: missing or unrelated shrine does not receive invented detail
+ok 291 - missing or unrelated shrine does not receive invented detail
+  ---
+  duration_ms: 21.2778
+  ...
+# Subtest: Kumataka opens the visual pavilion while keeping the exact original interaction, pick area and neighbouring objects
+ok 292 - Kumataka opens the visual pavilion while keeping the exact original interaction, pick area and neighbouring objects
+  ---
+  duration_ms: 52.0899
+  ...
+# Subtest: Kumataka refinement is idempotent and does not partially rewrite an unrecognized source pavilion
+ok 293 - Kumataka refinement is idempotent and does not partially rewrite an unrecognized source pavilion
+  ---
+  duration_ms: 22.945
+  ...
+# Subtest: Ainomine is registered to its own mountain footprint and existing bypass, without mutating geography
+ok 294 - Ainomine is registered to its own mountain footprint and existing bypass, without mutating geography
+  ---
+  duration_ms: 98.7899
+  ...
+# Subtest: all new shrine solids leave the complete mapped northern path walkable in both directions and at both edges
+ok 295 - all new shrine solids leave the complete mapped northern path walkable in both directions and at both edges
+  ---
+  duration_ms: 101.8947
+  ...
+# Subtest: gate preserves an open pedestrian centre while its visible pillars stop the player
+ok 296 - gate preserves an open pedestrian centre while its visible pillars stop the player
+  ---
+  duration_ms: 0.6051
+  ...
+# Subtest: inferred approach stays outside the existing public steps and does not require excavating terrain
+ok 297 - inferred approach stays outside the existing public steps and does not require excavating terrain
+  ---
+  duration_ms: 13.7956
+  ...
+# Subtest: Ainomine reserves its side approach before complete inferred torii stations are emitted
+ok 298 - Ainomine reserves its side approach before complete inferred torii stations are emitted
+  ---
+  duration_ms: 14.2876
+  ...
+# Subtest: mountain pass leaves entrance, both Senbon branches and lower elevations outside its scope
+ok 299 - mountain pass leaves entrance, both Senbon branches and lower elevations outside its scope
+  ---
+  duration_ms: 0.9219
+  ...
+# Subtest: soil shoulder follows downhill terrain instead of floating at tread height
+ok 300 - soil shoulder follows downhill terrain instead of floating at tread height
+  ---
+  duration_ms: 0.4066
+  ...
+# Subtest: shoulder triangles face upward on both sides without reversing at a rising grade
+ok 301 - shoulder triangles face upward on both sides without reversing at a rising grade
+  ---
+  duration_ms: 1.2137
+  ...
+# Subtest: shoulders do not bridge another route, a cliff or missing terrain samples
+ok 302 - shoulders do not bridge another route, a cliff or missing terrain samples
+  ---
+  duration_ms: 0.3292
+  ...
+# Subtest: inside of a short acute bend does not emit a folded soil ribbon
+ok 303 - inside of a short acute bend does not emit a folded soil ribbon
+  ---
+  duration_ms: 0.2821
+  ...
+# Subtest: paving UVs remain continuous through a bend; step edge follows ascent and descent
+ok 304 - paving UVs remain continuous through a bend; step edge follows ascent and descent
+  ---
+  duration_ms: 0.2371
+  ...
+# Subtest: mountain sections mix three stable size cohorts with safe clear widths
+ok 305 - mountain sections mix three stable size cohorts with safe clear widths
+  ---
+  duration_ms: 6.9232
+  ...
+# Subtest: adjacent dedications differ and always address valid atlas tiles
+ok 306 - adjacent dedications differ and always address valid atlas tiles
+  ---
+  duration_ms: 1.3122
+  ...
+# Subtest: gate visual bounds include full kasagi/end tips at actual station scale and yaw
+ok 307 - gate visual bounds include full kasagi/end tips at actual station scale and yaw
+  ---
+  duration_ms: 2.6608
+  ...
+# Subtest: actual refined Naihaiden gains photographed hanging lanterns, shade headers and transom mesh
+ok 308 - actual refined Naihaiden gains photographed hanging lanterns, shade headers and transom mesh
+  ---
+  duration_ms: 433.5939
+  ...
+# Subtest: unrefined or shifted source rejects addition without altering scene
+ok 309 - unrefined or shifted source rejects addition without altering scene
+  ---
+  duration_ms: 118.1204
+  ...
+# Subtest: lanterns retain 1.96m overhead clearance and shade headers stay on solid rear core
+ok 310 - lanterns retain 1.96m overhead clearance and shade headers stay on solid rear core
+  ---
+  duration_ms: 89.3783
+  ...
+# Subtest: actual GLB gets one sagging prayer facade while roof, stairs and lanterns retain exact geometry
+ok 311 - actual GLB gets one sagging prayer facade while roof, stairs and lanterns retain exact geometry
+  ---
+  duration_ms: 227.3294
+  ...
+# Subtest: future asset without exact rope source signature is not modified
+ok 312 - future asset without exact rope source signature is not modified
+  ---
+  duration_ms: 3.972
+  ...
+# Subtest: only two identified mapped landing interfaces receive finite flush batched grates
+ok 313 - only two identified mapped landing interfaces receive finite flush batched grates
+  ---
+  duration_ms: 103.8742
+  ...
+# Subtest: drain declines abrupt walking grade and absent mapped context
+ok 314 - drain declines abrupt walking grade and absent mapped context
+  ---
+  duration_ms: 2.3664
+  ...
+# Subtest: runs are bounded to actual row/Okumiya roof bounds and never include existing Tamayama fences
+ok 315 - runs are bounded to actual row/Okumiya roof bounds and never include existing Tamayama fences
+  ---
+  duration_ms: 1.4391
+  ...
+# Subtest: sections enter terrain and exclude a crossing route with clearance
+ok 316 - sections enter terrain and exclude a crossing route with clearance
+  ---
+  duration_ms: 444.9215
+  ...
+# Subtest: builder reuses materials, makes matching solid blockers and is idempotent without changing source or walking
+ok 317 - builder reuses materials, makes matching solid blockers and is idempotent without changing source or walking
+  ---
+  duration_ms: 1069.0348
+  ...
+# Subtest: actual mapped public aprons are contiguous bounded mineral areas with exact existing surface exclusions
+ok 318 - actual mapped public aprons are contiguous bounded mineral areas with exact existing surface exclusions
+  ---
+  duration_ms: 1483.8997
+  ...
+# Subtest: missing mapped context declines inference
+ok 319 - missing mapped context declines inference
+  ---
+  duration_ms: 8.7609
+  ...
+# Subtest: mineral apron never drapes abrupt landing skirt or steep diagonal bank
+ok 320 - mineral apron never drapes abrupt landing skirt or steep diagonal bank
+  ---
+  duration_ms: 3.7472
+  ...
+# Subtest: Gonden gravel stays between mapped roof edges and below the stair landing
+ok 321 - Gonden gravel stays between mapped roof edges and below the stair landing
+  ---
+  duration_ms: 162.9268
+  ...
+# Subtest: four distinct roofs use real mapped footprints with three red-white and one dark finish
+ok 322 - four distinct roofs use real mapped footprints with three red-white and one dark finish
+  ---
+  duration_ms: 1.7948
+  ...
+# Subtest: all generated roofs and architectural vertices stay within mapped roof bounds
+ok 323 - all generated roofs and architectural vertices stay within mapped roof bounds
+  ---
+  duration_ms: 48.7042
+  ...
+# Subtest: generated solid colliders match row centers and idempotent ownership
+ok 324 - generated solid colliders match row centers and idempotent ownership
+  ---
+  duration_ms: 11.0308
+  ...
+# Subtest: source-feature owners and absent footprints are preserved without duplicates
+ok 325 - source-feature owners and absent footprints are preserved without duplicates
+  ---
+  duration_ms: 4.4863
+  ...
+# Subtest: nonfinite or unresolved terrace grade never creates floating architecture
+ok 326 - nonfinite or unresolved terrace grade never creates floating architecture
+  ---
+  duration_ms: 1.2437
+  ...
+# Subtest: roof ridges run front-back with raised front gable and red trim below curved roof
+ok 327 - roof ridges run front-back with raised front gable and red trim below curved roof
+  ---
+  duration_ms: 12.0596
+  ...
+# Subtest: reference island remains west of mapped red frontage and south of shop frontage
+ok 328 - reference island remains west of mapped red frontage and south of shop frontage
+  ---
+  duration_ms: 0.9344
+  ...
+# Subtest: rounded planter perimeter preserves sourced crossing, shop and stair access corridors
+ok 329 - rounded planter perimeter preserves sourced crossing, shop and stair access corridors
+  ---
+  duration_ms: 1.5812
+  ...
+# Subtest: missing geographic context suppresses the island instead of guessing placement
+ok 330 - missing geographic context suppresses the island instead of guessing placement
+  ---
+  duration_ms: 0.3304
+  ...
+# Subtest: claims only exact mapped owner, retains ring/approach E and neighboring features, and is idempotent
+ok 331 - claims only exact mapped owner, retains ring/approach E and neighboring features, and is idempotent
+  ---
+  duration_ms: 86.3066
+  ...
+# Subtest: source-ring roof retains exact plan area and is finite, nondegenerate and upward-facing
+ok 332 - source-ring roof retains exact plan area and is finite, nondegenerate and upward-facing
+  ---
+  duration_ms: 36.0435
+  ...
+# Subtest: low barrier colliders stop the gate and sides while mapped approach and surrounding branch stay accessible
+ok 333 - low barrier colliders stop the gate and sides while mapped approach and surrounding branch stay accessible
+  ---
+  duration_ms: 45.6265
+  ...
+# Subtest: supported footing follows actual terrain while roof and lintels share one horizontal datum
+ok 334 - supported footing follows actual terrain while roof and lintels share one horizontal datum
+  ---
+  duration_ms: 12.8161
+  ...
+# Subtest: missing, invalid or already owned feature does not produce geometry, blockers or exclusion
+ok 335 - missing, invalid or already owned feature does not produce geometry, blockers or exclusion
+  ---
+  duration_ms: 0.4278
+  ...
+# Subtest: side bays are genuinely open above paling, rear plaster is enclosed, and front paper faces the visitor
+ok 336 - side bays are genuinely open above paling, rear plaster is enclosed, and front paper faces the visitor
+  ---
+  duration_ms: 59.757
+  ...
+# Subtest: roof pitch remains mostly linear with a restrained photographic end curve
+ok 337 - roof pitch remains mostly linear with a restrained photographic end curve
+  ---
+  duration_ms: 17.2806
+  ...
+# Subtest: mapped garden margins avoid water and buildings and preserve walking geometry
+ok 338 - mapped garden margins avoid water and buildings and preserve walking geometry
+  ---
+  duration_ms: 399.8417
+  ...
+# Subtest: missing mapped ponds creates no decorative substitute
+ok 339 - missing mapped ponds creates no decorative substitute
+  ---
+  duration_ms: 0.2916
+  ...
+# Subtest: mapped ponds produce separate horizontal opaque planes without changing terrain or walking samplers
+ok 340 - mapped ponds produce separate horizontal opaque planes without changing terrain or walking samplers
+  ---
+  duration_ms: 5.54
+  ...
+# Subtest: terrain clipping removes exact concave pond area and preserves every retained original triangle plane
+ok 341 - terrain clipping removes exact concave pond area and preserves every retained original triangle plane
+  ---
+  duration_ms: 9.8445
+  ...
+# Subtest: coarse sloping terrain cannot pierce water and exact retained shoreline edges seat the liner
+ok 342 - coarse sloping terrain cannot pierce water and exact retained shoreline edges seat the liner
+  ---
+  duration_ms: 1.8357
+  ...
+# Subtest: repeated clipping and builder calls are stable without duplicate meshes or descending levels
+ok 343 - repeated clipping and builder calls are stable without duplicate meshes or descending levels
+  ---
+  duration_ms: 5.5972
+  ...
+# Subtest: actual mapped office ponds have horizontal planes, bounded terrain cuts and finite seated shoreline geometry
+ok 344 - actual mapped office ponds have horizontal planes, bounded terrain cuts and finite seated shoreline geometry
+  ---
+  duration_ms: 132.7711
+  ...
+# Subtest: missing or invalid pond context creates no substitute and invalid terrain does not mutate existing geometry
+ok 345 - missing or invalid pond context creates no substitute and invalid terrain does not mutate existing geometry
+  ---
+  duration_ms: 1.6777
+  ...
+# Subtest: stone liner clones existing material and provides metre-scale wall UVs without disposing shared texture
+ok 346 - stone liner clones existing material and provides metre-scale wall UVs without disposing shared texture
+  ---
+  duration_ms: 2.1596
+  ...
+# Subtest: Okumiya preserves the interaction target, exterior podium and shared source maps
+ok 347 - Okumiya preserves the interaction target, exterior podium and shared source maps
+  ---
+  duration_ms: 125.8791
+  ...
+# Subtest: Okumiya refinement is idempotent and declines unknown source geometry without mutation
+ok 348 - Okumiya refinement is idempotent and declines unknown source geometry without mutation
+  ---
+  duration_ms: 33.0696
+  ...
+# Subtest: refined geometry is finite, nondegenerate and contained within the pavilion envelope
+ok 349 - refined geometry is finite, nondegenerate and contained within the pavilion envelope
+  ---
+  duration_ms: 76.2642
+  ...
+# Subtest: the taller asymmetric roof retains both eave heights and uses metric bark UVs
+ok 350 - the taller asymmetric roof retains both eave heights and uses metric bark UVs
+  ---
+  duration_ms: 27.8055
+  ...
+# Subtest: curved vermilion soffit stays below the bark shell at both gable overhangs
+ok 351 - curved vermilion soffit stays below the bark shell at both gable overhangs
+  ---
+  duration_ms: 40.0435
+  ...
+# Subtest: photographed corner lattice stays near the front and never wraps the main side walls
+ok 352 - photographed corner lattice stays near the front and never wraps the main side walls
+  ---
+  duration_ms: 18.9948
+  ...
+# Subtest: pale gable fascia follows the unchanged roof with constant clearance
+ok 353 - pale gable fascia follows the unchanged roof with constant clearance
+  ---
+  duration_ms: 0.3658
+  ...
+# Subtest: landing support meets paving without changing the walking surface
+ok 354 - landing support meets paving without changing the walking surface
+  ---
+  duration_ms: 0.9698
+  ...
+# Subtest: shoulder is continuous across mapped edge and returns to previous terrain
+ok 355 - shoulder is continuous across mapped edge and returns to previous terrain
+  ---
+  duration_ms: 0.202
+  ...
+# Subtest: stair fill preserves the lower riser level and unmapped routes
+ok 356 - stair fill preserves the lower riser level and unmapped routes
+  ---
+  duration_ms: 1.1787
+  ...
+# Subtest: short mapped landing opens overlapping stair and lateral curbs through its real nodes
+ok 357 - short mapped landing opens overlapping stair and lateral curbs through its real nodes
+  ---
+  duration_ms: 72.7758
+  ...
+# Subtest: two real footprint lanterns replace tall blocks with tapered stone/open red chamber/swept roof
+ok 358 - two real footprint lanterns replace tall blocks with tapered stone/open red chamber/swept roof
+  ---
+  duration_ms: 118.3927
+  ...
+# Subtest: blank facade underlying fallback is excluded only with positive refined shrine ownership
+ok 359 - blank facade underlying fallback is excluded only with positive refined shrine ownership
+  ---
+  duration_ms: 16.4037
+  ...
+# Subtest: existing source feature owners prevent duplicates and missing triangles never hide blocks
+ok 360 - existing source feature owners prevent duplicates and missing triangles never hide blocks
+  ---
+  duration_ms: 5.1592
+  ...
+# Subtest: real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+ok 361 - real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+  ---
+  duration_ms: 117.801
+  ...
+# Subtest: open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+ok 362 - open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+  ---
+  duration_ms: 48.5119
+  ...
+# Subtest: exact registered interaction mesh survives with visible geometry and correct transformed picking
+ok 363 - exact registered interaction mesh survives with visible geometry and correct transformed picking
+  ---
+  duration_ms: 29.2264
+  ...
+# Subtest: court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+ok 364 - court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+  ---
+  duration_ms: 45.4506
+  ...
+# Subtest: unrecognized legacy hall remains untouched
+ok 365 - unrecognized legacy hall remains untouched
+  ---
+  duration_ms: 0.7177
+  ...
+# Subtest: retained ema row opens a physical exit gap instead of moving its old pinch along the route
+ok 366 - retained ema row opens a physical exit gap instead of moving its old pinch along the route
+  ---
+  duration_ms: 35.8007
+  ...
+# Subtest: arrival removes overlapping pavement while retaining the surrounding area
+ok 367 - arrival removes overlapping pavement while retaining the surrounding area
+  ---
+  duration_ms: 1.5202
+  ...
+# Subtest: clipping preserves interpolated height and paving UVs at the seam
+ok 368 - clipping preserves interpolated height and paving UVs at the seam
+  ---
+  duration_ms: 0.4214
+  ...
+# Subtest: actual Okusha court excludes arrival and incoming/outgoing mapped ribbons without extending footprint
+ok 369 - actual Okusha court excludes arrival and incoming/outgoing mapped ribbons without extending footprint
+  ---
+  duration_ms: 33.0512
+  ...
+# Subtest: replacement mineral and ribbon are finite upward faces on same +.14 arrival datum
+ok 370 - replacement mineral and ribbon are finite upward faces on same +.14 arrival datum
+  ---
+  duration_ms: 17.75
+  ...
+# Subtest: exact rendered mitered path envelopes clear cross-owner overlap and retain the former right junction void
+ok 371 - exact rendered mitered path envelopes clear cross-owner overlap and retain the former right junction void
+  ---
+  duration_ms: 1972.3288
+  ...
+# Subtest: both Senbon exits and Okusha arrival share a level rather than the hillside DEM
+ok 372 - both Senbon exits and Okusha arrival share a level rather than the hillside DEM
+  ---
+  duration_ms: 0.8771
+  ...
+# Subtest: terrace releases continuously into the surrounding hillside
+ok 373 - terrace releases continuously into the surrounding hillside
+  ---
+  duration_ms: 0.9871
+  ...
+# Subtest: real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+ok 374 - real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+  ---
+  duration_ms: 89.7694
+  ...
+# Subtest: open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+ok 375 - open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+  ---
+  duration_ms: 45.0245
+  ...
+# Subtest: exact registered interaction mesh survives with visible geometry and correct transformed picking
+ok 376 - exact registered interaction mesh survives with visible geometry and correct transformed picking
+  ---
+  duration_ms: 25.731
+  ...
+# Subtest: court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+ok 377 - court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+  ---
+  duration_ms: 58.5362
+  ...
+# Subtest: unrecognized legacy hall remains untouched
+ok 378 - unrecognized legacy hall remains untouched
+  ---
+  duration_ms: 0.6512
+  ...
+# Subtest: retained ema row opens a physical exit gap instead of moving its old pinch along the route
+ok 379 - retained ema row opens a physical exit gap instead of moving its old pinch along the route
+  ---
+  duration_ms: 32.3338
+  ...
+# Subtest: R101 attaches source-backed fittings to actual mapped owners without mutating earlier owners
+ok 380 - R101 attaches source-backed fittings to actual mapped owners without mutating earlier owners
+  ---
+  duration_ms: 202.1939
+  ...
+# Subtest: missing source owner contracts cause no partial additions
+ok 381 - missing source owner contracts cause no partial additions
+  ---
+  duration_ms: 72.8484
+  ...
+# Subtest: confirmed actual roof becomes open low shelter; exact-ID ownership, supported posts and public paths survive
+ok 382 - confirmed actual roof becomes open low shelter; exact-ID ownership, supported posts and public paths survive
+  ---
+  duration_ms: 139.2485
+  ...
+# Subtest: unknown footprint or unsupported floor returns no builtIds and mutates nothing
+ok 383 - unknown footprint or unsupported floor returns no builtIds and mutates nothing
+  ---
+  duration_ms: 1.1086
+  ...
+# Subtest: coplanar path union has deterministic single ownership while distinct heights and remote surfaces remain
+ok 384 - coplanar path union has deterministic single ownership while distinct heights and remote surfaces remain
+  ---
+  duration_ms: 2.73
+  ...
+# Subtest: actual Okusha mapped way junction and arrival clipping no longer emit overlapping top triangles
+ok 385 - actual Okusha mapped way junction and arrival clipping no longer emit overlapping top triangles
+  ---
+  duration_ms: 307.209
+  ...
+# Subtest: actual junction curb cap pair keeps its raised lip union once
+ok 386 - actual junction curb cap pair keeps its raised lip union once
+  ---
+  duration_ms: 0.4239
+  ...
+# Subtest: crossing anchor uses real shared road/approach node and starts before first gate
+ok 387 - crossing anchor uses real shared road/approach node and starts before first gate
+  ---
+  duration_ms: 1.7344
+  ...
+# Subtest: curb ends leave a five metre flush crossing aperture
+ok 388 - curb ends leave a five metre flush crossing aperture
+  ---
+  duration_ms: 0.2353
+  ...
+# Subtest: surface batches follow slopes, have upward tops and repeated build is idempotent
+ok 389 - surface batches follow slopes, have upward tops and repeated build is idempotent
+  ---
+  duration_ms: 12.4665
+  ...
+# Subtest: missing geography is explicit and invalid height fails visibly
+ok 390 - missing geography is explicit and invalid height fails visibly
+  ---
+  duration_ms: 0.8755
+  ...
+# Subtest: paint and in-road gutters seat on asphalt while outside curbs retain their approach height
+ok 391 - paint and in-road gutters seat on asphalt while outside curbs retain their approach height
+  ---
+  duration_ms: 7.3535
+  ...
+# Subtest: zebra bands follow the road and repeat across the pedestrian route, matching the station reference
+ok 392 - zebra bands follow the road and repeat across the pedestrian route, matching the station reference
+  ---
+  duration_ms: 76.6511
+  ...
+# Subtest: observed subset stays outside main avenue and all mapped adjacent obstacles
+ok 393 - observed subset stays outside main avenue and all mapped adjacent obstacles
+  ---
+  duration_ms: 85.9826
+  ...
+# Subtest: columns seat on sloping ground, retain unrelated scene work, and do not duplicate on repeat
+ok 394 - columns seat on sloping ground, retain unrelated scene work, and do not duplicate on repeat
+  ---
+  duration_ms: 74.9442
+  ...
+# Subtest: public corridor is partitioned into disjoint4.8m slabs and1.6m sidebands rather than13.6m
+ok 395 - public corridor is partitioned into disjoint4.8m slabs and1.6m sidebands rather than13.6m
+  ---
+  duration_ms: 51.6603
+  ...
+# Subtest: photo-inferred avenue roots fit sidebands and leave central4.8m path clear
+ok 396 - photo-inferred avenue roots fit sidebands and leave central4.8m path clear
+  ---
+  duration_ms: 44.1897
+  ...
+# Subtest: existing trees and actual mapped boundaries retain ownership
+ok 397 - existing trees and actual mapped boundaries retain ownership
+  ---
+  duration_ms: 141.0031
+  ...
+# Subtest: batched trees/wells/supports are finite, idempotent and do not block center walking
+ok 398 - batched trees/wells/supports are finite, idempotent and do not block center walking
+  ---
+  duration_ms: 111.3354
+  ...
+# Subtest: earth well and rim vertices drape to actual sloped walk surface within millimetre offsets
+ok 399 - earth well and rim vertices drape to actual sloped walk surface within millimetre offsets
+  ---
+  duration_ms: 53.7791
+  ...
+# Subtest: junction anchored street packet has all four observed layers and bounded batches
+ok 400 - junction anchored street packet has all four observed layers and bounded batches
+  ---
+  duration_ms: 39.8188
+  ...
+# Subtest: flush street overlays sample actual surface at every emitted vertex and face upward
+ok 401 - flush street overlays sample actual surface at every emitted vertex and face upward
+  ---
+  duration_ms: 21.5072
+  ...
+# Subtest: pole collider preserves approach, road crossing and adjacent walking lanes
+ok 402 - pole collider preserves approach, road crossing and adjacent walking lanes
+  ---
+  duration_ms: 21.7822
+  ...
+# Subtest: utility omission respects mapped building ownership instead of forcing its position
+ok 403 - utility omission respects mapped building ownership instead of forcing its position
+  ---
+  duration_ms: 21.6733
+  ...
+# Subtest: unregistered remote supports leave no floating wire geometry
+ok 404 - unregistered remote supports leave no floating wire geometry
+  ---
+  duration_ms: 25.5897
+  ...
+# Subtest: mapped three-storey envelope and footprint replace generic owner once
+ok 405 - mapped three-storey envelope and footprint replace generic owner once
+  ---
+  duration_ms: 125.8717
+  ...
+# Subtest: middle gallery is a real .64m recess with rear glazing and front rail
+ok 406 - middle gallery is a real .64m recess with rear glazing and front rail
+  ---
+  duration_ms: 55.9212
+  ...
+# Subtest: wall seats bury into actual terrain and collision leaves source road and approach open
+ok 407 - wall seats bury into actual terrain and collision leaves source road and approach open
+  ---
+  duration_ms: 63.5066
+  ...
+# Subtest: missing source or nonfinite surface cannot silently create a guessed facade
+ok 408 - missing source or nonfinite surface cannot silently create a guessed facade
+  ---
+  duration_ms: 0.9487
+  ...
+# Subtest: horizontal gallery ceramic surfaces preserve metric tile scale through slab depth
+ok 409 - horizontal gallery ceramic surfaces preserve metric tile scale through slab depth
+  ---
+  duration_ms: 39.6876
+  ...
+# Subtest: new source frontage hedge keeps roof entry, first torii and existing prop gaps
+ok 410 - new source frontage hedge keeps roof entry, first torii and existing prop gaps
+  ---
+  duration_ms: 76.5505
+  ...
+# Subtest: source open roof is replaced by bounded roofed panel with successful ownership ids
+ok 411 - source open roof is replaced by bounded roofed panel with successful ownership ids
+  ---
+  duration_ms: 31.0961
+  ...
+# Subtest: both timber uprights bury into actual terrain and roof contacts tie and gable frame
+ok 412 - both timber uprights bury into actual terrain and roof contacts tie and gable frame
+  ---
+  duration_ms: 4.9526
+  ...
+# Subtest: fixed prop collision stays inside roof footprint and preserves mapped approach
+ok 413 - fixed prop collision stays inside roof footprint and preserves mapped approach
+  ---
+  duration_ms: 9.5276
+  ...
+# Subtest: missing/invalid source does not claim replacement ownership
+ok 414 - missing/invalid source does not claim replacement ownership
+  ---
+  duration_ms: 0.9605
+  ...
+# Subtest: production path builder emits no Omotesando slab under the six crossing bands
+ok 415 - production path builder emits no Omotesando slab under the six crossing bands
+  ---
+  duration_ms: 48.5506
+  ...
+# Subtest: mapped Omotesando entrance pavement yields only the Hommachi footprint, preserving slopes and UVs
+ok 416 - mapped Omotesando entrance pavement yields only the Hommachi footprint, preserving slopes and UVs
+  ---
+  duration_ms: 1.4538
+  ...
+# Subtest: shoulders exclude footprint interiors and full cells touching their boundary
+ok 417 - shoulders exclude footprint interiors and full cells touching their boundary
+  ---
+  duration_ms: 1.101
+  ...
+# Subtest: intersecting paths retain half width plus clearance and source central path is not self excluded
+ok 418 - intersecting paths retain half width plus clearance and source central path is not self excluded
+  ---
+  duration_ms: 1.0617
+  ...
+# Subtest: mapped water is excluded and height releases smoothly to existing terrain
+ok 419 - mapped water is excluded and height releases smoothly to existing terrain
+  ---
+  duration_ms: 0.2811
+  ...
+# Subtest: both mirrored shoulder strips face upward on sloped terrain
+ok 420 - both mirrored shoulder strips face upward on sloped terrain
+  ---
+  duration_ms: 0.2469
+  ...
+# Subtest: walking sampler follows actual rendered triangle plane and leaves excluded gaps unchanged
+ok 421 - walking sampler follows actual rendered triangle plane and leaves excluded gaps unchanged
+  ---
+  duration_ms: 0.4105
+  ...
+# Subtest: local exclusion prefilter keeps crossing segments whose endpoints are distant
+ok 422 - local exclusion prefilter keeps crossing segments whose endpoints are distant
+  ---
+  duration_ms: 0.2291
+  ...
+# Subtest: orbit eye clears sloping terrain and its near-plane footprint
+ok 423 - orbit eye clears sloping terrain and its near-plane footprint
+  ---
+  duration_ms: 1.0005
+  ...
+# Subtest: overview height is preserved and missing samples never poison the camera
+ok 424 - overview height is preserved and missing samples never poison the camera
+  ---
+  duration_ms: 0.1962
+  ...
+# Subtest: both additional outlooks connect to Yotsutsuji on existing mapped paths
+ok 425 - both additional outlooks connect to Yotsutsuji on existing mapped paths
+  ---
+  duration_ms: 89.4786
+  ...
+# Subtest: detail is available at every mapped lookout but not at the entrance
+ok 426 - detail is available at every mapped lookout but not at the entrance
+  ---
+  duration_ms: 1.2775
+  ...
+# Subtest: hysteresis prevents churn and distant aerial cameras turn detail off
+ok 427 - hysteresis prevents churn and distant aerial cameras turn detail off
+  ---
+  duration_ms: 0.4603
+  ...
+# Subtest: secondary view openings stay bounded and face mapped southwest
+ok 428 - secondary view openings stay bounded and face mapped southwest
+  ---
+  duration_ms: 0.3672
+  ...
+# Subtest: both sides of a turning flight share their full-width corner
+ok 429 - both sides of a turning flight share their full-width corner
+  ---
+  duration_ms: 7.4318
+  ...
+# Subtest: unmapped staircase preserves intermediate landing elevation even with equal endpoints
+ok 430 - unmapped staircase preserves intermediate landing elevation even with equal endpoints
+  ---
+  duration_ms: 2.3678
+  ...
+# Subtest: acute turns retain shared bounded corners instead of a triangular gap
+ok 431 - acute turns retain shared bounded corners instead of a triangular gap
+  ---
+  duration_ms: 0.3764
+  ...
+# Subtest: unresolved profiles retain source counts and actionable measurements for review
+ok 432 - unresolved profiles retain source counts and actionable measurements for review
+  ---
+  duration_ms: 0.6366
+  ...
+# Subtest: a shared OSM node opens the curb at a branch mouth
+ok 433 - a shared OSM node opens the curb at a branch mouth
+  ---
+  duration_ms: 2.7783
+  ...
+# Subtest: geometric crossings without a shared node do not open curbs
+ok 434 - geometric crossings without a shared node do not open curbs
+  ---
+  duration_ms: 0.3899
+  ...
+# Subtest: different elevations never open a curb across an overlapping path
+ok 435 - different elevations never open a curb across an overlapping path
+  ---
+  duration_ms: 0.2666
+  ...
+# Subtest: Okusha exported ray pair retains exact union across different material owners
+ok 436 - Okusha exported ray pair retains exact union across different material owners
+  ---
+  duration_ms: 3.2369
+  ...
+# Subtest: Omotesando exported ray pair retains exact union across different material owners
+ok 437 - Omotesando exported ray pair retains exact union across different material owners
+  ---
+  duration_ms: 0.5099
+  ...
+# Subtest: Sanctuary exported ray pair retains exact union across different material owners
+ok 438 - Sanctuary exported ray pair retains exact union across different material owners
+  ---
+  duration_ms: 0.2337
+  ...
+# Subtest: Honden exported ray pair retains exact union across different material owners
+ok 439 - Honden exported ray pair retains exact union across different material owners
+  ---
+  duration_ms: 0.2044
+  ...
+# Subtest: plane bin boundaries share ownership, separated levels retain it, and repeated partition is stable
+ok 440 - plane bin boundaries share ownership, separated levels retain it, and repeated partition is stable
+  ---
+  duration_ms: 0.5985
+  ...
+# Subtest: same-plane spatial cells preserve source UVs, lower aprons, sloped surfaces and excluded curbs
+ok 441 - same-plane spatial cells preserve source UVs, lower aprons, sloped surfaces and excluded curbs
+  ---
+  duration_ms: 1.0252
+  ...
+# Subtest: side courts retain architectural levels without procedural ridge noise
+ok 442 - side courts retain architectural levels without procedural ridge noise
+  ---
+  duration_ms: 0.9276
+  ...
+# Subtest: lower court connects gate, shop and hall without separate building mounds
+ok 443 - lower court connects gate, shop and hall without separate building mounds
+  ---
+  duration_ms: 0.3027
+  ...
+# Subtest: approach and sanctuary connections have continuous endpoint heights
+ok 444 - approach and sanctuary connections have continuous endpoint heights
+  ---
+  duration_ms: 0.1741
+  ...
+# Subtest: sanctuary grading meets both ends of the preserved stairs and upper landing
+ok 445 - sanctuary grading meets both ends of the preserved stairs and upper landing
+  ---
+  duration_ms: 0.9433
+  ...
+# Subtest: upper sanctuary terrace extends past the mapped Honden side access
+ok 446 - upper sanctuary terrace extends past the mapped Honden side access
+  ---
+  duration_ms: 0.2384
+  ...
+# Subtest: office context builds only the explicit mapped source with grounded solid sections
+ok 447 - office context builds only the explicit mapped source with grounded solid sections
+  ---
+  duration_ms: 169.8806
+  ...
+# Subtest: all roof triangle centers stay inside the actual concave footprint rather than spanning its courtyard
+ok 448 - all roof triangle centers stay inside the actual concave footprint rather than spanning its courtyard
+  ---
+  duration_ms: 248.5409
+  ...
+# Subtest: ownership is idempotent and preexisting source architecture wins
+ok 449 - ownership is idempotent and preexisting source architecture wins
+  ---
+  duration_ms: 121.1884
+  ...
+# Subtest: absent or unsupported ground cannot mutate scene or collider ownership
+ok 450 - absent or unsupported ground cannot mutate scene or collider ownership
+  ---
+  duration_ms: 0.2745
+  ...
+# Subtest: mapped terminal footway has a visible and physical opening across its complete width plus margins
+ok 451 - mapped terminal footway has a visible and physical opening across its complete width plus margins
+  ---
+  duration_ms: 250.3927
+  ...
+# Subtest: coincident roof vertices share finite smooth normals without changing the pitched envelope
+ok 452 - coincident roof vertices share finite smooth normals without changing the pitched envelope
+  ---
+  duration_ms: 201.3344
+  ...
+# Subtest: roof has matching two-face internal edges with no T-junction cracks or duplicated faces
+ok 453 - roof has matching two-face internal edges with no T-junction cracks or duplicated faces
+  ---
+  duration_ms: 322.4634
+  ...
+# Subtest: photographed glazing is confined to the two mapped pond-facing frontages in six batches
+ok 454 - photographed glazing is confined to the two mapped pond-facing frontages in six batches
+  ---
+  duration_ms: 160.1281
+  ...
+# Subtest: missing mapped pond attribution leaves original plaster context without invented glazing
+ok 455 - missing mapped pond attribution leaves original plaster context without invented glazing
+  ---
+  duration_ms: 173.8122
+  ...
+# Subtest: all bays and shallow eaves share one horizontal datum per garden frontage
+ok 456 - all bays and shallow eaves share one horizontal datum per garden frontage
+  ---
+  duration_ms: 116.4894
+  ...
+# Subtest: actual mapped shrines and neighbourhood retain bounded nonempty mineral collars
+ok 457 - actual mapped shrines and neighbourhood retain bounded nonempty mineral collars
+  ---
+  duration_ms: 693.2145
+  ...
+# Subtest: rotated pavilion collars exclude retained plinth and exact public cutouts
+ok 458 - rotated pavilion collars exclude retained plinth and exact public cutouts
+  ---
+  duration_ms: 2.5763
+  ...
+# Subtest: rendered overlays follow nonlinear terrain, preserve source state and cut building/path/junction
+ok 459 - rendered overlays follow nonlinear terrain, preserve source state and cut building/path/junction
+  ---
+  duration_ms: 12.1494
+  ...
+# Subtest: both real paths falsely rejected by sampling retain their mapped totals
+ok 460 - both real paths falsely rejected by sampling retain their mapped totals
+  ---
+  duration_ms: 60.7583
+  ...
+# Subtest: both exact Senbon ways and the complete Tamayama upper flight are sampled in both directions
+ok 461 - both exact Senbon ways and the complete Tamayama upper flight are sampled in both directions
+  ---
+  duration_ms: 7.75
+  ...
+# Subtest: photographed Okumiya divider remains diagnostic while both genuine walking lanes are required
+ok 462 - photographed Okumiya divider remains diagnostic while both genuine walking lanes are required
+  ---
+  duration_ms: 3.5848
+  ...
+# Subtest: one blocked Senbon branch is not hidden by its clear alternative
+ok 463 - one blocked Senbon branch is not hidden by its clear alternative
+  ---
+  duration_ms: 3.0728
+  ...
+# Subtest: missing ways and broken joints fail closed; invalid height and collision output remain visible
+ok 464 - missing ways and broken joints fail closed; invalid height and collision output remain visible
+  ---
+  duration_ms: 4.2848
+  ...
+# Subtest: actual assembled trunk anchors clear only interior/intersecting sugi and exact colliders
+ok 465 - actual assembled trunk anchors clear only interior/intersecting sugi and exact colliders
+  ---
+  duration_ms: 3.5168
+  ...
+# Subtest: built ownership required; maple pairing supported; unmatched trunk remains
+ok 466 - built ownership required; maple pairing supported; unmatched trunk remains
+  ---
+  duration_ms: 1.2577
+  ...
+# Subtest: upper reception body clears rising terrace while lower counter datum stays fixed
+ok 467 - upper reception body clears rising terrace while lower counter datum stays fixed
+  ---
+  duration_ms: 2.1764
+  ...
+# Subtest: flat or descending context never lowers the building and invalid grades fail visibly
+ok 468 - flat or descending context never lowers the building and invalid grades fail visibly
+  ---
+  duration_ms: 0.6503
+  ...
+# Subtest: recordings load only after enable, use bounded loops, and mute stops them
+ok 469 - recordings load only after enable, use bounded loops, and mute stops them
+  ---
+  duration_ms: 6.2036
+  ...
+# Subtest: pending decode never starts playback after mute
+ok 470 - pending decode never starts playback after mute
+  ---
+  duration_ms: 0.8651
+  ...
+# Subtest: hidden/menu pause stops sounds and crossing gate remains edge-triggered after resume
+ok 471 - hidden/menu pause stops sounds and crossing gate remains edge-triggered after resume
+  ---
+  duration_ms: 0.8991
+  ...
+# Subtest: bad recording fails once without replacing it with synthesized audio
+ok 472 - bad recording fails once without replacing it with synthesized audio
+  ---
+  duration_ms: 0.549
+  ...
+# Subtest: door warning stops at handoff and crossing ambience survives railway phase changes
+ok 473 - door warning stops at handoff and crossing ambience survives railway phase changes
+  ---
+  duration_ms: 0.9268
+  ...
+# Subtest: arrival schedules Japanese fully before English and cancels both on skip
+ok 474 - arrival schedules Japanese fully before English and cancels both on skip
+  ---
+  duration_ms: 2.2577
+  ...
+# Subtest: arrival replay replaces a scheduled announcement and menu pause prevents the later language
+ok 475 - arrival replay replaces a scheduled announcement and menu pause prevents the later language
+  ---
+  duration_ms: 1.4349
+  ...
+# Subtest: door hold remains active until the English source has ended
+ok 476 - door hold remains active until the English source has ended
+  ---
+  duration_ms: 0.6291
+  ...
+# Subtest: enabling sound late before opening still plays the two announcements once
+ok 477 - enabling sound late before opening still plays the two announcements once
+  ---
+  duration_ms: 0.906
+  ...
+# Subtest: gate chirps once per crossing in either direction, with debounce
+ok 478 - gate chirps once per crossing in either direction, with debounce
+  ---
+  duration_ms: 1.4783
+  ...
+# Subtest: teleports, flight, walking alongside and re-enabling do not tap a card
+ok 479 - teleports, flight, walking alongside and re-enabling do not tap a card
+  ---
+  duration_ms: 0.2835
+  ...
+# Subtest: closing alarm is edge triggered and skip never emits it
+ok 480 - closing alarm is edge triggered and skip never emits it
+  ---
+  duration_ms: 0.1482
+  ...
+# Subtest: real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+ok 481 - real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+  ---
+  duration_ms: 78.0377
+  ...
+# Subtest: open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+ok 482 - open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+  ---
+  duration_ms: 79.8824
+  ...
+# Subtest: exact registered interaction mesh survives with visible geometry and correct transformed picking
+ok 483 - exact registered interaction mesh survives with visible geometry and correct transformed picking
+  ---
+  duration_ms: 37.3642
+  ...
+# Subtest: court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+ok 484 - court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+  ---
+  duration_ms: 47.1523
+  ...
+# Subtest: unrecognized legacy hall remains untouched
+ok 485 - unrecognized legacy hall remains untouched
+  ---
+  duration_ms: 0.5374
+  ...
+# Subtest: retained ema row opens a physical exit gap instead of moving its old pinch along the route
+ok 486 - retained ema row opens a physical exit gap instead of moving its old pinch along the route
+  ---
+  duration_ms: 35.1255
+  ...
+# Subtest: mapped Omokaru relocation preserves actual pick-up objects and replaces only exact misplaced owners
+ok 487 - mapped Omokaru relocation preserves actual pick-up objects and replaces only exact misplaced owners
+  ---
+  duration_ms: 128.8311
+  ...
+# Subtest: cobble packing is deterministic, staggered, varied and horizontally broad
+ok 488 - cobble packing is deterministic, staggered, varied and horizontally broad
+  ---
+  duration_ms: 1.393
+  ...
+# Subtest: stone caps stay shallow and swept while keeping liftstone support inside retained collision radius
+ok 489 - stone caps stay shallow and swept while keeping liftstone support inside retained collision radius
+  ---
+  duration_ms: 0.5962
+  ...
+# Subtest: all swept canopy knees attach to actual long-eave receiver members
+ok 490 - all swept canopy knees attach to actual long-eave receiver members
+  ---
+  duration_ms: 1.6217
+  ...
+# Subtest: unknown source, missing matching collider, or non-finite terrain never partially relocate fixtures
+ok 491 - unknown source, missing matching collider, or non-finite terrain never partially relocate fixtures
+  ---
+  duration_ms: 231.1887
+  ...
+# Subtest: production Romon removes only four complete slabs, opens balcony and preserves roofs and deck
+ok 492 - production Romon removes only four complete slabs, opens balcony and preserves roofs and deck
+  ---
+  duration_ms: 528.3013
+  ...
+# Subtest: production Gehaiden replaces blinds and lanterns after prior balustrade repair, retaining roof/fence/plinth
+ok 493 - production Gehaiden replaces blinds and lanterns after prior balustrade repair, retaining roof/fence/plinth
+  ---
+  duration_ms: 355.505
+  ...
+# Subtest: unknown source refuses destructive partial refinement
+ok 494 - unknown source refuses destructive partial refinement
+  ---
+  duration_ms: 6.5706
+  ...
+# Subtest: both repaired roof shells keep exact plan/apex, join the ridge and reseat all source rafters
+ok 495 - both repaired roof shells keep exact plan/apex, join the ridge and reseat all source rafters
+  ---
+  duration_ms: 289.4744
+  ...
+# Subtest: changed roof source declines before mutating any existing mesh
+ok 496 - changed roof source declines before mutating any existing mesh
+  ---
+  duration_ms: 187.5163
+  ...
+# Subtest: production bark texture slots retain finite metric UVs across every replacement shell patch
+ok 497 - production bark texture slots retain finite metric UVs across every replacement shell patch
+  ---
+  duration_ms: 270.3689
+  ...
+# Subtest: north drip apron uses exact transformed rendered triangle planes and a single static batch
+ok 498 - north drip apron uses exact transformed rendered triangle planes and a single static batch
+  ---
+  duration_ms: 6.2475
+  ...
+# Subtest: mapped crossing clears the entire ribbon and neighboring footprint cuts the stone
+ok 499 - mapped crossing clears the entire ribbon and neighboring footprint cuts the stone
+  ---
+  duration_ms: 3.9618
+  ...
+# Subtest: missing or corrupt terrain never inserts unsupported geometry
+ok 500 - missing or corrupt terrain never inserts unsupported geometry
+  ---
+  duration_ms: 0.5625
+  ...
+# Subtest: production galleries receive complete static joinery packet while every source geometry survives
+ok 501 - production galleries receive complete static joinery packet while every source geometry survives
+  ---
+  duration_ms: 599.4599
+  ...
+# Subtest: unprepared or changed gallery integration refuses without partial insertion
+ok 502 - unprepared or changed gallery integration refuses without partial insertion
+  ---
+  duration_ms: 0.4801
+  ...
+# Subtest: north drainage meets existing threshold, stays clear of the central arch and is idempotent
+ok 503 - north drainage meets existing threshold, stays clear of the central arch and is idempotent
+  ---
+  duration_ms: 19.5722
+  ...
+# Subtest: nonfinite drain surface fails visibly instead of inserting corrupt geometry
+ok 504 - nonfinite drain surface fails visibly instead of inserting corrupt geometry
+  ---
+  duration_ms: 0.9064
+  ...
+# Subtest: actual GLB wing filter is bounded and preserves roof, base and central gate triangles
+ok 505 - actual GLB wing filter is bounded and preserves roof, base and central gate triangles
+  ---
+  duration_ms: 745.3162
+  ...
+# Subtest: rebuilt walls contain real apertures and preserve the central public passage
+ok 506 - rebuilt walls contain real apertures and preserve the central public passage
+  ---
+  duration_ms: 367.6131
+  ...
+# Subtest: unexpected source mesh declines reconstruction without adding or mutating geometry
+ok 507 - unexpected source mesh declines reconstruction without adding or mutating geometry
+  ---
+  duration_ms: 0.8521
+  ...
+# Subtest: end gable reaches the original end wall without enlarging roof plan or ridge height
+ok 508 - end gable reaches the original end wall without enlarging roof plan or ridge height
+  ---
+  duration_ms: 0.1864
+  ...
+# Subtest: runtime material substitution with cleared names retains exact production preflight
+ok 509 - runtime material substitution with cleared names retains exact production preflight
+  ---
+  duration_ms: 422.4172
+  ...
+# Subtest: outer hip bark cannot hide the north or south white gable from an end view
+ok 510 - outer hip bark cannot hide the north or south white gable from an end view
+  ---
+  duration_ms: 223.6433
+  ...
+# Subtest: roof retains a central ridge and gently raised symmetric eaves
+ok 511 - roof retains a central ridge and gently raised symmetric eaves
+  ---
+  duration_ms: 1.1673
+  ...
+# Subtest: Senbon retains dated OSM counts as reference metadata, independent of rendered spacing
+ok 512 - Senbon retains dated OSM counts as reference metadata, independent of rendered spacing
+  ---
+  duration_ms: 62.3705
+  ...
+# Subtest: OSM step_count produces level treads while walk sampling follows those same levels
+ok 513 - OSM step_count produces level treads while walk sampling follows those same levels
+  ---
+  duration_ms: 1.7479
+  ...
+# Subtest: surface network does not invent ground-level crossings for bridges and tunnels
+ok 514 - surface network does not invent ground-level crossings for bridges and tunnels
+  ---
+  duration_ms: 0.191
+  ...
+# Subtest: descending steps place their riser at the downstream edge with the actual rise
+ok 515 - descending steps place their riser at the downstream edge with the actual rise
+  ---
+  duration_ms: 0.3772
+  ...
+# Subtest: replaces only existing sourced retaining owner, preserving structural mesh and walking/collision ownership
+ok 516 - replaces only existing sourced retaining owner, preserving structural mesh and walking/collision ownership
+  ---
+  duration_ms: 13.3923
+  ...
+# Subtest: facing remains finite, nondegenerate, bounded within original 14cm stair reserve, and has metric UVs
+ok 517 - facing remains finite, nondegenerate, bounded within original 14cm stair reserve, and has metric UVs
+  ---
+  duration_ms: 7.0905
+  ...
+# Subtest: does not invent a wall if original owner or correct source identity is absent
+ok 518 - does not invent a wall if original owner or correct source identity is absent
+  ---
+  duration_ms: 1.112
+  ...
+# Subtest: stone fronts face outward from the retained R77 wall instead of being backface culled
+ok 519 - stone fronts face outward from the retained R77 wall instead of being backface culled
+  ---
+  duration_ms: 16.4754
+  ...
+# Subtest: actual Honden receives bounded open rear veranda with original source geometry intact
+ok 520 - actual Honden receives bounded open rear veranda with original source geometry intact
+  ---
+  duration_ms: 34.4559
+  ...
+# Subtest: unregistered asset fails closed without adding details
+ok 521 - unregistered asset fails closed without adding details
+  ---
+  duration_ms: 16.8678
+  ...
+# Subtest: production Honden replaces complete five solid walls preserving every other triangle and attribute
+ok 522 - production Honden replaces complete five solid walls preserving every other triangle and attribute
+  ---
+  duration_ms: 289.1013
+  ...
+# Subtest: incomplete Honden signature fails without altering original source
+ok 523 - incomplete Honden signature fails without altering original source
+  ---
+  duration_ms: 7.9488
+  ...
+# Subtest: production Naihaiden receives four open offering grilles and nine cords without mutating source
+ok 524 - production Naihaiden receives four open offering grilles and nine cords without mutating source
+  ---
+  duration_ms: 20.7736
+  ...
+# Subtest: prior veranda and prayer-facade refinements retain their owners when R95 runs afterwards
+ok 525 - prior veranda and prayer-facade refinements retain their owners when R95 runs afterwards
+  ---
+  duration_ms: 152.2329
+  ...
+# Subtest: Naihaiden architecture retains roof plan and rear junction while correcting closed front finish
+ok 526 - Naihaiden architecture retains roof plan and rear junction while correcting closed front finish
+  ---
+  duration_ms: 119.2122
+  ...
+# Subtest: actual Honden packet retains earlier source owners and adds four photographed categories
+ok 527 - actual Honden packet retains earlier source owners and adds four photographed categories
+  ---
+  duration_ms: 245.9676
+  ...
+# Subtest: different asset and shifted Honden fail closed without mutation
+ok 528 - different asset and shifted Honden fail closed without mutation
+  ---
+  duration_ms: 10.4547
+  ...
+# Subtest: all detail stays inside existing fenced exclusion, leaving public walking corridors unchanged
+ok 529 - all detail stays inside existing fenced exclusion, leaving public walking corridors unchanged
+  ---
+  duration_ms: 21.1032
+  ...
+# Subtest: both actual well-view apron overlap pairs retain their union once at the original lower datum
+ok 530 - both actual well-view apron overlap pairs retain their union once at the original lower datum
+  ---
+  duration_ms: 2.1873
+  ...
+# Subtest: real sanctuary approach builder gives both well rays one lower apron face with metric UVs
+ok 531 - real sanctuary approach builder gives both well rays one lower apron face with metric UVs
+  ---
+  duration_ms: 106.0678
+  ...
+# Subtest: actual sanctuary ray triangles are partitioned through the production precinct material bucket
+ok 532 - actual sanctuary ray triangles are partitioned through the production precinct material bucket
+  ---
+  duration_ms: 66.8512
+  ...
+# Subtest: actual black-rectangle ray triangles retain union area once and one top face at measured pixel hit
+ok 533 - actual black-rectangle ray triangles retain union area once and one top face at measured pixel hit
+  ---
+  duration_ms: 0.8031
+  ...
+# Subtest: bounded sanctuary partition preserves UVs, distinct lower apron and remote Okusha surfaces
+ok 534 - bounded sanctuary partition preserves UVs, distinct lower apron and remote Okusha surfaces
+  ---
+  duration_ms: 1.0103
+  ...
+# Subtest: Choja eave fascia meets the actual curved roof instead of a detached flat beam
+ok 535 - Choja eave fascia meets the actual curved roof instead of a detached flat beam
+  ---
+  duration_ms: 46.7473
+  ...
+# Subtest: only exact misplaced source groups/collider pairs are removed after all mapped owners exist
+ok 536 - only exact misplaced source groups/collider pairs are removed after all mapped owners exist
+  ---
+  duration_ms: 2.7115
+  ...
+# Subtest: missing owners, changed signatures and ambiguous pairs fail closed atomically
+ok 537 - missing owners, changed signatures and ambiguous pairs fail closed atomically
+  ---
+  duration_ms: 3.6745
+  ...
+# Subtest: mapped Choja keeps real footprint and physical body, with triangle seated base and inferred curved roof
+ok 538 - mapped Choja keeps real footprint and physical body, with triangle seated base and inferred curved roof
+  ---
+  duration_ms: 139.3907
+  ...
+# Subtest: supports the existing wide apron wings while preserving network walking and geometry
+ok 539 - supports the existing wide apron wings while preserving network walking and geometry
+  ---
+  duration_ms: 1.8614
+  ...
+# Subtest: bounded support meets previous terrain continuously and leaves other routes untouched
+ok 540 - bounded support meets previous terrain continuously and leaves other routes untouched
+  ---
+  duration_ms: 5.9696
+  ...
+# Subtest: mapped stairs and their risers retain previous terrain even across a supported route
+ok 541 - mapped stairs and their risers retain previous terrain even across a supported route
+  ---
+  duration_ms: 1.9687
+  ...
+# Subtest: actual Honden and Gonden approach identities receive local support without touching Okumiya
+ok 542 - actual Honden and Gonden approach identities receive local support without touching Okumiya
+  ---
+  duration_ms: 56.1798
+  ...
+# Subtest: Honden exterior crossing span and north access retain supported mapped curb widths
+ok 543 - Honden exterior crossing span and north access retain supported mapped curb widths
+  ---
+  duration_ms: 77.3773
+  ...
+# Subtest: season choice validates persisted values and keeps evergreens green
+ok 544 - season choice validates persisted values and keeps evergreens green
+  ---
+  duration_ms: 1.3895
+  ...
+# Subtest: flowering is an explicit sparse category, not all spring maples
+ok 545 - flowering is an explicit sparse category, not all spring maples
+  ---
+  duration_ms: 0.2138
+  ...
+# Subtest: review itinerary covers every architectural anchor without inventing connections
+ok 546 - review itinerary covers every architectural anchor without inventing connections
+  ---
+  duration_ms: 15.9135
+  ...
+# Subtest: physical audit reports obstructions and discontinuities separately from graph connectivity
+ok 547 - physical audit reports obstructions and discontinuities separately from graph connectivity
+  ---
+  duration_ms: 27.3356
+  ...
+# Subtest: straight torii corridor stays open but a post across a side branch is rejected
+ok 548 - straight torii corridor stays open but a post across a side branch is rejected
+  ---
+  duration_ms: 0.9281
+  ...
+# Subtest: both Senbon terminal gates face the same courtyard frontage
+ok 549 - both Senbon terminal gates face the same courtyard frontage
+  ---
+  duration_ms: 0.8068
+  ...
+# Subtest: terminal gates preserve spacing and leave the common path junction open
+ok 550 - terminal gates preserve spacing and leave the common path junction open
+  ---
+  duration_ms: 0.325
+  ...
+# Subtest: bank stems use actual terrain, exclude mapped buildings/routes and yield to existing forest roots
+ok 551 - bank stems use actual terrain, exclude mapped buildings/routes and yield to existing forest roots
+  ---
+  duration_ms: 99.5041
+  ...
+# Subtest: bank reuses cutout leaf texture and finite instances without touching existing colliders
+ok 552 - bank reuses cutout leaf texture and finite instances without touching existing colliders
+  ---
+  duration_ms: 41.684
+  ...
+# Subtest: mapped rest envelope closes real gable ends with finite, bounded static batches
+ok 553 - mapped rest envelope closes real gable ends with finite, bounded static batches
+  ---
+  duration_ms: 28.344
+  ...
+# Subtest: augmentation is idempotent and refuses unmapped or malformed footprints
+ok 554 - augmentation is idempotent and refuses unmapped or malformed footprints
+  ---
+  duration_ms: 6.3744
+  ...
+# Subtest: real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+ok 555 - real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+  ---
+  duration_ms: 78.6124
+  ...
+# Subtest: open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+ok 556 - open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+  ---
+  duration_ms: 78.7792
+  ...
+# Subtest: exact registered interaction mesh survives with visible geometry and correct transformed picking
+ok 557 - exact registered interaction mesh survives with visible geometry and correct transformed picking
+  ---
+  duration_ms: 25.385
+  ...
+# Subtest: court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+ok 558 - court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+  ---
+  duration_ms: 84.1212
+  ...
+# Subtest: unrecognized legacy hall remains untouched
+ok 559 - unrecognized legacy hall remains untouched
+  ---
+  duration_ms: 0.5376
+  ...
+# Subtest: retained ema row opens a physical exit gap instead of moving its old pinch along the route
+ok 560 - retained ema row opens a physical exit gap instead of moving its old pinch along the route
+  ---
+  duration_ms: 38.1303
+  ...
+# Subtest: R95 replaces repetitive reception contract while preserving collision, mapped toilet and interaction identity
+ok 561 - R95 replaces repetitive reception contract while preserving collision, mapped toilet and interaction identity
+  ---
+  duration_ms: 66.9679
+  ...
+# Subtest: R95 does not partially replace unknown source or reception panel contracts
+ok 562 - R95 does not partially replace unknown source or reception panel contracts
+  ---
+  duration_ms: 30.6841
+  ...
+# Subtest: real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+ok 563 - real mapped outline decomposes into broad west pavilion and separate narrow rear sanctuary
+  ---
+  duration_ms: 83.256
+  ...
+# Subtest: open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+ok 564 - open hall replaces broad blocker while new walls match structure and leave Senbon arrival clear
+  ---
+  duration_ms: 68.0373
+  ...
+# Subtest: exact registered interaction mesh survives with visible geometry and correct transformed picking
+ok 565 - exact registered interaction mesh survives with visible geometry and correct transformed picking
+  ---
+  duration_ms: 61.9567
+  ...
+# Subtest: court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+ok 566 - court owner removes obsolete hall fittings while preserving ema/Omokaru objects and callbacks
+  ---
+  duration_ms: 75.8682
+  ...
+# Subtest: unrecognized legacy hall remains untouched
+ok 567 - unrecognized legacy hall remains untouched
+  ---
+  duration_ms: 1.3199
+  ...
+# Subtest: retained ema row opens a physical exit gap instead of moving its old pinch along the route
+ok 568 - retained ema row opens a physical exit gap instead of moving its old pinch along the route
+  ---
+  duration_ms: 83.4303
+  ...
+# Subtest: R96 improves whole-court fittings inside existing ownership, preserving floors, collision and interactions
+ok 569 - R96 improves whole-court fittings inside existing ownership, preserving floors, collision and interactions
+  ---
+  duration_ms: 108.2202
+  ...
+# Subtest: R96 unknown hall or rack contracts fail before mutation
+ok 570 - R96 unknown hall or rack contracts fail before mutation
+  ---
+  duration_ms: 32.0112
+  ...
+# Subtest: bounded opposite-bank arc seats layered woodland on actual terrain with no source mutations or duplicate calls
+ok 571 - bounded opposite-bank arc seats layered woodland on actual terrain with no source mutations or duplicate calls
+  ---
+  duration_ms: 127.903
+  ...
+# Subtest: actual crown overhang retains dry roots and clear public-route widths; low growth stays outside water
+ok 572 - actual crown overhang retains dry roots and clear public-route widths; low growth stays outside water
+  ---
+  duration_ms: 102.8458
+  ...
+# Subtest: prior tree ownership suppresses exact new trunk without changing existing collider
+ok 573 - prior tree ownership suppresses exact new trunk without changing existing collider
+  ---
+  duration_ms: 58.5015
+  ...
+# Subtest: missing actual terrain, wet support and authoritative widened public walking segments withhold vegetation
+ok 574 - missing actual terrain, wet support and authoritative widened public walking segments withhold vegetation
+  ---
+  duration_ms: 51.497
+  ...
+# Subtest: seeded evergreen season, actual instance bounds and footprint support remain deterministic
+ok 575 - seeded evergreen season, actual instance bounds and footprint support remain deterministic
+  ---
+  duration_ms: 70.6963
+  ...
+# Subtest: resolved walking junction triangles also exclude the complete bank planting envelope
+ok 576 - resolved walking junction triangles also exclude the complete bank planting envelope
+  ---
+  duration_ms: 11.8116
+  ...
+# Subtest: every low crown actual minimum vertex is buried8cm into lowest actual support rather than hovering
+ok 577 - every low crown actual minimum vertex is buried8cm into lowest actual support rather than hovering
+  ---
+  duration_ms: 26.1652
+  ...
+# Subtest: local pond capture is deferred until nearby and reused across frames, travel and time
+ok 578 - local pond capture is deferred until nearby and reused across frames, travel and time
+  ---
+  duration_ms: 4.0129
+  ...
+# Subtest: failed appearance refresh retains the last usable reflection and does not retry every frame
+ok 579 - failed appearance refresh retains the last usable reflection and does not retry every frame
+  ---
+  duration_ms: 1.5306
+  ...
+# Subtest: a failure on a real CubeCamera face restores viewer target, visibility, XR and shadow state
+ok 580 - a failure on a real CubeCamera face restores viewer target, visibility, XR and shadow state
+  ---
+  duration_ms: 5.2097
+  ...
+# Subtest: actual PMREM blur failure restores autoClear and releases its unpublished output target
+ok 581 - actual PMREM blur failure restores autoClear and releases its unpublished output target
+  ---
+  duration_ms: 3.0678
+  ...
+# Subtest: successful real PMREM capture transfers only its output to the caller and disposes temporary cube and scratch
+ok 582 - successful real PMREM capture transfers only its output to the caller and disposes temporary cube and scratch
+  ---
+  duration_ms: 11.2093
+  ...
+# Subtest: actual audited three root matrices: remove open pond pair and seat both nearbank pairs on actual collar
+ok 583 - actual audited three root matrices: remove open pond pair and seat both nearbank pairs on actual collar
+  ---
+  duration_ms: 38.9267
+  ...
+# Subtest: wrong paired crown or ambiguous exact tree collider withholds that complete tree
+ok 584 - wrong paired crown or ambiguous exact tree collider withholds that complete tree
+  ---
+  duration_ms: 10.9113
+  ...
+# Subtest: nearbank tree with no actual dry collar is withheld; overlapping crown roots outside water remain untouched
+ok 585 - nearbank tree with no actual dry collar is withheld; overlapping crown roots outside water remain untouched
+  ---
+  duration_ms: 27.0212
+  ...
+# Subtest: requires original source pairing and exact bank owner before mutation
+ok 586 - requires original source pairing and exact bank owner before mutation
+  ---
+  duration_ms: 3.3594
+  ...
+# Subtest: momiji source branch removes only its one paired crown and preserves sugi arrays
+ok 587 - momiji source branch removes only its one paired crown and preserves sugi arrays
+  ---
+  duration_ms: 2.7685
+  ...
+# Subtest: actual verified momiji273 on wet collar toe loses only its paired crown; unknown nearbank support is retained
+ok 588 - actual verified momiji273 on wet collar toe loses only its paired crown; unknown nearbank support is retained
+  ---
+  duration_ms: 5.4508
+  ...
+# Subtest: actual Shin-ike ring yields one lower horizontal olive water and only removes exact legacy signature
+ok 589 - actual Shin-ike ring yields one lower horizontal olive water and only removes exact legacy signature
+  ---
+  duration_ms: 47.9023
+  ...
+# Subtest: exact water cut preserves exterior planes and distant triangles, with no retained pond overlap
+ok 590 - exact water cut preserves exterior planes and distant triangles, with no retained pond overlap
+  ---
+  duration_ms: 39.1351
+  ...
+# Subtest: inward natural bank stays inside mapped pond with disjoint projected triangles and bounded inset
+ok 591 - inward natural bank stays inside mapped pond with disjoint projected triangles and bounded inset
+  ---
+  duration_ms: 80.5959
+  ...
+# Subtest: downward ray sees exposed flat water below shrine court rather than coarse terrain in pond center
+ok 592 - downward ray sees exposed flat water below shrine court rather than coarse terrain in pond center
+  ---
+  duration_ms: 16.5641
+  ...
+# Subtest: missing source/legacy, changed datum or incomplete support leave legacy plane attached
+ok 593 - missing source/legacy, changed datum or incomplete support leave legacy plane attached
+  ---
+  duration_ms: 1.2519
+  ...
+# Subtest: low actual shoreline deterministically lowers water once without a berm or later descending levels
+ok 594 - low actual shoreline deterministically lowers water once without a berm or later descending levels
+  ---
+  duration_ms: 19.1123
+  ...
+# Subtest: exact wet cut and inner bank preserve the actual arrival/onward walking corridor including player margin
+ok 595 - exact wet cut and inner bank preserve the actual arrival/onward walking corridor including player margin
+  ---
+  duration_ms: 0.553
+  ...
+# Subtest: successful water rebuild removes only the uniquely registered temporary legacy fallen log
+ok 596 - successful water rebuild removes only the uniquely registered temporary legacy fallen log
+  ---
+  duration_ms: 13.4679
+  ...
+# Subtest: ambiguous or displaced log signatures and failed water builds preserve all original log objects
+ok 597 - ambiguous or displaced log signatures and failed water builds preserve all original log objects
+  ---
+  duration_ms: 60.2364
+  ...
+# Subtest: opaque dark backing covers exactly the mapped pond 0.6m below unchanged water without new collision or grading
+ok 598 - opaque dark backing covers exactly the mapped pond 0.6m below unchanged water without new collision or grading
+  ---
+  duration_ms: 12.8814
+  ...
+# Subtest: actual mapped roof registers named well position and builds closed photo-backed pavilion
+ok 599 - actual mapped roof registers named well position and builds closed photo-backed pavilion
+  ---
+  duration_ms: 56.2726
+  ...
+# Subtest: bad source, steep/incomplete terrain or unsupported floor reject without geometry or collider mutation
+ok 600 - bad source, steep/incomplete terrain or unsupported floor reject without geometry or collider mutation
+  ---
+  duration_ms: 0.7596
+  ...
+# Subtest: public corridor overlap fails but actual service-stub remains clear of inset fence
+ok 601 - public corridor overlap fails but actual service-stub remains clear of inset fence
+  ---
+  duration_ms: 8.9427
+  ...
+# Subtest: existing physical owner is never overwritten by the replacement well
+ok 602 - existing physical owner is never overwritten by the replacement well
+  ---
+  duration_ms: 0.7784
+  ...
+# Subtest: pure planner proves full clipped coverage first and builder preserves existing owners/terrain/walking
+ok 603 - pure planner proves full clipped coverage first and builder preserves existing owners/terrain/walking
+  ---
+  duration_ms: 156.7772
+  ...
+# Subtest: a hidden internal terrain crease rejects the whole original north portion, not arbitrary safe fragments
+ok 604 - a hidden internal terrain crease rejects the whole original north portion, not arbitrary safe fragments
+  ---
+  duration_ms: 72.9191
+  ...
+# Subtest: small relief cannot bypass the .10 slope gate
+ok 605 - small relief cannot bypass the .10 slope gate
+  ---
+  duration_ms: 39.0826
+  ...
+# Subtest: no viable portions, missing owner, incomplete and duplicated coverage fail without allocating a mesh
+ok 606 - no viable portions, missing owner, incomplete and duplicated coverage fail without allocating a mesh
+  ---
+  duration_ms: 109.6196
+  ...
+# Subtest: existing ground paving and physical solids are independently excluded with actual owner geometry
+ok 607 - existing ground paving and physical solids are independently excluded with actual owner geometry
+  ---
+  duration_ms: 54.376
+  ...
+# Subtest: post-batching empty tamagaki owner rejects explicitly before evaluating nonfinite bounds
+ok 608 - post-batching empty tamagaki owner rejects explicitly before evaluating nonfinite bounds
+  ---
+  duration_ms: 2.2194
+  ...
+# Subtest: terrain resolution request follows the registered Mikoshiko court, not fixed world coordinates
+ok 609 - terrain resolution request follows the registered Mikoshiko court, not fixed world coordinates
+  ---
+  duration_ms: 76.2449
+  ...
+# Subtest: Shinsenjo retains irregular mapped returns without source mutation
+ok 610 - Shinsenjo retains irregular mapped returns without source mutation
+  ---
+  duration_ms: 82.4053
+  ...
+# Subtest: closed service shell has finite geometry, terrain support and idempotence
+ok 611 - closed service shell has finite geometry, terrain support and idempotence
+  ---
+  duration_ms: 20.6406
+  ...
+# Subtest: missing footprint or invalid support builds nothing
+ok 612 - missing footprint or invalid support builds nothing
+  ---
+  duration_ms: 0.4695
+  ...
+# Subtest: actual site DEM cuts only mapped interior and preserves retained terrain planes
+ok 613 - actual site DEM cuts only mapped interior and preserves retained terrain planes
+  ---
+  duration_ms: 50.2686
+  ...
+# Subtest: every foundation wall is visible from outside and floor faces upward
+ok 614 - every foundation wall is visible from outside and floor faces upward
+  ---
+  duration_ms: 13.902
+  ...
+# Subtest: forecourt is locally graded without flattening the north or west stair flights
+ok 615 - forecourt is locally graded without flattening the north or west stair flights
+  ---
+  duration_ms: 0.9305
+  ...
+# Subtest: Yotsutsuji approaches retain mapped counts and positive, walkable rises
+ok 616 - Yotsutsuji approaches retain mapped counts and positive, walkable rises
+  ---
+  duration_ms: 96.657
+  ...
+# Subtest: late mapped Okusha shelter stays in its mapped footprint through the production batcher
+ok 617 - late mapped Okusha shelter stays in its mapped footprint through the production batcher
+  ---
+  duration_ms: 30.6708
+  ...
+# Subtest: nested late translations, rotations and nonuniform scale survive a real merged batch
+ok 618 - nested late translations, rotations and nonuniform scale survive a real merged batch
+  ---
+  duration_ms: 2.0253
+  ...
+# Subtest: transformed batch root does not apply its placement twice to merged vertices
+ok 619 - transformed batch root does not apply its placement twice to merged vertices
+  ---
+  duration_ms: 1.0313
+  ...
+# Subtest: interactive and animated retained meshes keep identity and are not absorbed into static sectors
+ok 620 - interactive and animated retained meshes keep identity and are not absorbed into static sectors
+  ---
+  duration_ms: 1.309
+  ...
+# Subtest: architectural placement is rigid, retaining distances and absolute floor offsets
+ok 621 - architectural placement is rigid, retaining distances and absolute floor offsets
+  ---
+  duration_ms: 1.5251
+  ...
+# Subtest: all 22 anchors exist; elevations come from the same GSI ground
+ok 622 - all 22 anchors exist; elevations come from the same GSI ground
+  ---
+  duration_ms: 0.2418
+  ...
+# Subtest: ascent and alternative return remain connected on OSM, not compressed source curves
+ok 623 - ascent and alternative return remain connected on OSM, not compressed source curves
+  ---
+  duration_ms: 0.9947
+  ...
+# Subtest: the two Senbon tunnels use separate surveyed paths with independent geometry
+ok 624 - the two Senbon tunnels use separate surveyed paths with independent geometry
+  ---
+  duration_ms: 0.4342
+  ...
+# Subtest: the source viewer remains the exact version used by the extraction adapter
+ok 625 - the source viewer remains the exact version used by the extraction adapter
+  ---
+  duration_ms: 44.8105
+  ...
+# Subtest: either Senbon branch can be selected without disconnecting the ascent
+ok 626 - either Senbon branch can be selected without disconnecting the ascent
+  ---
+  duration_ms: 14.3099
+  ...
+# Subtest: clearance uses actual segment interiors, including sparse OSM vertices
+ok 627 - clearance uses actual segment interiors, including sparse OSM vertices
+  ---
+  duration_ms: 0.6447
+  ...
+# Subtest: mapped ten-count on the long upper ascent cannot produce metre-high risers
+ok 628 - mapped ten-count on the long upper ascent cannot produce metre-high risers
+  ---
+  duration_ms: 1.1377
+  ...
+# Subtest: valid survey counts survive in either walking direction
+ok 629 - valid survey counts survive in either walking direction
+  ---
+  duration_ms: 0.1795
+  ...
+# Subtest: flat DEM and physically impossible short stairways remain visibly unresolved in data
+ok 630 - flat DEM and physically impossible short stairways remain visibly unresolved in data
+  ---
+  duration_ms: 0.2478
+  ...
+# Subtest: inferred flights meet the terrain at interior shared nodes instead of bridging over branches
+ok 631 - inferred flights meet the terrain at interior shared nodes instead of bridging over branches
+  ---
+  duration_ms: 0.6409
+  ...
+# Subtest: mapped count follows an interior summit in both directions without flattening it
+ok 632 - mapped count follows an interior summit in both directions without flattening it
+  ---
+  duration_ms: 0.6486
+  ...
+# Subtest: infeasible mapped interior rise is rejected instead of creating giant steps
+ok 633 - infeasible mapped interior rise is rejected instead of creating giant steps
+  ---
+  duration_ms: 0.1281
+  ...
+# Subtest: long inferred stairs follow interior terrain without discarding mapped bends
+ok 634 - long inferred stairs follow interior terrain without discarding mapped bends
+  ---
+  duration_ms: 0.3571
+  ...
+# Subtest: mapped count cannot hide an intermediate hill on a long single edge
+ok 635 - mapped count cannot hide an intermediate hill on a long single edge
+  ---
+  duration_ms: 0.2287
+  ...
+# Subtest: arbitrary terrain sample boundaries do not inflate a valid mapped total
+ok 636 - arbitrary terrain sample boundaries do not inflate a valid mapped total
+  ---
+  duration_ms: 0.3263
+  ...
+# Subtest: both station routes begin on their platform and reach the exterior canonical Romon node
+ok 637 - both station routes begin on their platform and reach the exterior canonical Romon node
+  ---
+  duration_ms: 120.9721
+  ...
+# Subtest: Keihan Omotesando branch turns south at Hommachi then east through the first torii
+ok 638 - Keihan Omotesando branch turns south at Hommachi then east through the first torii
+  ---
+  duration_ms: 159.7604
+  ...
+# Subtest: authored corners and real mapped gate/Omotesando/Urasando connections survive densification
+ok 639 - authored corners and real mapped gate/Omotesando/Urasando connections survive densification
+  ---
+  duration_ms: 75.3419
+  ...
+# Subtest: every returned height comes from assembly and all three-dimensional steps are at most two metres
+ok 640 - every returned height comes from assembly and all three-dimensional steps are at most two metres
+  ---
+  duration_ms: 72.699
+  ...
+# Subtest: station data is preserved and returned arrays do not alias either owner
+ok 641 - station data is preserved and returned arrays do not alias either owner
+  ---
+  duration_ms: 78.2275
+  ...
+# Subtest: a missing owner withholds only its station while invalid shared connectivity withholds both
+ok 642 - a missing owner withholds only its station while invalid shared connectivity withholds both
+  ---
+  duration_ms: 161.3527
+  ...
+# Subtest: unmapped joins, unavailable floors and unsupported samples fail closed
+ok 643 - unmapped joins, unavailable floors and unsupported samples fail closed
+  ---
+  duration_ms: 214.3863
+  ...
+# Subtest: the two actual route feet move onto their emitted top without new geometry or altered owners
+ok 644 - the two actual route feet move onto their emitted top without new geometry or altered owners
+  ---
+  duration_ms: 4.6557
+  ...
+# Subtest: unrelated positions and a higher station/building floor retain original ownership
+ok 645 - unrelated positions and a higher station/building floor retain original ownership
+  ---
+  duration_ms: 1.479
+  ...
+# Subtest: overhead decorative tops and downward faces cannot become walking support
+ok 646 - overhead decorative tops and downward faces cannot become walking support
+  ---
+  duration_ms: 1.558
+  ...
+# Subtest: missing or disconnected junction sources withhold corrections and previous height reaches the canonical sampler
+ok 647 - missing or disconnected junction sources withhold corrections and previous height reaches the canonical sampler
+  ---
+  duration_ms: 0.6816
+  ...
+# Subtest: Omotesando road ownership lowers the old approach sample only over emitted asphalt and within its mapped footprint
+ok 648 - Omotesando road ownership lowers the old approach sample only over emitted asphalt and within its mapped footprint
+  ---
+  duration_ms: 1.83
+  ...
+# Subtest: the additional Omotesando and Urasando witnesses use only their registered junction disks
+ok 649 - the additional Omotesando and Urasando witnesses use only their registered junction disks
+  ---
+  duration_ms: 0.6896
+  ...
+# Subtest: station footprint supplies actual center and long axis with facade facing east
+ok 650 - station footprint supplies actual center and long axis with facade facing east
+  ---
+  duration_ms: 1.8737
+  ...
+# Subtest: station placement does not invent a target without its footprint
+ok 651 - station placement does not invent a target without its footprint
+  ---
+  duration_ms: 0.1594
+  ...
+# Subtest: actual Tamayama front already connects to Okumiya through mapped nodes and four-count steps
+ok 652 - actual Tamayama front already connects to Okumiya through mapped nodes and four-count steps
+  ---
+  duration_ms: 3.6326
+  ...
+# Subtest: mapped front stair and connector curb receive backing without changing tread or walking levels
+ok 653 - mapped front stair and connector curb receive backing without changing tread or walking levels
+  ---
+  duration_ms: 14.024
+  ...
+# Subtest: main west flight uses full mapped width and a continuous dividing rail at its actual tread heights
+ok 654 - main west flight uses full mapped width and a continuous dividing rail at its actual tread heights
+  ---
+  duration_ms: 6.5926
+  ...
+# Subtest: only bounded shoulders change and meet prior terrain continuously
+ok 655 - only bounded shoulders change and meet prior terrain continuously
+  ---
+  duration_ms: 0.3206
+  ...
+# Subtest: photo width affects only connected western approach without changing source or elevations
+ok 656 - photo width affects only connected western approach without changing source or elevations
+  ---
+  duration_ms: 0.7765
+  ...
+# Subtest: refinement retains interaction, original plaque asset and floor ownership
+ok 657 - refinement retains interaction, original plaque asset and floor ownership
+  ---
+  duration_ms: 58.4653
+  ...
+# Subtest: unknown shrine or incomplete legacy signature is not partially rewritten
+ok 658 - unknown shrine or incomplete legacy signature is not partially rewritten
+  ---
+  duration_ms: 0.5468
+  ...
+# Subtest: mapped public approach reaches the closed front without invisible collision
+ok 659 - mapped public approach reaches the closed front without invisible collision
+  ---
+  duration_ms: 41.026
+  ...
+# Subtest: corrected floor and furniture do not occupy the mapped southern shrine
+ok 660 - corrected floor and furniture do not occupy the mapped southern shrine
+  ---
+  duration_ms: 33.7389
+  ...
+# Subtest: all added geometry is finite and static within a bounded material budget
+ok 661 - all added geometry is finite and static within a bounded material budget
+  ---
+  duration_ms: 39.3523
+  ...
+# Subtest: right turn continues along the full mapped south branch; lower west gate remains separate
+ok 662 - right turn continues along the full mapped south branch; lower west gate remains separate
+  ---
+  duration_ms: 130.6741
+  ...
+# Subtest: actual geometry envelope is reported, feet seat to terrain, and clear centre passage has post collision
+ok 663 - actual geometry envelope is reported, feet seat to terrain, and clear centre passage has post collision
+  ---
+  duration_ms: 15.6051
+  ...
+# Subtest: no duplicate gate over a future existing active station or fabricated gate on broken route
+ok 664 - no duplicate gate over a future existing active station or fabricated gate on broken route
+  ---
+  duration_ms: 81.0763
+  ...
+# Subtest: foot seating raycasts the rendered coarse triangle rather than its nonlinear source function
+ok 665 - foot seating raycasts the rendered coarse triangle rather than its nonlinear source function
+  ---
+  duration_ms: 4.448
+  ...
+# Subtest: shared inscription helper keeps its full existing default and frontOnly emits only supported front glyphs
+ok 666 - shared inscription helper keeps its full existing default and frontOnly emits only supported front glyphs
+  ---
+  duration_ms: 2.5414
+  ...
+# Subtest: small mineral envelope surrounds existing lantern bases while retaining apron and all pedestal holes
+ok 667 - small mineral envelope surrounds existing lantern bases while retaining apron and all pedestal holes
+  ---
+  duration_ms: 15.9618
+  ...
+# Subtest: path junction, building and water obstacles are exact holes, without extra clearance strips
+ok 668 - path junction, building and water obstacles are exact holes, without extra clearance strips
+  ---
+  duration_ms: 3.652
+  ...
+# Subtest: compound world matrix owns the west-facing registration and its area is preserved
+ok 669 - compound world matrix owns the west-facing registration and its area is preserved
+  ---
+  duration_ms: 1.9231
+  ...
+# Subtest: south continuation court follows only its three registered ways and retains the treed bank
+ok 670 - south continuation court follows only its three registered ways and retains the treed bank
+  ---
+  duration_ms: 145.9451
+  ...
+# Subtest: actual mapped neighbourhood produces one bounded batch without changing walking, terrain or source geometry
+ok 671 - actual mapped neighbourhood produces one bounded batch without changing walking, terrain or source geometry
+  ---
+  duration_ms: 106.3736
+  ...
+# Subtest: continuation mineral surface consumes actual rendered planes, preserving path holes and all source heights
+ok 672 - continuation mineral surface consumes actual rendered planes, preserving path holes and all source heights
+  ---
+  duration_ms: 98.0279
+  ...
+# Subtest: real Tamayama and Okumiya lane switches become continuous rendered landings
+ok 673 - real Tamayama and Okumiya lane switches become continuous rendered landings
+  ---
+  duration_ms: 23.8964
+  ...
+# Subtest: walk height follows every emitted triangle; clipped ribbons never stack
+ok 674 - walk height follows every emitted triangle; clipped ribbons never stack
+  ---
+  duration_ms: 53.5951
+  ...
+# Subtest: mapped geometry and the protected side stair remain intact
+ok 675 - mapped geometry and the protected side stair remain intact
+  ---
+  duration_ms: 121.2868
+  ...
+# Subtest: unrelated paths and points beyond the local transition keep their old values
+ok 676 - unrelated paths and points beyond the local transition keep their old values
+  ---
+  duration_ms: 14.9611
+  ...
+# Subtest: bounded, idempotent patch adds no material or collision objects
+ok 677 - bounded, idempotent patch adds no material or collision objects
+  ---
+  duration_ms: 2.946
+  ...
+# Subtest: mineral margins follow widened landing while leaving its paving and branch mouth open
+ok 678 - mineral margins follow widened landing while leaving its paving and branch mouth open
+  ---
+  duration_ms: 47.6252
+  ...
+# Subtest: source building and water obstacles cut exact holes from narrow margins
+ok 679 - source building and water obstacles cut exact holes from narrow margins
+  ---
+  duration_ms: 0.5021
+  ...
+# Subtest: southern horse is registered separately from smaller Tamayama horse
+ok 680 - southern horse is registered separately from smaller Tamayama horse
+  ---
+  duration_ms: 1.5535
+  ...
+# Subtest: batched architecture is finite, idempotent and preserves mapped east continuation
+ok 681 - batched architecture is finite, idempotent and preserves mapped east continuation
+  ---
+  duration_ms: 141.2915
+  ...
+# Subtest: foundation reaches actual rendered terrain beneath rotated footprint
+ok 682 - foundation reaches actual rendered terrain beneath rotated footprint
+  ---
+  duration_ms: 15.6014
+  ...
+# Subtest: missing or invalid geometry inputs leave owner and collider list untouched
+ok 683 - missing or invalid geometry inputs leave owner and collider list untouched
+  ---
+  duration_ms: 0.392
+  ...
+# Subtest: stone edges follow actual flight widths/heights, remain outside curb, and enter supporting terrain
+ok 684 - stone edges follow actual flight widths/heights, remain outside curb, and enter supporting terrain
+  ---
+  duration_ms: 2.1685
+  ...
+# Subtest: crossing paths and obstacle footprints cut the edges instead of closing the access
+ok 685 - crossing paths and obstacle footprints cut the edges instead of closing the access
+  ---
+  duration_ms: 1.8068
+  ...
+# Subtest: builder reuses stone material in one batch, is idempotent, and preserves walking ownership
+ok 686 - builder reuses stone material in one batch, is idempotent, and preserves walking ownership
+  ---
+  duration_ms: 3.2634
+  ...
+# Subtest: bank remains south of west stair, clear of mapped routes, with one independent landmark lantern
+ok 687 - bank remains south of west stair, clear of mapped routes, with one independent landmark lantern
+  ---
+  duration_ms: 194.9883
+  ...
+# Subtest: finite static meshes and colliders do not alter canonical source geometry or existing surfaces
+ok 688 - finite static meshes and colliders do not alter canonical source geometry or existing surfaces
+  ---
+  duration_ms: 158.3447
+  ...
+# Subtest: existing tree/lantern owners are preserved and prevent duplicates
+ok 689 - existing tree/lantern owners are preserved and prevent duplicates
+  ---
+  duration_ms: 43.7688
+  ...
+# Subtest: idempotence and missing-source handoff prevent duplicated geometry/colliders
+ok 690 - idempotence and missing-source handoff prevent duplicated geometry/colliders
+  ---
+  duration_ms: 32.6348
+  ...
+# Subtest: source-backed lower branch layer fills bank without additional trunks or solid obstacles
+ok 691 - source-backed lower branch layer fills bank without additional trunks or solid obstacles
+  ---
+  duration_ms: 9979.5314
+  ...
+# Subtest: mapped 6m upper flight explicitly owns a center rail and joins Okumiya landing
+ok 692 - mapped 6m upper flight explicitly owns a center rail and joins Okumiya landing
+  ---
+  duration_ms: 49.3578
+  ...
+# Subtest: upper twin rail suppresses only its own side rails and preserves grades/counts and lower rail
+ok 693 - upper twin rail suppresses only its own side rails and preserves grades/counts and lower rail
+  ---
+  duration_ms: 7.9649
+  ...
+# Subtest: canopy width subdivisions match the curved rafter height at interior vertices
+ok 694 - canopy width subdivisions match the curved rafter height at interior vertices
+  ---
+  duration_ms: 68.8518
+  ...
+# Subtest: soffit tracks the same surface below the roof with downward normals
+ok 695 - soffit tracks the same surface below the roof with downward normals
+  ---
+  duration_ms: 26.2027
+  ...
+# Subtest: canopy refinement keeps basin identity and is idempotent
+ok 696 - canopy refinement keeps basin identity and is idempotent
+  ---
+  duration_ms: 44.9605
+  ...
+# Subtest: nonlinear graded terrain has no unmatched internal edges at LOD cell boundaries
+ok 697 - nonlinear graded terrain has no unmatched internal edges at LOD cell boundaries
+  ---
+  duration_ms: 16.2866
+  ...
+# Subtest: optional registered court bounds refine cells without changing heights or outside topology
+ok 698 - optional registered court bounds refine cells without changing heights or outside topology
+  ---
+  duration_ms: 14.6442
+  ...
+# Subtest: spacing leaves beam clearance instead of packing a historical count
+ok 699 - spacing leaves beam clearance instead of packing a historical count
+  ---
+  duration_ms: 1.4102
+  ...
+# Subtest: each corridor keeps both original finishes and bounded independent dimensions
+ok 700 - each corridor keeps both original finishes and bounded independent dimensions
+  ---
+  duration_ms: 1.8718
+  ...
+# Subtest: constructor stays idle; start owns the camera and starts moving with closed doors
+ok 701 - constructor stays idle; start owns the camera and starts moving with closed doors
+  ---
+  duration_ms: 2.8324
+  ...
+# Subtest: menu or photo pause freezes timeline and leaves the photo camera untouched
+ok 702 - menu or photo pause freezes timeline and leaves the photo camera untouched
+  ---
+  duration_ms: 1.0015
+  ...
+# Subtest: completion hands off exactly once and subsequent frames never reset the walking camera
+ok 703 - completion hands off exactly once and subsequent frames never reset the walking camera
+  ---
+  duration_ms: 2.481
+  ...
+# Subtest: an immediate skip closes the doors before the safe walking handoff
+ok 704 - an immediate skip closes the doors before the safe walking handoff
+  ---
+  duration_ms: 0.3172
+  ...
+# Subtest: paused skip preserves the photo camera, walker and station until an unpaused update hands off once
+ok 705 - paused skip preserves the photo camera, walker and station until an unpaused update hands off once
+  ---
+  duration_ms: 0.8281
+  ...
+# Subtest: cancel and replay both discard a queued skip
+ok 706 - cancel and replay both discard a queued skip
+  ---
+  duration_ms: 0.6217
+  ...
+# Subtest: cancel closes the train but relinquishes the camera without teleporting
+ok 707 - cancel closes the train but relinquishes the camera without teleporting
+  ---
+  duration_ms: 0.2922
+  ...
+# Subtest: replay replaces an active or complete run without stacking handoffs
+ok 708 - replay replaces an active or complete run without stacking handoffs
+  ---
+  duration_ms: 0.9878
+  ...
+# Subtest: failed platform teleport tries fallback once; unavailable handoff leaves orbit control at the safe pose
+ok 709 - failed platform teleport tries fallback once; unavailable handoff leaves orbit control at the safe pose
+  ---
+  duration_ms: 0.5881
+  ...
+# Subtest: an idle adapter never unpauses another mode or changes its camera
+ok 710 - an idle adapter never unpauses another mode or changes its camera
+  ---
+  duration_ms: 0.4588
+  ...
+# Subtest: Keihan announcement lead time keeps doors closed through both voices with reduced motion too
+ok 711 - Keihan announcement lead time keeps doors closed through both voices with reduced motion too
+  ---
+  duration_ms: 1.5258
+  ...
+# Subtest: constructor is idle and start frames the closed door inside the moving train
+ok 712 - constructor is idle and start frames the closed door inside the moving train
+  ---
+  duration_ms: 11.2629
+  ...
+# Subtest: the complete timeline brakes, opens, automatically disembarks, closes, then releases control
+ok 713 - the complete timeline brakes, opens, automatically disembarks, closes, then releases control
+  ---
+  duration_ms: 2.4044
+  ...
+# Subtest: skip and reset are safe and idempotent at every point, including before arrival starts
+ok 714 - skip and reset are safe and idempotent at every point, including before arrival starts
+  ---
+  duration_ms: 2.7348
+  ...
+# Subtest: replay replaces prior progress and uses immutable copies of caller data and snapshots
+ok 715 - replay replaces prior progress and uses immutable copies of caller data and snapshots
+  ---
+  duration_ms: 1.8925
+  ...
+# Subtest: manual and external pause discard time, and resume cannot jump past the next frame
+ok 716 - manual and external pause discard time, and resume cannot jump past the next frame
+  ---
+  duration_ms: 0.4566
+  ...
+# Subtest: invalid deltas do nothing; stale frames are bounded and subsequent frames finish
+ok 717 - invalid deltas do nothing; stale frames are bounded and subsequent frames finish
+  ---
+  duration_ms: 0.8472
+  ...
+# Subtest: regular frame partitions produce the same pose and doors at the same elapsed time
+ok 718 - regular frame partitions produce the same pose and doors at the same elapsed time
+  ---
+  duration_ms: 0.8117
+  ...
+# Subtest: reduced motion removes approach travel and crossing dolly while retaining an automatic safe exit
+ok 719 - reduced motion removes approach travel and crossing dolly while retaining an automatic safe exit
+  ---
+  duration_ms: 0.7205
+  ...
+# Subtest: cancel relinquishes camera ownership for teleport and never reapplies the platform pose
+ok 720 - cancel relinquishes camera ownership for teleport and never reapplies the platform pose
+  ---
+  duration_ms: 0.7552
+  ...
+# Subtest: malformed geometry and timing fail immediately instead of producing NaN poses or a trapped timeline
+ok 721 - malformed geometry and timing fail immediately instead of producing NaN poses or a trapped timeline
+  ---
+  duration_ms: 1.0209
+  ...
+# Subtest: bounded upper woodland has triangle-seated roots and static low-budget material batches
+ok 722 - bounded upper woodland has triangle-seated roots and static low-budget material batches
+  ---
+  duration_ms: 171.1955
+  ...
+# Subtest: actual foliage corners preserve every mapped public route and conservative roof envelope
+ok 723 - actual foliage corners preserve every mapped public route and conservative roof envelope
+  ---
+  duration_ms: 484.2494
+  ...
+# Subtest: existing forest/solid owner cannot acquire a duplicate trunk
+ok 724 - existing forest/solid owner cannot acquire a duplicate trunk
+  ---
+  duration_ms: 20.244
+  ...
+# Subtest: rendered support is required and partial terrain safely withholds unsupported roots
+ok 725 - rendered support is required and partial terrain safely withholds unsupported roots
+  ---
+  duration_ms: 10.7532
+  ...
+# Subtest: wide authoritative rendered walking segments override narrow source widths
+ok 726 - wide authoritative rendered walking segments override narrow source widths
+  ---
+  duration_ms: 10.5826
+  ...
+# Subtest: coherent stair sector adds both coping flanks, open south rails and wooded bank
+ok 727 - coherent stair sector adds both coping flanks, open south rails and wooded bank
+  ---
+  duration_ms: 734.781
+  ...
+# Subtest: new solids remain outside every authoritative walking envelope and geometry is finite
+ok 728 - new solids remain outside every authoritative walking envelope and geometry is finite
+  ---
+  duration_ms: 349.1324
+  ...
+# Subtest: actual foliage corners keep all mapped paths and roof envelopes clear
+ok 729 - actual foliage corners keep all mapped paths and roof envelopes clear
+  ---
+  duration_ms: 626.3678
+  ...
+# Subtest: prior trees and stone boundary owners suppress duplicates; missing support fails closed
+ok 730 - prior trees and stone boundary owners suppress duplicates; missing support fails closed
+  ---
+  duration_ms: 273.8939
+  ...
+# Subtest: bounded upper woodland has triangle-seated roots and static low-budget material batches
+ok 731 - bounded upper woodland has triangle-seated roots and static low-budget material batches
+  ---
+  duration_ms: 202.5306
+  ...
+# Subtest: actual foliage corners preserve every mapped public route and conservative roof envelope
+ok 732 - actual foliage corners preserve every mapped public route and conservative roof envelope
+  ---
+  duration_ms: 479.9875
+  ...
+# Subtest: existing forest/solid owner cannot acquire a duplicate trunk
+ok 733 - existing forest/solid owner cannot acquire a duplicate trunk
+  ---
+  duration_ms: 27.53
+  ...
+# Subtest: rendered support is required and partial terrain safely withholds unsupported roots
+ok 734 - rendered support is required and partial terrain safely withholds unsupported roots
+  ---
+  duration_ms: 10.0321
+  ...
+# Subtest: wide authoritative rendered walking segments override narrow source widths
+ok 735 - wide authoritative rendered walking segments override narrow source widths
+  ---
+  duration_ms: 7.9548
+  ...
+# Subtest: basal buttress toes and midpoints follow rendered slope and are withheld for preowned trees
+ok 736 - basal buttress toes and midpoints follow rendered slope and are withheld for preowned trees
+  ---
+  duration_ms: 42.7249
+  ...
+# Subtest: all crown and low foliage vertices avoid prior torii/solid footprints
+ok 737 - all crown and low foliage vertices avoid prior torii/solid footprints
+  ---
+  duration_ms: 29.8778
+  ...
+# Subtest: three mapped Byakkosha returns preserve open south forecourt and main rear
+ok 738 - three mapped Byakkosha returns preserve open south forecourt and main rear
+  ---
+  duration_ms: 254.5595
+  ...
+# Subtest: every complete boundary section excludes actual mapped public route and roof envelopes
+ok 739 - every complete boundary section excludes actual mapped public route and roof envelopes
+  ---
+  duration_ms: 692.7253
+  ...
+# Subtest: rendered support and existing solid ownership withhold unsupported or duplicate sections
+ok 740 - rendered support and existing solid ownership withhold unsupported or duplicate sections
+  ---
+  duration_ms: 115.8244
+  ...
+# Subtest: resolved junction triangles override source route widths without barrier slivers
+ok 741 - resolved junction triangles override source route widths without barrier slivers
+  ---
+  duration_ms: 7.393
+  ...
+# Subtest: run endpoints derive from mapped Byakkosha bounds and unavailable owner creates nothing
+ok 742 - run endpoints derive from mapped Byakkosha bounds and unavailable owner creates nothing
+  ---
+  duration_ms: 0.7612
+  ...
+# Subtest: Casual_Male ships a bounded skinned model with a nonempty animated clip
+ok 743 - Casual_Male ships a bounded skinned model with a nonempty animated clip
+  ---
+  duration_ms: 2.1092
+  ...
+# Subtest: Casual_Female ships a bounded skinned model with a nonempty animated clip
+ok 744 - Casual_Female ships a bounded skinned model with a nonempty animated clip
+  ---
+  duration_ms: 0.8695
+  ...
+# Subtest: Kimono_Female ships a bounded skinned model with a nonempty animated clip
+ok 745 - Kimono_Female ships a bounded skinned model with a nonempty animated clip
+  ---
+  duration_ms: 0.8255
+  ...
+# Subtest: visitor capsule rejects rails crossing the torso, solid bodies and cylinder centers
+ok 746 - visitor capsule rejects rails crossing the torso, solid bodies and cylinder centers
+  ---
+  duration_ms: 1.7096
+  ...
+# Subtest: routes require an entirely clear public path with continuous walking height
+ok 747 - routes require an entirely clear public path with continuous walking height
+  ---
+  duration_ms: 2.9141
+  ...
+# Subtest: visitors pause, yield without overlapping, resume and reverse while staying on route
+ok 748 - visitors pause, yield without overlapping, resume and reverse while staying on route
+  ---
+  duration_ms: 1.6033
+  ...
+# Subtest: Casual_Male: loaded joints and actual skinned vertices alternate during walking
+ok 749 - Casual_Male: loaded joints and actual skinned vertices alternate during walking
+  ---
+  duration_ms: 60.8537
+  ...
+# Subtest: Casual_Female: loaded joints and actual skinned vertices alternate during walking
+ok 750 - Casual_Female: loaded joints and actual skinned vertices alternate during walking
+  ---
+  duration_ms: 20.1317
+  ...
+# Subtest: Kimono_Female: loaded joints and actual skinned vertices alternate during walking
+ok 751 - Kimono_Female: loaded joints and actual skinned vertices alternate during walking
+  ---
+  duration_ms: 13.5748
+  ...
+# Subtest: Casual_Male: idle arm pose survives repeated gait, pauses and zero-delta updates
+ok 752 - Casual_Male: idle arm pose survives repeated gait, pauses and zero-delta updates
+  ---
+  duration_ms: 47.3578
+  ...
+# Subtest: Casual_Female: idle arm pose survives repeated gait, pauses and zero-delta updates
+ok 753 - Casual_Female: idle arm pose survives repeated gait, pauses and zero-delta updates
+  ---
+  duration_ms: 32.9505
+  ...
+# Subtest: Kimono_Female: idle arm pose survives repeated gait, pauses and zero-delta updates
+ok 754 - Kimono_Female: idle arm pose survives repeated gait, pauses and zero-delta updates
+  ---
+  duration_ms: 23.9201
+  ...
+# Subtest: fast and boosted walking retain bounded collision substeps
+ok 755 - fast and boosted walking retain bounded collision substeps
+  ---
+  duration_ms: 5.1878
+  ...
+# Subtest: invalid settings cannot create negative or unbounded movement
+ok 756 - invalid settings cannot create negative or unbounded movement
+  ---
+  duration_ms: 0.8073
+  ...
+# Subtest: arrival teleport accepts mapped clear crossing and retains its exact requested center
+ok 757 - arrival teleport accepts mapped clear crossing and retains its exact requested center
+  ---
+  duration_ms: 4.5024
+  ...
+# Subtest: teleport still rejects missing mapped surface without moving camera
+ok 758 - teleport still rejects missing mapped surface without moving camera
+  ---
+  duration_ms: 2.3759
+  ...
+# Subtest: teleport still rejects a crossing covered by a solid collision without bypassing it
+ok 759 - teleport still rejects a crossing covered by a solid collision without bypassing it
+  ---
+  duration_ms: 0.9704
+  ...
+# Subtest: registered station paving can accept teleport without inventing a mapped path
+ok 760 - registered station paving can accept teleport without inventing a mapped path
+  ---
+  duration_ms: 0.6317
+  ...
+# Subtest: registered paving does not bypass the collider check
+ok 761 - registered paving does not bypass the collider check
+  ---
+  duration_ms: 0.7654
+  ...
+# Subtest: pond and lake use distinct opaque standard-light palettes with no emissive light source
+ok 762 - pond and lake use distinct opaque standard-light palettes with no emissive light source
+  ---
+  duration_ms: 2.2135
+  ...
+# Subtest: real Three r164 shader hooks retain standard lighting and never displace water vertices
+ok 763 - real Three r164 shader hooks retain standard lighting and never displace water vertices
+  ---
+  duration_ms: 0.5416
+  ...
+# Subtest: updates and lighting modes retain uniform identities and the same shader program cache key
+ok 764 - updates and lighting modes retain uniform identities and the same shader program cache key
+  ---
+  duration_ms: 0.7333
+  ...
+# Subtest: one shared material can compile independent shader variants while preserving stable controls
+ok 765 - one shared material can compile independent shader variants while preserving stable controls
+  ---
+  duration_ms: 0.5351
+  ...
+# Subtest: view-space tangent perturbation is camera-rotation equivariant for a tilted surface
+ok 766 - view-space tangent perturbation is camera-rotation equivariant for a tilted surface
+  ---
+  duration_ms: 0.515
+  ...
+# Subtest: Shin-ike uses a muted olive palette with calm analytic normals in every lighting mode
+ok 767 - Shin-ike uses a muted olive palette with calm analytic normals in every lighting mode
+  ---
+  duration_ms: 1.0831
+  ...
+# Subtest: Shin-ike exposes water IOR specular response and retains a caller-owned static environment across modes/time
+ok 768 - Shin-ike exposes water IOR specular response and retains a caller-owned static environment across modes/time
+  ---
+  duration_ms: 0.6688
+  ...
+# Subtest: Shin-ike gloss/ripple changes preserve other pond and lake optical settings in every mode
+ok 769 - Shin-ike gloss/ripple changes preserve other pond and lake optical settings in every mode
+  ---
+  duration_ms: 0.5184
+  ...
+# Subtest: only Shin-ike uses modest single-pass native alpha and keeps opacity/depth settings through lighting/time updates
+ok 770 - only Shin-ike uses modest single-pass native alpha and keeps opacity/depth settings through lighting/time updates
+  ---
+  duration_ms: 0.6188
+  ...
+# Subtest: far detail sleeps and a teleport activates its destination in the same update
+ok 771 - far detail sleeps and a teleport activates its destination in the same update
+  ---
+  duration_ms: 2.6802
+  ...
+# Subtest: hysteresis prevents repeated changes near a sector boundary
+ok 772 - hysteresis prevents repeated changes near a sector boundary
+  ---
+  duration_ms: 0.4961
+  ...
+# Subtest: bounds include parent transforms and preserve geometry and floor raycasts while hidden
+ok 773 - bounds include parent transforms and preserve geometry and floor raycasts while hidden
+  ---
+  duration_ms: 3.0817
+  ...
+# Subtest: elevated overview restores distant details without modifying individual transforms
+ok 774 - elevated overview restores distant details without modifying individual transforms
+  ---
+  duration_ms: 0.3846
+  ...
+# Subtest: registered facade frames preserve mapped ring directions and accepted tea-house floors
+ok 775 - registered facade frames preserve mapped ring directions and accepted tea-house floors
+  ---
+  duration_ms: 106.2698
+  ...
+# Subtest: bounded above-head attachments leave the existing owner and geographic source intact
+ok 776 - bounded above-head attachments leave the existing owner and geographic source intact
+  ---
+  duration_ms: 125.6286
+  ...
+# Subtest: source changes or missing original builder fail closed without partial attachments
+ok 777 - source changes or missing original builder fail closed without partial attachments
+  ---
+  duration_ms: 80.0818
+  ...
+# R96 actual mapped route packet: {"built":true,"stats":{"batches":8,"primitives":261,"triangles":4074},"records":[{"kind":"existing-bench-pad","x":797,"z":-219.75,"radius":0,"base":164.28375},{"kind":"existing-bench-pad","x":803,"z":-219.75,"radius":0,"base":164.70374999999999},{"kind":"annex-platform-table","x":796.3072113057265,"z":-210.10781857104308,"radius":0.7,"base":162.98614274426265},{"kind":"annex-platform-table","x":799.5072055546555,"z":-210.10175170845463,"radius":0.7,"base":163.74865696867994},{"kind":"main-display-cabinet","x":803.620180845651,"z":-209.08636506522308,"radius":0.66,"base":164.5613094043271},{"kind":"bank-hedge-rock-fern","x":787.8,"z":-208.9,"radius":0.47300000000000003,"base":160.57439999999994},{"kind":"bank-hedge-rock-fern","x":789.2,"z":-209,"radius":0.528,"base":161.12500000000003},{"kind":"bank-hedge-rock-fern","x":790.7,"z":-209,"radius":0.462,"base":161.61299999999994},{"kind":"bank-hedge-rock-fern","x":792.1,"z":-209,"radius":0.49500000000000005,"base":161.94899999999993},{"kind":"bank-hedge-rock-fern","x":784.4,"z":-215,"radius":0.7480000000000001,"base":158.75099999999998},{"kind":"bank-hedge-rock-fern","x":786,"z":-215.5,"radius":0.66,"base":159.3935},{"kind":"outlook-side-tree","x":783.8,"z":-207.3,"radius":1.55,"base":159.292},{"kind":"outlook-side-tree","x":783.5,"z":-218.2,"radius":1.55,"base":158.25269999999998}],"skipped":[],"collidersAdded":0,"terrainChanged":false,"sources":["https://zekkeikana.com/kyoto/fusimiku/fushimiinari/yotsutsuji13.jpg","https://zekkeikana.com/kyoto/fusimiku/fushimiinari/yotsutsuji14.jpg","https://cdn.japan-travel-note.com/images/00523/26.jpg"],"limits":"2013 red sitting platforms, pale tables and beverage cabinet; downhill hedge, rocks, fern forms and flanking trees. Dimensions, counts, species and placement inferred. Existing benches decorated; route envelopes reject new furniture/planting. No skyline reconstruction."}
+# Subtest: court furnishings and planted bank retain route envelopes and source owners
+ok 778 - court furnishings and planted bank retain route envelopes and source owners
+  ---
+  duration_ms: 255.3075
+  ...
+# Subtest: route guard handles segment ends and rejects all new furniture on occupied ground
+ok 779 - route guard handles segment ends and rejects all new furniture on occupied ground
+  ---
+  duration_ms: 1.2764
+  ...
+# Subtest: missing source floor/owner/network and invalid bench ground leave no partial group
+ok 780 - missing source floor/owner/network and invalid bench ground leave no partial group
+  ---
+  duration_ms: 0.6442
+  ...
+# Subtest: registered annex edge uses existing terrain and remains on building side of mapped west stair
+ok 781 - registered annex edge uses existing terrain and remains on building side of mapped west stair
+  ---
+  duration_ms: 96.737
+  ...
+# Subtest: outside face has outward normals and raycasts continuously to its terrain-seated foot
+ok 782 - outside face has outward normals and raycasts continuously to its terrain-seated foot
+  ---
+  duration_ms: 9.4694
+  ...
+# Subtest: court owner keeps accepted forecourt, three tea houses, benches and mapped branches
+ok 783 - court owner keeps accepted forecourt, three tea houses, benches and mapped branches
+  ---
+  duration_ms: 26.9189
+  ...
+# Subtest: changed outline or invalid terrain fails safely without a fabricated retaining wall
+ok 784 - changed outline or invalid terrain fails safely without a fabricated retaining wall
+  ---
+  duration_ms: 81.3444
+  ...
+# Subtest: actual court boundary and tread footprints receive vertical toe closure without new top faces
+ok 785 - actual court boundary and tread footprints receive vertical toe closure without new top faces
+  ---
+  duration_ms: 10.7145
+  ...
+# Subtest: only registered bounded stair bodies are closed and invalid sources fail without partial mesh
+ok 786 - only registered bounded stair bodies are closed and invalid sources fail without partial mesh
+  ---
+  duration_ms: 1.5716
+  ...
+1..786
+# tests 786
+# suites 0
+# pass 786
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17060.5641

@@ -15,7 +15,7 @@ const at=(s,u,v)=>{const a=s.points[s.edge];return [a[0]+s.t[0]*u+s.n[0]*v,a[2]+
 test('named shops and observed anonymous facades retain source footprints and bounded static detail',()=>{
  const before=JSON.stringify(features),root=new THREE.Group(),colliders=[],built=buildKeihanFrontages(root,features,surfaces,{},colliders);
  assert.equal(built.built,true);assert.deepEqual(built.builtIds,keihanFrontageIds);
- assert.equal(built.materialBatches,8);assert.equal(built.drawBatches,8);assert.ok(built.triangles<14000);assert.ok(built.collidersAdded<55);
+ assert.equal(built.materialBatches,9);assert.equal(built.drawBatches,9);assert.ok(built.triangles<15272);assert.ok(built.collidersAdded<55);
  for(const store of built.storefronts){assert.deepEqual(store.points,features.buildings.find(b=>b.id===store.id).points.slice(0,-1));assert.ok(store.width>store.widthRange[0]&&store.width<store.widthRange[1]);assert.equal(store.height,6);}
  let lights=0;root.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)for(const value of o.geometry.attributes.position.array)assert.ok(Number.isFinite(value));});assert.equal(lights,0);
  assert.equal(buildKeihanFrontages(root,features,surfaces,{},colliders).group,built.group);assert.equal(root.children.length,1);assert.equal(colliders.length,built.collidersAdded);assert.equal(JSON.stringify(features),before);
@@ -81,4 +81,18 @@ test('missing or changed registration withholds replacements without mutating sc
  ];
  for(const f of variants){const root=new THREE.Group(),colliders=[],result=buildKeihanFrontages(root,f,surfaces,{},colliders);assert.equal(result.built,false);assert.deepEqual(result.builtIds,[]);assert.equal(root.children.length,0);assert.equal(colliders.length,0);}
  for(const bad of [{}, {...surfaces,segments:[]}, {...surfaces,segments:surfaces.segments.map(s=>({...s,ya:NaN,yb:NaN}))}]){const root=new THREE.Group(),colliders=[],result=buildKeihanFrontages(root,features,bad,{},colliders);assert.equal(result.built,false);assert.equal(root.children.length,0);assert.equal(colliders.length,0);}
+});
+
+
+test('fabric canopies slope toward the street and preserve head clearance in one static batch',()=>{
+ const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces);root.updateMatrixWorld(true);
+ const fabric=built.group.children.filter(m=>m.material.vertexColors&&m.material.color.getHex()===0xffffff);
+ assert.equal(fabric.length,1);
+ for(const s of built.storefronts){
+  const u=s.kind.endsWith('-row')?s.width/6:s.width/2;
+  const height=v=>{const [x,z]=at(s,u,v);const hits=new THREE.Raycaster(new THREE.Vector3(x,s.floor+3.4,z),new THREE.Vector3(0,-1,0),0,1.1).intersectObject(fabric[0]);assert.ok(hits.length,`${s.kind}: cloth at ${v}`);return hits[0].point.y-s.floor;};
+  const back=height(.02),front=height(s.kind.endsWith('-row')?.40:.60);
+  assert.ok(back-front>.10,`${s.kind}: visibly sloped canopy`);assert.ok(front>2.60,`${s.kind}: head clearance`);
+ }
+ assert.equal(built.collidersAdded,48);
 });
