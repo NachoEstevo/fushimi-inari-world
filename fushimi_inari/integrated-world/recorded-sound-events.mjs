@@ -1,14 +1,15 @@
 // Event edges use the assembled gate, never a timer that beeps near a station.
 export function createRecordedSoundEvents(){
- let previous=null,phase=null,lastGate=-Infinity;
- return {reset(){previous=null;phase=null;lastGate=-Infinity;},update({position,gate,arrivalPhase,time,enabled=true,paused=false}){
+ let previous=null,phase=null,lastGate=-Infinity,lastSequence=0;
+ return {reset(){previous=null;phase=null;lastGate=-Infinity;},update({position,gate,gateState,arrivalPhase,time,enabled=true,paused=false}){
   const events=[];
-  if(!enabled||paused){previous=null;phase=arrivalPhase;return events;}
+  if(!enabled||paused){previous=null;phase=arrivalPhase;lastSequence=gateState?.sequence??0;return events;}
   if(arrivalPhase!==phase){
    if(arrivalPhase==='closing')events.push('doors');
    phase=arrivalPhase;
   }
-  if(previous&&gate&&time-lastGate>2){
+  if(gateState){if(gateState.sequence>lastSequence)events.push('gate');lastSequence=gateState.sequence;}
+  if(!gateState&&previous&&gate&&time-lastGate>2){
    const distance=Math.hypot(...position.map((v,i)=>v-previous[i]));
    const dz=position[2]-previous[2],t=dz?(gate.center[2]-previous[2])/dz:-1;
    if(distance<5&&t>0&&t<=1){

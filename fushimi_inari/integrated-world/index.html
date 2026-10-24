@@ -3,20 +3,37 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fushimi Inari · Integrated world</title>
-  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=keihan-arrival-1">
+  <meta name="description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
+  <!-- Planned public URL. Update these absolute URLs if the deployment hostname changes. -->
+  <link rel="canonical" href="https://kyoto.nachoestevo.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fushimi Inari">
+  <meta property="og:title" content="Fushimi Inari · Inariyama Explorer">
+  <meta property="og:description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
+  <meta property="og:url" content="https://kyoto.nachoestevo.com/">
+  <meta property="og:image" content="https://kyoto.nachoestevo.com/assets/social-preview.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1087">
+  <meta property="og:image:height" content="535">
+  <meta property="og:image:alt" content="Fushimi Inari cover with vermilion torii gates, stone steps and trees beside the project title on an ivory background.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fushimi Inari · Inariyama Explorer">
+  <meta name="twitter:description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
+  <meta name="twitter:image" content="https://kyoto.nachoestevo.com/assets/social-preview.png">
+  <meta name="twitter:image:alt" content="Fushimi Inari cover with vermilion torii gates, stone steps and trees beside the project title on an ivory background.">
+  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=photo-align-1">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
 </head>
-<body>
+<body class="welcome-open">
   <main id="world" aria-label="3D geographic model of Inariyama"></main>
   <header><div><span class="eyebrow">伏見稲荷大社 · MUNDO INTEGRADO · REVISION 14</span><h1>The shrine and mountain.</h1><p id="summary">Loading maps and elevations…</p></div><button id="overview">Overview</button></header>
   <button id="panels">Hide panels</button><aside>
     <label for="place">View a location</label><select id="place"></select>
     <div class="row"><button id="visit">View</button><button id="freewalk">Walk · WASD</button></div>
     <label for="light">Lighting</label><select id="light"><option value="day">Day</option><option value="gold">Sunset</option><option value="night">Night</option></select>
-    <button id="audio">Sound: off</button>
 
     <span class="eyebrow">EXPLORE THE TRAIL</span>
-    <label for="itinerary">Itinerary</label><select id="itinerary"><option value="keihan">Keihan → Urasando → shrine</option><option value="keihan_omotesando">Keihan → Omotesando first torii → shrine</option><option value="jr">JR Inari → Fushimi Inari shrine</option><option value="ascent">Senbon and the three summits</option><option value="loop">Summit loop via Gozendani</option><option value="custom">Custom route</option></select>
+    <label for="itinerary">Itinerary</label><select id="itinerary"><option value="keihan">Keihan → Urasando → shrine</option><option value="keihan_loop" selected>Keihan → Omotesando → shrine → Summit loop</option><option value="keihan_omotesando">Keihan → Omotesando first torii → shrine</option><option value="jr">JR Inari → Fushimi Inari shrine</option><option value="ascent">Senbon and the three summits</option><option value="loop">Summit loop via Gozendani</option><option value="custom">Custom route</option></select>
     <div id="custom-fields" hidden>
       <label for="start">From</label><select id="start"></select>
       <label for="destination">To</label><select id="destination"></select>
@@ -42,7 +59,37 @@
   <section id="map-panel"><div class="row"><span class="eyebrow">N ↑ · TERRAIN PLAN</span><span>500 m ━</span></div><canvas id="map" width="600" height="580" aria-label="Map of trails, landmarks and current location"></canvas><p>Drag to orbit · scroll to zoom · click a landmark to choose a destination</p></section>
   <div id="position">Horizontal and vertical scale 1:1</div>
   <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terrain derived from <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Official shrine map</a></footer>
-  <div id="loading">Preparing terrain and trails…</div>
-  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=video-shops-3"></script>
+  <div id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+    <div class="welcome-gates" aria-hidden="true">
+      <svg viewBox="-100 -100 200 200">
+        <defs><g id="torii-mark">
+          <path class="torii-black" d="M-64-52Q0-38 64-52L61-42Q0-29-61-42Z"/>
+          <path d="M-56-40Q0-28 56-40L55-33Q0-21-55-33Z"/>
+          <rect x="-5" y="-30" width="10" height="14"/>
+          <rect x="-53" y="-17" width="106" height="8"/>
+          <path d="M-41-33H-31L-29 46H-43ZM31-33H41L43 46H29Z"/>
+          <path class="torii-black" d="M-45 44H-27V52H-45ZM27 44H45V52H27Z"/>
+        </g></defs>
+        <use href="#torii-mark" class="gate" style="--i:0;--s:.24;--o:.35"/>
+        <use href="#torii-mark" class="gate" style="--i:1;--s:.36;--o:.55"/>
+        <use href="#torii-mark" class="gate" style="--i:2;--s:.52;--o:.75"/>
+        <use href="#torii-mark" class="gate" style="--i:3;--s:.76;--o:.9"/>
+        <use href="#torii-mark" class="gate" style="--i:4;--s:1.1;--o:1"/>
+        <use href="#torii-mark" class="gate" style="--i:5;--s:1.6;--o:0"/>
+      </svg>
+    </div>
+    <div class="welcome-copy">
+      <p class="welcome-kanji" lang="ja">伏見稲荷大社</p>
+      <h2 id="welcome-title">Fushimi Inari</h2>
+      <p class="welcome-lede">Arrive by train at Keihan Fushimi-Inari, then walk the vermilion gates up Inariyama.</p>
+      <p id="loading" role="status">Preparing terrain and trails…</p>
+      <div class="welcome-bar" aria-hidden="true"><span></span></div>
+      <button id="welcome-enter" class="primary" hidden>Enter <span lang="ja">入る</span></button>
+      <p class="welcome-sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>Sound on · press <kbd>M</kbd> to mute</p>
+      <ul class="welcome-keys"><li><kbd>W A S D</kbd> walk</li><li><kbd>Drag</kbd> look</li><li><kbd>Shift</kbd> run</li><li><kbd>Esc</kbd> menu</li></ul>
+    </div>
+    <p class="welcome-credit">Made by <a href="https://nachoestevo.com" target="_blank" rel="noopener noreferrer">Ignacio Estevo</a></p>
+  </div>
+  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=ultra-2"></script>
 </body>
 </html>

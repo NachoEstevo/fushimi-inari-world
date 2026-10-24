@@ -1,6 +1,10 @@
 # Local generated captures, downloads and duplicate Blender backups.
 fushimi_inari/outputs/
 fushimi_inari/references/
+# Local experiments, raw captures, downloaded originals and recoverable archives.
+# Previously committed, selected audit evidence remains tracked.
+/outputs/
+/.tmp/
 *.blend1
 __pycache__/
 *.pyc

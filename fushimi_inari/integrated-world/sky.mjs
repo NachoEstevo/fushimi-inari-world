@@ -29,7 +29,7 @@ export function installSky(scene,camera){
   const stars=new THREE.Points(starsGeo,starsMat);stars.frustumCulled=false;stars.renderOrder=-90;scene.add(stars);
   const palettes={
     day:['#3687c7','#89c8ec','#d7e6e7','#f8fbfc','#b9d2e0'],
-    gold:['#537fac','#b1c9d6','#f2d4b1','#ffe6ca','#b2b3c2'],
+    gold:['#566f9c','#d3adab','#f6b978','#ffe0b1','#a991ac'],
     night:['#081326','#172942','#34465c','#52647b','#293b52']
   };
   function setMode(mode){

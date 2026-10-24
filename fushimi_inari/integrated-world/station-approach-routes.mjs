@@ -4,6 +4,19 @@ const finitePoint=p=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite);
 const gap=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
 const same=(a,b)=>gap(a,b)<1e-6;
 
+// The station approach and mountain loop share the mapped Rōmon node.
+// Reject mismatched joins instead of drawing a shortcut across the precinct.
+export function joinKeihanSummitLoop(approach,loop,walkHeight){
+ if(!approach?.points?.length||!loop?.length||!same(approach.points.at(-1),loop[0]))return null;
+ const points=approach.points.map(p=>[...p]);
+ for(const p of loop.slice(1)){
+  const y=walkHeight(p[0],p[2],points.at(-1)[1]);
+  if(!Number.isFinite(y))return null;
+  points.push([p[0],y,p[2]]);
+ }
+ return points;
+}
+
 // Owners supply their authored circulation. Only their mapped endpoint joins
 // use the public graph; heights always come from the assembled floor owners.
 export function buildStationApproachRoutes(assembly,features,terrain){

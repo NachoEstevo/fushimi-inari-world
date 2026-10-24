@@ -14,7 +14,7 @@ export function installSeasons(assembly,canopy){
   const select=document.createElement('select');select.id='season';select.setAttribute('aria-label','Season');
   for(const [value,text] of [['spring','Spring · fresh greens'],['autumn','Autumn · gold and amber']])select.add(new Option(text,value));
   const label=document.createElement('label');label.htmlFor='season';label.textContent='Season';
-  const pane=document.getElementById('pane-3');pane.prepend(label,select);
+  const pane=document.getElementById('scene-settings');pane.prepend(label,select);
   let saved='spring';try{saved=validSeason(localStorage.getItem('inari-season'));}catch{}
   const tint=new THREE.Color();
   const apply=()=>{

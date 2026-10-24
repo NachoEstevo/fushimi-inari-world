@@ -1,4 +1,4 @@
-import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=29c';
+import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-1';
 import {inscriptionVariant,inscriptionDate} from './mountain-torii-profile.mjs?v=29c';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';

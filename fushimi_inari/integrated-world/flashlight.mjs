@@ -6,7 +6,7 @@ export function installFlashlight(scene,camera){
   const button=document.createElement('button');button.id='flashlight-toggle';
   button.setAttribute('aria-pressed','false');
   const label=document.createElement('label');label.textContent='Personal light';label.htmlFor=button.id;
-  document.getElementById('pane-3').append(label,button);
+  document.getElementById('scene-settings').append(label,button);
   let enabled=false;const offset=new THREE.Vector3(.18,-.13,-.1),aim=new THREE.Vector3(0,-.03,-1);
   function toggle(){enabled=!enabled;button.textContent=`Flashlight: ${enabled?'on':'off'} · L`;button.setAttribute('aria-pressed',String(enabled));light.intensity=enabled?45:0;}
   button.textContent='Flashlight: off · L';button.onclick=toggle;

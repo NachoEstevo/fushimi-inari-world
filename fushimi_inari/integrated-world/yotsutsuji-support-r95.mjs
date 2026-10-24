@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {yotsuForecourt} from './site-grading.mjs';
+import {yotsutsujiWestStairCutout,yotsutsujiCourtEdgeIntervals} from './yotsutsuji-court-clearance.mjs';
 
 const NAME='Yotsutsuji existing court and tread underside R95';
 const stairIds=new Set(['way/1372826379','way/1052553392']);
@@ -7,15 +8,15 @@ const stairIds=new Set(['way/1372826379','way/1052553392']);
 // height, footprint, collision or terrain is introduced or moved here.
 export function buildYotsutsujiSupportsR95(root,network,ground,stone){
  const existing=root.getObjectByName(NAME);if(existing)return existing.userData;
- const vertices=[],uv=[];let courtPanels=0,treadBodies=0;
+ const vertices=[],uv=[],cutout=yotsutsujiWestStairCutout(network);let courtPanels=0,treadBodies=0;
  const quad=(a,b,c,d)=>{for(const p of [a,b,c,a,c,d]){vertices.push(...p);uv.push((Math.abs(a[0]-b[0])>Math.abs(a[2]-b[2])?p[0]:p[2])/1.4,p[1]/1.4);}};
  for(let i=0;i<yotsuForecourt.length;i++){
   const a=yotsuForecourt[i],b=yotsuForecourt[(i+1)%yotsuForecourt.length],ay=ground(...a)+.10,by=ground(...b)+.10;
   if(!Number.isFinite(ay)||!Number.isFinite(by))return {built:false,reason:'Invalid court support terrain'};
   const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.40);
-  for(let j=0;j<n;j++){
+  for(const [lo,hi]of yotsutsujiCourtEdgeIntervals(a,b,cutout))for(let j=0;j<n;j++){
    const point=t=>[a[0]+(b[0]-a[0])*t,ay+(by-ay)*t,a[1]+(b[1]-a[1])*t];
-   const p=point(j/n),q=point((j+1)/n),py=ground(p[0],p[2])-.22,qy=ground(q[0],q[2])-.22;
+   const p=point(lo+(hi-lo)*j/n),q=point(lo+(hi-lo)*(j+1)/n),py=ground(p[0],p[2])-.22,qy=ground(q[0],q[2])-.22;
    if(!Number.isFinite(py)||!Number.isFinite(qy))return {built:false,reason:'Invalid court support terrain'};
    quad(p,q,[q[0],Math.min(q[1]-.02,qy),q[2]],[p[0],Math.min(p[1]-.02,py),p[2]]);courtPanels++;
   }

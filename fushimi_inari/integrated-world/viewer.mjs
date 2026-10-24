@@ -1,21 +1,25 @@
+import {createRenderQuality} from './render-quality.mjs?v=ultra-2';
+import {LIGHT_PRESETS,installRouteLighting} from './route-lighting.mjs';
+import {installKeihanFareGates} from './keihan-fare-gates.mjs?v=suica-2';
 import {buildKeihanVideoMerchandise} from './keihan-video-merchandise.mjs?v=video-shops-3';
 import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details.mjs';
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
-import {installExplorationMenu} from './exploration-menu.mjs?v=keihan-street-3';
+import {installExplorationMenu} from './exploration-menu.mjs?v=ultra-1';
+import {installWelcomeScreen} from './welcome-screen.mjs?v=welcome-hud-1';
 import {createTrainArrivalExperience} from './train-arrival-experience.mjs?v=recorded-immersion-9';
-import {buildStationApproachRoutes} from './station-approach-routes.mjs?v=keihan-street-3';
+import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approach-routes.mjs?v=complete-route-1';
 import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs?v=recorded-immersion-5';
 import {advanceGuidedRoute} from './guided-route-motion.mjs';
 import {createWorldDetailChunks} from './world-detail-chunks.mjs';
 import {installKeihanStreetCommerce} from './keihan-street-commerce.mjs?v=keihan-street-3';
 import {installKeihanStreetLife} from './keihan-street-life.mjs?v=keihan-street-4';
-import {installTrainArrivalUI} from './train-arrival-ui.mjs';
-import {installPhotoMode} from './photo-mode.mjs?v=32';
+import {installTrainArrivalUI} from './train-arrival-ui.mjs?v=welcome-hud-3';
+import {installPhotoMode} from './photo-mode.mjs?v=ultra-1';
 import {protectOrbit} from './orbit-clearance.mjs';
-import {installSky} from './sky.mjs?v=32';
-import {installFlashlight} from './flashlight.mjs';
+import {installSky} from './sky.mjs?v=ambience-4';
+import {installFlashlight} from './flashlight.mjs?v=welcome-hud-1';
 import {installVisitors} from './visitors.mjs?v=82';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
@@ -25,17 +29,18 @@ import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {blendKeihanStreetGround} from './keihan-street-ground.mjs?v=keihan-street-3';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
-import {installSeasons} from './seasons.mjs?v=25';
+import {installSeasons} from './seasons.mjs?v=welcome-hud-1';
 import {buildPathMeshes} from './path-meshes.mjs?v=recorded-immersion-7';
-import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-street-3';
-import {integrate} from './integration.mjs?v=video-shops-3';
-import {installWalking} from './walking.mjs?v=keihan-street-3';
-import {createAudio} from './audio.mjs?v=recorded-immersion-9';
+import {installExplorationHUD} from './exploration-hud.mjs?v=welcome-hud-1';
+import {integrate} from './integration.mjs?v=complete-route-2';
+import {installWalking} from './walking.mjs?v=ambience-4';
+import {createAudio} from './audio.mjs?v=audio-small-1';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {heightAt,buildGraph,nearestNode,shortestRoute,routeMetrics,resample,pathWidth,isRestricted,distance} from '../geography/geo-core.mjs';
 
 const $=id=>document.getElementById(id);
+const welcome=installWelcomeScreen();
 try {
   const [terrain,features,manifest]=await Promise.all(['terrain','features','manifest'].map(async name=>{
     const response=await fetch(`../geography/${name}.json`);if(!response.ok)throw new Error(`${name}: HTTP ${response.status}`);return response.json();
@@ -235,6 +240,7 @@ try {
     clearRoute();
     $('custom-fields').hidden=$('itinerary').value!=='custom';
     const stationKey=$('itinerary').value;
+    const completeKeihan=stationKey==='keihan_loop';
     const stationSelected=['keihan','keihan_omotesando','jr'].includes(stationKey);
     $('branch').hidden=stationSelected;document.querySelector('label[for="branch"]').hidden=stationSelected;
     if(stationSelected){
@@ -250,7 +256,7 @@ try {
     let chosen=[$('start').value,...($('via').value?[$('via').value]:[]),$('destination').value].map(id=>landmarks.find(p=>p.id===id));
     if($('itinerary').value!=='custom'){
       const names=['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)','三ノ峰','二ノ峰','一ノ峰'];
-      if($('itinerary').value==='loop')names.push('御劔社','御膳谷奉拝所','四ツ辻 (Yottsu tsuji)','楼門');
+      if($('itinerary').value==='loop'||completeKeihan)names.push('御劔社','御膳谷奉拝所','四ツ辻 (Yottsu tsuji)','楼門');
       chosen=names.map(name=>landmarks.find(p=>p.tags.name===name));
       const branch=features.paths.find(p=>p.id===$('branch').value);
       chosen.splice(1,0,branch?{id:branch.id,tags:{name:'Senbon · rama seleccionada'},point:branch.points[Math.floor(branch.points.length/2)]}:landmarks.find(p=>p.id==='node/6865347485'));
@@ -265,16 +271,18 @@ try {
       if(!segment){$('route-info').textContent='These points are on disconnected trail networks. Try another access point.';drawMap();return;}
       route.push(...(i===1?segment:segment.slice(1)));
     }
-    activeRoute=resample(route,terrain,2);
+    const mountainRoute=resample(route,terrain,2);
+    activeRoute=completeKeihan?joinKeihanSummitLoop(stationRoutes.keihan_omotesando,mountainRoute,assembly.walkHeight):mountainRoute;
+    if(!activeRoute){$('route-info').textContent='The station approach and summit loop could not be joined at Rōmon.';drawMap();return;}
     if(activeRoute.length<2){$('route-info').textContent='Start and destination share the same network point.';drawMap();return;}
     const stats=routeMetrics(activeRoute),gaps=snapped.map(s=>Math.round(s.distance));
     $('route-info').textContent=`${(stats.length/1000).toFixed(2)} km · ↑ ${Math.round(stats.ascent)} m · ↓ ${Math.round(stats.descent)} m. Elevation estimated from DEM.`;
-    $('route-stops').textContent=chosen.map(displayName).join(' → ');
+    $('route-stops').textContent=[...(completeKeihan?stationRoutes.keihan_omotesando.stops.slice(0,-1):[]),...chosen.map(displayName)].join(' → ');
     $('route-gaps').textContent=`Maximum landmark-to-path distance: ${Math.max(...gaps)} m. Routes reach mapped trail nodes, without invented links to buildings.`;
     showRoute();
   }
   function showRoute(){
-    const lift=['keihan','keihan_omotesando','jr'].includes($('itinerary').value)?.08:1;
+    const lift=['keihan','keihan_omotesando','keihan_loop','jr'].includes($('itinerary').value)?.08:1;
     routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+lift,p[2]))),
       new THREE.LineBasicMaterial({color:0xff7146,depthTest:true}));
     routeLine.renderOrder=20;scene.add(routeLine);profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
@@ -340,11 +348,13 @@ try {
     if(hit&&landmarkGroup.visible){$('itinerary').value='custom';$('destination').value=landmarks[hit.instanceId].id;trace();}
   });
   $('summary').textContent=`${(width/1000).toFixed(2)} × ${(depth/1000).toFixed(2)} km study area · ${features.paths.length.toLocaleString('es')} mapped segments · ${landmarks.length} identified landmarks`;
-  const canMove=(from,to)=>assembly.keihanRail?.canMove(from,to)??true;
+  const fareGates=installKeihanFareGates(assembly.keihanStation);
+  const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
   const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     for(const [id,label,x,z,tx,tz] of [
+      ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
       ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45]
     ]){
@@ -393,18 +403,21 @@ try {
     if(arrival?.active){interruptArrival();walker.start();}else toggleWalking();
   };
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
-  $('audio').onclick=()=>{$('audio').textContent=audio.toggle()?'Sound: on':'Sound: off';document.getElementById('ambient-toggle').textContent=$('audio').textContent;};
+  const routeLighting=installRouteLighting(scene,assembly.spatial.main,assembly.ground,{extraRoutes:[assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point))],existingLights:assembly.legacy.lanternPointLights});
+  document.body.dataset.routeLighting=JSON.stringify(routeLighting.stats);
+  const sunOffset=new THREE.Vector3();
   $('light').onchange=()=>{
     const mode=$('light').value;
-    sun.intensity=mode==='night'?.18:mode==='gold'?2.8:2.3;
-    sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
-    hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
+    const preset=LIGHT_PRESETS[mode]??LIGHT_PRESETS.day;
+    sun.intensity=preset.sun;sun.color.set(preset.color);sunOffset.fromArray(preset.offset);
+    hemi.intensity=preset.fill;hemi.color.set(preset.sky);hemi.groundColor.set(preset.ground);
+    renderer.toneMappingExposure=preset.exposure;sky.setMode(mode);routeLighting.setMode(mode);
     assembly.inariStation?.setMode(mode);
     assembly.keihanStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
-    for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
+  const quality=createRenderQuality({renderer,scene,camera,sun});
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,render:quality.render,overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -415,12 +428,12 @@ try {
   for(const group of observedStreet.detailGroups??[])detailChunks.add(group,{radius:100,margin:20});
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
-  const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:quality=>{renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?1.7:1.25));renderer.setSize(innerWidth,innerHeight);},
+  const menu=installExplorationMenu({walker,controls,camera,assembly,places:hud.places,onNavigate:interruptArrival,
+    sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
+    onRenderQuality:value=>quality.setMode(value),
     onDetailDistance:value=>{detailDistance=value;}});
-  document.querySelector('label[for="ambient-volume"]')?.replaceChildren(document.createTextNode('Sound volume'));
   document.getElementById('ambient-volume').addEventListener('input',event=>audio.setRecordedVolume(Number(event.target.value)/100));
-  document.getElementById('pane-3').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
+  document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
   const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
@@ -428,11 +441,11 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted)pondReflections.dispose();});
+  addEventListener('pagehide',event=>{if(!event.persisted){pondReflections.dispose();quality.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').textContent='Preparing materials for the arrival…';
   await renderer.compileAsync(scene,camera);
-  $('loading').remove();trace();
+  trace();
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
     const {position:[x,z],lookAt:[tx,tz]}=assembly.omotesandoArrival.spawn;
@@ -449,13 +462,16 @@ try {
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
     arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active,
       labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · drag to look'}:{}});
-    arrival.start({reducedMotion:arrivalUI.reducedMotion});
+    // The train waits behind the welcome sheet so its sound and motion start together.
+    welcome.ready().then(({gesture})=>{if(gesture){audio.setEnabled(true);menu.syncSound();}arrival.start({reducedMotion:arrivalUI.reducedMotion});});
     document.body.dataset.startLocation=isKeihan?'Keihan Fushimi-Inari train arrival · Platform 2':'JR Inari fallback · Platform 2';
   }else{
     document.body.dataset.startLocation=startAtOmotesando()?'Omotesando fallback: station unavailable':'Romon fallback: crossing unavailable';
+    welcome.ready().then(({gesture})=>{if(gesture){audio.setEnabled(true);menu.syncSound();}});
   }
 
 
+  renderer.info.autoReset=false;
   const recordRender=renderStats(renderer);
   lastTime=performance.now();
   let mapTimer=0;
@@ -464,7 +480,7 @@ try {
     if(arrival?.active){
       const holdDoors=arrival.snapshot.phase==='stopped'&&arrival.snapshot.phaseProgress>.94&&audio.arrivalSpeechActive();
       arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active});
-    }else if(walking&&activeRoute.length>1){
+    }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active){
       const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
       routeProgress=motion.index;travelled=motion.travelled;
       const arrived=motion.arrived;
@@ -479,19 +495,22 @@ try {
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
       $('position').textContent=motion.blocked?'Train crossing · Please wait':arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!photo.active&&!walker.update(dt)){
+    }else if(!photo.active&&!menu.active&&!walker.update(dt)){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
     }
     sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
-    sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
+    sun.position.copy(sun.target.position).add(sunOffset);
+    routeLighting.update(camera,dt);
     candleFlames.update(time);
 
     for(const water of waterControllers)water.update(time/1000);
+    fareGates?.update(camera.position.toArray(),time/1000,document.hidden||menu.active||photo.active);
+    if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
     sky.update();flashlight.update();visitors.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     const elevated=camera.position.y-assembly.ground(camera.position.x,camera.position.z)>22;
-    detailChunks.update(camera,time/1000,detailDistance==='full'?60:elevated?6:1);
+    detailChunks.update(camera,time/1000,detailDistance==='full'?60:elevated?6:quality.detailScale);
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.
     for(const chunks of buildingGroup.children)for(const mesh of chunks.children){
@@ -501,14 +520,14 @@ try {
     pondReflections.update(camera.position,[$('light').value,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked].join(':'));
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
-    const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
+    const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});
+    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});
 
   }
   requestAnimationFrame(animate);
-  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();quality.resize();});
 }catch(error){
   console.error(error);$('loading').textContent=`Could not load geographic data: ${error.message}. Open this page from the local server.`;
 }

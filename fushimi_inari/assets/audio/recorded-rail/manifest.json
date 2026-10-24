@@ -4,7 +4,7 @@
   "assets": [
     {
       "id": "fushimi-crossing",
-      "file": "fushimi-inari-crossing-mrauralization.mp3",
+      "file": "fushimi-inari-crossing-mrauralization.ogg",
       "title": "Railroad Crossing Japan",
       "author": "MrAuralization",
       "sourceUrl": "https://freesound.org/people/MrAuralization/sounds/162068/",
@@ -14,7 +14,7 @@
       "durationSeconds": 105.43,
       "sourceDurationSeconds": 105.403,
       "channels": 2,
-      "format": "MP3",
+      "format": "Ogg Vorbis",
       "meanDbfs": -27.1,
       "peakDbfs": 0,
       "initialGain": 0.14,
@@ -24,12 +24,13 @@
       ],
       "use": "Nearby crossing ambience; keep full recording until listened and event segments identified.",
       "provenance": "Author identifies a railway crossing near Fushimi Inari, Kyoto, Japan. Exact crossing and operator not established.",
-      "modifications": "Unmodified public HQ MP3 preview supplied by Freesound; original source WAV not downloaded.",
-      "path": "fushimi_inari/assets/audio/recorded-rail/fushimi-inari-crossing-mrauralization.mp3",
-      "bytes": 2393849,
-      "sha256": "56f91ccb7d84c3c249b950ab1460a8bd12eb8543add1aeddc65cc989594f1e79",
+      "modifications": "libvorbis quality 3; stereo, original duration and sample rate; no trimming, gain or time changes",
+      "path": "fushimi_inari/assets/audio/recorded-rail/fushimi-inari-crossing-mrauralization.ogg",
+      "bytes": 1326414,
+      "sha256": "403f69e24a5a9c65633decbf5d6e2a7e485613492951664e1c203f621a4e1467",
       "sampleRate": 44100,
-      "listened": false
+      "listened": false,
+      "originalArchive": "outputs/audio-optimization/originals/fushimi-inari-crossing-mrauralization.mp3"
     },
     {
       "id": "japan-rail-joints",

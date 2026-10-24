@@ -74,7 +74,7 @@ header>div {
   display:grid;
   grid-template-columns:34px minmax(0,1fr);
   column-gap:14px;
-  padding:16px 20px;
+  padding:12px 18px;
   background:#fffffff0;
   border-radius:0 8px 8px 0;
   border-left:3px solid var(--red);
@@ -96,7 +96,7 @@ header .eyebrow {
 header h1 {
   grid-column:2;
   font-family:Georgia,serif;
-  font-size:30px;
+  font-size:24px;
   font-weight:400;
   line-height:1.1;
   letter-spacing:-.7px;
@@ -108,25 +108,49 @@ header h1 {
 header #summary,#panels,#position,#map-panel,header #overview {
   display:none!important}
 
-#menu-open,#photo-open {
+#hud-actions {
   position:fixed;
   top:24px;
+  right:24px;
   z-index:20;
+  display:flex;
+  align-items:center;
+  gap:8px}
+#hud-actions>button,#hud-actions .pace {
   min-height:44px;
   background:#fffffff0;
   border:0;
+  box-shadow:0 4px 18px #0000001f}
+#menu-open {
   display:flex;
   align-items:center;
   gap:10px;
-  padding:12px 16px}
-#menu-open {
-  right:24px}
-#photo-open {
-  right:168px}
-#menu-open svg,#photo-open svg {
-  width:18px;
-  height:18px;
+  padding:10px 16px}
+.icon-button {
+  width:44px;
+  padding:0;
+  display:grid;
+  place-items:center}
+#hud-actions svg {
+  width:20px;
+  height:20px;
   flex:none}
+#sound-toggle[aria-pressed=true] {
+  color:var(--red)}
+.pace {
+  display:flex;
+  padding:4px;
+  border-radius:var(--radius)}
+.pace button {
+  min-height:36px;
+  padding:6px 12px;
+  border:0;
+  background:transparent;
+  font-size:13px;
+  color:var(--muted)}
+.pace button[aria-pressed=true] {
+  background:var(--ink);
+  color:#fff}
 kbd {
   font:inherit;
   font-size:11px;
@@ -173,8 +197,10 @@ kbd {
 #nav-location {
   font-size:12px;
   font-variant-numeric:tabular-nums}
-#nav-content>small {
-  display:none}
+#navigation .row strong {
+  font-size:13px;
+  color:var(--muted);
+  font-weight:600}
 
 /* 680px = 160px navigation + 520px sheet;
    8px inset belongs to the frame. */
@@ -274,28 +300,88 @@ kbd {
   color:var(--muted);
   line-height:1.8;
   margin:22px 0 12px}
-#checkpoint-buttons {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:0;
-  margin-top:20px}
-#checkpoint-buttons button {
-  position:relative;
-  text-align:left;
-  font-size:13px;
-  border:0;
-  border-bottom:1px solid #edf0ea;
-  border-radius:0;
-  padding:12px 22px 12px 0;
-  font-weight:500;
-  min-height:48px}
-#checkpoint-buttons button:nth-child(odd) {
-  margin-right:14px}
-#checkpoint-buttons button::after {
-  content:"↗";
-  position:absolute;
-  right:5px;
+.menu-section {
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:28px 0 10px}
+[role=tabpanel]>.menu-section:first-child {
+  margin-top:0}
+.menu-keys {
+  list-style:none;
+  padding:0;
+  margin:14px 0 0;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 16px;
+  font-size:12px;
   color:var(--muted)}
+.place-group {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px}
+.place-group h3 {
+  flex-basis:100%;
+  font-size:13px;
+  font-weight:600;
+  margin:16px 0 2px}
+.place-group button {
+  min-height:34px;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:500;
+  background:var(--frame);
+  border-color:transparent}
+.place-group button:hover {
+  background:#e3e7df;
+  border-color:#cfd5cb}
+.more-places {
+  margin-top:16px}
+.more-places .row {
+  display:flex;
+  gap:8px;
+  margin-top:10px}
+.menu-link {
+  margin-top:18px;
+  width:100%}
+.switch,.check {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600}
+.check {
+  font-weight:400;
+  font-size:13px;
+  margin:10px 0}
+.switch input {
+  appearance:none;
+  width:40px;
+  height:22px;
+  border-radius:11px;
+  background:#c9cec6;
+  position:relative;
+  cursor:pointer;
+  margin:0;
+  transition:background-color .15s}
+.switch input::after {
+  content:"";
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#fff;
+  transition:transform .15s}
+.switch input:checked {
+  background:var(--red)}
+.switch input:checked::after {
+  transform:translateX(18px)}
+#sound-settings.muted {
+  opacity:.5}
 #checkpoint-go,button.primary {
   background:var(--red);
   color:white;
@@ -331,22 +417,14 @@ details {
 #profile {
   width:100%;
   height:auto}
-#pane-3 details {
+#pane-2 details {
   border:0;
-  margin:0;
+  margin:12px 0 0;
   padding:0}
-#pane-3 input[type=range] {
+#pane-2 input[type=range] {
   width:100%;
   margin:0;
   box-sizing:border-box}
-#pane-3 input[type=checkbox] {
-  width:auto}
-#pane-3 small {
-  display:block;
-  margin:14px 0}
-#ambient-toggle {
-  width:100%;
-  margin:0 0 6px}
 .menu-credit {
   grid-column:1/-1;
   margin:0;
@@ -438,7 +516,22 @@ footer a {
   font-family:Georgia,serif;
   font-size:26px;
   font-weight:400;
-  margin:0 0 20px}
+  margin:0}
+#photo-panel .menu-heading {
+  padding:0;
+  margin-bottom:18px;
+  align-items:center}
+#photo-panel #photo-close {
+  display:grid;
+  place-items:center;
+  flex:0 0 36px;
+  min-width:36px;
+  min-height:36px;
+  width:36px;
+  height:36px;
+  padding:0;
+  margin:0;
+  line-height:1}
 #photo-panel label {
   font-size:13px;
   margin:16px 0 6px}
@@ -450,10 +543,14 @@ footer a {
   color:var(--muted);
   font-variant-numeric:tabular-nums}
 #photo-panel .row {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   margin-top:16px;
   gap:8px}
 #photo-panel .row button {
-  flex:1}
+  width:100%;
+  min-height:44px;
+  margin:0}
 .photo-help,#photo-status {
   font-size:12px;
   line-height:1.5;
@@ -464,7 +561,7 @@ footer a {
   gap:8px}
 #photo-grid-toggle {
   width:auto}
-.photo-mode header,.photo-mode #navigation,.photo-mode footer,.photo-mode #crosshair,.photo-mode #interaction,.photo-mode #menu-open,.photo-mode #photo-open {
+.photo-mode header,.photo-mode #navigation,.photo-mode footer,.photo-mode #crosshair,.photo-mode #interaction,.photo-mode #hud-actions {
   display:none!important}
 #photo-grid {
   position:fixed;
@@ -490,8 +587,8 @@ footer a {
 @media(max-width:700px) {
   header {
   left:16px;
-  top:16px;
-  max-width:calc(100vw - 130px)}
+  top:72px;
+  max-width:calc(100vw - 32px)}
 header>div {
   padding:12px;
   column-gap:10px;
@@ -505,19 +602,16 @@ header h1 {
   letter-spacing:-.5px}
 header .eyebrow {
   font-size:11px}
-#menu-open {
+#hud-actions {
   top:16px;
   right:16px;
-  padding:10px;
   gap:6px}
-#menu-open kbd {
+#menu-open {
+  padding:10px}
+#menu-open span,#menu-open kbd {
   display:none}
-#photo-open {
-  right:16px;
-  top:68px;
-  padding:10px;
-  font-size:12px;
-  gap:6px}
+.pace button {
+  padding:6px 9px}
 #navigation {
   right:16px;
   bottom:70px;
@@ -581,23 +675,70 @@ button:active {
   transform:none}
 }
 
-#train-arrival {
-  position:fixed;left:50%;bottom:80px;transform:translateX(-50%);
-  z-index:15;width:min(410px,calc(100vw - 32px));box-sizing:border-box;
-  padding:18px 22px;background:#f5f4edee;color:#28362f;
-  border:1px solid #ffffff80;border-radius:8px;box-shadow:0 8px 36px #14291a26;
-}
+#train-arrival {position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:15}
+#arrival-skip {min-width:120px;border:0;border-radius:999px;background:#fffffff0;box-shadow:0 8px 28px #14291a33}
+.visually-hidden {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #train-arrival[hidden],.photo-mode #train-arrival {display:none}
-#arrival-phase {font-size:20px;line-height:1.2;margin:9px 0}
-#arrival-help {font-size:13px;line-height:1.5;margin:0 0 12px}
-.arrival-actions {display:flex;gap:8px}
-#train-arrival label,.arrival-settings label {display:flex;align-items:center;gap:8px;font-size:12px;margin-top:12px}
-#train-arrival input,.arrival-settings input {width:auto;margin:0}
+
+.arrival-settings label {display:flex;align-items:center;gap:8px;font-size:12px;margin-top:12px}
+.arrival-settings input {width:auto;margin:0}
 .arrival-settings {margin-top:24px;padding-top:20px;border-top:1px solid #bcc7b6}
 .arrival-settings h3 {font-size:18px;margin:0 0 6px}
 .arrival-settings p {font-size:13px;margin:0 0 12px}
 .train-arriving #crosshair {display:none}
 @media(max-width:700px){
-  #train-arrival{left:16px;transform:none;bottom:76px;width:calc(100vw - 32px);padding:14px 18px}
+  #train-arrival{bottom:76px}
   .train-arriving #navigation{display:none}
+}
+
+/* Welcome: a Senbon tunnel of gates passes while the world loads. */
+.welcome-open header,.welcome-open #hud-actions,.welcome-open #navigation,.welcome-open footer,
+.welcome-open #train-arrival,.welcome-open #crosshair,.welcome-open #interaction {visibility:hidden}
+#welcome {
+  position:fixed;inset:0;z-index:100;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:clamp(24px,5vw,72px);
+  padding:clamp(24px,6vw,80px);
+  background:radial-gradient(circle at 28% 50%,#fbf3e6 0,#f3ece0 45%,#e9e1d3 100%);
+  color:var(--ink);transition:opacity .7s ease,visibility .7s}
+#welcome.leaving {opacity:0;visibility:hidden;pointer-events:none}
+.welcome-gates {
+  justify-self:end;width:min(42vw,460px);aspect-ratio:1;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 50% 46%,#fff8e9 0,#f6dcc0 38%,#d98f69 72%,#7d3424 100%);
+  box-shadow:inset 0 0 60px #4a160c55,0 30px 80px #6b2a1a2e}
+.welcome-gates svg {width:100%;height:100%;display:block}
+.gate {fill:#c8372d;opacity:0;animation:gate-pass 7.2s cubic-bezier(.5,0,1,.6) infinite;animation-delay:calc(var(--i) * -1.2s)}
+.torii-black {fill:#231f1c}
+@keyframes gate-pass {
+  0% {transform:scale(.12);opacity:0}
+  18% {opacity:1}
+  85% {opacity:1}
+  100% {transform:scale(2.8);opacity:0}}
+.welcome-copy {max-width:440px}
+.welcome-kanji {font-size:15px;letter-spacing:.4em;color:var(--red);margin:0}
+#welcome h2 {font-family:Georgia,serif;font-weight:400;font-size:clamp(44px,6vw,76px);line-height:1;letter-spacing:-.02em;margin:10px 0 18px}
+.welcome-lede {font-size:17px;line-height:1.55;color:#4a4d48;margin:0 0 28px}
+#loading {position:static;display:block;background:none;color:var(--muted);font-size:13px;padding:0;margin:0 0 10px;text-align:left}
+.welcome-bar {height:3px;width:220px;border-radius:2px;background:#d9d1c3;overflow:hidden}
+.welcome-bar span {display:block;height:100%;width:40%;background:var(--red);animation:welcome-load 1.6s ease-in-out infinite}
+@keyframes welcome-load {from {transform:translateX(-100%)} to {transform:translateX(260%)}}
+#welcome.ready .welcome-bar,#welcome.ready #loading {display:none}
+#welcome-enter {width:auto;font-size:17px;padding:14px 34px;min-height:52px;border-radius:999px;box-shadow:0 10px 30px #b52c2740}
+#welcome-enter span {font-weight:400;margin-left:6px;opacity:.85}
+.welcome-sound {display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:22px 0 0}
+.welcome-sound svg {width:18px;height:18px}
+.welcome-keys {list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.welcome-credit {position:absolute;right:24px;bottom:16px;margin:0;font-size:12px;color:var(--muted)}
+.welcome-credit a {color:var(--ink);font-weight:600;text-decoration:none}
+@media(max-width:760px){
+  #welcome {grid-template-columns:1fr;align-content:center;justify-items:center;text-align:center;gap:24px;overflow:auto}
+  .welcome-gates {justify-self:center;width:min(64vw,280px)}
+  .welcome-copy {display:flex;flex-direction:column;align-items:center}
+  #loading {text-align:center}
+  .welcome-keys,.welcome-sound {justify-content:center}
+  .welcome-credit {position:static}
+}
+@media(prefers-reduced-motion:reduce){
+  .gate {animation:none;transform:scale(var(--s));opacity:var(--o)}
+  .welcome-bar span {animation:none;width:100%}
+  #welcome {transition:none}
 }

@@ -1,8 +1,8 @@
-import {createRecordedSoundEvents} from './recorded-sound-events.mjs';
+import {createRecordedSoundEvents} from './recorded-sound-events.mjs?v=suica-2';
 
 export const RECORDED_CLIPS=Object.freeze({
  rolling:{url:'../assets/audio/recorded-rail/odakyu-rail-joints-cassiopeia-sweet.ogg',gain:.12},
- crossing:{url:'../assets/audio/recorded-rail/fushimi-inari-crossing-mrauralization.mp3',gain:.18},
+ crossing:{url:'../assets/audio/recorded-rail/fushimi-inari-crossing-mrauralization.ogg',gain:.18},
  doors:{url:'../assets/audio/recorded-rail/nambu-205-door-alarm-hitachi-train.ogg',gain:.12},
  announcementJa:{url:'../assets/audio/recorded-station/fushimi-arrival-ja.mp3',gain:.9},
  announcementEn:{url:'../assets/audio/recorded-station/fushimi-arrival-en.mp3',gain:.9},
@@ -62,7 +62,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
   pause(value){paused=!!value;if(paused)stopAll();report();},
   setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of Object.keys(RECORDED_CLIPS))load(id);report();},
   setVolume(value){bus.gain.setTargetAtTime(Math.max(0,Math.min(1,Number(value)||0)),ctx.currentTime,.08);},
-  update({position,gate,arrival,rail,time=0,paused:pause=false}){
+  update({position,gate,gateState,arrival,rail,time=0,paused:pause=false}){
    if(paused!==pause){paused=pause;if(paused)stopAll();report();}
    const phase=arrival?.phase??'idle';currentPhase=phase;
    const arrivalTime=arrival?.elapsed??0,restarted=arrivalTime<lastArrivalTime;
@@ -70,7 +70,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
    lastArrivalTime=arrivalTime;
    if(!voiceRunStarted&&Number.isFinite(arrival?.elapsed)&&['moving','decelerating','stopped'].includes(phase)&&enabled&&!paused){voiceRunStarted=true;announce();}
    if(phase!=='closing')for(const item of shots)if(item.id==='doors'){stop(item);shots.delete(item);}
-   for(const event of events.update({position,gate,arrivalPhase:phase,time,enabled,paused}))oneShot(event);
+   for(const event of events.update({position,gate,gateState,arrivalPhase:phase,time,enabled,paused}))oneShot(event);
    for(const item of shots)if(item.id==='gate'&&gate)item.gain.gain.setTargetAtTime(RECORDED_CLIPS.gate.gain*attenuation(position,gate.center,7),ctx.currentTime,.08);
    wanted.clear();
    if(enabled&&!paused){

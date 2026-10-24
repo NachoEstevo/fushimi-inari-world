@@ -2,7 +2,7 @@ import {flightDisplacement} from './flight-motion.mjs';
 import {englishInteraction} from './interaction-english.mjs';
 import * as THREE from 'three';
 import {SpatialCollisionWorld} from './collision.mjs';
-import {walkingSpeed,movementSteps} from './walking-motion.mjs';
+import {walkingSpeed,movementSteps,paceSpeed,WALKING_EYE_HEIGHT,smoothWalkingEye,createFootstepCadence} from './walking-motion.mjs?v=mountain-walk-2';
 import {auditSectorConnections} from './sector-audit.mjs';
 
 export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart,canMove=()=>true}){
@@ -72,16 +72,17 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const keys=new Set(),direction=new THREE.Vector3(),right=new THREE.Vector3();
   const ray=new THREE.Raycaster(),panel=document.getElementById('interaction');
   const crosshair=document.getElementById('crosshair'),button=document.getElementById('freewalk');
-  let active=false,footstep=0,paused=false,flying=false;
+  const footsteps=createFootstepCadence(),moveFrom=[0,0,0],moveTo=[0,0,0];
+  let active=false,paused=false,flying=false,pace='slow',supportY=0;
   function stop(){
-    active=false;flying=false;keys.clear();dragging=false;controls.enabled=true;crosshair.hidden=true;
+    active=false;flying=false;keys.clear();footsteps.reset();dragging=false;controls.enabled=true;crosshair.hidden=true;
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(8));
     document.body.classList.remove('walking');button.textContent='Walk · WASD';
   }
   function start(flight=false){
     document.activeElement?.blur();
-    onStart();active=true;flying=flight;keys.clear();controls.enabled=false;crosshair.hidden=false;
-    if(!flying)camera.position.y=assembly.walkHeight(camera.position.x,camera.position.z)+1.7;
+    onStart();active=true;flying=flight;keys.clear();footsteps.reset();controls.enabled=false;crosshair.hidden=false;
+    if(!flying){supportY=assembly.walkHeight(camera.position.x,camera.position.z);camera.position.y=supportY+WALKING_EYE_HEIGHT;}
     document.body.classList.add('walking');button.textContent='Orbit view';
   }
   button.onclick=()=>{if(active)stop();else start();};
@@ -131,9 +132,9 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     if(e.code==='KeyE'&&!flying&&!e.repeat)interact();
   });
   addEventListener('keyup',e=>keys.delete(e.code));
-  addEventListener('blur',()=>{keys.clear();if(active)stop();});
-  return {stop,start,fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},pause(value){paused=value;keys.clear();dragging=false;},get active(){return active;},teleport(point,target){
-    keys.clear();dragging=false;panel.hidden=true;
+  addEventListener('blur',()=>{keys.clear();footsteps.reset();dragging=false;});
+  return {stop,start,fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},get pace(){return pace;},setPace(value){pace=value==='fast'?'fast':'slow';},pause(value){paused=value;keys.clear();footsteps.reset();dragging=false;},get active(){return active;},teleport(point,target){
+    keys.clear();footsteps.reset();dragging=false;panel.hidden=true;
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){
       const x=point[0]+Math.cos(angle)*r,z=point[2]+Math.sin(angle)*r;
@@ -152,28 +153,35 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
       const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
       const side=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
       const vertical=Number(keys.has('KeyR')||keys.has('Space'))-Number(keys.has('KeyF')||keys.has('ControlLeft')||keys.has('ControlRight'));
-      const delta=flightDisplacement(direction.toArray(),forward,side,vertical,dt,document.getElementById('flight-speed')?.value??15,keys.has('ShiftLeft')||keys.has('ShiftRight'));
+      const delta=flightDisplacement(direction.toArray(),forward,side,vertical,dt,paceSpeed(pace,'fly'),keys.has('ShiftLeft')||keys.has('ShiftRight'));
       camera.position.x+=delta[0];camera.position.y+=delta[1];camera.position.z+=delta[2];
       return true;
     }
     camera.getWorldDirection(direction);direction.y=0;direction.normalize();right.crossVectors(direction,camera.up).normalize();
     const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
     const side=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
+    const boost=keys.has('ShiftLeft')||keys.has('ShiftRight');
+    let travelled=0;
     if(forward||side){
       const velocity=direction.multiplyScalar(forward).addScaledVector(right,side).normalize();
-      const speed=walkingSpeed(document.getElementById('walk-speed')?.value??3,keys.has('ShiftLeft')||keys.has('ShiftRight'));
+      const speed=walkingSpeed(paceSpeed(pace,'walk'),boost);
       const step=movementSteps(dt,speed);
       for(let i=0;i<step.count;i++){
         const x=camera.position.x+velocity.x*step.distance,z=camera.position.z+velocity.z*step.distance;
-        const resolved=obstacles.resolvePlayer(x,camera.position.y,z);
-        if(!canMove(camera.position.toArray(),[resolved.x,camera.position.y,resolved.z]))break;
-        camera.position.set(resolved.x,assembly.walkHeight(resolved.x,resolved.z,camera.position.y-1.7)+1.7,resolved.z);
-      }
-      footstep+=step.distance*step.count;if(footstep>.7){
-        audio.step(assembly.surfaces.sample(camera.position.x,camera.position.z)?.segment.kind==='stone');footstep=0;
+        const physicalEye=supportY+WALKING_EYE_HEIGHT,resolved=obstacles.resolvePlayer(x,physicalEye,z);
+        moveFrom[0]=camera.position.x;moveFrom[1]=physicalEye;moveFrom[2]=camera.position.z;
+        moveTo[0]=resolved.x;moveTo[1]=physicalEye;moveTo[2]=resolved.z;
+        if(!canMove(moveFrom,moveTo))break;
+        travelled+=Math.hypot(resolved.x-camera.position.x,resolved.z-camera.position.z);
+        supportY=assembly.walkHeight(resolved.x,resolved.z,supportY);
+        camera.position.x=resolved.x;camera.position.z=resolved.z;
       }
     }
-    document.getElementById('position').textContent=`${(camera.position.y-1.7).toFixed(1)} m ASL · WASD · drag to look · Shift boost · E interact · Esc menu`;
+    camera.position.y=smoothWalkingEye(camera.position.y,supportY,dt);
+    if(footsteps.update(travelled,dt,pace,boost)){
+      const segment=assembly.surfaces.sample(camera.position.x,camera.position.z)?.segment;
+      audio.step(segment?.kind==='stone'||segment?.stair===true);
+    }
     return true;
   }};
 }

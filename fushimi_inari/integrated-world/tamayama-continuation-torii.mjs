@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {toriiMaterials} from './torii-materials.mjs';
-import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=90-front';
+import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-1';
 import {integratedTerrainTriangles} from './terrain-triangles.mjs?v=90-shared';
 
 // Sampling the nonlinear terrain-height function alone does not reproduce a

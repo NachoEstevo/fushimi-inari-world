@@ -1,154 +1,101 @@
 # Fushimi Inari · Inariyama Explorer
 
-**A walkable reconstruction of the shrine precinct and mountain trails in Kyoto.**
+**Arrive by train. Walk Kyoto's streets. Follow the torii into the mountain.**
 
-Made by [Ignacio Estevo](https://nachoestevo.com).
+An interactive, reference-driven reconstruction by [Ignacio Estevo](https://nachoestevo.com), built with Three.js.
 
-![Rōmon entrance, forecourt and side buildings in the current viewer](docs/images/romon-current.png)
+![Rōmon at sunset, framed by the entrance torii](docs/images/romon-sunset-ultra.webp)
 
-Explore the preserved architectural scene on a geographic trail network: the Rōmon entrance, Senbon Torii, tea houses, secondary paths and the ascent to Ichinomine. Switch between walking, free flight and orbit view, or jump to a checkpoint from the menu.
+Start aboard a Keihan train: Japanese and English arrival announcements finish before the doors open. Leave the platform, pass the automatic IC-card gates, and follow the streets past shops, food counters, vending machines and the JR crossing. The default route turns toward **Omotesando's first torii**, reaches the shrine and continues around the **summit loop**—approximately **4.38 km** in the model.
 
-> Work in progress. This is a reference-driven reconstruction, not a surveyed digital twin. The screenshots show the actual viewer, not concept renders.
+## Three ways to see Inariyama
 
-## From the entrance to the mountain
+![Daylight along the mountain shrine approach](docs/images/inariyama-day-ultra.webp)
 
-![Aerial overview of Inariyama, its connected trails and the surrounding Kyoto neighbourhoods](docs/images/inariyama-overview.png)
+**Day** reveals the timber, stone paving, inscriptions and woodland. Walk the route yourself, follow its guide line, or explore with free flight and orbit controls.
 
-The geographic study area spans approximately **2.55 km east–west × 2.45 km north–south**, including surrounding neighbourhoods. This rectangle is **not the legal shrine estate boundary**. The mountain, trail network and urban context share a metre-based coordinate system without vertical exaggeration. City buildings are simplified volumes; forest coverage and individual crowns are interpretive.
+![Night lighting in the shrine grounds](docs/images/inariyama-night-ultra.webp)
 
-![Yotsutsuji terrace looking over the torii descent toward the simplified Kyoto skyline](docs/images/yotsutsuji-current.png)
+**Sunset and night** change the sun, sky and local lighting. Warm trail markers make the route legible from above; stars, field recordings and nearby chimes add atmosphere. The light placements and some sounds are interpretive, rather than a record of every real fixture or railway.
 
-**Yotsutsuji · Kyoto view.** A ground-level view connects the terrace, descending torii and distant city. These three new images were exported directly through Photo mode on **20 October 2026**, at **1920 × 1356**, without navigation overlays or retouching. They document the current model, including its remaining visual limitations.
+These photographs were exported from the actual viewer on **24 October 2026** with **Ultra** enabled. The README uses compressed WebP copies; the scene was not retouched or generated for the screenshots.
 
 ## Run locally
 
-Requires Python 3 for serving files and a desktop browser with WebGL. Three.js loads from a pinned CDN version, so the first load needs internet access. The scene contains large assets; allow the initial load to finish.
-
-From the repository root:
+Use Python 3 and a desktop browser with WebGL 2. The pinned Three.js CDN requires internet on first load.
 
 ```powershell
 python -m http.server 8420 --bind 127.0.0.1 --directory fushimi_inari
 ```
 
-Open [the integrated world](http://127.0.0.1:8420/integrated-world/index.html).
-
-## Explore
-
-The Checkpoints tab includes Yotsutsuji, Kojingamine and the western trail
-outlook. An additional west-facing bench sits on a planted margin at Yotsutsuji.
-City facade detail is built on first approach to these outlooks, shown within
-135 m and hidden beyond 180 m (or outside 115–340 m camera elevation). It retains
-its buffers for reuse; the ordinary low-cost aerial massing remains available.
-Footprints are mapped, while windows, building heights without OSM metadata and
-the added bench placement are interpretive. See [R28 notes](docs/r28-outlooks.md).
+Open [Inariyama Explorer](http://127.0.0.1:8420/integrated-world/index.html). Wait for **Enter** to start the arrival with sound. `?intro=0` skips the welcome screen; sound then requires a gesture.
 
 | Control | Action |
 | --- | --- |
-| **Esc** | Open the tabbed exploration menu |
-| **W A S D** | Move while walking or flying |
-| **Drag** | Look around |
-| **Shift** | Move faster |
-| **R / Space**, **F / Ctrl** | Fly up / down |
-| **E** | Interact with supported objects |
-| **Checkpoints** | Teleport to a named location |
-| **Environment** | Spring / Autumn, lighting and ambient sound |
+| **W A S D**, drag | Move and look |
+| **Slow / Fast**, **Shift** | Choose pace; hold Shift to sprint |
+| **Esc** | Pause and open Explore, Routes or Settings; keep the current movement mode |
+| **R / Space**, **F / Ctrl** | Ascend / descend in Fly mode |
+| **E** | Use supported objects |
+| **M**, **L** | Toggle sound / flashlight |
+| **Explore → Go to a place** | Jump to station, shrine or mountain checkpoints |
 | **Photo mode** | Pan, tilt, field of view, exposure and clean PNG export up to 3840 px |
 
-The minimap follows your position. Movement speed, free flight, routes and sound are available in the menu. Start with **Rōmon**, **Temizuya**, **Shrine reception** or **Senbon Torii**.
+## Quality and performance
 
-**Night** adds luminous stars with gentle scintillation. Press **L** to toggle your
-flashlight, or use **Environment → Personal light**. Reception visitors use external
-CC0 rigged models with skeletal idle animation; see [credits](fushimi_inari/assets/models/visitors/CREDITS.md)
-and [R32 scope](docs/r32-visitors-and-night.md). Characters remain stylized.
+**Balanced is the default.** Choose a preset in **Settings → Rendering quality**.
 
-At **Temizuya**, approach and aim at the basin, then press **E** to lift a ladle.
-At **Shrine reception**, aim at the attendant under the Goshuin sign for a
-commemorative stamp demonstration. At **Ichinomine**, approach the hanging rope
-and press **E** to ring the bell. Enable sound in **Environment** to hear the
-existing effects. The attendant is adapted from a CC0 Quaternius rigged character;
-the entrance kitsune are original procedural models. Both remain stylized, not scans.
-See the [model credits](fushimi_inari/assets/models/visitors/CREDITS.md),
-[R33 reception refinement](docs/r33-reception-and-ground.md) and
-[animation regression checks](fushimi_inari/tests/README.md).
-
-For the city outlook, choose **Checkpoints → Yotsutsuji · Kyoto view**. The existing forecourt has resting benches and an open stair approach. Its furniture dimensions are inferred from references; the distant city remains simplified mapped massing.
-
-**Photo mode** holds your position and hides navigation overlays. Adjust the composition, optionally show a thirds grid, then **Save PNG**. Exports retain the screen aspect ratio with a 1920 or 3840 pixel longest edge; the grid and controls are excluded. **Open last photo** provides the latest capture if the browser does not download automatically. **Esc** restores the original camera settings and exploration controls. High-resolution rendering is temporary and uses the existing renderer.
-
-## Seasons and upper court
-
-![Autumn woodland from the live viewer](docs/images/autumn.png)
-
-Choose **Esc → Environment → Season** for fresh spring greens or autumn gold and amber. The choice persists locally. Evergreen trees retain their green foliage; sparse spring flowering crowns are interpretive, not surveyed tree locations. Seasonal changes reuse the same geometry and textures.
-
-The Naihaiden ascent now connects to the lower court and upper side platforms, with finer granite and stitched terrain boundaries. Dimensions remain video-guided estimates. See [R24 references and walking checks](fushimi_inari/integrated-world/REFERENCES-R24.md).
-
-The twin Senbon exits now open onto a connected Okusha court, with the original ema and Omokaru details retained and mapped lateral buildings added. Exterior sanctuary approaches follow OSM paths. Preserved tree crowns now have lightweight distant substitutes. See [R25 reference, walking and performance checks](fushimi_inari/integrated-world/REFERENCES-R25.md).
-
-## Entrance details
-
-The lower court shares a connected ground level, with original building pedestals retained. Surrounding OSM building footprints and lightweight distant forest crowns provide context for aerial exploration. Google Maps satellite views guide broad woodland coverage; building heights and individual trees remain approximate. Toggle these layers under **Esc → Routes → Layers and sources**. See [R23 reference and validation notes](fushimi_inari/integrated-world/REFERENCES-R23.md).
-
-![Purification basin with ladles and water](docs/images/temizuya.png)
-
-The original buildings remain the foundation of the scene. Current refinements include grey slab paving and aggregate, gilded fittings, curved gable ornaments, leafy shrubs, a hollow purification basin with animated water, and additional detail on the original approach shops.
-
-The reception building follows the mapped Juyosho footprint. Counter interiors, furnishings and the particular goshuin window are interpretive. Personal visit photographs guide materials and details; they are not uploaded or redistributed here.
-
-## What is sourced—and what is still approximate
-
-The [sector review and reconstruction queue](docs/sector-review.md) tracks current
-coverage, timestamped video observations, official-map omissions and physical
-access findings. Its [R35 runtime audit](docs/audits/sector-audit-r35.json) separates
-mapped connectivity from collision and height checks.
-
-| Layer | Status |
+| Preset | Rendering |
 | --- | --- |
-| Trail connectivity | OpenStreetMap node topology; alternative routes remain distinct |
-| Broad terrain | GSI elevation data; the baseline is a 10 m grid |
-| Building placement | Mapped anchors with preserved original architecture |
-| Steps and local grading | Mixed source counts and inferred profiles; the [recorded 52-profile audit](fushimi_inari/integrated-world/profile-walk-audit-r14.json) checks centreline continuity, but marks real-world fidelity unverified |
-| Vegetation and minor furnishings | Reference-informed, unsurveyed placement |
-| Reception, shops and gables | Visual reconstruction; exact dimensions and counter locations remain unverified |
-| Torii | Regional size and inscription variations; individual dimensions, spacing and donor inscriptions are not an exact inventory |
-| City panorama | Mapped footprints with simplified, partly inferred heights and facades |
+| Balanced | Original direct render; device pixel ratio capped at 1.25; 2048 px sun shadows |
+| High resolution | Same rendering with pixel ratio capped at 1.7 |
+| Ultra | Supersampling up to 2×, capped at 4 million viewport pixels; 4096 px sun shadows; 16-sample ambient occlusion at reduced resolution; up to 16× texture filtering; 25% farther nearby detail |
 
-There is **no measured overall accuracy percentage**. Geographic provenance does not establish centimetre-level placement, accurate step geometry or a complete inventory of shrine details. Automated route and walking checks establish model behaviour, not correspondence to the physical site.
+Ultra improves shading and sampling of the existing scene; it does not turn approximate buildings into surveyed geometry. Day, sunset, night, water and photo export retain their controls. Switching back releases the additional postprocessing targets and restores texture filtering and shadows.
 
-The strongest foundation is broad terrain and mapped route connectivity. The largest fidelity gaps are local platforms and stairs, building proportions and roof profiles, shrine-specific furnishings, vegetation structure and the city skyline. Earlier access and ground-transition audits are not a current exhaustive clearance survey. Static meshes are batched and vegetation is spatially partitioned, but a complete performance qualification has not been completed.
+At the same 1467 × 852 camera view, local samples measured approximately **101 FPS Balanced / 63 FPS Ultra at Rōmon**, and **147 / 87 FPS beside Shin-ike**. These are short observations from one desktop/browser, with animated characters and water—not GPU requirements, mobile certification or a guaranteed frame rate. See [validation and limits](docs/ultra-quality-and-release.md).
 
-See [R18 video references](fushimi_inari/integrated-world/REFERENCES-R18.md), [R17 references and validation](fushimi_inari/integrated-world/REFERENCES-R17.md), [personal-photo reference notes](fushimi_inari/integrated-world/REFERENCES-R16.md), and the [geographic manifest](fushimi_inari/geography/manifest.json).
+Static geometry is batched, repeated objects are instanced, and nearby detail uses spatial activation. The optional entire-world detail setting costs more. Recorded crossing audio is **44.6% smaller** than its previous runtime MP3; voices and their ordering remain unchanged.
 
-## Project structure
+## What is reconstructed
 
-| Path | Contents |
-| --- | --- |
-| `fushimi_inari/integrated-world/` | Current interactive world and geographic integration |
-| `fushimi_inari/geography/` | Map data, elevation data and geographic algorithms |
-| `fushimi_inari/interactive_viewer/` | Preserved original viewer |
-| `fushimi_inari/index.html` | Original scene presentation |
-| `fushimi_inari/scripts/` | Build, extraction and audit scripts |
-| `fushimi_inari/assets/` | Textures, models and audio |
-| `docs/images/` | Selected live-viewer screenshots for this README |
-| `fushimi_inari/outputs/` | Local captures and audits, excluded from Git |
+- **Station and streets:** Keihan arrival, automatic fare gates, street commerce, pedestrians, interactive vending machines and a passing JR train. The separate JR Inari approach remains available.
+- **Shrine precinct:** Rōmon, purification basin, reception, upper courts, bifurcated Senbon Torii and Okusha, including lateral boundaries and offerings.
+- **Mountain:** tea houses, stone stairs, varied torii inscriptions, Yotsutsuji's city view, summit shrines and return paths. The short Ōsugi access now reaches its mapped shrine.
+- **Interaction:** walk, fly, orbit, routes, minimap, seasons, recorded footsteps, sound controls, flashlight and photography.
 
-The Blender master and scene specifications are preserved in `fushimi_inari/`. The `r03-baseline` Git tag preserves the integration before the torii correction.
+The geographic study area spans approximately **2.55 × 2.45 km**; it is not the legal shrine boundary. Trail topology comes from OSM and broad terrain from GSI elevation data. Local grading, roof profiles, small furnishings, donor inscriptions, trees, shop inventories and the simplified city skyline contain visual estimates. There is no measured overall accuracy percentage. This remains a work in progress, not a surveyed digital twin.
 
 ## Develop and verify
 
-The current integrated entry point is maintained in `fushimi_inari/integrated-world/`. The old `build_integrated_viewer.py` is a historical bootstrap and does not reproduce later refinements; do not run it over the current viewer. Validate changes with:
+The current entry point is `fushimi_inari/integrated-world/`. The original viewer and Blender sources are preserved. Do not run the historical `build_integrated_viewer.py` bootstrap over the current implementation.
+
+For local geometry tests, install the matching Three.js package if needed:
 
 ```powershell
+npm install --no-save --package-lock=false three@0.164.1
 node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.test.mjs
 ```
 
-`legacy-builders.mjs` is generated from the original viewer; scene refinements belong in the integration adapters. Keep the original source viewers intact. Browser inspection is required for geometry, materials, camera clearance and shader changes—unit tests alone do not establish visual correctness.
+Browser review is required for materials, shaders, camera clearance and UI changes; tests alone do not prove visual fidelity. Current validation and known limits are in [the release notes](docs/ultra-quality-and-release.md). The [sector review](docs/sector-review.md) retains reference and reconstruction history.
 
-## Sources and rights
+| Path | Purpose |
+| --- | --- |
+| `fushimi_inari/integrated-world/` | Runtime and interaction modules |
+| `fushimi_inari/geography/` | Map, elevation and routing data |
+| `fushimi_inari/assets/` | Runtime textures, models and credited audio |
+| `fushimi_inari/scripts/` | Build and audit tools |
+| `docs/` | Selected documentation, photos and reference notes |
+| `outputs/`, `.tmp/`, `fushimi_inari/outputs/` | Local captures, experiments and recovery archives; new files excluded from Git |
 
-- Map data: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL.
-- Elevation data: [Geospatial Information Authority of Japan](https://maps.gsi.go.jp/development/demtile.html).
-- Site reference: [official Fushimi Inari shrine map](https://inari.jp/trip/map01/).
-- Bird recording: [audio credits](fushimi_inari/assets/audio/CREDITS.md). The uguisu recording is CC BY-SA 3.0 and was recorded in Kantō, not Inariyama.
+For hosting, serve `fushimi_inari/` as the static root and route `/` to `integrated-world/index.html`. Exclude local outputs and references. Social metadata currently names the planned `kyoto.nachoestevo.com` domain; verify it before publishing. No hosting deployment is implied by a Git push.
 
-Private working repository. No blanket redistribution license is granted for third-party material. External photographs remain references rather than bundled textures. Selected documentation images are screenshots of this project.
+## Sources and credits
+
+- [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL: mapped trails and footprints.
+- [GSI Japan](https://maps.gsi.go.jp/development/demtile.html): elevation data.
+- [Official Fushimi Inari map](https://inari.jp/trip/map01/): site reference.
+- [Rail recording sources](fushimi_inari/assets/audio/recorded-rail/manifest.json), [station voices and gate](fushimi_inari/assets/audio/recorded-station/CREDITS.md), [footsteps](fushimi_inari/assets/audio/footsteps/CREDITS.md), [bird audio](fushimi_inari/assets/audio/CREDITS.md).
+- [Character credits](fushimi_inari/assets/models/visitors/CREDITS.md): stylized CC0 rigged visitors.
+
+Private working repository. Third-party assets retain their individual rights; no blanket redistribution license is granted. Reference photographs are not bundled as scene textures. Documentation images show this project's viewer.

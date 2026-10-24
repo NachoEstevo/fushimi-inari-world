@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildGraph,heightAt,nearestNode} from '../geography/geo-core.mjs';
+import {buildGraph,heightAt,nearestNode,shortestRoute,resample} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {createKeihanStationSpec} from './keihan-station-spec.mjs';
 import {keihanApproachLayout} from './keihan-approach.mjs';
 import {createInariStationArrivalSpec} from './inari-station-arrival-spec.mjs';
 import {inariStationRouteLayout} from './inari-station-route.mjs';
-import {buildStationApproachRoutes} from './station-approach-routes.mjs';
+import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approach-routes.mjs';
 
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url))),terrain=JSON.parse(readFileSync(new URL('../geography/terrain.json',import.meta.url)));
 const surfaces=makePathSurfaces(features,(x,z)=>heightAt(terrain,x,z)),graph=buildGraph(features.paths,terrain),romon=nearestNode(graph,features.pois.find(p=>p.tags.name==='楼門').point,10).node.point;
@@ -79,4 +79,17 @@ test('unmapped joins, unavailable floors and unsupported samples fail closed',()
  const b=setup();b.walkHeight=()=>NaN;assert.deepEqual(buildStationApproachRoutes(b,features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
  const c=setup();c.isWalkable=()=>false;assert.deepEqual(buildStationApproachRoutes(c,features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
  assert.deepEqual(buildStationApproachRoutes({},features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
+});
+
+test('full default joins Keihan Omotesando to the summit loop at the real Romon node',()=>{
+ const names=['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)','三ノ峰','二ノ峰','一ノ峰','御劔社','御膳谷奉拝所','四ツ辻 (Yottsu tsuji)','楼門'];
+ const stops=names.map(name=>nearestNode(graph,features.pois.find(p=>p.tags.name===name).point,80).node);let loop=[];
+ for(let i=1;i<stops.length;i++){const p=shortestRoute(graph,stops[i-1].id,stops[i].id);loop.push(...(i===1?p:p.slice(1)));}
+ const approach=buildStationApproachRoutes(setup(),features,terrain).keihan_omotesando;
+ const full=joinKeihanSummitLoop(approach,resample(loop,terrain,2),floor);
+ assert.ok(full.length>1500);assert.deepEqual(full[0],approach.points[0]);assert.deepEqual(full.at(-1),approach.points.at(-1));
+ for(let i=1;i<full.length;i++)assert.ok(Math.hypot(full[i][0]-full[i-1][0],full[i][2]-full[i-1][2])<2.001);
+ for(const node of stops)assert.ok(contains(full,node.point));
+ assert.equal(joinKeihanSummitLoop(approach,[[999,0,999]],floor),null);
+ assert.equal(joinKeihanSummitLoop(approach,resample(loop,terrain,2),()=>NaN),null);
 });

@@ -60,7 +60,11 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
       if(under)for(let n=0;n<3;n++){
         const ux=x+(random()-.5)*6,uz=z+(random()-.5)*6;
         const near=pathDistance(ux,uz);if(near&&near.distance<2.1)continue;
-        put(3,ux,ground(ux,uz),uz,.6+random()*.65,.45+random()*.75,.6+random()*.65,random()*6.28);understory++;
+        // A clear tree root does not imply its offset shrubs clear a shrine.
+        // Consume the same random values so unrelated forest placement stays stable.
+        const sx=.6+random()*.65,sy=.45+random()*.75,sz=.6+random()*.65,yaw=random()*6.28;
+        if((forbidden.get(`${Math.floor(ux/cell)},${Math.floor(uz/cell)}`)??[]).some(b=>ux>b.minX&&ux<b.maxX&&uz>b.minZ&&uz<b.maxZ))continue;
+        put(3,ux,ground(ux,uz),uz,sx,sy,sz,yaw);understory++;
       }
       colliders.push({type:'cylinder',args:[x,z,.40*scale,y,y+9*scale,'forest_tree']});
     }

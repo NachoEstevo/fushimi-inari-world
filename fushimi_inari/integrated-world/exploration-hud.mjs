@@ -2,37 +2,36 @@ import {isRestricted} from '../geography/geo-core.mjs';
 
 export function installExplorationHUD({camera,features,assembly,teleport,getRoute=()=>[]}){
   const panel=document.createElement('section');panel.id='navigation';panel.setAttribute('aria-label','Navigation');
-  panel.innerHTML=`<div class="row"><strong>Inariyama map</strong><button id="nav-collapse" aria-label="Collapse minimap">−</button></div>
+  panel.innerHTML=`<div class="row"><strong>Map</strong><button id="nav-collapse" aria-label="Collapse minimap">−</button></div>
     <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimap with position and trails"></canvas>
-    <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Minimap scale"><option value="320">Nearby · 320 m</option><option value="1000">Area · 1 km</option><option value="2700">Entire area</option></select></div>
-    <small>Rose: trails · amber: stairs · blue: water · dashed: restricted or grade-separated</small>
-    <label for="walk-speed">Walking speed</label><select id="walk-speed"><option value="1.6">Stroll · 1.6 m/s</option><option value="3" selected>Brisk · 3 m/s</option><option value="6">Fast · 6 m/s</option><option value="10">Explore · 10 m/s</option></select>
-    <label>Quick checkpoints</label><div id="checkpoint-buttons"></div>
-    <label for="checkpoint-select">Destination</label><div class="row"><select id="checkpoint-select"></select><button id="checkpoint-go">Teleport</button></div>
-    <details><summary>Spring ambience</summary>
-    <button id="ambient-toggle">Sound: off</button>
-    <label for="ambient-volume">Ambient volume</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
-    <label><input id="ambient-birds" type="checkbox" checked> Uguisu · field recording</label>
-    <label><input id="ambient-wind" type="checkbox" checked> Breeze and leaves</label>
-    <label><input id="ambient-chimes" type="checkbox"> Chimes near tea houses</label>
-    <small>Interpretive chimes. <a href="../assets/audio/CREDITS.md" target="_blank" rel="noopener">Audio credits</a></small></details>
-    <p>WASD · drag to look · Shift to boost · Esc menu</p></div>`;
+    <div class="row"><span id="nav-location"></span><select id="map-range" aria-label="Minimap scale"><option value="320">Nearby · 320 m</option><option value="1000">Area · 1 km</option><option value="2700">Entire area</option></select></div></div>`;
   document.body.append(panel);
-  panel.querySelector('#ambient-toggle').onclick=()=>{document.getElementById('audio').click();document.getElementById('ambient-toggle').textContent=document.getElementById('audio').textContent;};
   for(const input of panel.querySelectorAll('select'))input.onchange=()=>input.blur();
   const canvas=panel.querySelector('canvas'),ctx=canvas.getContext('2d');
-  const select=panel.querySelector('#checkpoint-select');
+  // Places are teleport targets shown by the menu; the HUD owns the access logic.
+  const places=document.createElement('div');places.id='places';
+  places.innerHTML='<div id="checkpoint-buttons"></div><details class="more-places"><summary>All places</summary><div class="row"><select id="checkpoint-select" aria-label="Destination"></select><button id="checkpoint-go">Go</button></div></details>';
+  const select=places.querySelector('#checkpoint-select');
   for(const a of assembly.spatial.anchors){
     const option=document.createElement('option');option.value=a.id;option.textContent=a.label;select.append(option);
   }
   select.value='romon';
-  const ids=['keihan_platform','keihan_drinks','keihan_gate','keihan_food','inari_bridge','jr_crossing','hommachi_turn','urasando','inari_platform','omotesando_entry','romon','senbon','okusha','kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani'].filter(id=>assembly.spatial.byId[id]);
-  for(const id of ids){
-    const button=document.createElement('button');button.textContent=id==='yotsu'?'Yotsutsuji · Kyoto view':assembly.spatial.byId[id].label;
-    button.setAttribute('aria-label',button.textContent);
-    button.onclick=()=>{select.value=id;teleport(id);};panel.querySelector('#checkpoint-buttons').append(button);
+  const groups=[
+    ['Station approach',['keihan_platform','keihan_drinks','keihan_gate','keihan_food','inari_bridge','jr_crossing','hommachi_turn','urasando','inari_platform']],
+    ['Shrine',['omotesando_entry','romon','senbon','okusha']],
+    ['Mountain',['kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani']]
+  ];
+  for(const [title,list] of groups){
+    const ids=list.filter(id=>assembly.spatial.byId[id]);if(!ids.length)continue;
+    const group=document.createElement('section');group.className='place-group';
+    group.innerHTML=`<h3>${title}</h3>`;
+    for(const id of ids){
+      const button=document.createElement('button');button.textContent=id==='yotsu'?'Yotsutsuji · Kyoto view':assembly.spatial.byId[id].label;
+      button.onclick=()=>{select.value=id;teleport(id);};group.append(button);
+    }
+    places.querySelector('#checkpoint-buttons').append(group);
   }
-  panel.querySelector('#checkpoint-go').onclick=()=>teleport(select.value);
+  places.querySelector('#checkpoint-go').onclick=()=>teleport(select.value);
   panel.querySelector('#nav-collapse').onclick=e=>{
     const content=panel.querySelector('#nav-content');content.hidden=!content.hidden;
     e.currentTarget.textContent=content.hidden?'+':'−';
@@ -41,7 +40,7 @@ export function installExplorationHUD({camera,features,assembly,teleport,getRout
   let last=0;
   const secondary=features.pois.filter(p=>p.tags.name&&(p.tags.religion==='shinto'||p.tags.natural==='peak'||p.tags.tourism==='viewpoint')
     &&!assembly.spatial.anchors.some(a=>a.osm===p.id||Math.hypot(a.target[0]-p.point[0],a.target[2]-p.point[2])<10));
-  return {update(time){
+  return {places,update(time){
     if(time-last<150)return;last=time;
     const range=Number(panel.querySelector('#map-range').value),all=range>2000;
     const cx=all?660:camera.position.x,cz=all?-220:camera.position.z;

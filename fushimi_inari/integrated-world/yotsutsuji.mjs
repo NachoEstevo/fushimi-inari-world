@@ -3,7 +3,8 @@ import {pathSampler} from './spatial.mjs';
 import {toriiMaterials} from './torii-materials.mjs';
 import {yotsuForecourt} from './site-grading.mjs';
 import {yotsutsujiRetainingPlan,buildYotsutsujiRetaining,retainingBuilding,retainingEdgeIndex} from './yotsutsuji-retaining.mjs';
-import {buildYotsutsujiSupportsR95} from './yotsutsuji-support-r95.mjs';
+import {buildYotsutsujiSupportsR95} from './yotsutsuji-support-r95.mjs?v=mountain-walk-1';
+import {yotsutsujiWestStairCutout,yotsutsujiCourtPieces} from './yotsutsuji-court-clearance.mjs';
 
 // Footprints are OSM; floor datums are tied to mapped approaches. Building
 // heights, windows and roofs are reference-informed estimates, not a survey.
@@ -104,13 +105,18 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   }
   // A bounded, sloped forecourt follows the existing junction instead of
   // the old 22 m square that covered the branches and their stairs.
-  const polygon=yotsuForecourt;
+  const polygon=yotsuForecourt,cutout=yotsutsujiWestStairCutout(surfaces);
   const positions=[],uv=[];
-  for(const t of THREE.ShapeUtils.triangulateShape(polygon.map(p=>new THREE.Vector2(...p)),[]))
-    for(const i of t){const [x,z]=polygon[i];positions.push(x,ground(x,z)+.10,z);uv.push(x/2,z/2);}
+  for(const t of THREE.ShapeUtils.triangulateShape(polygon.map(p=>new THREE.Vector2(...p)),[])){
+    const source=t.map(i=>polygon[i]),heights=source.map(([x,z])=>ground(x,z)+.10),[a,b,c]=source,den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);
+    for(const piece of yotsutsujiCourtPieces(source,cutout))for(let j=1;j<piece.length-1;j++)for(const [x,z]of [piece[0],piece[j],piece[j+1]]){
+      const u=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(z-c[1]))/den,v=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(z-c[1]))/den;
+      positions.push(x,u*heights[0]+v*heights[1]+(1-u-v)*heights[2],z);uv.push(x/2,z/2);
+    }
+  }
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.computeVertexNormals();
   const mat=legacy.materials.flagstoneMat.clone();mat.side=THREE.DoubleSide;
-  const plaza=new THREE.Mesh(geo,mat);plaza.receiveShadow=true;group.add(plaza);
+  const plaza=new THREE.Mesh(geo,mat);plaza.name='Yotsutsuji forecourt outside west stair';plaza.receiveShadow=true;group.add(plaza);
   // Resting places stay inside the existing forecourt, clear of all three
   // stair mouths. Dimensions are inferred from viewpoint/tea-house references.
   for(const x of [797,803]){

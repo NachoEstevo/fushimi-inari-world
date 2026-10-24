@@ -1,8 +1,10 @@
-import {createRecordedAudio} from './recorded-audio.mjs?v=recorded-immersion-9';
+import {createFootstepAudio} from './footstep-audio.mjs?v=complete-route-1';
+import {createRecordedAudio} from './recorded-audio.mjs?v=audio-small-1';
 import {createAmbience} from './ambient-audio.mjs';
-export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null,recorded=null;
+export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null,recorded=null,footsteps=null;
     document.addEventListener('visibilitychange',()=>{
       recorded?.pause(document.hidden);
+      if(document.hidden)footsteps?.stop();
       if(audioCtx&&audioEnabled){if(document.hidden)audioCtx.suspend();else audioCtx.resume();}
     });
     function initAmbientAudio() {
@@ -29,6 +31,8 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
       gain.connect(audioCtx.destination);
       // Continuous legacy noise is replaced by intermittent breeze.
       whiteNoise.disconnect();filter.disconnect();gain.disconnect();
+      footsteps=createFootstepAudio(audioCtx,{onStats:stats=>document.body.dataset.footstepAudio=JSON.stringify(stats)});
+      footsteps.load();
       ambience=createAmbience(audioCtx);
       recorded=createRecordedAudio(audioCtx,{onStats:stats=>document.body.dataset.recordedAudio=JSON.stringify(stats)});
       recorded.setVolume(Number(document.getElementById('ambient-volume')?.value??55)/100);
@@ -71,21 +75,10 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
 
     function playFootstepTick(isStone) {
       if (!audioEnabled || !audioCtx) return;
-      const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(isStone ? 135 : 92, now);
-      osc.frequency.exponentialRampToValueAtTime(42, now + 0.065);
-      g.gain.setValueAtTime(0.032, now);
-      g.gain.exponentialRampToValueAtTime(0.0008, now + 0.07);
-      osc.connect(g);
-      g.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.075);
+      footsteps?.play(isStone);
     }
 
 
 return {arrivalSpeechActive:()=>recorded?.announcementActive??false,bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>recorded?.setVolume(value),toggle(){initAmbientAudio();audioEnabled=!audioEnabled;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else audioCtx.suspend();return audioEnabled;}};
+step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>recorded?.setVolume(value),get enabled(){return audioEnabled;},setEnabled(value){initAmbientAudio();audioEnabled=!!value;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else {footsteps?.stop();audioCtx.suspend();}return audioEnabled;},toggle(){return this.setEnabled(!audioEnabled);}};
 }

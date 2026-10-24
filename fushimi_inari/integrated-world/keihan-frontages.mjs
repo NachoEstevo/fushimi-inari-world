@@ -166,6 +166,29 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   // One light strip is geometry only; no per-store light or shadow capture.
   fb(w-.35,.035,.04,w/2,2.60,-.07,palette.plaster);
   const caseData=kind==='senbei'?[[.90,1.35],[w-.90,1.35]]:kind==='soft-serve'?[[.94,1.40],[w-.83,1.21]]:[];
+  // Interpretive stock and equipment inside the recess, using existing batches.
+  // Keep the doorway and public street clear; these are not inventory claims.
+  for(const [u,bw] of caseData){
+   for(const y of [1.58,2.05]){
+    fb(bw-.12,.045,.32,u,y,-1.12,palette.timber);
+    for(const du of [-bw*.35,bw*.35])fb(.035,.18,.25,u+du,y-.10,-1.15,palette.stone);
+    for(let i=0;i<5;i++){
+     const x=u-bw*.32+i*bw*.16,ph=.21+(i%3)*.035;
+     fb(.14,ph,.13,x,y+.023+ph/2,-1.10,kind==='senbei'?palette.food:palette.plaster);
+     fb(.10,.055,.008,x,y+.11,-1.031,i%2?palette.red:palette.dark);
+     fb(.15,.018,.14,x,y+.032+ph,-1.10,palette.timber);
+    }
+   }
+  }
+  if(kind==='soft-serve'){
+   const u=w-.85;
+   for(const du of [-.27,.27])fb(.045,.91,.045,u+du,.455,-1.20,palette.stone);
+   fb(.67,.06,.50,u,.94,-1.08,palette.stone);
+   fb(.50,.49,.40,u,1.215,-1.09,palette.plaster);
+   fb(.38,.15,.025,u,1.32,-.876,palette.dark);
+   for(const du of [-.11,.11]){fb(.035,.15,.045,u+du,1.18,-.85,palette.dark);fb(.075,.035,.065,u+du,1.245,-.83,palette.red);}
+   fb(.42,.025,.20,u,.985,-.85,palette.dark);
+  }
   for(const [u,bw]of caseData){
    fb(bw,.68,.68,u,.34,-.43,kind==='senbei'?palette.timber:palette.plaster);blocker(bw,.68,u,-.43,0,1.25,'keihan_store_display_case');
    fb(bw,.065,.74,u,.73,-.43,palette.dark);fb(bw,.06,.62,u,1.20,-.42,palette.plaster);
