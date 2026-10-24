@@ -1,3 +1,5 @@
+import {buildKumatakaRestFurnitureR102} from './kumataka-rest-furniture-r102.mjs?v=102-release';
+import {buildOkushaMappedSheltersR102} from './okusha-mapped-shelters-r102.mjs?v=102-release';
 import {buildEntranceDetailsR101} from './entrance-details-r101.mjs?v=101-release';
 import {buildKumatakaDetailsR101} from './kumataka-details-r101.mjs?v=101-release';
 import {buildOkushaDetailsR101} from './okusha-details-r101.mjs?v=101-release';
@@ -710,6 +712,10 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const hit=floorRay.intersectObjects(walkSurfaces,false).find(hit=>hit.point.y>=base-.15&&hit.point.y<=Math.max(base,previous)+.24);
     return hit?Math.max(base,hit.point.y+.025):base;
   }
+  const okushaMappedSheltersR102=buildOkushaMappedSheltersR102(root,features,legacy.materials,walkHeight,colliders);
+  document.body.dataset.okushaMappedSheltersR102=JSON.stringify(okushaMappedSheltersR102?(({group,...report})=>report)(okushaMappedSheltersR102):null);
+  const kumatakaRestFurnitureR102=buildKumatakaRestFurnitureR102(root,features,surfaces,colliders,{water:shinikeWater,terrainPositions:renderedTerrainPositions});
+  document.body.dataset.kumatakaRestFurnitureR102=JSON.stringify(kumatakaRestFurnitureR102?(({group,...report})=>report)(kumatakaRestFurnitureR102):null);
   // Reviewed exterior positions on the mapped approaches. The nearest graph
   // node can fall beside a stair or inside the sanctuary's solid footprint.
   // Native walking review: the former points were clear of collisions but
@@ -744,5 +750,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   return {root,apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
-    excludesBuilding:b=>(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }
