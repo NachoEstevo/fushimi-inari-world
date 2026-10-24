@@ -14,9 +14,9 @@ import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
-import {buildPathMeshes} from './path-meshes.mjs?v=96-release';
+import {buildPathMeshes} from './path-meshes.mjs?v=100-release';
 import {installExplorationHUD} from './exploration-hud.mjs?v=32';
-import {integrate} from './integration.mjs?v=99-release';
+import {integrate} from './integration.mjs?v=101-release';
 import {installWalking} from './walking.mjs?v=35';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
@@ -101,6 +101,7 @@ try {
     }
   }
   const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy,assembly.ground);scene.add(pathGroup);
+  document.body.dataset.apronTransitionsR100=JSON.stringify(assembly.apronTransitionsR100);
 
   // Footprints are sourced. Extrusion height is metadata-based or explicitly inferred.
   const buildingGroup=new THREE.Group();scene.add(buildingGroup);buildingGroup.visible=$('buildings').checked;

@@ -1,3 +1,7 @@
+import {buildEntranceDetailsR101} from './entrance-details-r101.mjs?v=101-release';
+import {buildKumatakaDetailsR101} from './kumataka-details-r101.mjs?v=101-release';
+import {buildOkushaDetailsR101} from './okusha-details-r101.mjs?v=101-release';
+import {prepareMikoshikoApronTransitionsR100} from './mikoshiko-apron-transitions-r100.mjs?v=100-release';
 import {buildShinikeWaterR97} from './shinike-water-r97.mjs?v=98-water2';
 import {repairShinikeVegetationR97} from './shinike-vegetation-r97.mjs?v=97-release';
 import {buildKumatakaRegistrationR97} from './kumataka-registration-r97.mjs?v=98-water2';
@@ -655,6 +659,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const okushaCourt=buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders,surfaces);
   document.body.dataset.okushaFrontageR95=JSON.stringify(buildSenbonRestR95(root,features,byId.okusha,legacy.materials));
   document.body.dataset.okushaRestR96=JSON.stringify((({group,...report})=>report)(buildSenbonRestR96(root,features,byId.okusha,legacy.materials)));
+  const okushaDetailsR101=buildOkushaDetailsR101(root,features,byId.okusha,legacy.materials);
+  document.body.dataset.okushaDetailsR101=JSON.stringify(okushaDetailsR101?(({group,...report})=>report)(okushaDetailsR101):null);
   const restBoundaryR96=buildRestBoundaryR96(root,features,legacy.materials,colliders,ground);
   document.body.dataset.okushaBoundaryR96=JSON.stringify(restBoundaryR96?(({group,...report})=>report)(restBoundaryR96):null);
   document.body.dataset.okushaArchitecture=JSON.stringify(okushaCourt??null);
@@ -671,6 +677,12 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     parent.add(chunks);mesh.removeFromParent();
   }
   document.body.dataset.shinsenjoNorthCourtR99=JSON.stringify(buildShinsenjoNorthCourtR99(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  const apronTransitionsR100=prepareMikoshikoApronTransitionsR100(root);
+  if(apronTransitionsR100.built)surfaces.partitionApronEdgesR100=apronTransitionsR100.partitionEdges;
+  document.body.dataset.apronTransitionsR100=JSON.stringify(apronTransitionsR100.report??apronTransitionsR100);
+  const kumatakaDetailsR101=buildKumatakaDetailsR101(root);
+  document.body.dataset.kumatakaDetailsR101=JSON.stringify(kumatakaDetailsR101?(({group,...report})=>report)(kumatakaDetailsR101):null);
+  document.body.dataset.entranceDetailsR101=JSON.stringify(buildEntranceDetailsR101(root,features));
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
@@ -731,6 +743,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
     nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
-  return {root,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+  return {root,apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
     excludesBuilding:b=>(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

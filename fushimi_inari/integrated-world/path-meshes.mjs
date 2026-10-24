@@ -81,14 +81,21 @@ export function buildPathMeshes(network,legacy,ground){
           const lip=s.curbLip??.025;
           const cap=[up(a,lip),up(b,lip),up(ob,lip),up(oa,lip)];
           if(mountain&&side<0)cap.reverse();
-          quad(buckets.edge,...cap);
+          // Only source-qualified nonstair curb faces enter this optional
+          // apron reconciliation. Stair tops/risers and other buckets bypass it.
+          const curbQuad=(...corners)=>{
+            if(mountain||s.stair||!network.partitionApronEdgesR100){quad(buckets.edge,...corners);return;}
+            const vertices=[];quad(vertices,...corners);
+            buckets.edge.push(...network.partitionApronEdgesR100(vertices,s));
+          };
+          curbQuad(...cap);
           const foot=p=>[p[0],Math.min(p[1]-.30,ground(p[0],p[2])-.20),p[2]];
           if(mountain){
             const ua=(s.distance+len*part/cuts)/1.4,ub=(s.distance+len*(part+1)/cuts)/1.4;
             const wall=[foot(oa),foot(ob),up(ob,lip),up(oa,lip)].map((p,i)=>[...p,i===0||i===3?ua:ub,p[1]/1.4]);
             if(side>0)wall.reverse();
             quad(buckets.mountainRetaining,...wall);detail.retainingFaces++;
-          }else quad(buckets.edge,foot(oa),foot(ob),up(ob,lip),up(oa,lip));
+          }else curbQuad(foot(oa),foot(ob),up(ob,lip),up(oa,lip));
           // Narrow, uneven earth shoulder on mountain paths, below the curb.
           if(s.ya>55&&!senbon&&!network.omitEarthShoulder?.(s,side)){
             const spread=.28+.10*Math.sin(s.distance*1.73+side);

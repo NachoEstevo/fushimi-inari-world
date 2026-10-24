@@ -1,0 +1,148 @@
+{
+  "kumataka": null,
+  "okusha": null,
+  "entrance": {
+    "built": true,
+    "builtIds": [],
+    "revision": "R101",
+    "families": 3,
+    "condenserUnits": 3,
+    "upperEaveRails": 2,
+    "hangingRings": 16,
+    "extinguishers": 1,
+    "materialBatches": 5,
+    "triangles": 2002,
+    "units": [
+      {
+        "edge": 1,
+        "station": 3.357915129421827,
+        "relativeStation": 0.18,
+        "mid": 36.243452000000005,
+        "bottom": 35.968452000000006,
+        "projection": 0.391
+      },
+      {
+        "edge": 1,
+        "station": 7.275482780413959,
+        "relativeStation": 0.39,
+        "mid": 36.243452000000005,
+        "bottom": 35.968452000000006,
+        "projection": 0.391
+      },
+      {
+        "edge": 1,
+        "station": 10.633397909835784,
+        "relativeStation": 0.57,
+        "mid": 36.243452000000005,
+        "bottom": 35.968452000000006,
+        "projection": 0.391
+      }
+    ],
+    "rails": [
+      {
+        "side": -1,
+        "z": -5,
+        "level": 9.489999999999998,
+        "length": 14.799999999999999,
+        "rings": 8
+      },
+      {
+        "side": 1,
+        "z": 5,
+        "level": 9.489999999999998,
+        "length": 14.799999999999999,
+        "rings": 8
+      }
+    ],
+    "collidersAdded": 0,
+    "walkingChanged": false,
+    "terrainChanged": false,
+    "sourceGeometryChanged": false,
+    "sourceYears": [
+      2016,
+      2021
+    ],
+    "registration": "Apartment south edge inherited R96 mapped facade; Romon upper eave and north Kairo inherited R71/R95 source frame.",
+    "limits": "Equipment categories observed; stations, unit sizes, bracket/pipe details, rail length and ring count inferred. No logos, readable labels, remote services, mirrored extinguisher, hidden facade equipment, red pail, temporary festival flags, new route or surveyed/current-condition claim."
+  },
+  "groups": [
+    {
+      "name": "Entrance architectural equipment R101 / Romon fittings",
+      "triangles": 1426,
+      "batches": 3,
+      "bounds": [
+        [
+          -7.9896107949465085,
+          42.83224895231628,
+          -17.421113408515083
+        ],
+        [
+          3.59022702699811,
+          50.647697951721184,
+          8.700921374035397
+        ]
+      ]
+    },
+    {
+      "name": "Entrance architectural equipment R101 / apartment services",
+      "triangles": 576,
+      "batches": 2,
+      "bounds": [
+        [
+          -149.5209503173828,
+          35.543453216552734,
+          2.0512170791625977
+        ],
+        [
+          -141.44520568847656,
+          36.51845169067383,
+          2.4858639240264893
+        ]
+      ]
+    },
+    {
+      "name": "Kumataka photographed entry fittings R101",
+      "triangles": 680,
+      "batches": 3,
+      "bounds": [
+        [
+          539.5125203078228,
+          68.00287405722045,
+          -132.0604482193756
+        ],
+        [
+          542.1211329855944,
+          68.95187393896484,
+          -129.28792130038568
+        ]
+      ]
+    },
+    {
+      "name": "Okusha attached gable, sanctuary lattice and reception lanterns R101",
+      "triangles": 1896,
+      "batches": 5,
+      "bounds": [
+        [
+          244.76527158491498,
+          64.5317208302765,
+          64.56695697033607
+        ],
+        [
+          268.88910916627094,
+          67.64697785504151,
+          74.32730188341479
+        ]
+      ]
+    }
+  ],
+  "originalMeshCount": 7320,
+  "sourceGeometryAndAttributesUnchanged": true,
+  "sourceMaterialsUnchanged": true,
+  "sourceWorldMatricesUnchanged": true,
+  "interactionsPreserved": true,
+  "interactionCount": 59,
+  "featuresUnchanged": true,
+  "collidersUnchanged": true,
+  "heightUnchanged": true,
+  "terrainHeightUnchanged": true
+}
