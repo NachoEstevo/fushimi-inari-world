@@ -1,0 +1,305 @@
+{
+  "recordedAt": "2026-10-24T04:49:40.595270+00:00",
+  "baseline": "da6e6b98fefea5b8d212ff6e0915671b6218e858",
+  "scope": "Keihan default arrival and JR alternate approach; local CPU and native-browser evidence",
+  "releaseTests": {
+    "passed": 714,
+    "failed": 0,
+    "excluded": "unrelated unintegrated okusha-north-boundary-r103.test.mjs",
+    "lastAppearanceChange": "20-segment street-shoulder extension; four focused tests passed, native shader and Urasando screenshot verified"
+  },
+  "physicalReview": {
+    "publicRoute": {
+      "samples": 25566,
+      "blocked": 0,
+      "notWalkable": 0,
+      "missingSupport": 0,
+      "bodyIntersections": 0,
+      "duplicateTopSamples": 0,
+      "maxStep": 0.1358135179358868,
+      "maxAbsGap": 0.05289040603798867
+    },
+    "jrPublicRoute": {
+      "samples": 12204,
+      "blocked": 0,
+      "notWalkable": 0,
+      "missingSupport": 0,
+      "bodyIntersections": 0,
+      "duplicateTopSamples": 0,
+      "maxStep": 0.19929275994677198,
+      "maxAbsGap": 0.04488710218720371
+    },
+    "autoEgress": {
+      "samples": 246,
+      "blocked": 0,
+      "notWalkable": 0,
+      "missingSupport": 0,
+      "bodyIntersections": 0,
+      "duplicateTopSamples": 0,
+      "maxStep": 0.0006250000000029843,
+      "maxAbsGap": 0.015625075073252503
+    }
+  },
+  "nativeRouteCompletion": {
+    "keihanMetres": 415,
+    "jrMetres": 198,
+    "destinationCamera": "-8.52,43.49,1.31",
+    "button": "Restart route"
+  },
+  "performance": {
+    "samePoseViewport": [
+      1280,
+      720
+    ],
+    "pixelRatio": 1,
+    "beforeCalls": 2535,
+    "afterCalls": 2288,
+    "netCallReductionPercent": 9.74,
+    "controlledFpsImprovementEstablished": false
+  },
+  "boundaries": [
+    "The physical audit precedes the last appearance-only shoulder extension; geometry, colliders and walk heights are unchanged.",
+    "The audit harness source list was expanded during packaging; the original report retains its original launch hashes.",
+    "Final platform PNG is a later 1397x852 capture, not the 1280x720 platform performance sample.",
+    "Intermediate native review images retain their earlier pavement appearance.",
+    "Final native HTML includes separate user social metadata; its staged blob omits those unrelated edits.",
+    "Raw working hashes preserve Windows line endings. Git normalizes staged source; staged hashes are listed separately.",
+    "High-DPI/mobile performance, controlled first-load latency and production deployment are not verified.",
+    "Google Street View research captures are not included."
+  ],
+  "sources": {
+    "fushimi_inari/integrated-world/candle-flame-instances.mjs": {
+      "workingSha256": "6c663cd54dfbbc3c975bc114e358e9c22898ca1cbe5a3fd8e26bb14532c49b85",
+      "stagedSha256": "6c663cd54dfbbc3c975bc114e358e9c22898ca1cbe5a3fd8e26bb14532c49b85",
+      "stagedGitBlob": "3ea4a371b1deecdcb3c59ba19859592c75a362da"
+    },
+    "fushimi_inari/integrated-world/candle-flame-instances.test.mjs": {
+      "workingSha256": "5e169fc86289233763cbf791f1bf3d0e39301cfa2e7ebd38266a87df2b60de95",
+      "stagedSha256": "5e169fc86289233763cbf791f1bf3d0e39301cfa2e7ebd38266a87df2b60de95",
+      "stagedGitBlob": "87fc474548dab90b067fb345fd3595ac22dd381a"
+    },
+    "fushimi_inari/integrated-world/exploration-hud.mjs": {
+      "workingSha256": "be27d4f69e5e715558d480300ead674744f56ba0709dec3bee2b5313e7b3c194",
+      "stagedSha256": "253ec443107b55b1c8d37e4d75bc3cc6ea7cf5737769198f8a9ff4cedeb12c4c",
+      "stagedGitBlob": "4817586f1ad8e91174f13b4ff36893c98b9a865d"
+    },
+    "fushimi_inari/integrated-world/exploration-menu.mjs": {
+      "workingSha256": "8368f7a2b5a730c52ceff778269e07a48719cfa449e8363c87dfda50b518c5ac",
+      "stagedSha256": "e2f0e0e063f058d59ad64895e26f17cc9d014c443af41f46a366d3c9be3b182a",
+      "stagedGitBlob": "a64c3b42ddc4befffbefd4df23001ff6f0d33916"
+    },
+    "fushimi_inari/integrated-world/index.html": {
+      "workingSha256": "40c6b008339666aa6193ba09260594c477b1861fa2b94431fc254ef79d021913",
+      "stagedSha256": "27a528eaf2fc28676336fb6590dde595902c958b54ba1f5602ca19743b6573f8",
+      "stagedGitBlob": "39d6420e18fcbc6176909347ffdbdb05763c56b7"
+    },
+    "fushimi_inari/integrated-world/integration.mjs": {
+      "workingSha256": "efe40c280099892bbe2a3007762cb2918e7a47eb31fcef04ab12a154c28b8b71",
+      "stagedSha256": "2b56bbe81984117518804a1bc0b6ed6536a97251b3fc327c165c4589a2576771",
+      "stagedGitBlob": "cdb0f4bbdbd09c947e3e9b366554c92211f9d09e"
+    },
+    "fushimi_inari/integrated-world/keihan-approach.mjs": {
+      "workingSha256": "d9472fc492b7d9edc95ca1a30f02e96e020d960ddcfe9e384cb1e64e07106a33",
+      "stagedSha256": "e9d737d8e79197a661e09f35d3bce1add566d6cf31aa3ce89c096a8aefca45fd",
+      "stagedGitBlob": "8eb0bb1bae34821b263563141aaabe0b8acf1275"
+    },
+    "fushimi_inari/integrated-world/keihan-approach.test.mjs": {
+      "workingSha256": "b228014af3190a8c2502a92873c1cd280e4c731374c7ec65da0e319f51501a78",
+      "stagedSha256": "b228014af3190a8c2502a92873c1cd280e4c731374c7ec65da0e319f51501a78",
+      "stagedGitBlob": "1eecae194f4dca135b9b88fcd820265da2dcf731"
+    },
+    "fushimi_inari/integrated-world/keihan-frontages.mjs": {
+      "workingSha256": "941b9eadd9237928169fcab0697a4368c07c792dfee27bb3964fda154bc5a477",
+      "stagedSha256": "941b9eadd9237928169fcab0697a4368c07c792dfee27bb3964fda154bc5a477",
+      "stagedGitBlob": "c53c54f4493fd9afa4210ba5d875993ae34ef53c"
+    },
+    "fushimi_inari/integrated-world/keihan-frontages.test.mjs": {
+      "workingSha256": "b3d9c4e3f90d1ca8efc771bf962482f8d450cb660c5a4f49bc0c56d2811ff4e7",
+      "stagedSha256": "b3d9c4e3f90d1ca8efc771bf962482f8d450cb660c5a4f49bc0c56d2811ff4e7",
+      "stagedGitBlob": "7c09e4ae1c01d0938de3ffc6c940265820fe2474"
+    },
+    "fushimi_inari/integrated-world/keihan-station-spec.mjs": {
+      "workingSha256": "5dd10348b4c11c293f58f05933b0cf2bdbbfd2f9a9c13cd9526021b7aa32bad0",
+      "stagedSha256": "5dd10348b4c11c293f58f05933b0cf2bdbbfd2f9a9c13cd9526021b7aa32bad0",
+      "stagedGitBlob": "8629cdd4ac097c15ed6303835afd1979ee5fef2c"
+    },
+    "fushimi_inari/integrated-world/keihan-station.mjs": {
+      "workingSha256": "f2370f4af84f81add496d9431e10c2e1c800f17e34341c35d1f8e50604d03944",
+      "stagedSha256": "f2370f4af84f81add496d9431e10c2e1c800f17e34341c35d1f8e50604d03944",
+      "stagedGitBlob": "a3b9fe2820eb65d6be7499f32acadef9e4e70d27"
+    },
+    "fushimi_inari/integrated-world/keihan-station.test.mjs": {
+      "workingSha256": "1190ca0f0edbff4c27ab4e936138284386b0d86f1723aeb6ed77b7236afc37c2",
+      "stagedSha256": "1190ca0f0edbff4c27ab4e936138284386b0d86f1723aeb6ed77b7236afc37c2",
+      "stagedGitBlob": "524442fa70174571bbcb4ea9157ff3d3585ed423"
+    },
+    "fushimi_inari/integrated-world/keihan-street-context.mjs": {
+      "workingSha256": "8801a71fd189aef3ed0af8a109a5ec47bc6338a3b3a2d55251b1a73c686434c7",
+      "stagedSha256": "8801a71fd189aef3ed0af8a109a5ec47bc6338a3b3a2d55251b1a73c686434c7",
+      "stagedGitBlob": "9894807d5e63ad55badff91bb77b26365566951e"
+    },
+    "fushimi_inari/integrated-world/keihan-street-context.test.mjs": {
+      "workingSha256": "68439dfdfc5afeebcc9063e5cb1a48eb0a29b0316686dcd3c112558be2c85037",
+      "stagedSha256": "68439dfdfc5afeebcc9063e5cb1a48eb0a29b0316686dcd3c112558be2c85037",
+      "stagedGitBlob": "b76a10c64a73516392cec993d57805e92ca43bb3"
+    },
+    "fushimi_inari/integrated-world/keihan-street-ground.mjs": {
+      "workingSha256": "bb72efd54ad4b35480cfd6ffb7f7a7e524e050384f2371b664ff8f53d96b24d7",
+      "stagedSha256": "bb72efd54ad4b35480cfd6ffb7f7a7e524e050384f2371b664ff8f53d96b24d7",
+      "stagedGitBlob": "90cb8d72450fa68fadd5fa093d724c5514768333"
+    },
+    "fushimi_inari/integrated-world/keihan-street-ground.test.mjs": {
+      "workingSha256": "6e80f14762d4bc97065d2a4f54fe8223a79098fa36c306e9e99c5b9261e7d86d",
+      "stagedSha256": "6e80f14762d4bc97065d2a4f54fe8223a79098fa36c306e9e99c5b9261e7d86d",
+      "stagedGitBlob": "4ebfd09be60a17a2cdd5ff216054ee77a0583e14"
+    },
+    "fushimi_inari/integrated-world/keihan-urasando.mjs": {
+      "workingSha256": "8c41af899ecc9a2daefe611cb838d829efa38cc057b52946a5add0adb379a60c",
+      "stagedSha256": "a1b12a6b1e4f93cdc9da19ef94c9e94812f48697253193dd4431c3ed6f0d00a4",
+      "stagedGitBlob": "c96ad5df602d03b5e411a95362ec2a31c284d967"
+    },
+    "fushimi_inari/integrated-world/keihan-urasando.test.mjs": {
+      "workingSha256": "9721701e9391900c5d0990f8b13f17caae5f4c045f1b1b43615a5cf70ed4a26d",
+      "stagedSha256": "9721701e9391900c5d0990f8b13f17caae5f4c045f1b1b43615a5cf70ed4a26d",
+      "stagedGitBlob": "e63775dd1ce1f06162b8846d205428514a20dcc7"
+    },
+    "fushimi_inari/integrated-world/station-approach-routes.mjs": {
+      "workingSha256": "3fe136b453514f83b5967cb63c61d187fd77f869906102f0dea7dc482a02b79b",
+      "stagedSha256": "3fe136b453514f83b5967cb63c61d187fd77f869906102f0dea7dc482a02b79b",
+      "stagedGitBlob": "88c9b9165ec4e9a67b5c537ffb1360ba82f994a9"
+    },
+    "fushimi_inari/integrated-world/station-approach-routes.test.mjs": {
+      "workingSha256": "5356d1e0b43bb0a9703776d81319fe0cd742994fac9b934a294c53f29237120b",
+      "stagedSha256": "5356d1e0b43bb0a9703776d81319fe0cd742994fac9b934a294c53f29237120b",
+      "stagedGitBlob": "7aa6a67cb23eafa4a9838e7e413d004a665dfc27"
+    },
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.mjs": {
+      "workingSha256": "2cd340f687e32671531c16d732d8265eae2215ea89a68306314d1483c9e5ea17",
+      "stagedSha256": "2cd340f687e32671531c16d732d8265eae2215ea89a68306314d1483c9e5ea17",
+      "stagedGitBlob": "4752ee7698f311a16f3749b494decf97b380d231"
+    },
+    "fushimi_inari/integrated-world/station-approach-surface-fixes.test.mjs": {
+      "workingSha256": "26a625fded0ce3f2af60bf2d4d0c3abc358dcb222935e771f2020a54f5c42e14",
+      "stagedSha256": "26a625fded0ce3f2af60bf2d4d0c3abc358dcb222935e771f2020a54f5c42e14",
+      "stagedGitBlob": "ea012ae098581c26188c8c0a6d93152d5fce26ed"
+    },
+    "fushimi_inari/integrated-world/train-arrival-ui.mjs": {
+      "workingSha256": "d3cabba6a21734aba8ea4fe44d0f0517539c772c463a60eb3cf1cd4cc99fe4a3",
+      "stagedSha256": "d3cabba6a21734aba8ea4fe44d0f0517539c772c463a60eb3cf1cd4cc99fe4a3",
+      "stagedGitBlob": "9d57fec47e830c5b180e50692cbb1758421041be"
+    },
+    "fushimi_inari/integrated-world/viewer.mjs": {
+      "workingSha256": "6a800baa3c336b7ca7884ee5e86dedf6bcd5d3474c34727a37a0ffe0bbaf56d0",
+      "stagedSha256": "d76f7885128f7df4017917e9985e81ee738d34d56841e77e33cc09c16ed48dd6",
+      "stagedGitBlob": "0cdf6d3e01aa18fd350c5a67504fcc0d39e126dd"
+    }
+  },
+  "evidence": {
+    "outputs/keihan-arrival-review/README.md": {
+      "bytes": 3576,
+      "sha256": "3e0d0428fca5e59f9892c10b75a98bb81c407d32a519162d912a9ec540e2409c"
+    },
+    "outputs/keihan-arrival-review/audit.mjs": {
+      "bytes": 16292,
+      "sha256": "0147ac23e89ca03fb0e7f0d7674c68364b1f1e0ff2a98d146f0f8c6247d47723"
+    },
+    "outputs/keihan-arrival-review/independent-audit.json": {
+      "bytes": 47175,
+      "sha256": "25c29817d06a19413bac3512ca673cf0fa0083f4d76afa585270be7447b86327"
+    },
+    "outputs/keihan-arrival-review/independent-audit.log": {
+      "bytes": 11694,
+      "sha256": "7369921d6a82a03c30f70d88323f76a7dfc5df9d031b5805fef52288b7385f61"
+    },
+    "outputs/keihan-arrival-review/release-tests.log": {
+      "bytes": 162727,
+      "sha256": "23deed9eb97f5000dd397931d9638b25ab518f8744d7f31175687449e9160d2b"
+    },
+    "outputs/keihan-arrival-review/native-keihan-before.json": {
+      "bytes": 379,
+      "sha256": "f7e22548d7c17f2ff5dae8e1439602c3496a042e4e2a87b6a1923664611d01ad"
+    },
+    "outputs/keihan-arrival-review/native-keihan-flames-after.json": {
+      "bytes": 404,
+      "sha256": "fd9afc1bb0537ee44d8ea0f4181ee1dfb835e2d1055a74f06f155132a963415b"
+    },
+    "outputs/keihan-arrival-review/native-final-platform.json": {
+      "bytes": 610,
+      "sha256": "2292954143f630cc05e4d9492912d4336cff3417e9eb20e88391293c11f13514"
+    },
+    "outputs/keihan-arrival-review/native-final-platform.png": {
+      "bytes": 74359,
+      "sha256": "e89932648a53d12dbb02cb0d5cc8f85f0893c459e1b955e4f541fcd32b30e1f9",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-final-keihan-tour.json": {
+      "bytes": 409,
+      "sha256": "3487f22b1e41bc2210aada1d035c6923d59ac3efdff8ccfafd745b6c33e6beb1"
+    },
+    "outputs/keihan-arrival-review/native-final-jr-tour.json": {
+      "bytes": 346,
+      "sha256": "3e3ad6f69646618c117a394737be457072989f9b891ff05e5f150a4149f9e75a"
+    },
+    "outputs/keihan-arrival-review/native-final-romon.png": {
+      "bytes": 117318,
+      "sha256": "ac920646542a97d1c3056a80f5b3c131098538789e4e844f8b11a4b1a6726535",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-final-urasando.png": {
+      "bytes": 178448,
+      "sha256": "0e3de6e877a40c02f3f0ddf744e4fe44f9d85e7d178bcf1bd6bfdeb14fc5b84a",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-final-urasando.json": {
+      "bytes": 407,
+      "sha256": "85da808c723e7c9c62ad8954c353e8d0792c06d1afafb53c409692581705628b"
+    },
+    "outputs/keihan-arrival-review/native-final-console.json": {
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "outputs/keihan-arrival-review/native-platform-reviewed.png": {
+      "bytes": 65795,
+      "sha256": "ec089cbb9293fb31199c67444b6f3b4ae86ae41c35e160aed468e696e53aa2bb",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-bridge-reviewed.png": {
+      "bytes": 86462,
+      "sha256": "f6d317f9f73cf416fd6fef1cf25ea4143e1532c1214011ac6645d8ca5b0ee4e5",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-canal-reviewed.png": {
+      "bytes": 92479,
+      "sha256": "49d4601265bd8686be254fe5b4f648260f41ba9803dd0d166aa4edfc05fb9c2c",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/keihan-arrival-review/native-food-counter.png": {
+      "bytes": 99242,
+      "sha256": "01567589cf49ed8c66d17e01dd8915c8231c9b10ee1cfa348891437ce0dbf48d",
+      "width": 65536,
+      "height": 4292542531
+    },
+    "outputs/inari-followup-performance/candle-benchmark.mjs": {
+      "bytes": 9063,
+      "sha256": "c8506dee4b25bd353fc1573e13c297928af5e057905d5bba551563c9e96f6ae5"
+    },
+    "outputs/inari-followup-performance/candle-benchmark.json": {
+      "bytes": 5026,
+      "sha256": "5510c2e6c94b085fe0e965af6670a7ba0100cdc323cd5b2d92cf04b9839c4499"
+    },
+    "outputs/inari-followup-performance/candle-benchmark-first.json": {
+      "bytes": 3198,
+      "sha256": "dc1996d8359e9a02be63dd7b265433acb9f9de5175b5d1e138191a94ff6058f5"
+    },
+    "outputs/inari-followup-performance/candle-benchmark-flames-only.json": {
+      "bytes": 3408,
+      "sha256": "cd7b3a5b07b2f5638ba19ab53f617d1668f904aec77592ef06d67106c4577580"
+    }
+  }
+}

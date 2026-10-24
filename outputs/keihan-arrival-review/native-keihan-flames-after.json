@@ -1,0 +1,5 @@
+{
+  "camera": "-306.13,32.74,-181.95",
+  "flames": "{\"flames\":196,\"instancedFlames\":196,\"batches\":14,\"fallbackFlames\":0,\"removedDrawCalls\":182,\"updates\":0}",
+  "stats": "{\"fps\":68.3,\"submitMs\":13.52,\"calls\":2375,\"triangles\":3719098,\"geometries\":1775,\"textures\":109,\"width\":1280,\"height\":720,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T04:29:16.099Z\"}"
+}

@@ -1,0 +1,7 @@
+{
+  "camera": "-8.52,43.49,1.31",
+  "routeText": "415 m · Station to Rōmon",
+  "start": "Keihan Fushimi-Inari train arrival · Platform 2",
+  "stats": "{\"fps\":72.2,\"submitMs\":12.95,\"calls\":2068,\"triangles\":5821715,\"geometries\":2119,\"textures\":161,\"width\":1280,\"height\":720,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T04:41:05.214Z\"}",
+  "walkButton": "Restart route"
+}

@@ -1,0 +1,7 @@
+{
+  "arrival": "{\"phase\":\"complete\",\"paused\":false,\"reducedMotion\":false,\"handoff\":\"walking\"}",
+  "camera": "-306.13,32.74,-181.95",
+  "flames": "{\"flames\":196,\"instancedFlames\":196,\"batches\":14,\"fallbackFlames\":0,\"instancedWax\":112,\"waxBatches\":8,\"removedDrawCalls\":286,\"updates\":0}",
+  "start": "Keihan Fushimi-Inari train arrival · Platform 2",
+  "stats": "{\"fps\":73.9,\"submitMs\":12.8,\"calls\":2288,\"triangles\":3748828,\"geometries\":1790,\"textures\":110,\"width\":1280,\"height\":720,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T04:40:17.000Z\"}"
+}

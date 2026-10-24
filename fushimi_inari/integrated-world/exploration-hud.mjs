@@ -1,6 +1,6 @@
 import {isRestricted} from '../geography/geo-core.mjs';
 
-export function installExplorationHUD({camera,features,assembly,teleport}){
+export function installExplorationHUD({camera,features,assembly,teleport,getRoute=()=>[]}){
   const panel=document.createElement('section');panel.id='navigation';panel.setAttribute('aria-label','Navigation');
   panel.innerHTML=`<div class="row"><strong>Inariyama map</strong><button id="nav-collapse" aria-label="Collapse minimap">−</button></div>
     <div id="nav-content"><canvas id="walk-map" width="400" height="240" aria-label="Minimap with position and trails"></canvas>
@@ -26,7 +26,7 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
     const option=document.createElement('option');option.value=a.id;option.textContent=a.label;select.append(option);
   }
   select.value='romon';
-  const ids=['inari_platform','omotesando_entry','romon','senbon','okusha','kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani'].filter(id=>assembly.spatial.byId[id]);
+  const ids=['keihan_platform','keihan_gate','inari_bridge','urasando','inari_platform','omotesando_entry','romon','senbon','okusha','kumataka','yotsu','kojingamine','west_view','sannomine','ninomine','summit','mitsurugi','gozendani'].filter(id=>assembly.spatial.byId[id]);
   for(const id of ids){
     const button=document.createElement('button');button.textContent=id==='yotsu'?'Yotsutsuji · Kyoto view':assembly.spatial.byId[id].label;
     button.setAttribute('aria-label',button.textContent);
@@ -53,6 +53,9 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
       ctx.fillStyle='#4d8d99';ctx.strokeStyle='#4d8d99';
       if(water.tags.natural==='water')ctx.fill();else ctx.stroke();
     }
+    if(assembly.keihanApproach?.canal){
+      ctx.beginPath();assembly.keihanApproach.canal.ring.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[1])):ctx.moveTo(px(p[0]),pz(p[1])));ctx.fillStyle='#4d8d99';ctx.fill();
+    }
     for(const b of features.buildings){
       if(!b.points.some(p=>Math.abs(p[0]-cx)<range*.6&&Math.abs(p[2]-cz)<range*.5))continue;
       ctx.fillStyle='#abb0a3aa';ctx.beginPath();b.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.fill();
@@ -64,6 +67,8 @@ export function installExplorationHUD({camera,features,assembly,teleport}){
       ctx.lineWidth=p.tags.highway==='steps'?2:1.2;ctx.beginPath();
       p.points.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.stroke();
     }
+    const route=getRoute();
+    if(route.length){ctx.setLineDash([]);ctx.strokeStyle='#d64c2e';ctx.lineWidth=2.5;ctx.beginPath();route.forEach((p,i)=>i?ctx.lineTo(px(p[0]),pz(p[2])):ctx.moveTo(px(p[0]),pz(p[2])));ctx.stroke();}
     ctx.setLineDash([]);
     const labels=assembly.spatial.anchors.map(a=>{
       const x=Math.min(px(a.target[0])+6,310),y=pz(a.target[2])-5;

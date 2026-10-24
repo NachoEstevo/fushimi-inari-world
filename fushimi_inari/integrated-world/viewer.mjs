@@ -1,8 +1,10 @@
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
-import {installExplorationMenu} from './exploration-menu.mjs?v=inari-arrival-1';
+import {installExplorationMenu} from './exploration-menu.mjs?v=keihan-arrival-1';
 import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
+import {buildStationApproachRoutes} from './station-approach-routes.mjs';
+import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs';
 import {installTrainArrivalUI} from './train-arrival-ui.mjs';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
@@ -11,15 +13,17 @@ import {installFlashlight} from './flashlight.mjs';
 import {installVisitors} from './visitors.mjs?v=82';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
+import {installCandleFlameInstances} from './candle-flame-instances.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
+import {blendKeihanStreetGround} from './keihan-street-ground.mjs';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=100-release';
-import {installExplorationHUD} from './exploration-hud.mjs?v=inari-arrival-1';
-import {integrate} from './integration.mjs?v=inari-arrival-1';
-import {installWalking} from './walking.mjs?v=inari-arrival-1';
+import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-arrival-1';
+import {integrate} from './integration.mjs?v=keihan-arrival-1';
+import {installWalking} from './walking.mjs?v=keihan-arrival-1';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -36,7 +40,7 @@ try {
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   const renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
   $('world').append(renderer.domElement);
@@ -58,7 +62,8 @@ try {
   const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
   const mikoshikoClipped=assembly.mikoshikoPrecinct.clipTerrain?.(pathClipped)??pathClipped;
   const shinsenjoClipped=assembly.shinsenjoPrecinct.clipTerrain?.(mikoshikoClipped)??mikoshikoClipped;
-  const pos=assembly.shinikeWater.clipTerrain?.(shinsenjoClipped)??shinsenjoClipped;
+  const shinikeClipped=assembly.shinikeWater.clipTerrain?.(shinsenjoClipped)??shinsenjoClipped;
+  const pos=assembly.keihanApproach?.clipTerrain(shinikeClipped)??shinikeClipped;
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
@@ -88,6 +93,7 @@ try {
   const romon=assembly.spatial.byId.romon;
   blendCourtyardGround(terrainMaterial,courtyard,romon);
   blendEntranceGround(terrainGeo,terrainMaterial,courtyard,romon,features);
+  blendKeihanStreetGround(terrainGeo,terrainMaterial,features);
   const landscape=spatialMeshes(terrainGeo,terrainMaterial,160);scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
@@ -105,6 +111,9 @@ try {
     }
   }
   const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy,assembly.ground);scene.add(pathGroup);
+  const approachFloors=buildStationApproachSurfaceFixes(assembly,pathGroup,features);
+  assembly.walkHeight=approachFloors.walkHeight;
+  document.body.dataset.approachFloors=JSON.stringify(approachFloors.stats);
   document.body.dataset.apronTransitionsR100=JSON.stringify(assembly.apronTransitionsR100);
 
   // Footprints are sourced. Extrusion height is metadata-based or explicitly inferred.
@@ -180,6 +189,7 @@ try {
   landmarks.forEach((p,i)=>{dummy.position.set(p.point[0],ground(p.point[0],p.point[2])+12,p.point[2]);dummy.updateMatrix();markers.setMatrixAt(i,dummy.matrix);});
   landmarkGroup.add(markers);landmarkGroup.visible=false;
   const graph=buildGraph(features.paths,terrain);
+  const stationRoutes=buildStationApproachRoutes(assembly,features,terrain);
   let activeRoute=[],routeLine=null,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
   let arrival=null,arrivalUI=null;
   function interruptArrival(){
@@ -212,6 +222,19 @@ try {
   function trace(){
     clearRoute();
     $('custom-fields').hidden=$('itinerary').value!=='custom';
+    const stationKey=$('itinerary').value;
+    const stationSelected=stationKey==='keihan'||stationKey==='jr';
+    $('branch').hidden=stationSelected;document.querySelector('label[for="branch"]').hidden=stationSelected;
+    if(stationKey==='keihan'||stationKey==='jr'){
+      const route=stationRoutes[stationKey];
+      if(!route){$('route-info').textContent='This station approach is unavailable.';drawMap();return;}
+      activeRoute=route.points;
+      const stats=routeMetrics(activeRoute);
+      $('route-info').textContent=`${Math.round(stats.length)} m · Station to Rōmon`;
+      $('route-stops').textContent=route.stops.join(' → ');
+      $('route-gaps').textContent='Follow the station exit and public streets to the shrine.';
+      showRoute();return;
+    }
     let chosen=[$('start').value,...($('via').value?[$('via').value]:[]),$('destination').value].map(id=>landmarks.find(p=>p.id===id));
     if($('itinerary').value!=='custom'){
       const names=['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)','三ノ峰','二ノ峰','一ノ峰'];
@@ -236,7 +259,11 @@ try {
     $('route-info').textContent=`${(stats.length/1000).toFixed(2)} km · ↑ ${Math.round(stats.ascent)} m · ↓ ${Math.round(stats.descent)} m. Elevation estimated from DEM.`;
     $('route-stops').textContent=chosen.map(displayName).join(' → ');
     $('route-gaps').textContent=`Maximum landmark-to-path distance: ${Math.max(...gaps)} m. Routes reach mapped trail nodes, without invented links to buildings.`;
-    routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+1,p[2]))),
+    showRoute();
+  }
+  function showRoute(){
+    const lift=['keihan','jr'].includes($('itinerary').value)?.08:1;
+    routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+lift,p[2]))),
       new THREE.LineBasicMaterial({color:0xff7146,depthTest:true}));
     routeLine.renderOrder=20;scene.add(routeLine);profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
     marker.position.set(activeRoute[0][0],activeRoute[0][1]+5,activeRoute[0][2]);marker.visible=true;drawMap();
@@ -335,7 +362,7 @@ try {
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m ASL`;
   }
   $('visit').onclick=visit;$('place').value='romon';visit();
-  const hud=installExplorationHUD({camera,features,assembly,teleport:id=>{
+  const hud=installExplorationHUD({camera,features,assembly,getRoute:()=>activeRoute,teleport:id=>{
     const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
     if(!node)return;
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
@@ -360,11 +387,15 @@ try {
     sun.color.set(mode==='gold'?0xffba75:mode==='night'?0x7c9ad4:0xffebcd);
     hemi.intensity=mode==='night'?.4:1.6;sky.setMode(mode);
     assembly.inariStation?.setMode(mode);
+    assembly.keihanStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
     for(const light of assembly.legacy.lanternPointLights){light.intensity=mode==='night'?2:0;light.visible=mode==='night';}
   };$('light').onchange();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
-  const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false});
+  const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
+  document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
+  const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false,
+    onRenderQuality:quality=>{renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?1.7:1.25));renderer.setSize(innerWidth,innerHeight);}});
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
   installSeasons(assembly,canopy);
@@ -373,6 +404,8 @@ try {
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
   addEventListener('pagehide',event=>{if(!event.persisted)pondReflections.dispose();});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
+  $('loading').textContent='Preparing materials for the arrival…';
+  await renderer.compileAsync(scene,camera);
   $('loading').remove();trace();
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
@@ -381,20 +414,24 @@ try {
     return walker.teleport([x,y,z],[tx,y+1.7,tz]);
   }
   // Route initialization enables orbit controls; give arrival sole ownership last.
-  if(assembly.inariStation?.built&&assembly.inariStationRoute?.built){
-    arrival=createTrainArrivalExperience({sequenceOptions:assembly.inariStation.spec.arrival,
-      station:assembly.inariStation,camera,controls,walker,
+  const arrivalStation=assembly.keihanStation??assembly.inariStation;
+  if(arrivalStation?.built){
+    const isKeihan=arrivalStation===assembly.keihanStation;
+    arrival=createTrainArrivalExperience({sequenceOptions:arrivalStation.spec.arrival,
+      station:arrivalStation,camera,controls,walker,
       onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
-    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active});
+    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active,
+      labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · drag to look'}:{}});
     arrival.start({reducedMotion:arrivalUI.reducedMotion});
-    document.body.dataset.startLocation='JR Inari train arrival · Platform 2';
+    document.body.dataset.startLocation=isKeihan?'Keihan Fushimi-Inari train arrival · Platform 2':'JR Inari fallback · Platform 2';
   }else{
     document.body.dataset.startLocation=startAtOmotesando()?'Omotesando fallback: station unavailable':'Romon fallback: crossing unavailable';
   }
 
 
   const recordRender=renderStats(renderer);
+  lastTime=performance.now();
   let mapTimer=0;
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
@@ -416,7 +453,7 @@ try {
       const look=routeProgress>=activeRoute.length-1
         ? [b[0]+b[0]-a[0],b[1],b[2]+b[2]-a[2]]
         : activeRoute[Math.min(routeProgress+5,activeRoute.length-1)];
-      camera.lookAt(look[0],ground(look[0],look[2])+1.7,look[2]);marker.position.set(x,y+5,z);
+      camera.lookAt(look[0],look[1]+1.7,look[2]);marker.position.set(x,y+5,z);
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
       $('position').textContent=arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
@@ -427,7 +464,7 @@ try {
     }
     sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
     sun.position.copy(sun.target.position).add(new THREE.Vector3(-45,65,35));
-    for(const flame of assembly.legacy.flickeringCandleMeshes)flame.scale.y=.88+.12*Math.sin(time*.006+(flame.userData.phase??0));
+    candleFlames.update(time);
 
     for(const water of waterControllers)water.update(time/1000);
     sky.update();flashlight.update();visitors.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);

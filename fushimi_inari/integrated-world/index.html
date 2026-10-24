@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fushimi Inari · Integrated world</title>
-  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=inari-arrival-1">
+  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=keihan-arrival-1">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
 </head>
 <body>
@@ -16,7 +16,7 @@
     <button id="audio">Sound: off</button>
 
     <span class="eyebrow">EXPLORE THE TRAIL</span>
-    <label for="itinerary">Itinerary</label><select id="itinerary"><option value="ascent">Senbon and the three summits</option><option value="loop">Summit loop via Gozendani</option><option value="custom">Custom route</option></select>
+    <label for="itinerary">Itinerary</label><select id="itinerary"><option value="keihan">Keihan → Fushimi Inari shrine</option><option value="jr">JR Inari → Fushimi Inari shrine</option><option value="ascent">Senbon and the three summits</option><option value="loop">Summit loop via Gozendani</option><option value="custom">Custom route</option></select>
     <div id="custom-fields" hidden>
       <label for="start">From</label><select id="start"></select>
       <label for="destination">To</label><select id="destination"></select>
@@ -43,6 +43,6 @@
   <div id="position">Horizontal and vertical scale 1:1</div>
   <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terrain derived from <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Official shrine map</a></footer>
   <div id="loading">Preparing terrain and trails…</div>
-  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=inari-arrival-1"></script>
+  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=keihan-arrival-1"></script>
 </body>
 </html>

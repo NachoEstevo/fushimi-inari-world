@@ -1,0 +1,6 @@
+{
+  "camera": "-8.52,43.49,1.31",
+  "routeText": "198 m · Station to Rōmon",
+  "stats": "{\"fps\":75.8,\"submitMs\":12.34,\"calls\":2068,\"triangles\":5821715,\"geometries\":2428,\"textures\":161,\"width\":1280,\"height\":720,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T04:42:01.023Z\"}",
+  "walkButton": "Restart route"
+}

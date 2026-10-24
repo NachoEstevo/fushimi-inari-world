@@ -1,0 +1,5 @@
+{
+  "arrival": "{\"phase\":\"complete\",\"paused\":false,\"reducedMotion\":false,\"handoff\":\"walking\"}",
+  "camera": "-306.13,32.74,-181.95",
+  "stats": "{\"fps\":67.6,\"submitMs\":14.03,\"calls\":2535,\"triangles\":3718104,\"geometries\":1753,\"textures\":108,\"width\":1280,\"height\":720,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T04:24:40.073Z\"}"
+}

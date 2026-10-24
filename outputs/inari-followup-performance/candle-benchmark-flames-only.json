@@ -1,0 +1,147 @@
+{
+  "checkedAt": "2026-10-24T04:31:22.808Z",
+  "scope": "Actual integrate CPU frustum candidates at1280x720 FOV45; before/after same assembly; no WebGL/GPU or native FPS claim. CPU update costs include root.updateMatrixWorld(true).",
+  "sourceHashes": {
+    "integration.mjs": "284caf85a3a5af6a6ecfbc18b669ad8daf7ca37b210cdc02a5b093851c700f00",
+    "viewer.mjs": "3f2b9c4f0ec61c4a36eb4fcde693054a5cf558eb17d42924b4d4dd07cb6d0ebd",
+    "candle-flame-instances.mjs": "84a28b351175bb545f791f0eeef6c435d445220bb49c1d870f799729aad17bf3"
+  },
+  "stats": {
+    "flames": 196,
+    "instancedFlames": 196,
+    "batches": 14,
+    "fallbackFlames": 0,
+    "removedDrawCalls": 182,
+    "updates": 250
+  },
+  "preservation": {
+    "directInteractiveFlames": 0,
+    "interactables": 60
+  },
+  "missingSubpixel": {
+    "count": 497,
+    "flames": 196,
+    "interactive": 396,
+    "LOD": 0,
+    "arrayMaterials": 0
+  },
+  "before": {
+    "train": {
+      "main": {
+        "meshes": 1947,
+        "triangles": 3229938,
+        "candleMeshes": 196,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 70,
+        "triangles": 152987,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    },
+    "platform": {
+      "main": {
+        "meshes": 1942,
+        "triangles": 3347106,
+        "candleMeshes": 196,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 71,
+        "triangles": 152999,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    },
+    "crossing": {
+      "main": {
+        "meshes": 1949,
+        "triangles": 3482728,
+        "candleMeshes": 196,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 85,
+        "triangles": 164225,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    }
+  },
+  "after": {
+    "train": {
+      "main": {
+        "meshes": 1765,
+        "triangles": 3229938,
+        "candleMeshes": 14,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 70,
+        "triangles": 152987,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    },
+    "platform": {
+      "main": {
+        "meshes": 1760,
+        "triangles": 3347106,
+        "candleMeshes": 14,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 71,
+        "triangles": 152999,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    },
+    "crossing": {
+      "main": {
+        "meshes": 1767,
+        "triangles": 3482728,
+        "candleMeshes": 14,
+        "candleTriangles": 3528
+      },
+      "shadow": {
+        "meshes": 85,
+        "triangles": 164225,
+        "candleMeshes": 0,
+        "candleTriangles": 0
+      }
+    }
+  },
+  "deltas": {
+    "train": {
+      "removedMainMeshes": 182,
+      "triangleDelta": 0,
+      "shadowMeshDelta": 0,
+      "shadowTriangleDelta": 0
+    },
+    "platform": {
+      "removedMainMeshes": 182,
+      "triangleDelta": 0,
+      "shadowMeshDelta": 0,
+      "shadowTriangleDelta": 0
+    },
+    "crossing": {
+      "removedMainMeshes": 182,
+      "triangleDelta": 0,
+      "shadowMeshDelta": 0,
+      "shadowTriangleDelta": 0
+    }
+  },
+  "originalCost": {
+    "count": 250,
+    "medianMs": 0.5056000000004133,
+    "maxMs": 2.0018999999992957
+  },
+  "instancedCost": {
+    "count": 250,
+    "medianMs": 0.46419999999852735,
+    "maxMs": 1.2711999999992258
+  },
+  "restoredFlames": 196
+}
