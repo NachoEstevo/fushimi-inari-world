@@ -143,10 +143,12 @@ export function buildInariStationArrival(root,materials,features,surfaces,option
  }
  const railYaw=Math.atan2(-spec.track.east[1],spec.track.east[0]),railLocal=spec.track.local;
  const railParts=new THREE.Group();railParts.name='JR rail bed and platform canopy';railParts.position.set(...[spec.track.origin[0],spec.railTop,spec.track.origin[1]]);railParts.rotation.y=railYaw;group.add(railParts);const r=staticParts(railParts);
+ const railStart=Number.isFinite(options.northRailStart)?options.northRailStart:15-spec.track.length/2;
+ const railEnd=15+spec.track.length/2,railLength=railEnd-railStart,railCenter=(railStart+railEnd)/2;
  for(const trackU of [0,-spec.track.trackSpacing]){
-  r.box(3.0,.26,spec.track.length,trackU,-.35,15,palette.asphalt);
-  for(const side of [-1,1])r.box(.065,.14,spec.track.length,trackU+side*spec.track.gauge/2,-.035,15,palette.metal);
-  for(let v=-100;v<135;v+=.65)r.box(2.1,.13,.18,trackU,-.18,v,palette.dark);
+  r.box(3.0,.26,railLength,trackU,-.35,railCenter,palette.asphalt);
+  for(const side of [-1,1])r.box(.065,.14,railLength,trackU+side*spec.track.gauge/2,-.035,railCenter,palette.metal);
+  for(let v=Number.isFinite(options.northRailStart)?railStart:-100;v<135;v+=.65)r.box(2.1,.13,.18,trackU,-.18,v,palette.dark);
  }
  // P2 photographed tactile edge, open canopy, red columns. Dimensions inferred.
  r.box(.36,.022,92,2.03,1.11,13,palette.tactile);

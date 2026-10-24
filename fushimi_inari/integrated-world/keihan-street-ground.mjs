@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {pathWidth} from '../geography/geo-core.mjs';
 
-const sourceIds=['way/946510942','way/79699849','way/1057050892','way/297888106'],shoulder=2,fade=.5;
+const sourceIds=['way/946510942','way/79699849','way/1057050892','way/297888106','way/79699850'],shoulder=2,fade=.5;
 const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t);};
 
 export function makeKeihanStreetGroundMask(features){
@@ -15,7 +15,7 @@ export function makeKeihanStreetGroundMask(features){
    if(dx*dx+dz*dz>1e-8)segments.push({a:[a[0],a[2]],b:[b[0],b[2]],radius});
   }
  }
- // The frozen street and Urasando source has twenty segments. Stop at the
+ // The frozen street and Urasando source has twenty-three segments. Stop at the
  // stone-torii approach; way/105449676 beyond the garden is not included.
  // A substantially changed trace
  // needs review instead of silently increasing every terrain fragment's work.

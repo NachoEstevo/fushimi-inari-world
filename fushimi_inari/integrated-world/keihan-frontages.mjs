@@ -89,13 +89,24 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   put(new THREE.ExtrudeGeometry(shape,{depth:floor-foundation,bevelEnabled:false}).rotateX(-Math.PI/2).translate(0,foundation,0),palette.stone);
   put(new THREE.ShapeGeometry(shape).rotateX(-Math.PI/2).translate(0,floor+h,0),palette.dark);
   if(kind.endsWith('-row')){
-   const green=kind==='green-awning-row',bay=w/3;
-   fb(w,h,.14,w/2,h/2,-.07,palette.plaster);
-   blocker(w,.14,w/2,-.07,0,h,'keihan_observed_row_front');
+   const green=kind==='green-awning-row',bay=w/3,openBay=green?0:2;
+   s.machineRecess={uMin:openBay*bay+.12,uMax:(openBay+1)*bay-.12,depth:1.30};s.interpretiveOpenBay=true;
+   fb(w,h-2.65,.14,w/2,(h+2.65)/2,-.07,palette.plaster);
    for(let i=0;i<3;i++){
     const u=bay*(i+.5),bw=bay-.18;
-    fb(bw,2.28,.05,u,1.27,.015,i===2?palette.dark:palette.stone);
-    if(i<2)for(let j=0;j<15;j++)fb(bw,.022,.025,u,.24+j*.145,.048,palette.dark);
+    if(i===openBay){
+     // An interpretive open service bay occupies the existing parcel. It is
+     // backed, floored and bounded; no new business identity is implied.
+     fb(bw,2.65,.10,u,1.325,-1.35,palette.dark);blocker(bw,.10,u,-1.35,0,2.65,'keihan_row_recess_back');
+     for(const du of [-bw/2,bw/2]){fb(.09,2.65,1.35,u+du,1.325,-.675,palette.plaster);blocker(.09,1.35,u+du,-.675,0,2.65,'keihan_row_recess_jamb');}
+     const caseW=bw-1.35,caseU=green?u+.55:u-.55;
+     fb(caseW,.87,.64,caseU,.435,-.54,palette.timber);fb(caseW+.06,.055,.69,caseU,.90,-.54,palette.stone);blocker(caseW,.69,caseU,-.54,0,1.10,'keihan_row_food_case');
+     for(let r=0;r<2;r++)for(let c=0;c<5;c++){const x=caseU-caseW*.38+c*caseW*.19;fb(.14,.085,.12,x,.97+r*.10,-.36-r*.18,palette.food);fb(.16,.015,.14,x,.935+r*.10,-.36-r*.18,palette.red);}
+    }else{
+     fb(bay,2.65,.14,u,1.325,-.07,palette.plaster);blocker(bay,.14,u,-.07,0,2.65,'keihan_observed_row_front');
+     fb(bw,2.28,.05,u,1.27,.015,i===2?palette.dark:palette.stone);
+     if(i<2)for(let j=0;j<15;j++)fb(bw,.022,.025,u,.24+j*.145,.048,palette.dark);
+    }
     for(const du of [-bw/2,bw/2])fb(.055,2.38,.07,u+du,1.27,.045,palette.stone);
     fb(bw,.06,.52,u,2.63,.21,green?palette.plaster:palette.red,green?'#55745b':undefined);
     fb(bw,.14,.05,u,2.57,.48,green?palette.plaster:palette.red,green?'#55745b':undefined);
@@ -205,9 +216,9 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
  for(const [material,parts]of batches){const geometry=mergeGeometries(parts,false);parts.forEach(p=>p.dispose());const mesh=new THREE.Mesh(geometry,material);mesh.name='Keihan food storefront material';mesh.castShadow=!material.transparent;mesh.receiveShadow=true;group.add(mesh);}
  const publicStores=stores.map(({at,...s})=>s);
  const surfaceHeight=(x,z)=>{
-  for(const s of stores){if(!s.publicRecess)continue;const a=s.points[s.edge],dx=x-a[0],dz=z-a[2],u=dx*s.t[0]+dz*s.t[1],v=dx*s.n[0]+dz*s.n[1];if(u>=.22&&u<=s.width-.22&&v<=0&&v>=-s.publicRecess)return s.floor;}
+  for(const s of stores){if(!s.publicRecess&&!s.machineRecess)continue;const a=s.points[s.edge],dx=x-a[0],dz=z-a[2],u=dx*s.t[0]+dz*s.t[1],v=dx*s.n[0]+dz*s.n[1];if(s.machineRecess&&u>=s.machineRecess.uMin&&u<=s.machineRecess.uMax&&v<=0&&v>=-s.machineRecess.depth)return s.floor;if(s.publicRecess&&u>=.22&&u<=s.width-.22&&v<=0&&v>=-s.publicRecess)return s.floor;}
   return null;
  };
- group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. No claim of current inventory or surveyed dimensions.'};
+ group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Two open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

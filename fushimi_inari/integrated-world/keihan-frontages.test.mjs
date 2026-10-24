@@ -15,7 +15,7 @@ const at=(s,u,v)=>{const a=s.points[s.edge];return [a[0]+s.t[0]*u+s.n[0]*v,a[2]+
 test('named shops and observed anonymous facades retain source footprints and bounded static detail',()=>{
  const before=JSON.stringify(features),root=new THREE.Group(),colliders=[],built=buildKeihanFrontages(root,features,surfaces,{},colliders);
  assert.equal(built.built,true);assert.deepEqual(built.builtIds,keihanFrontageIds);
- assert.equal(built.materialBatches,8);assert.equal(built.drawBatches,8);assert.ok(built.triangles<12000);assert.ok(built.collidersAdded<45);
+ assert.equal(built.materialBatches,8);assert.equal(built.drawBatches,8);assert.ok(built.triangles<14000);assert.ok(built.collidersAdded<55);
  for(const store of built.storefronts){assert.deepEqual(store.points,features.buildings.find(b=>b.id===store.id).points.slice(0,-1));assert.ok(store.width>store.widthRange[0]&&store.width<store.widthRange[1]);assert.equal(store.height,6);}
  let lights=0;root.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)for(const value of o.geometry.attributes.position.array)assert.ok(Number.isFinite(value));});assert.equal(lights,0);
  assert.equal(buildKeihanFrontages(root,features,surfaces,{},colliders).group,built.group);assert.equal(root.children.length,1);assert.equal(colliders.length,built.collidersAdded);assert.equal(JSON.stringify(features),before);
@@ -49,10 +49,10 @@ test('frontage cases block entry into display volumes while the street route rem
  for(const s of built.storefronts.filter(s=>!s.kind.endsWith('-row'))){const [x,z]=at(s,.9,-.43),r=world.resolvePlayer(x,s.floor+1.7,z);assert.ok(Math.hypot(r.x-x,r.z-z)>.1,`${s.name} display collider`);}
 });
 
-test('the counters have physical fronts and the closed anonymous facades block entry',()=>{
+test('the counters have physical fronts and the remaining anonymous shutters block entry',()=>{
  const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces);root.updateMatrixWorld(true);
  for(const s of built.storefronts){
-  const [x,z]=at(s,.9,.12),ray=new THREE.Raycaster(new THREE.Vector3(x,s.floor+.45,z),new THREE.Vector3(-s.n[0],0,-s.n[1]),0,1),hit=ray.intersectObject(root,true)[0];assert.ok(hit,`${s.name} case must have a solid front`);assert.ok(hit.distance<.5);
+  const [x,z]=at(s,s.kind.endsWith('-row')?s.width/2:.9,.12),ray=new THREE.Raycaster(new THREE.Vector3(x,s.floor+.45,z),new THREE.Vector3(-s.n[0],0,-s.n[1]),0,1),hit=ray.intersectObject(root,true)[0];assert.ok(hit,`${s.name} case must have a solid front`);assert.ok(hit.distance<.5);
  }
  for(const s of built.storefronts.filter(s=>!s.publicRecess)){const [x,z]=at(s,s.width/2,-.4);assert.equal(built.surfaceHeight(x,z),null,'closed counters and shutters must not advertise walkable interiors');}
 });

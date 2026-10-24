@@ -1,0 +1,182 @@
+{
+  "tests": {
+    "passed": 753,
+    "failed": 0,
+    "excluded": "Unrelated unintegrated R103 test"
+  },
+  "physicalAudit": {
+    "publicRoute": {
+      "samples": 25566,
+      "blocked": 0,
+      "bodyIntersections": 0
+    },
+    "jrPublicRoute": {
+      "samples": 12204,
+      "blocked": 0,
+      "bodyIntersections": 0
+    },
+    "omotesandoRoute": {
+      "samples": 28452,
+      "blocked": 0,
+      "bodyIntersections": 0
+    },
+    "autoEgress": {
+      "samples": 246,
+      "blocked": 0,
+      "bodyIntersections": 0
+    }
+  },
+  "native": {
+    "omotesandoRoute": "Arrived at Romon (-8.52,43.49,1.31), 12m/s",
+    "machines": "Next drink -> Water -> Dispense -> Collect drink; native tray visible",
+    "vendor": "Final lowered forearm pose reviewed",
+    "romon": "Same twin conifer sector, floating stones absent",
+    "crossing": "W held 4 s; stopped X=-212.41 while passing/front41.78945/barrier1; waiting and passing geometry captured",
+    "console": "Older asynchronous message-channel listener errors present without application stack; not claimed zero-console-error",
+    "review": "All four specialist angles approved; distant railway surroundings remain simplified"
+  },
+  "sources": {
+    "docs/keihan-jr-crossing-detail.md": {
+      "workingSha256": "576da7c47926d9697a22d3803b12cd4b82594a7d2ccda2f292700ef6e9e0f056",
+      "stagedGitBlob": "251f245e678639efafb91e3c7bd466a84d107108"
+    },
+    "docs/keihan-street-commerce.md": {
+      "workingSha256": "7181fd2ffd2a7876e691e585a885b8d80bf39ef04b9c834327994cdac99f20db",
+      "stagedGitBlob": "645889dbace559e3fdddda56ac5f5b261546de02"
+    },
+    "docs/keihan-street-expansion.md": {
+      "workingSha256": "996b33c8f2989ed20cb0587c94a47715fca55b8b103eb43de861c7c56d48898a",
+      "stagedGitBlob": "c4a3abc40e90fa2179f9d4f9aa680fcc50bf46d5"
+    },
+    "docs/keihan-street-life.md": {
+      "workingSha256": "723f391f7fff7ed743804d50e7b756a9c6dc755c4f920c8831f347c373608a5e",
+      "stagedGitBlob": "be8d5080bc9873c44cf91d835cc927c412cda46c"
+    },
+    "docs/romon-stone-support-r104.md": {
+      "workingSha256": "5d3135cdaa2cdcaca0250a6fe06eeb7cacbc44f5b8d8cc2d6648bbae0c532e3b",
+      "stagedGitBlob": "ef9a362fb5b64111e56729bd419396c6816dc5ea"
+    },
+    "fushimi_inari/integrated-world/exploration-hud.mjs": {
+      "workingSha256": "47e0bcd9f6102ad935c83d7bc8df83a41dae533c114aed26be5378e0833b3963",
+      "stagedGitBlob": "6e923e51455acd00e9c172e25de2e7ad341f329c"
+    },
+    "fushimi_inari/integrated-world/exploration-menu.mjs": {
+      "workingSha256": "4cad878270cc3bc304d8708f0ba735c9379ca87ac94870c8571a2892132ea6cc",
+      "stagedGitBlob": "0c0ccf85cf00688b9bd64bbbfbad3a1bde4f3b52"
+    },
+    "fushimi_inari/integrated-world/guided-route-motion.mjs": {
+      "workingSha256": "049ba785fc22f3ed9e89256ab62fc93bd0b34a15a74e161a686439e4cd360a83",
+      "stagedGitBlob": "b808db923ce187c03c7f30263953963767510f75"
+    },
+    "fushimi_inari/integrated-world/guided-route-motion.test.mjs": {
+      "workingSha256": "f97ad3075be0d8d0d6b98aed28cb14f0aa0b910075d594995e3e7f7923df857b",
+      "stagedGitBlob": "c816ab6aa8185e861c6d8d315bce5915b03636f0"
+    },
+    "fushimi_inari/integrated-world/inari-station-arrival.mjs": {
+      "workingSha256": "b1263de2b3b403dc6d837a489c6223a9f2c35d42e3a4bb8853ef55002e5a5858",
+      "stagedGitBlob": "4fef6306c00b91a13c13a1bf282386f740100954"
+    },
+    "fushimi_inari/integrated-world/index.html": {
+      "workingSha256": "4533fabc304427b446afaaeaad21ef8e3c228429e0c3099a98077fbf5d5c3d93",
+      "stagedGitBlob": "037306dd66b6683d9f720a980fb86fdaea082311"
+    },
+    "fushimi_inari/integrated-world/integration.mjs": {
+      "workingSha256": "d768da8d0d2c9cf3d31fe71c820c146792442fcecb1f86f92db73f04ad62ee6b",
+      "stagedGitBlob": "112123578eb4a5b70750846c5c50726d636fd090"
+    },
+    "fushimi_inari/integrated-world/keihan-approach.mjs": {
+      "workingSha256": "b58fd08f8884e803ccc2fdc3448cdcef8fb9eed3b9259dbb120f900d99c51ba8",
+      "stagedGitBlob": "9200f157bcc537d81f22380aea7e1393be88419b"
+    },
+    "fushimi_inari/integrated-world/keihan-frontages.mjs": {
+      "workingSha256": "1e9fa88c8c4e10dfc860ddf74a5ccd8874a35ca5b0a577a9ad24534d12fc1d7a",
+      "stagedGitBlob": "6a9fceb720e70853f47a107a22198466b8599f8f"
+    },
+    "fushimi_inari/integrated-world/keihan-frontages.test.mjs": {
+      "workingSha256": "d323de8c5534aec0218b62579a9eeb7ebf273a733940e4526417fba74e3a0f7b",
+      "stagedGitBlob": "776a4cecde7a0a165d85d0b010262c1d2dede9cf"
+    },
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.mjs": {
+      "workingSha256": "42db758a82309b1592625d287e25f69dc6c79ea1a78c150fc0140457cfdc9b87",
+      "stagedGitBlob": "78e1f7cfca1f6f1dcaa013277335841eb9a92102"
+    },
+    "fushimi_inari/integrated-world/keihan-jr-crossing-detail.test.mjs": {
+      "workingSha256": "9bc875dfed18b697957932ceb9361fc45ec64fdb09dc2b292bf8ac00cb59dfef",
+      "stagedGitBlob": "75509916af86d7f36cca18fb648c357c61fdb08f"
+    },
+    "fushimi_inari/integrated-world/keihan-station.mjs": {
+      "workingSha256": "9d2e35f2db215bd3d1fc2902eadbcb73a7eb8ece0e5b3923c0fe130a14dea070",
+      "stagedGitBlob": "f4a0f3af0344bb8c64693f2f251954dc2c6646eb"
+    },
+    "fushimi_inari/integrated-world/keihan-street-commerce.mjs": {
+      "workingSha256": "c7996956407018ec47b8ac9dea8effc4bae03b43d9717a3b6d13d672df7189c7",
+      "stagedGitBlob": "3b6f82351ef45d2a827942fcdc0b201e0a8b7b73"
+    },
+    "fushimi_inari/integrated-world/keihan-street-commerce.test.mjs": {
+      "workingSha256": "bf26e2bde76c94accc80ddf2899f594ee7946e8eb138723d75a096f0e18a29e0",
+      "stagedGitBlob": "deceeee804fef6298f6d4c4107d29ca800ae45ec"
+    },
+    "fushimi_inari/integrated-world/keihan-street-context.mjs": {
+      "workingSha256": "4166d248634f41ca09db73628d7c288f2d096efdeacabeb551205655f3649f89",
+      "stagedGitBlob": "dd638849912751de864e3d6c8f188d3985033d49"
+    },
+    "fushimi_inari/integrated-world/keihan-street-context.test.mjs": {
+      "workingSha256": "88707920fd7f64bc965d4fee6472b080168fa9782fb86938e423bb8cfa60dd19",
+      "stagedGitBlob": "08800c3906a50aebefbcb45a95eb6678040e5487"
+    },
+    "fushimi_inari/integrated-world/keihan-street-ground.mjs": {
+      "workingSha256": "de9ee37e7b2c3928c56f88bbdf64f21d4d40c5e7338e3b0ec1a72f2042a37054",
+      "stagedGitBlob": "e3c802322b56287bff609fcd61a29deb6a893a4c"
+    },
+    "fushimi_inari/integrated-world/keihan-street-ground.test.mjs": {
+      "workingSha256": "e59032f93cb06a28301bb7f144c8000ed36bfe580792cc3351751c019e652f1c",
+      "stagedGitBlob": "1ab0388b4520835df775d61cbe07258904fea0f8"
+    },
+    "fushimi_inari/integrated-world/keihan-street-life.mjs": {
+      "workingSha256": "b082b354e62172056adff608ed23819d6132e27fac0e40ac05fb3477b2b240ec",
+      "stagedGitBlob": "3e505a943ff7e2ce653f6f1bde80a795852755af"
+    },
+    "fushimi_inari/integrated-world/keihan-street-life.test.mjs": {
+      "workingSha256": "84e699d9de035c0f27b3f2cb8761ec9d665d73178737a35f761df97ff38926fe",
+      "stagedGitBlob": "0b5ad6f8638e19525af09ad1c83d4b5e70f0ac82"
+    },
+    "fushimi_inari/integrated-world/spatial-static-batches.mjs": {
+      "workingSha256": "4c2a86bff93619a94f5d9da10f21937601797ca5a41274441c95d8824798af56",
+      "stagedGitBlob": "948a3eaa433e1346ff2fcc9d0c992bd3e72231af"
+    },
+    "fushimi_inari/integrated-world/spatial-static-batches.test.mjs": {
+      "workingSha256": "93584934fa5841f84a4221f54d8498d207eaa593595c770e5ada66431da2deac",
+      "stagedGitBlob": "8310d48f395066f57da3bbf77dd975e088541bf5"
+    },
+    "fushimi_inari/integrated-world/station-approach-routes.mjs": {
+      "workingSha256": "27ff3e8ac24aad86a61cd2828b854e8f3aaf735de3631758152756d6fb86a7d5",
+      "stagedGitBlob": "6a9e7433d668131a7d1b67d1a772d075f1f02cd3"
+    },
+    "fushimi_inari/integrated-world/station-approach-routes.test.mjs": {
+      "workingSha256": "fec4963e0fae0f55b7cafd7b24968909182af5fbe6bf37157e5f980020291d40",
+      "stagedGitBlob": "034c691ec47b943f5b9519bb2972ea57677e87cb"
+    },
+    "fushimi_inari/integrated-world/viewer.mjs": {
+      "workingSha256": "d727d0409ca8779628fa771e3879e02c556db67720f06a5535bbf15e0a49e503",
+      "stagedGitBlob": "8cd27babd0b3d004fb924bb0acb40deb28f30fb8"
+    },
+    "fushimi_inari/integrated-world/walking.mjs": {
+      "workingSha256": "e74b63086fd2c67398efc82598d1d48c04a42453eb26f0598a5b651f7efea796",
+      "stagedGitBlob": "2afffa2575d18b9f1f9b09a4c1eb188994d202bf"
+    },
+    "fushimi_inari/integrated-world/world-detail-chunks.mjs": {
+      "workingSha256": "ac1651315f3071541d30c67e1733f0913934e95d484eaed48f036c7094d35296",
+      "stagedGitBlob": "1fa5af9e106a8c87b9b750ab4038e9df852b0d85"
+    },
+    "fushimi_inari/integrated-world/world-detail-chunks.test.mjs": {
+      "workingSha256": "60d345311ffe10fb43f6171909051d87553460284e7960d0c09d1c70bdbb6a2a",
+      "stagedGitBlob": "cff52496df9d36d6248e6237afa9e494cf902ddc"
+    }
+  },
+  "limits": [
+    "Static geometry remains resident; render and animation activation only, NPC assets lazy loaded",
+    "Inferred storefront dressing and stylized NPC/train assets",
+    "FPS observations are not a controlled benchmark",
+    "Public deployment not verified"
+  ]
+}

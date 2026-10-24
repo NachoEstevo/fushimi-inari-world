@@ -1,4 +1,4 @@
-export function installExplorationMenu({walker,controls,camera,assembly,onNavigate=()=>{},cameraOwned=()=>false,onRenderQuality=()=>{}}){
+export function installExplorationMenu({walker,controls,camera,assembly,onNavigate=()=>{},cameraOwned=()=>false,onRenderQuality=()=>{},onDetailDistance=()=>{}}){
   const $=id=>document.getElementById(id);
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Movement','Checkpoints','Routes','Environment'];
@@ -18,6 +18,8 @@ export function installExplorationMenu({walker,controls,camera,assembly,onNaviga
   const aside=document.querySelector('aside');$('pane-2').append(aside);
   $('pane-3').insertAdjacentHTML('beforeend','<label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High resolution</option></select>');
   $('render-quality').onchange=()=>onRenderQuality($('render-quality').value);
+  $('pane-3').insertAdjacentHTML('beforeend','<label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby · 220 m</option><option value="full">Entire world</option></select>');
+  $('detail-distance').onchange=()=>onDetailDistance($('detail-distance').value);
   document.querySelector('label[for="place"]').hidden=true;$('place').hidden=true;$('visit').parentElement.hidden=true;
   // Remove obsolete HUD labels; the map retains only scale and altitude.
   for(const node of [...$('nav-content').children])if(node.matches('label,p,small'))node.remove();

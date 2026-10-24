@@ -58,7 +58,7 @@ export function keihanApproachLayout(features,surfaces,spec=createKeihanStationS
  return {spec,portions,existingTops:tops,bridge:{west,east,length,along,across,local,relative,height:bridgeHeight,westY,eastY,polygon:rect(0,length,-3,6.25)},canal:{source:'way/310960824',ring:ccw(KEIHAN_CANAL_RING),waterY:Math.min(westY,eastY)-2.45},routePoints:routeXZ.map(([x,z])=>[x,surfaceHeight(x,z)??surfaces.height(x,z),z]),surfaceHeight};
 }
 
-export function buildKeihanApproach(root,features,surfaces,materials={},colliders=[],spec=createKeihanStationSpec(features,surfaces)){
+export function buildKeihanApproach(root,features,surfaces,materials={},colliders=[],spec=createKeihanStationSpec(features,surfaces),options={}){
  const name='Keihan Inari-shinmichi bridge and Urasando approach',old=root.getObjectByName(name);if(old)return {group:old,...old.userData};
  const layout=keihanApproachLayout(features,surfaces,spec);if(!layout)return {built:false,builtIds:[],reason:'Keihan station or mapped approach missing'};
  const group=new THREE.Group();group.name=name;
@@ -97,7 +97,7 @@ export function buildKeihanApproach(root,features,surfaces,materials={},collider
  for(const [x,z]of crossingCenters){for(const side of [-1,1]){const cx=x+railDir[1]*.5335*side,cz=z-railDir[0]*.5335*side,a=[cx-railDir[0]*5,cz-railDir[1]*5],b=[cx+railDir[0]*5,cz+railDir[1]*5],n=[railDir[1]*.032,-railDir[0]*.032];top([[a[0]-n[0],a[1]-n[1]],[b[0]-n[0],b[1]-n[1]],[b[0]+n[0],b[1]+n[1]],[a[0]+n[0],a[1]+n[1]]],(px,pz)=>projectedHeight(surfaces.segments.filter(s=>s.id==='way/79699849'),px,pz)+.009,'metal');}}
  // Crossing equipment remains open and inert. No train, red-light state or
  // movement is implied; device dimensions/offsets are photograph estimates.
- for(const [x,z]of [[-210.65,-89.65],[-199.2,-81.0]]){const y=surfaces.height(x,z);for(let i=0;i<9;i++)box(x,y+.2+i*.33,z,.15,.33,.15,i%2?'dark':'yellow');for(const sign of [-1,1]){const g=new THREE.BoxGeometry(.15,1.05,.06);g.rotateZ(sign*Math.PI/4);g.translate(x,y+3.0,z);put(g,'yellow');}for(const ox of [-.28,.28]){beam([x+ox,y+2.4,z-.08],[x+ox,y+2.4,z+.08],.13,'dark',10);}const armX=x+.36;for(let i=0;i<8;i++)box(armX,y+.5+i*.40,z,.075,.40,.075,i%2?'dark':'yellow');box(x,y+.55,z,.48,1.0,.4,'yellow');pending.push({type:'cylinder',args:[x,z,.3,y,y+3.5,'inari_crossing_device']});}
+ if(!options.externalCrossingDevices)for(const [x,z]of [[-210.65,-89.65],[-199.2,-81.0]]){const y=surfaces.height(x,z);for(let i=0;i<9;i++)box(x,y+.2+i*.33,z,.15,.33,.15,i%2?'dark':'yellow');for(const sign of [-1,1]){const g=new THREE.BoxGeometry(.15,1.05,.06);g.rotateZ(sign*Math.PI/4);g.translate(x,y+3.0,z);put(g,'yellow');}for(const ox of [-.28,.28]){beam([x+ox,y+2.4,z-.08],[x+ox,y+2.4,z+.08],.13,'dark',10);}const armX=x+.36;for(let i=0;i<8;i++)box(armX,y+.5+i*.40,z,.075,.40,.075,i%2?'dark':'yellow');box(x,y+.55,z,.48,1.0,.4,'yellow');pending.push({type:'cylinder',args:[x,z,.3,y,y+3.5,'inari_crossing_device']});}
  // November 2020 east-street frame shows paired white globe lamps on dark
  // curved arms. Two bounded examples use estimated roadside positions;
  // spheres are unlit geometry and introduce no point lights or update work.

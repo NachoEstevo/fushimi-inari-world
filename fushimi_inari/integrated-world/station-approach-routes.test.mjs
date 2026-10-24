@@ -24,12 +24,23 @@ const contains=(points,p)=>points.some(q=>Math.hypot(q[0]-p[0],q[2]-p[2])<1e-8);
 
 test('both station routes begin on their platform and reach the exterior canonical Romon node',()=>{
  const a=setup(),r=buildStationApproachRoutes(a,features,terrain);
- for(const [key,spec]of [['keihan',keihan],['jr',jr]]){
+ for(const [key,spec]of [['keihan',keihan],['keihan_omotesando',keihan],['jr',jr]]){
   assert.ok(r[key]);assert.deepEqual(r[key].points[0],[spec.route.platformDoor[0],floor(spec.route.platformDoor[0],spec.route.platformDoor[2]),spec.route.platformDoor[2]]);
   assert.deepEqual(r[key].points.at(-1),[romon[0],floor(romon[0],romon[2]),romon[2]]);
   assert.equal(contains(r[key].points,spec.train.doorPosition),false,'train doorway is outside the walking tour');
   assert.ok(r[key].stops[0].includes(key==='jr'?'JR':'Keihan'));assert.equal(r[key].stops.at(-1),'Rōmon');
  }
+});
+
+test('Keihan Omotesando branch turns south at Hommachi then east through the first torii',()=>{
+ const r=buildStationApproachRoutes(setup(),features,terrain),p=r.keihan_omotesando.points;
+ for(const point of [[-157.252,0,-85.95],[-157.261,0,-82.343],[-157.407,0,10.342],[-149.06,0,10.742],[-73.144,0,6.724]])assert.ok(contains(p,point));
+ assert.equal(contains(p,[-157.198,0,31.926]),false,'do not walk south past the Omotesando turn');
+ assert.ok(p.length>r.keihan.points.length);
+ assert.ok(r.keihan_omotesando.stops.includes('Omotesando · First torii'));
+ const missing={...features,paths:features.paths.filter(p=>p.id!=='way/79699850')};
+ const broken=buildStationApproachRoutes(setup(),missing,terrain);
+ assert.equal(broken.keihan_omotesando,null);assert.ok(broken.keihan);assert.ok(broken.jr);
 });
 
 test('authored corners and real mapped gate/Omotesando/Urasando connections survive densification',()=>{
@@ -60,12 +71,12 @@ test('station data is preserved and returned arrays do not alias either owner',(
 
 test('a missing owner withholds only its station while invalid shared connectivity withholds both',()=>{
  const a=setup();a.keihanStation.built=false;const r=buildStationApproachRoutes(a,features,terrain);assert.equal(r.keihan,null);assert.ok(r.jr);
- const disconnected={...features,paths:features.paths.filter(p=>!p.nodeIds.includes(5911582120))};assert.deepEqual(buildStationApproachRoutes(setup(),disconnected,terrain),{keihan:null,jr:null});
+ const disconnected={...features,paths:features.paths.filter(p=>!p.nodeIds.includes(5911582120))};assert.deepEqual(buildStationApproachRoutes(setup(),disconnected,terrain),{keihan:null,keihan_omotesando:null,jr:null});
 });
 
 test('unmapped joins, unavailable floors and unsupported samples fail closed',()=>{
  const a=setup();a.keihanApproach.routePoints[0]=[-300,0,-120];assert.equal(buildStationApproachRoutes(a,features,terrain).keihan,null);
- const b=setup();b.walkHeight=()=>NaN;assert.deepEqual(buildStationApproachRoutes(b,features,terrain),{keihan:null,jr:null});
- const c=setup();c.isWalkable=()=>false;assert.deepEqual(buildStationApproachRoutes(c,features,terrain),{keihan:null,jr:null});
- assert.deepEqual(buildStationApproachRoutes({},features,terrain),{keihan:null,jr:null});
+ const b=setup();b.walkHeight=()=>NaN;assert.deepEqual(buildStationApproachRoutes(b,features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
+ const c=setup();c.isWalkable=()=>false;assert.deepEqual(buildStationApproachRoutes(c,features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
+ assert.deepEqual(buildStationApproachRoutes({},features,terrain),{keihan:null,keihan_omotesando:null,jr:null});
 });

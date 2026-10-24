@@ -1,10 +1,13 @@
-import {buildInariStationArrival} from './inari-station-arrival.mjs';
+import {batchStaticScene} from './spatial-static-batches.mjs';
+import {createInariStationArrivalSpec} from './inari-station-arrival-spec.mjs';
+import {createKeihanJrCrossingSpec,buildKeihanJrCrossingDetail} from './keihan-jr-crossing-detail.mjs?v=keihan-street-3';
+import {buildInariStationArrival} from './inari-station-arrival.mjs?v=keihan-street-3';
 import {buildInariStationRoute} from './inari-station-route.mjs';
 import {buildInariStationFrontage} from './inari-station-frontage.mjs';
-import {buildKeihanStation} from './keihan-station.mjs';
-import {buildKeihanApproach} from './keihan-approach.mjs';
-import {buildKeihanFrontages} from './keihan-frontages.mjs';
-import {buildKeihanStreetContext} from './keihan-street-context.mjs';
+import {buildKeihanStation} from './keihan-station.mjs?v=keihan-street-3';
+import {buildKeihanApproach} from './keihan-approach.mjs?v=keihan-street-3';
+import {buildKeihanFrontages} from './keihan-frontages.mjs?v=keihan-street-3';
+import {buildKeihanStreetContext} from './keihan-street-context.mjs?v=keihan-street-3';
 import {buildKeihanUrasando} from './keihan-urasando.mjs';
 import {buildKumatakaRestFurnitureR102} from './kumataka-rest-furniture-r102.mjs?v=102-release';
 import {buildOkushaMappedSheltersR102} from './okusha-mapped-shelters-r102.mjs?v=102-release';
@@ -696,17 +699,19 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.entranceDetailsR101=JSON.stringify(buildEntranceDetailsR101(root,features));
   // Replace only the identified legacy station after the complete public
   // access builds successfully. Preserve the original interactive sign object.
-  let inariStation=null,inariStationRoute=null,inariBuildError=null;
+  let inariStation=null,inariStationRoute=null,inariBuildError=null,keihanRail=null;
   const stationInteractionsBefore=legacy.interactables.length;
   const stationOwners=[];root.traverse(o=>{if(o.userData.mappedStationPlaced)stationOwners.push(o);});
   const stationSolids=colliders.filter(c=>c.args.at(-1)==='jr_inari_station');
   const stationSigns=stationOwners[0]?.children.filter(o=>legacy.interactables.includes(o))??[];
   if(stationOwners.length===1&&stationSolids.length===1&&stationSigns.length===1){
-    let candidate=null,route=null;const routeColliders=[];
+    let candidate=null,route=null;const routeColliders=[],railColliders=[];
     try{
-      candidate=buildInariStationArrival(root,legacy.materials,features,surfaces);
+      const stationSpec=createInariStationArrivalSpec(features,surfaces),crossingSpec=createKeihanJrCrossingSpec(features,surfaces,stationSpec);
+      keihanRail=crossingSpec?buildKeihanJrCrossingDetail(root,features,surfaces,railColliders,{spec:crossingSpec}):null;
+      candidate=buildInariStationArrival(root,legacy.materials,features,surfaces,{spec:stationSpec,northRailStart:keihanRail?.built?crossingSpec.source.northRailStart:undefined});
       route=candidate.built?buildInariStationRoute(root,features,surfaces,legacy.materials,routeColliders,candidate.spec):null;
-    }catch(error){candidate?.group?.removeFromParent();route?.group?.removeFromParent();candidate=null;route=null;inariBuildError=error.message;}
+    }catch(error){candidate?.group?.removeFromParent();route?.group?.removeFromParent();keihanRail?.group?.removeFromParent();keihanRail=null;candidate=null;route=null;inariBuildError=error.message;}
     if(candidate?.built&&route?.built){
       const sign=stationSigns[0],replacement=candidate.sign;
       replacement.parent.add(sign);sign.position.copy(replacement.position);sign.rotation.set(0,Math.PI/2,0);sign.scale.set(1,1,1);
@@ -716,9 +721,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       stationOwners[0].removeFromParent();colliders.splice(colliders.indexOf(stationSolids[0]),1);
       // The cinematic crosses this opening without walking physics. Once
       // control is released the doors are closed, so this solid is always valid.
-      colliders.push(...candidate.colliders,...(candidate.closedDoorCollider?[candidate.closedDoorCollider]:[]),...routeColliders);
+      colliders.push(...candidate.colliders,...(candidate.closedDoorCollider?[candidate.closedDoorCollider]:[]),...routeColliders,...railColliders);
       inariStation=candidate;inariStationRoute=route;
-    }else{candidate?.group?.removeFromParent();route?.group?.removeFromParent();}
+    }else{candidate?.group?.removeFromParent();route?.group?.removeFromParent();keihanRail?.group?.removeFromParent();keihanRail=null;}
   }
   document.body.dataset.inariStation=JSON.stringify(inariStation?{built:true,revision:inariStation.spec.revision,stats:inariStation.stats,provenance:inariStation.spec.provenance,interactablesBefore:stationInteractionsBefore,interactablesAfter:legacy.interactables.length}:{built:false,reason:inariBuildError??'station replacement ownership or access unavailable'});
   document.body.dataset.inariStationRoute=JSON.stringify(inariStationRoute?{built:true,triangles:inariStationRoute.triangles,collidersAdded:inariStationRoute.collidersAdded,routePoints:inariStationRoute.routePoints}:{built:false});
@@ -730,7 +735,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const keihanColliders=[];
   try{
     keihanStation=buildKeihanStation(root,legacy.materials,features,surfaces);
-    keihanApproach=keihanStation.built?buildKeihanApproach(root,features,surfaces,legacy.materials,keihanColliders,keihanStation.spec):null;
+    keihanApproach=keihanStation.built?buildKeihanApproach(root,features,surfaces,legacy.materials,keihanColliders,keihanStation.spec,{externalCrossingDevices:!!keihanRail?.built}):null;
     if(!keihanStation.built||!keihanApproach?.built)throw Error('Keihan platform or public approach unavailable');
     colliders.push(...keihanStation.colliders,...(keihanStation.closedDoorCollider?[keihanStation.closedDoorCollider]:[]),...keihanColliders);
   }catch(error){
@@ -784,29 +789,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     anchor.checkpoint=[x,walkHeight(x,z),z];
     anchor.lookAt=[anchor.target[0],anchor.target[1]+2,anchor.target[2]];
   }
-  const buckets=new Map(),retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes]);
+  const retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes]);
   for(const object of legacy.interactables)object.traverse(child=>retained.add(child));
   // A moving carriage and its sliding doors must retain their local transforms.
   inariStation?.trainGroup.traverse(child=>retained.add(child));
   inariStation?.thresholdGroup.traverse(child=>retained.add(child));
   keihanStation?.trainGroup.traverse(child=>retained.add(child));
   keihanStation?.thresholdGroup.traverse(child=>retained.add(child));
-  root.traverse(object=>{
-    if(!object.isMesh||object.isInstancedMesh||retained.has(object)||Array.isArray(object.material))return;
-    object.geometry.computeBoundingSphere();
-    const center=object.geometry.boundingSphere.center.clone().applyMatrix4(object.matrixWorld);
-    const key=`${Math.floor(center.x/128)},${Math.floor(center.z/128)}:`+object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index)+`:${object.castShadow}:${object.receiveShadow}`;
-    if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(object);
-  });
-  for(const objects of buckets.values()){
-    if(objects.length<2)continue;
-    const geometries=objects.map(o=>o.geometry.clone().applyMatrix4(o.matrixWorld));
-    const merged=mergeGeometries(geometries,false);
-    geometries.forEach(g=>g.dispose());
-    if(!merged)continue;
-    const mesh=new THREE.Mesh(merged,objects[0].material);mesh.castShadow=objects[0].castShadow;mesh.receiveShadow=objects[0].receiveShadow;root.add(mesh);
-    objects.forEach(o=>o.removeFromParent());
-  }
+  keihanRail?.group.traverse(child=>retained.add(child));
+  const staticBatches=batchStaticScene(root,retained);
   const forestChunks=[];root.updateMatrixWorld(true);
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
@@ -819,8 +810,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(keihanStation){const pose=keihanStation.spec.arrival.platformPose;registerCheckpoint('keihan_platform','Keihan Fushimi-Inari · Platform 2',[pose.position[0],pose.position[1]-1.7,pose.position[2]],pose.target);}
   const keihanLabels={keihan_gate:'Keihan · East exit',inari_bridge:'Inari-shinmichi · Canal bridge',urasando:'Urasando · Shrine approach'};
   for(const checkpoint of keihanApproach?.checkpoints??[]){const p=checkpoint.position;registerCheckpoint(checkpoint.id,keihanLabels[checkpoint.id],[p[0],p[1]-1.7,p[2]],checkpoint.lookAt);}
+  if(keihanStation){const y=keihanStation.spec.platformFloor;registerCheckpoint('keihan_drinks','Keihan · Drink machines',[-302.0,y,-169.0],[-299.65,y+1.35,-169.0]);}
+  if(keihanApproach){
+    registerCheckpoint('jr_crossing','JR · Street crossing',[-220.5,walkHeight(-220.5,-86.5),-86.5],[-201,walkHeight(-201,-85)+1.7,-85]);
+    registerCheckpoint('hommachi_turn','Hommachi · Right turn',[-157.252,walkHeight(-157.252,-85.95),-85.95],[-157.407,walkHeight(-157.407,10.342)+1.7,10.342]);
+  }
+  const foodCounter=keihanFrontages.storefronts?.find(s=>s.kind==='grill');
+  if(foodCounter){const a=foodCounter.points[foodCounter.edge],u=foodCounter.width/2,x=a[0]+foodCounter.t[0]*u,z=a[2]+foodCounter.t[1]*u,px=x+foodCounter.n[0]*2.6,pz=z+foodCounter.n[1]*2.6;registerCheckpoint('keihan_food','Inari-shinmichi · Food counter',[px,walkHeight(px,pz),pz],[x,foodCounter.floor+1.3,z]);}
   if(omotesandoArrival.built){const {position:[x,z],lookAt:[tx,tz]}=omotesandoArrival.spawn;registerCheckpoint('omotesando_entry','Omotesando · First torii',[x,walkHeight(x,z),z],[tx,walkHeight(x,z)+1.7,tz]);}
   inventory.anchors=spatial.anchors.length;
-  return {root,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
+  return {root,staticBatches,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,
     excludesBuilding:b=>(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

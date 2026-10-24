@@ -1,0 +1,6 @@
+{
+  "camera": "-306.13,32.74,-181.95",
+  "chunks": "{\"registered\":1928,\"active\":1928,\"dormant\":0,\"cells\":300,\"checked\":1928,\"nearMetres\":220,\"farMetres\":260,\"rangeScale\":60,\"mode\":\"spatial render activation; collision data retained\"}",
+  "people": "{\"pedestrians\":11,\"attendants\":3,\"omitted\":[],\"active\":0,\"animated\":0,\"loadedModels\":0,\"assetRequests\":0,\"loadErrors\":0,\"loading\":false}",
+  "stats": "{\"fps\":71.9,\"submitMs\":13.12,\"calls\":3390,\"triangles\":17816099,\"geometries\":1834,\"textures\":116,\"width\":1467,\"height\":852,\"pixelRatio\":1,\"visibility\":\"visible\",\"time\":\"2026-10-24T13:43:14.568Z\"}"
+}

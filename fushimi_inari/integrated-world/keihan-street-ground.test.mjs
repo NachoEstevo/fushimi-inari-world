@@ -11,7 +11,7 @@ import {KEIHAN_CANAL_RING} from './keihan-approach.mjs';
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url)));
 
 test('mineral shoulder follows every mapped corner and fades at a bounded distance',()=>{
- const layout=makeKeihanStreetGroundMask(features);assert.equal(layout.segments.length,20);
+ const layout=makeKeihanStreetGroundMask(features);assert.equal(layout.segments.length,23);
  for(const s of layout.segments){assert.equal(layout.mask(...s.a),1);assert.equal(layout.mask(...s.b),1);}
  const s=layout.segments.find(s=>Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1])>30),dx=s.b[0]-s.a[0],dz=s.b[1]-s.a[1],length=Math.hypot(dx,dz),x=(s.a[0]+s.b[0])/2,z=(s.a[1]+s.b[1])/2;
  const sample=offset=>layout.mask(x-dz/length*offset,z+dx/length*offset);
@@ -34,10 +34,10 @@ test('appearance hook preserves courtyard and entrance shader stages and uses on
  blendCourtyardGround(material,gravel,romon);blendEntranceGround(geometry,material,gravel,romon,features);
  const before=[...geometry.attributes.position.array],attributes=Object.keys(geometry.attributes),report=blendKeihanStreetGround(geometry,material,features);
  const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <color_fragment>\n#include <normal_fragment_maps>'};material.onBeforeCompile(shader);
- assert.equal(report.segments,20);assert.equal(shader.uniforms.keihanStreetSegments.value.length,20);assert.equal(shader.uniforms.courtMap.value,gravel.map);assert.equal(shader.uniforms.entranceGravel.value,gravel.map);
- assert.match(shader.fragmentShader,/for\(int i=0;i<20;i\+\+\)/);assert.ok(shader.fragmentShader.indexOf('return 0.0')<shader.fragmentShader.indexOf('for(int'));
+ assert.equal(report.segments,23);assert.equal(shader.uniforms.keihanStreetSegments.value.length,23);assert.equal(shader.uniforms.courtMap.value,gravel.map);assert.equal(shader.uniforms.entranceGravel.value,gravel.map);
+ assert.match(shader.fragmentShader,/for\(int i=0;i<23;i\+\+\)/);assert.ok(shader.fragmentShader.indexOf('return 0.0')<shader.fragmentShader.indexOf('for(int'));
  assert.equal(shader.fragmentShader.match(/#include <normal_fragment_maps>/g).length,1);assert.match(shader.fragmentShader,/keihanBaseNormal,keihanGroundWeight/);assert.match(shader.fragmentShader,/entranceBaseNormal,entranceWeight/);assert.match(shader.fragmentShader,/untexturedNormal,max\(courtWeight/);
- assert.match(material.customProgramCacheKey(),/entrance-mineral-v2-keihan-street-mineral-v1-20/);
+ assert.match(material.customProgramCacheKey(),/entrance-mineral-v2-keihan-street-mineral-v1-23/);
  assert.deepEqual([...geometry.attributes.position.array],before);assert.deepEqual(Object.keys(geometry.attributes),attributes);
 });
 
@@ -47,5 +47,5 @@ test('blending cannot reintroduce terrain into the clipped canal or alter physic
  const before=geometry.attributes.position.array.slice(),normal=geometry.attributes.normal.array.slice(),material=new THREE.MeshStandardMaterial();
  blendKeihanStreetGround(geometry,material,features);assert.deepEqual(geometry.attributes.position.array,before);assert.deepEqual(geometry.attributes.normal.array,normal);
  const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));mesh.updateMatrixWorld(true);
- const ray=new THREE.Raycaster(new THREE.Vector3(-221,40,-100),new THREE.Vector3(0,-1,0),0,20);assert.equal(ray.intersectObject(mesh).length,0);
+ const ray=new THREE.Raycaster(new THREE.Vector3(-221,40,-100),new THREE.Vector3(0,-1,0),0,23);assert.equal(ray.intersectObject(mesh).length,0);
 });

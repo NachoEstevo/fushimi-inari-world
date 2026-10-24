@@ -1,10 +1,14 @@
 import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
 import {installCityPanorama} from './city-panorama.mjs';
-import {installExplorationMenu} from './exploration-menu.mjs?v=keihan-arrival-1';
+import {installExplorationMenu} from './exploration-menu.mjs?v=keihan-street-3';
 import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
-import {buildStationApproachRoutes} from './station-approach-routes.mjs';
+import {buildStationApproachRoutes} from './station-approach-routes.mjs?v=keihan-street-3';
 import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs';
+import {advanceGuidedRoute} from './guided-route-motion.mjs';
+import {createWorldDetailChunks} from './world-detail-chunks.mjs';
+import {installKeihanStreetCommerce} from './keihan-street-commerce.mjs?v=keihan-street-3';
+import {installKeihanStreetLife} from './keihan-street-life.mjs?v=keihan-street-4';
 import {installTrainArrivalUI} from './train-arrival-ui.mjs';
 import {installPhotoMode} from './photo-mode.mjs?v=32';
 import {protectOrbit} from './orbit-clearance.mjs';
@@ -17,13 +21,13 @@ import {installCandleFlameInstances} from './candle-flame-instances.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
 import {blendEntranceGround} from './entrance-ground.mjs?v=48';
-import {blendKeihanStreetGround} from './keihan-street-ground.mjs';
+import {blendKeihanStreetGround} from './keihan-street-ground.mjs?v=keihan-street-3';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=25';
 import {buildPathMeshes} from './path-meshes.mjs?v=100-release';
-import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-arrival-1';
-import {integrate} from './integration.mjs?v=keihan-arrival-1';
-import {installWalking} from './walking.mjs?v=keihan-arrival-1';
+import {installExplorationHUD} from './exploration-hud.mjs?v=keihan-street-3';
+import {integrate} from './integration.mjs?v=keihan-street-3';
+import {installWalking} from './walking.mjs?v=keihan-street-3';
 import {createAudio} from './audio.mjs';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -113,6 +117,8 @@ try {
   const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy,assembly.ground);scene.add(pathGroup);
   const approachFloors=buildStationApproachSurfaceFixes(assembly,pathGroup,features);
   assembly.walkHeight=approachFloors.walkHeight;
+  const streetCommerce=installKeihanStreetCommerce(assembly);
+  document.body.dataset.streetCommerce=JSON.stringify(streetCommerce.stats);
   document.body.dataset.approachFloors=JSON.stringify(approachFloors.stats);
   document.body.dataset.apronTransitionsR100=JSON.stringify(assembly.apronTransitionsR100);
 
@@ -223,9 +229,9 @@ try {
     clearRoute();
     $('custom-fields').hidden=$('itinerary').value!=='custom';
     const stationKey=$('itinerary').value;
-    const stationSelected=stationKey==='keihan'||stationKey==='jr';
+    const stationSelected=['keihan','keihan_omotesando','jr'].includes(stationKey);
     $('branch').hidden=stationSelected;document.querySelector('label[for="branch"]').hidden=stationSelected;
-    if(stationKey==='keihan'||stationKey==='jr'){
+    if(stationSelected){
       const route=stationRoutes[stationKey];
       if(!route){$('route-info').textContent='This station approach is unavailable.';drawMap();return;}
       activeRoute=route.points;
@@ -262,7 +268,7 @@ try {
     showRoute();
   }
   function showRoute(){
-    const lift=['keihan','jr'].includes($('itinerary').value)?.08:1;
+    const lift=['keihan','keihan_omotesando','jr'].includes($('itinerary').value)?.08:1;
     routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+lift,p[2]))),
       new THREE.LineBasicMaterial({color:0xff7146,depthTest:true}));
     routeLine.renderOrder=20;scene.add(routeLine);profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
@@ -328,7 +334,8 @@ try {
     if(hit&&landmarkGroup.visible){$('itinerary').value='custom';$('destination').value=landmarks[hit.instanceId].id;trace();}
   });
   $('summary').textContent=`${(width/1000).toFixed(2)} × ${(depth/1000).toFixed(2)} km study area · ${features.paths.length.toLocaleString('es')} mapped segments · ${landmarks.length} identified landmarks`;
-  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,onStart:()=>{walking=false;$('stop').disabled=true;}});
+  const canMove=(from,to)=>assembly.keihanRail?.canMove(from,to)??true;
+  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     for(const [id,label,x,z,tx,tz] of [
@@ -394,10 +401,18 @@ try {
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
+  let detailDistance='near';
+  const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
+  for(const mesh of assembly.staticBatches.meshes)detailChunks.add(mesh);
+  for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
+  for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
+  for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   const menu=installExplorationMenu({walker,controls,camera,assembly,onNavigate:interruptArrival,cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:quality=>{renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?1.7:1.25));renderer.setSize(innerWidth,innerHeight);}});
+    onRenderQuality:quality=>{renderer.setPixelRatio(Math.min(devicePixelRatio,quality==='high'?1.7:1.25));renderer.setSize(innerWidth,innerHeight);},
+    onDetailDistance:value=>{detailDistance=value;}});
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
+  const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
   installSeasons(assembly,canopy);
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
@@ -438,24 +453,19 @@ try {
     if(arrival?.active){
       arrival.update(dt,{paused:photo.active||menu.active});
     }else if(walking&&activeRoute.length>1){
-      let remaining=dt*Number($('speed').value);
-      while(remaining>0&&routeProgress<activeRoute.length-1){
-        const len=distance(activeRoute[routeProgress],activeRoute[routeProgress+1]),step=Math.min(remaining,len-travelled);
-        travelled+=step;remaining-=step;
-        if(travelled>=len-.0001){routeProgress++;travelled=0;}
-      }
-      const arrived=routeProgress>=activeRoute.length-1;
+      const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
+      routeProgress=motion.index;travelled=motion.travelled;
+      const arrived=motion.arrived;
       if(arrived){walking=false;$('stop').disabled=true;$('walk').textContent='Restart route';}
       const a=activeRoute[Math.min(routeProgress,activeRoute.length-2)],b=activeRoute[Math.min(routeProgress+1,activeRoute.length-1)];
-      const f=routeProgress>=activeRoute.length-1?1:travelled/Math.max(distance(a,b),.0001);
-      const x=THREE.MathUtils.lerp(a[0],b[0],f),z=THREE.MathUtils.lerp(a[2],b[2],f),y=assembly.walkHeight(x,z,camera.position.y-1.7);
+      const [x,,z]=motion.position,y=assembly.walkHeight(x,z,camera.position.y-1.7);
       camera.position.set(x,y+1.7,z);
       const look=routeProgress>=activeRoute.length-1
         ? [b[0]+b[0]-a[0],b[1],b[2]+b[2]-a[2]]
         : activeRoute[Math.min(routeProgress+5,activeRoute.length-1)];
       camera.lookAt(look[0],look[1]+1.7,look[2]);marker.position.set(x,y+5,z);
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
-      $('position').textContent=arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
+      $('position').textContent=motion.blocked?'Train crossing · Please wait':arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
     }else if(!photo.active&&!walker.update(dt)){
       controls.update();
@@ -467,8 +477,9 @@ try {
     candleFlames.update(time);
 
     for(const water of waterControllers)water.update(time/1000);
-    sky.update();flashlight.update();visitors.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
-    for(const {object,bounds} of assembly.forestChunks)object.visible=camera.position.distanceTo(bounds.center)<bounds.radius+400;
+    sky.update();flashlight.update();visitors.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    const elevated=camera.position.y-assembly.ground(camera.position.x,camera.position.z)>22;
+    detailChunks.update(camera,time/1000,detailDistance==='full'?60:elevated?6:1);
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.
     for(const chunks of buildingGroup.children)for(const mesh of chunks.children){
@@ -477,6 +488,7 @@ try {
     }
     pondReflections.update(camera.position,[$('light').value,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked].join(':'));
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
+    if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     const submitStart=performance.now();renderer.render(scene,camera);recordRender(time,performance.now()-submitStart);
     document.body.dataset.drawCalls=renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');

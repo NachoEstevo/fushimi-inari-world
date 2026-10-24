@@ -7,7 +7,7 @@ const same=(a,b)=>gap(a,b)<1e-6;
 // Owners supply their authored circulation. Only their mapped endpoint joins
 // use the public graph; heights always come from the assembled floor owners.
 export function buildStationApproachRoutes(assembly,features,terrain){
- const routes={keihan:null,jr:null};
+ const routes={keihan:null,keihan_omotesando:null,jr:null};
  if(typeof assembly?.walkHeight!=='function'||!Array.isArray(features?.paths)||!finitePoint(assembly.spatial?.main?.[0]))return routes;
  let graph;try{graph=buildGraph(features.paths,terrain);}catch{return routes;}
  const destination=assembly.spatial.main[0];
@@ -54,6 +54,18 @@ export function buildStationApproachRoutes(assembly,features,terrain){
   return {points,stops:[...stops]};
  }
  routes.keihan=make(assembly.keihanStation,assembly.keihanApproach,['Keihan Fushimi-Inari · Platform 2','South gate','Inari-shinmichi','Inari bridge','Urasando','Rōmon']);
+ // Keep the actual right turn at Hommachi and the first Omotesando torii.
+ // A shortest-path request alone would choose the shorter Urasando approach.
+ const hommachi=features.paths.find(p=>p.id==='way/79699850'),omotesando=features.paths.find(p=>p.id==='way/105449722');
+ if(hommachi&&omotesando&&assembly.keihanApproach?.built){
+  const junction=hommachi.points.at(-1),southTurn=omotesando.points.at(-1);
+  const fork=assembly.keihanApproach.routePoints.findIndex(p=>same(p,junction));
+  const south=[...hommachi.points].reverse(),turn=south.findIndex(p=>same(p,southTurn));
+  if(fork>=0&&turn>=0){
+   const routePoints=[...assembly.keihanApproach.routePoints.slice(0,fork+1),...south.slice(1,turn+1),...[...omotesando.points].reverse().slice(1)];
+   routes.keihan_omotesando=make(assembly.keihanStation,{built:true,routePoints},['Keihan Fushimi-Inari · Platform 2','South gate','Inari bridge','JR crossing','Hommachi · Turn right','Omotesando · First torii','Rōmon']);
+  }
+ }
  routes.jr=make(assembly.inariStation,assembly.inariStationRoute,['JR Inari · Platform 2','East ticket gate','Omotesando · First torii','Rōmon']);
  return routes;
 }

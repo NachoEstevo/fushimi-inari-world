@@ -5,7 +5,7 @@ import {SpatialCollisionWorld} from './collision.mjs';
 import {walkingSpeed,movementSteps} from './walking-motion.mjs';
 import {auditSectorConnections} from './sector-audit.mjs';
 
-export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart}){
+export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart,canMove=()=>true}){
   const obstacles=new SpatialCollisionWorld(4);
   for(const c of assembly.colliders)obstacles[c.type==='box'?'addBox':'addCylinder'](...c.args);
   const audit={samples:0,blocked:0,maxCorrection:0,examples:[]};
@@ -166,6 +166,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
       for(let i=0;i<step.count;i++){
         const x=camera.position.x+velocity.x*step.distance,z=camera.position.z+velocity.z*step.distance;
         const resolved=obstacles.resolvePlayer(x,camera.position.y,z);
+        if(!canMove(camera.position.toArray(),[resolved.x,camera.position.y,resolved.z]))break;
         camera.position.set(resolved.x,assembly.walkHeight(resolved.x,resolved.z,camera.position.y-1.7)+1.7,resolved.z);
       }
       footstep+=step.distance*step.count;if(footstep>.7){
