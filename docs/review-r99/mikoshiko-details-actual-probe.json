@@ -1,0 +1,212 @@
+{
+  "report": {
+    "built": true,
+    "revision": "R99",
+    "sourceFeature": "way/1287564336",
+    "shortEnd": -1,
+    "shutter": {
+      "shortEnd": -1,
+      "center": [
+        0,
+        3.45,
+        -8.1230057023537
+      ],
+      "width": 1.22,
+      "height": 1.07
+    },
+    "hood": {
+      "width": 1.84,
+      "projection": 0.38,
+      "top": 4.155
+    },
+    "gutter": {
+      "u": -4.585230128787298,
+      "y": 4.535,
+      "length": 17.1460114047074
+    },
+    "downpipe": {
+      "u": -4.305230128787299,
+      "v": -8.3130057023537,
+      "bottom": 0.34,
+      "top": 4.31
+    },
+    "brackets": [
+      {
+        "point": [
+          -4.3652301287872985,
+          4.205,
+          -6.9730057023537
+        ]
+      },
+      {
+        "point": [
+          -4.3652301287872985,
+          4.205,
+          -3.4865028511768497
+        ]
+      },
+      {
+        "point": [
+          -4.3652301287872985,
+          4.205,
+          -2.220446049250313e-16
+        ]
+      },
+      {
+        "point": [
+          -4.3652301287872985,
+          4.205,
+          3.4865028511768497
+        ]
+      }
+    ],
+    "uprights": [
+      {
+        "point": [
+          -4.310230128787299,
+          2.125,
+          -6.9730057023537
+        ]
+      },
+      {
+        "point": [
+          -4.310230128787299,
+          2.125,
+          -3.4865028511768497
+        ]
+      },
+      {
+        "point": [
+          -4.310230128787299,
+          2.125,
+          -2.220446049250313e-16
+        ]
+      },
+      {
+        "point": [
+          -4.310230128787299,
+          2.125,
+          3.4865028511768497
+        ]
+      }
+    ],
+    "roofContacts": [
+      {
+        "u": -4.570230128787299,
+        "v": -6.9730057023537,
+        "bottom": 4.2,
+        "top": 4.49,
+        "receiverBottom": 4.475
+      },
+      {
+        "u": -4.570230128787299,
+        "v": -3.4865028511768497,
+        "bottom": 4.2,
+        "top": 4.49,
+        "receiverBottom": 4.475
+      },
+      {
+        "u": -4.570230128787299,
+        "v": -2.220446049250313e-16,
+        "bottom": 4.2,
+        "top": 4.49,
+        "receiverBottom": 4.475
+      },
+      {
+        "u": -4.570230128787299,
+        "v": 3.4865028511768497,
+        "bottom": 4.2,
+        "top": 4.49,
+        "receiverBottom": 4.475
+      }
+    ],
+    "batches": 3,
+    "primitives": 63,
+    "triangles": 1038,
+    "materialsReused": 3,
+    "newMaterials": 0,
+    "newColliders": 0,
+    "footprintChanged": false,
+    "routesChanged": false,
+    "registration": "2021 short face front/west long face recedes right => north -V; northeast gate12822895657 and south Shinsenjo context corroborate accepted mapped transform",
+    "sources": [
+      "https://www.goriluckey.com/wp-content/uploads/IMG_5749_20210412.jpg",
+      "https://image.space.rakuten.co.jp/d/strg/ctrl/9/8510ca7752a74472051e7d4b360d3e1c586296e7.77.2.9.2.jpeg"
+    ],
+    "limits": "Detail sizes inferred. North end sign corroborated relative to existing west-door registration, not a surveyed camera. Shutters closed; no public entry/porch/elevator, new roof mass, fence, terrain, collider or route edit."
+  },
+  "triangles": 1038,
+  "repeatSameReport": true,
+  "sourceGeometryUnchanged": true,
+  "collidersUnchanged": true,
+  "featuresUnchanged": true,
+  "transformUnchanged": true,
+  "floorUnchanged": true,
+  "heightFunctionsUnchanged": true,
+  "worldBounds": [
+    [
+      72.93829422895142,
+      44.297249057220455,
+      3.3010885664831893
+    ],
+    [
+      78.95510318352889,
+      48.61724922888183,
+      20.579584725532552
+    ]
+  ],
+  "localBounds": [
+    [
+      -4.6617302894592285,
+      0.315000057220459,
+      -8.573005676269531
+    ],
+    [
+      0.9350000023841858,
+      4.635000228881836,
+      8.573005676269531
+    ]
+  ],
+  "routeClearances": [
+    {
+      "id": "way/751194635",
+      "tags": {
+        "highway": "footway",
+        "width": "2"
+      },
+      "minimumVertexDistance": 1.8047197053086328,
+      "witness": [
+        73.0276611988208,
+        48.47224877111816,
+        4.977028827248698
+      ]
+    },
+    {
+      "id": "way/751194636",
+      "tags": {
+        "highway": "footway"
+      },
+      "minimumVertexDistance": 8.03464699358454,
+      "witness": [
+        73.36006644871144,
+        48.61724922888183,
+        20.579584725532552
+      ]
+    },
+    {
+      "id": "way/1297255919",
+      "tags": {
+        "foot": "yes",
+        "highway": "footway",
+        "surface": "paving_stones",
+        "wheelchair": "yes"
+      },
+      "minimumVertexDistance": 1.651457014627996,
+      "witness": [
+        78.53523738335319,
+        48.00474903814697,
+        3.3785654583898292
+      ]
+    }
+  ]
+}

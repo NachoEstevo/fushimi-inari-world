@@ -36,7 +36,9 @@ import {buildGondenRearLandscape} from './gonden-rear-landscape.mjs?v=93-release
 import {buildMikoshikoPrecinct} from './mikoshiko-precinct.mjs?v=93-release';
 import {buildHondenRearBoundary} from './honden-rear-boundary.mjs?v=93-release';
 import {buildTamayamaSouthShinmesha} from './tamayama-south-shinmesha.mjs?v=91-final';
-import {integratedTerrainTriangles} from './terrain-triangles.mjs?v=90-shared';
+import {integratedTerrainTriangles} from './terrain-triangles.mjs?v=99-release';
+import {buildMikoshikoDetailsR99} from './mikoshiko-details-r99.mjs?v=99-release';
+import {shinsenjoNorthCourtTerrainDetailR99,buildShinsenjoNorthCourtR99} from './shinsenjo-north-court-r99.mjs?v=99-release';
 import {buildTamayamaStairLandscape} from './tamayama-stair-landscape.mjs?v=91-dense';
 import {buildTamayamaContinuationTorii} from './tamayama-continuation-torii.mjs?v=90-seated';
 import {buildMitsuFrontageAprons} from './mitsu-frontage-aprons.mjs?v=89-edge';
@@ -500,7 +502,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   colliders.push(...twinColliders);
   const omotesandoArrival=buildOmotesandoArrivalR94(root,features,surfaces);
   document.body.dataset.omotesandoArrival=JSON.stringify(omotesandoArrival);
-  const renderedTerrainPositions=integratedTerrainTriangles(terrain,anchors,pathDistance,surfaces.terrainHeight);
+  const renderedTerrainPositions=integratedTerrainTriangles(terrain,anchors,pathDistance,surfaces.terrainHeight,{detailBounds:shinsenjoNorthCourtTerrainDetailR99(features)});
   const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
   const southShinmesha=buildTamayamaSouthShinmesha(root,legacy.materials,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions});
   document.body.dataset.southShinmesha=JSON.stringify(southShinmesha);
@@ -527,6 +529,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.gondenRearLandscape=JSON.stringify(buildGondenRearLandscape(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   document.body.dataset.gondenServiceR95=JSON.stringify(buildGondenServiceR95(root,legacy.materials));
   const mikoshiko=buildMikoshikoPrecinct(root,legacy.materials,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions});
+  document.body.dataset.mikoshikoDetailsR99=JSON.stringify(buildMikoshikoDetailsR99(root,features));
   // Full-ring terrain rises above the sourced facade; preserve legacy context
   // until service-floor/east-bank registration is resolved (R93 native review).
   const shinsenjo={built:false,builtIds:[],reason:'Pending registered floor and terrain levels: southeast ground exceeds proposed roof'};
@@ -667,6 +670,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     else if(legacy.foliage.includes(mesh))for(const child of chunks.children)child.userData.nearForest=true;
     parent.add(chunks);mesh.removeFromParent();
   }
+  document.body.dataset.shinsenjoNorthCourtR99=JSON.stringify(buildShinsenjoNorthCourtR99(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);

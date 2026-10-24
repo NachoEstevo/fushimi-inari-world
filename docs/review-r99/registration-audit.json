@@ -1,0 +1,46 @@
+{
+  "retainingWall": [
+    [
+      79.383,
+      -1.648
+    ],
+    [
+      81.564,
+      -1.648
+    ],
+    [
+      86.28,
+      -1.737
+    ],
+    [
+      86.526,
+      27.952
+    ]
+  ],
+  "retainingWallLength": 36.58785887377326,
+  "bridge": [
+    [
+      84.838,
+      15.518
+    ],
+    [
+      93.769,
+      15.284
+    ]
+  ],
+  "bridgeCrossesWallAt": [
+    86.42262913563414,
+    15.47648133269081
+  ],
+  "distanceElevatorToWallCrossing": 1.5851729549912683,
+  "wallSouthEndpointToShinsenjo": {
+    "distance": 3.518387588463069,
+    "nearestRingPoint": [
+      86.59825258739241,
+      31.46964563113826
+    ]
+  },
+  "newSource": "https://api.openstreetmap.org/api/0.6/map?bbox=135.7730,34.96665,135.77395,34.96725",
+  "geographicFormula": "Existing build_geography.py ORIGIN34.96714/135.77267 R6378137 equirectangular; X east Z south",
+  "elevations": "No source elevation/height/deck metadata; no elevation measured by this plan audit"
+}
