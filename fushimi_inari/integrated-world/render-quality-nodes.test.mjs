@@ -24,13 +24,17 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
   const previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
   Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:3431,innerHeight:1264,devicePixelRatio:2});
   let ratio=1,disposed=0;
-  const renderer={getMaxAnisotropy:()=>16,setPixelRatio:value=>ratio=value,getPixelRatio:()=>ratio,setSize(){}};
+  let activeTarget=null;
+  const prepared=[];
+  const renderer={getMaxAnisotropy:()=>16,setPixelRatio:value=>ratio=value,getPixelRatio:()=>ratio,setDrawingBufferSize(width,height,value){ratio=value;},
+    getRenderTarget:()=>activeTarget,getActiveCubeFace:()=>2,getActiveMipmapLevel:()=>1,
+    setRenderTarget:target=>activeTarget=target,clear:()=>prepared.push([activeTarget.width,activeTarget.height])};
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),sun=new THREE.DirectionalLight();
   const texture=new THREE.Texture({width:1,height:1});texture.anisotropy=4;
   scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial({map:texture})));
   // Exercise r180's real cached shadow target and resize implementation.
   const shadowNode=new ShadowNode(sun);
-  const target=new THREE.RenderTarget(512,512,{depthTexture:new THREE.DepthTexture(512,512)});
+  const target=new THREE.RenderTarget(2048,2048,{depthTexture:new THREE.DepthTexture(2048,2048)});
   const depthTexture=target.depthTexture,colorTexture=target.texture;
   target.addEventListener('dispose',()=>disposed++);
   shadowNode.shadowMap=target;sun.shadow.map=target;
@@ -38,7 +42,7 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
   const quality=createRenderQuality({renderer,scene,camera,sun});
   const report=()=>JSON.parse(document.body.dataset.renderQuality);
   try{
-    assert.equal(report().shadowSize,1024);
+    assert.equal(report().shadowSize,2048);
     assert.equal(disposed,0);
     assert.equal(report().maxPixels,2000000);
     quality.setLook('dreamcore');
@@ -47,23 +51,59 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(report().shadowSize,2048);assert.equal(report().bloom,.65);
     assert.equal(texture.anisotropy,4);
     await quality.setMode('ultra');
-    assert.equal(report().shadowSize,4096);assert.equal(texture.anisotropy,16);
+    assert.equal(report().shadowSize,2048);assert.equal(texture.anisotropy,16);
     assert.equal(sun.shadow.map,target);
-    assert.equal(disposed,0,'the menu must not dispose cached GPU resources');
+    assert.equal(disposed,0,'quality transitions never resize the live shadow atlas');
+    assert.equal(activeTarget,null);assert.deepEqual(prepared,[]);
     shadowNode.renderShadow(frame);
-    assert.equal(target.width,4096);assert.equal(target.height,4096);
+    assert.equal(target.width,2048);assert.equal(target.height,2048);
     assert.equal(target.depthTexture,depthTexture);assert.equal(target.texture,colorTexture);
-    assert.equal(disposed,1,'ShadowNode resizes its own render target');
+    assert.equal(disposed,0,'ShadowNode must not destroy a depth texture during render');
     assert.equal(quality.detailScale,1.25);
     await quality.setMode('balanced');
-    assert.equal(report().shadowSize,1024);assert.equal(texture.anisotropy,4);
+    assert.equal(report().shadowSize,2048);assert.equal(texture.anisotropy,4);
     assert.equal(quality.detailScale,1);assert.equal(report().look,'dreamcore');
     await quality.setMode('invalid');assert.equal(quality.mode,'balanced');
-    assert.equal(disposed,1,'quality changes leave the shadow target lifecycle to ShadowNode');
+    assert.equal(disposed,0,'returning to Balanced preserves the shadow atlas');
     shadowNode.renderShadow(frame);
-    assert.equal(target.width,1024);assert.equal(target.depthTexture,depthTexture);
+    assert.equal(target.width,2048);assert.equal(target.depthTexture,depthTexture);
     quality.dispose();quality.dispose();
   }finally{
+    for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}
+  }
+});
+
+
+test('WebGPU transitions wait for submitted work and serialize mode and resize requests',async()=>{
+  const names=['document','innerWidth','innerHeight','devicePixelRatio'];
+  const previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+  Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1200,innerHeight:800,devicePixelRatio:2});
+  let ratio=1;
+  const releases=[],sizes=[];
+  let graphsDisposed=0;
+  const disposePost=THREE.PostProcessing.prototype.dispose;
+  THREE.PostProcessing.prototype.dispose=function(){graphsDisposed++;return disposePost.call(this);};
+  const renderer={getMaxAnisotropy:()=>16,getPixelRatio:()=>ratio,setPixelRatio:value=>ratio=value,
+    setDrawingBufferSize:(width,height,value)=>{ratio=value;sizes.push([width,height]);},waitForGPU:()=>new Promise(resolve=>releases.push(resolve))};
+  const quality=createRenderQuality({renderer,scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),sun:new THREE.DirectionalLight()});
+  try{
+    assert.equal(quality.mode,'balanced','initial state is established synchronously');
+    const first=quality.setMode('high'),second=quality.resize(900,600);
+    quality.render(); // Must skip, since this renderer deliberately has no render implementation.
+    await Promise.resolve();
+    assert.equal(releases.length,1);assert.equal(quality.mode,'balanced');assert.equal(sizes.length,1);
+    releases[0]();await first;
+    assert.equal(quality.mode,'high');assert.equal(graphsDisposed,0,'resolution changes retain graph texture identities');
+    await Promise.resolve();
+    assert.equal(releases.length,2);assert.equal(sizes.length,2);
+    quality.setLook('sakura');quality.render();
+    releases[1]();await second;
+    assert.deepEqual(sizes.at(-1),[900,600]);assert.equal(graphsDisposed,0);
+    const report=JSON.parse(document.body.dataset.renderQuality);
+    assert.equal(report.status,'ready');assert.equal(report.look,'sakura');assert.equal(report.bloom,.30);
+  }finally{
+    quality.dispose();
+    THREE.PostProcessing.prototype.dispose=disposePost;
     for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}
   }
 });
