@@ -64,6 +64,8 @@ Static geometry is batched, repeated objects are instanced, and nearby detail us
 - **Mountain:** tea houses, stone stairs, varied torii inscriptions, Yotsutsuji's city view, summit shrines and return paths. The short Ōsugi access now reaches its mapped shrine.
 - **Interaction:** walk, fly, orbit, routes, minimap, seasons, recorded footsteps, sound controls, flashlight and photography.
 
+![Overview of Inariyama and the surrounding Kyoto streets, showing the full map extent](docs/images/inariyama-overview.png)
+
 The geographic study area spans approximately **2.55 × 2.45 km**; it is not the legal shrine boundary. Trail topology comes from OSM and broad terrain from GSI elevation data. Local grading, roof profiles, small furnishings, donor inscriptions, trees, shop inventories and the simplified city skyline contain visual estimates. There is no measured overall accuracy percentage. This remains a work in progress, not a surveyed digital twin.
 
 ## Develop and verify
