@@ -16,4 +16,4 @@ Final Shinmesha: owner corrected both roof windings, rotated the front floor sam
 
 Native walking crossed the gate again from z−33.98 through−23.76 to−19.34, then followed the pavilion east side after shifting to x99.33: z−15.57→−7.90→−6.70. No obstruction on this bounded track. This reaches alongside the pavilion, not a complete circumnavigation. Rear support, night, interior interaction and exact historic dimensions remain unverified. No confirmed remaining scoped blocker.
 
-Final saved project captures: [bank](review-r91-shinmesha/native-bank.png), [pavilion front](review-r91-shinmesha/native-front.png). Root inspected both actual images. Full suite340 passes and24 integrated route records unchanged fromR90.
+Final saved project captures: [bank — archived](repository-archive.md#historical-review-evidence) (`review-r91-shinmesha/native-bank.png`), [pavilion front — archived](repository-archive.md#historical-review-evidence) (`review-r91-shinmesha/native-front.png`). Root inspected both actual images. Full suite340 passes and24 integrated route records unchanged fromR90.

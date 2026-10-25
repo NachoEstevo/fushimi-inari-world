@@ -1,5 +1,7 @@
 # R96 — Omokaru / rear boundary ownership investigation
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 Inspected production legacy builder, R88 court replacement owner, the current `outputs/r95-integrated/okusha.json` geometry export, its manifest anchor, actual mapped path/building features, and the official exterior/Omokaru photographs. The initial contradiction below was subsequently resolved by primary OSM records; see the implemented resolution at the end.
 
 ## Source-backed appearance

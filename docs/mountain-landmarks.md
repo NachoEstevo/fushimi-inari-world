@@ -204,8 +204,8 @@ flat roof and curtain meshes and replaces the old body geometry. Batches here
 are the builders' material groups, not measured full-scene GPU draw calls or FPS.
 Existing integration may merge static groups into its spatial chunks.
 
-The [Ainomine component preview](review-r67/ainomine-software.png) and
-[Kumataka pavilion preview](review-r67/kumataka-pavilion-software.png) render the
+The [Ainomine component preview — archived](repository-archive.md#historical-review-evidence) (`review-r67/ainomine-software.png`) and
+[Kumataka pavilion preview — archived](repository-archive.md#historical-review-evidence) (`review-r67/kumataka-pavilion-software.png`) render the
 actual production geometry with EGL/llvmpipe and approximate diffuse materials.
 They are not browser captures or full-scene performance measurements. The
 Kumataka preview contains 4,629 triangles because it also includes 36 triangles

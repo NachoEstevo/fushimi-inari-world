@@ -91,9 +91,9 @@ contained the newly integrated gate was detected and discarded.
 
 | Fixed view | Before | After |
 | --- | --- | --- |
-| South continuation | [before](review-r90-gate/before-south.png) | [after](review-r90-gate/after-south.png) |
-| Reverse from upper approach | [before](review-r90-gate/before-upper.png) | [after](review-r90-gate/after-upper.png) |
-| West oblique | [before](review-r90-gate/before-west.png) | [after](review-r90-gate/after-west.png) |
+| South continuation | [before — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/before-south.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/after-south.png`) |
+| Reverse from upper approach | [before — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/before-upper.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/after-upper.png`) |
+| West oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/before-west.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/after-west.png`) |
 
 These offline renders omit alpha-textured foliage and inscription patches and use
 approximate diffuse colours. White/flat-looking paving and clipped distant context

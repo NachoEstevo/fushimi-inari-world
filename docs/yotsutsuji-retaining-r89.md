@@ -80,9 +80,9 @@ Three offline diagnostic render/review loops used Blender **5.2.0 LTS**, Cycles,
 
 | Pose | Before | After |
 | --- | --- | --- |
-| Front/downhill edge | [before](review-r89-yotsu/before-front.png) | [after](review-r89-yotsu/after-front.png) |
-| Uphill oblique | [before](review-r89-yotsu/before-uphill.png) | [after](review-r89-yotsu/after-uphill.png) |
-| Low downhill oblique | [before](review-r89-yotsu/before-downhill.png) | [after](review-r89-yotsu/after-downhill.png) |
+| Front/downhill edge | [before — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/before-front.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/after-front.png`) |
+| Uphill oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/before-uphill.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/after-uphill.png`) |
+| Low downhill oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/before-downhill.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r89-yotsu/after-downhill.png`) |
 
 These are actual Three.js owner meshes exported with indices and colours, plus a
 patch sampled from the actual integrated ground; geometry was not redrawn in

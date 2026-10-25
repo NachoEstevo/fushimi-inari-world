@@ -1,5 +1,7 @@
 # R95 — Yotsutsuji tea-house frontage and sitting canopy
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 23 October 2026. Uses the architectural-environment-production skill's structural-source and ownership gates, preserving the existing canonical mapped scene. This specialist opened no GPU browser and changed no integration, viewer, terrain or source geography. Root owns integration and rendered acceptance. No whole-Yotsutsuji completion is claimed.
 
 ## Sources and actual observed pixels

@@ -1,5 +1,7 @@
 # R95 — Exact ownership of overlapping Okusha path ribbons
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 The same fixed-camera integrated render still showed wide black strips after
 the court height correction. Actual camera rays through the exported production
 triangles identified the root cause rather than treating it as a hole to cover:

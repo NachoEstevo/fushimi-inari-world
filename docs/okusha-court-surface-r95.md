@@ -1,5 +1,7 @@
 # R95 — Okusha court/path datum correction
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 The root's actual integrated geometry renders (`outputs/r95-integrated/okusha-
 aerial.png` and `okusha-arrival.png`) showed dark strips around the pavilion and
 at court/path joins. Both pixels and the exported actual triangle payload were

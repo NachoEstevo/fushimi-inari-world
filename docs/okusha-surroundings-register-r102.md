@@ -1,5 +1,7 @@
 # Okusha surroundings register R102
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 Research only, 2026-10-23. Coordinates below are local **[X east, Z south] metres**, origin latitude34.96714 longitude135.77267; R6378137 equirectangular projection. No elevation is established by these plan coordinates. No production geometry, paths, renderer or browser was changed.
 
 ## Primary map and actual scene comparison

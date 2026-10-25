@@ -91,9 +91,9 @@ browser captures, a complete geographic scene or evidence of FPS.
 
 | Fixed pose | Before | After |
 | --- | --- | --- |
-| Front oblique | [before](review-r88-okusha/before-front.png) | [after](review-r88-okusha/after-front.png) |
-| Rear oblique | [before](review-r88-okusha/before-rear.png) | [after](review-r88-okusha/after-rear.png) |
-| Eye-level entry | [before](review-r88-okusha/before-entry.png) | [after](review-r88-okusha/after-entry.png) |
+| Front oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/before-front.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/after-front.png`) |
+| Rear oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/before-rear.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/after-rear.png`) |
+| Eye-level entry | [before — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/before-entry.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r88-okusha/after-entry.png`) |
 
 Cameras in the canonical local Three.js frame: front `[13,7,18]` toward
 `[3.8,2.4,-5]`; rear `[13,8,-22]` toward `[3.8,3,-7]`; entry `[3.8,1.75,8]`

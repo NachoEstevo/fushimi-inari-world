@@ -1,5 +1,7 @@
 # R96 shared walking-top ownership
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 Four actual integrated ray findings established the same failure in different
 places: Okusha, sanctuary-side paving, Honden rear, and Omotesando. At the latter,
 pixel375/374 meets two path triangles at world[-73.297556,36.606998,5.608800].

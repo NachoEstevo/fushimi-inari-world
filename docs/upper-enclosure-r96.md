@@ -1,5 +1,7 @@
 # R96 Byakkosha wooded boundary registration
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 ## Second source pass
 
 This packet explicitly revisits the largest unresolved boundary omission after

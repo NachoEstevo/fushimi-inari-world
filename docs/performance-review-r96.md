@@ -1,5 +1,7 @@
 # R96 CPU/source performance and arrival review
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 Reviewed 2026-10-23, without browser or renderer. Evidence is
 `fushimi_inari/outputs/r90/r95.json`, final `r96-reviewdatasets.json`, `r96-start.json`, current
 integration/viewer/builders, and the shared-path benchmark. Regional export

@@ -28,4 +28,4 @@ Fresh `90-seated` native scene completed loading, then the visible checkpoint me
 
 Mineral margins are now present along the south continuation around both gate posts, with the green treed bank retained. DOM reports 49.058m² continuation, inferred width6.4m, 1911 total court triangles and one material batch, registered to shared terrain planes+.003m. Native image shows no obvious exposed gap around the inspected gate margins. This resolves the scoped floating-post blocker; the court perimeter and canopy remain photo-informed estimates, and night/full-route/perimeter inspection remain unverified.
 
-Saved final native evidence: [south view](review-r90-gate/native-south-seated.png), [closer feet](review-r90-gate/native-feet-close.png). These are project renders, not source Street View photographs.
+Saved final native evidence: [south view — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/native-south-seated.png`), [closer feet — archived](repository-archive.md#historical-review-evidence) (`review-r90-gate/native-feet-close.png`). These are project renders, not source Street View photographs.

@@ -18,7 +18,7 @@ The independent reviewer reproduced two real failure cases in the installed Thre
 
 - Reflection/material focused suite: 13 passing tests.
 - Full repository suite: **560 passed, zero failed**, using `node --test --test-concurrency=4 fushimi_inari/integrated-world/*.test.mjs fushimi_inari/geography/*.test.mjs`.
-- Fresh assembled geometry: 36 connected route checks remain zero-shove with valid heights; the third rail return, fixed water level, exact backing and original shrine callback all pass. Evidence is packaged in `docs/review-r98/`.
+- Fresh assembled geometry: 36 connected route checks remain zero-shove with valid heights; the third rail return, fixed water level, exact backing and original shrine callback all pass. Evidence was archived from `docs/review-r98/`; see the [archive index](repository-archive.md#historical-review-evidence).
 - Viewer/module syntax and completed diff reviewed independently.
 - Local server restarted on port 8420 after the user reported it was down; HTTP 200 and the `98-water2` version were verified.
 - The user confirmed that the new reflected water looked quite good. No independent native browser appearance or FPS measurement is claimed; the prior browser access restriction remains respected. Diagnostic CPU geometry renders only review the added rail, not the shader/reflection change.

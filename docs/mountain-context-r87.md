@@ -65,8 +65,8 @@ shading makes these unsuitable for colour/material acceptance.
 
 | Pose | Before | After |
 | --- | --- | --- |
-| Front | [before](review-r87-mountain/before-front.png) | [after](review-r87-mountain/after-front.png) |
-| Low oblique | [before](review-r87-mountain/before-underside.png) | [after](review-r87-mountain/after-underside.png) |
+| Front | [before — archived](repository-archive.md#historical-review-evidence) (`review-r87-mountain/before-front.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r87-mountain/after-front.png`) |
+| Low oblique | [before — archived](repository-archive.md#historical-review-evidence) (`review-r87-mountain/before-underside.png`) | [after — archived](repository-archive.md#historical-review-evidence) (`review-r87-mountain/after-underside.png`) |
 
 Fixed camera positions in shrine-local Three.js metres: front `[1,2.6,7]`,
 target `[0,1.6,0]`; low oblique `[2.5,1.3,5]`, target `[0,2,0]`; lens 47 mm.

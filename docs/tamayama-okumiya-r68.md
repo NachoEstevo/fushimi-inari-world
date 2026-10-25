@@ -88,10 +88,10 @@ The pass reuses the existing bark, red timber, lattice, plaque, stone and paper 
 
 ### Review images
 
-![Tamayama frontal geometry review](review-r68/tamayama-front.png)
+[Tamayama frontal geometry review — archived](repository-archive.md#historical-review-evidence) (`review-r68/tamayama-front.png`)
 
-![Okumiya pedestrian approach geometry review](review-r68/okumiya-approach.png)
+[Okumiya pedestrian approach geometry review — archived](repository-archive.md#historical-review-evidence) (`review-r68/okumiya-approach.png`)
 
-Additional views: [Tamayama oblique](review-r68/tamayama-oblique.png), [Okumiya rear](review-r68/okumiya-rear.png).
+Additional views: [Tamayama oblique — archived](repository-archive.md#historical-review-evidence) (`review-r68/tamayama-oblique.png`), [Okumiya rear — archived](repository-archive.md#historical-review-evidence) (`review-r68/okumiya-rear.png`).
 
-Detailed numeric results and limitations: [validation.json](review-r68/validation.json).
+Detailed numeric results and limitations: [validation.json — archived](repository-archive.md#historical-review-evidence) (`review-r68/validation.json`).

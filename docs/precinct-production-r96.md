@@ -47,6 +47,6 @@ Actual camera-ray review found two more lower sanctuary apron overlaps near the 
 - Performance measurements and qualifications are in [performance-review-r96.md](performance-review-r96.md). New builders add static geometry with no new animation loops or PointLights. Browser FPS was not measured.
 - Geometry was exported from the actual integrated scene and reviewed through serialized Blender 5.2 CPU renders. Their diagnostic palette omits native Three.js textures, alpha cutouts and custom shaders. The local browser access restriction was respected; native appearance and interaction remain unverified.
 
-Selected renders, exact cameras, audit evidence and source hashes are packaged in [review-r96](review-r96/README.md).
+Selected renders, exact cameras, audit evidence and source hashes are packaged in [review-r96 — archived](repository-archive.md#historical-review-evidence) (`review-r96/README.md`).
 
 This is a substantial verified checkpoint, **not a claim that all requested sectors are identical to the real site**. Outstanding priorities are Shinsenjo's shared court/terrain boundary, unregistered frontage proportions, remaining exact architectural motifs/materials and native visual verification. [shinsenjo-grade-reconciliation-r96.md](shinsenjo-grade-reconciliation-r96.md) contains the measured conflict and ownership plan. Hidden walls, terrace endpoints and floors must be registered before that compound is activated; grass is not authority for inventing a building or wall.

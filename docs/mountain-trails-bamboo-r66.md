@@ -66,8 +66,8 @@ particular, the [official Miyuki description](https://inari.jp/en/map/spot_18/)
 identifies black bamboo there; that evidence is not used to recolour every grove
 or invent the unverified extent of a Miyuki planting.
 
-The [component close-up](review-r66/bamboo-close-software.png) and
-[whole-plant comparison view](review-r66/bamboo-full-software.png) were rendered
+The [component close-up — archived](repository-archive.md#historical-review-evidence) (`review-r66/bamboo-close-software.png`) and
+[whole-plant comparison view — archived](repository-archive.md#historical-review-evidence) (`review-r66/bamboo-full-software.png`) were rendered
 from the exact production geometry with EGL/llvmpipe. They use approximate diffuse
 lighting/materials and are **not browser screenshots or full-scene FPS evidence**.
 

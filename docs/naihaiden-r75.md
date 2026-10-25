@@ -12,5 +12,5 @@ Offline Blender 5.2 render of the actual Three.js geometry revealed inherited ra
 
 This does not complete Naihaiden: the photo's central karahafu is broader/taller, the front worship opening and offering barrier remain simplified, the lantern shapes and carved figurative detail need further work. Existing nine-step flight is authored, not a verified surveyed count. Do not present this as an exact replica.
 
-![Before](review-r75/before.png)
-![After](review-r75/after.png)
+[Before — archived](repository-archive.md#historical-review-evidence) (`review-r75/before.png`)
+[After — archived](repository-archive.md#historical-review-evidence) (`review-r75/after.png`)

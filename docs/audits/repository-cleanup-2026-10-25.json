@@ -1,0 +1,2177 @@
+{
+  "date": "2026-10-25",
+  "archiveId": "fushimi-cleanup-2026-10-25",
+  "files": [
+    {
+      "path": "docs/review-r66/bamboo-close-software.png",
+      "bytes": 84562,
+      "sha256": "4f6bf1c5b38c35d8862eb81793146f587f7c15d5cbedc5b66d83a60c34ffc60d",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r66/bamboo-full-software.png",
+      "bytes": 80482,
+      "sha256": "87a717d5961557804bcc611d05ace13495017a32eb3bc6a8b629c1cccd85244b",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r67/ainomine-software.png",
+      "bytes": 49254,
+      "sha256": "872a146d35d1cd55e08ff3352c8687e9c4830f584569553124f85d651514a80a",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r67/kumataka-pavilion-software.png",
+      "bytes": 43538,
+      "sha256": "108f08400c3a74d1c6001551f920c20246c22c7ca36ad144475f9322bb81fa6d",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r68/okumiya-approach.png",
+      "bytes": 225119,
+      "sha256": "6f2f317ef0f4796637e16442ec3c164fc5ecac879ec6eb1610b68a2da62f6bce",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r68/okumiya-rear.png",
+      "bytes": 256870,
+      "sha256": "710882129a3bfd74359900745ab0969415a6af51b942ad8b93fe02ad2025e38e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r68/tamayama-front.png",
+      "bytes": 55320,
+      "sha256": "425ea6f7cd780f29dce486b2d617f2797b1e2804c62314dee40a9c1ee875c61c",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r68/tamayama-oblique.png",
+      "bytes": 65956,
+      "sha256": "69b40e16d3268f01807c82693114e68c24bb054b7252563c173e0beadebbd4f4",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r68/validation.json",
+      "bytes": 20450,
+      "sha256": "c946bed340dee3c425aa5bc7ec38bab2af56e8766b1fd97418a8867bda8c5ccd",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r75/after.png",
+      "bytes": 758409,
+      "sha256": "ceebfa4beb8e449cad8b268dcc67c429e39e8f712a3dd20042700186df874835",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r75/before.png",
+      "bytes": 752395,
+      "sha256": "6a3058de70eed418b06ebb665ac4dd0f4ead48e0b6a36c27911e0b276d6cd56c",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r87-mountain/after-front.png",
+      "bytes": 548441,
+      "sha256": "df6e107a37406c0361dfd878988defb812e4fa203f63045442af4a3cba92d24b",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r87-mountain/after-underside.png",
+      "bytes": 577853,
+      "sha256": "74bdf243541d0579911acadf75988526ad784daa5ba5578feaab9d2449857171",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r87-mountain/before-front.png",
+      "bytes": 548558,
+      "sha256": "827135576483e9ce1504618dcaad042a32b9c7bf4b1bb51a9be4c74c9123c4c5",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r87-mountain/before-underside.png",
+      "bytes": 577196,
+      "sha256": "6d353d252230b3160ab42158a2b51e792409304c6bcfd334817b51420684493a",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/after-entry.png",
+      "bytes": 810530,
+      "sha256": "febc98243cdeabc9a4ed68ae77085e302c250c31c0c2977b5bd96db947516501",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/after-front.png",
+      "bytes": 726609,
+      "sha256": "007eee4c4e0a28094cbbfaec86601a203ee2cd99a338cb6179cddeb73413dfd2",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/after-rear.png",
+      "bytes": 747202,
+      "sha256": "f58df71dc2caadc3b51201c4a8e1a4c06fff5adec4bfcfce1efe392a46750f49",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/before-entry.png",
+      "bytes": 669050,
+      "sha256": "caaaa89887bac44c59fe880ea534f93a7c91715f3920c426e72ec95761cf9c0e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/before-front.png",
+      "bytes": 655629,
+      "sha256": "4c1582f520f0e18e63b1bc029f23e5cf4fc1898f5cedd5e7ec54e70834d5f780",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r88-okusha/before-rear.png",
+      "bytes": 667651,
+      "sha256": "5cdee18fb2dab3f9ce917e355008dd9064ae84195cb83a93a72c6e4e3ec523a0",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/after-downhill.png",
+      "bytes": 773779,
+      "sha256": "0417ebe224ac37cc3e43dd770e7757a955fb061490ee1329605df86c5abed5d6",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/after-front.png",
+      "bytes": 734648,
+      "sha256": "fe75864596bbb53a01b25d26474ece17ce3ac0390d876bd3ea81d3120c42682c",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/after-uphill.png",
+      "bytes": 720884,
+      "sha256": "ac755893d804f20e488f911d1d3e8baaa888e8903237778a45b08207434704b3",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/before-downhill.png",
+      "bytes": 751871,
+      "sha256": "18b7cb8bb2b6e45957667a251d2052b0d030e88210f82c34a837665126f1c809",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/before-front.png",
+      "bytes": 720571,
+      "sha256": "66a6c50679dd70096369e47cb4bf9b7c1cabd5a37a45e1d3c2fb429e212fa85b",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r89-yotsu/before-uphill.png",
+      "bytes": 708716,
+      "sha256": "a6c27bf79ea605bf79ac0c7c704172a718cc130ca85ed7aea1eb01fed4e99c52",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/after-south.png",
+      "bytes": 772520,
+      "sha256": "f34fc392754188677e54b6392df3dcc1e64414b623628f1b0f1ebd02af0cf735",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/after-upper.png",
+      "bytes": 723918,
+      "sha256": "39894e7c8a310fee6f6fa3199c4efe80c4f6df9c00b7e2554bfdcc27ce1bbd9e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/after-west.png",
+      "bytes": 760976,
+      "sha256": "5f174ce865b0dd63b74f547b9c89edf25fd68a44f251a0419317a200f87d78c1",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/before-south.png",
+      "bytes": 751101,
+      "sha256": "0d003c616d507abde80a48b17e8beeccee024be514e569a4a6c30e3fa09baf71",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/before-upper.png",
+      "bytes": 680046,
+      "sha256": "041696a78de358b82ce26d66378044d9e615f5c4d3260e012728aedcfb69c4db",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/before-west.png",
+      "bytes": 743940,
+      "sha256": "a95bb8fbcc4f8716c2537710d7ce111c0020bf74c367283a6118779fe12bfcac",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/native-feet-close.png",
+      "bytes": 4455045,
+      "sha256": "0b85a4df23a3b01cbe21b50e7f98fc09f6baad03365806dac5d09020b569ef55",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/native-south-seated.png",
+      "bytes": 4632283,
+      "sha256": "99325a652a3b055bcfcfedb40aafd176d6354ff9ee6d45f8191af9eb60ec1b6e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r90-gate/route-report.json",
+      "bytes": 5523,
+      "sha256": "bbc5e28341334da6481a852af64c6c1b7a3e429597b728b1d6c64b863883c188",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/export.mjs",
+      "bytes": 977,
+      "sha256": "ffb8d3bd16176c55a723c8b7af9f4ef255eea61e9bfb462d15a94af80ea84d61",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/front.png",
+      "bytes": 723934,
+      "sha256": "47362766e930c19a21276d17e222b63be76245a417e73b56fb7df420330b35da",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/native-bank.png",
+      "bytes": 4156005,
+      "sha256": "bc510008058c48bbadeb74c4712fcb0ddad741529b344dab9c0233a609b9e168",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/native-front.png",
+      "bytes": 3868072,
+      "sha256": "275110341e191faff93bd5e1e7170d3bbb2e298725aa298a0666fa89047c7699",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/oblique.png",
+      "bytes": 744443,
+      "sha256": "ae31b37ea73a48d681f3902cec12782cccc8637eddc50965361b1b90fc59bcab",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/render.py",
+      "bytes": 1587,
+      "sha256": "004c7fbf1fcf84f186819c5ddfec637152274c6499d2c625fe371a1169d0d8a5",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/seating.json",
+      "bytes": 1194,
+      "sha256": "6fef7593ccd478ebb81c2d67664a7ee821932268d11509da31218dacc471cc49",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r91-shinmesha/stats.json",
+      "bytes": 794,
+      "sha256": "519d4eb47efdec26cbc6bf3bc26c94bc972b7b6a812532189f93a73a059ff510",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r92/native-rear-close.png",
+      "bytes": 2936487,
+      "sha256": "a1849e7f450680088e78e2dcf2caa77cb56bbd156ba29b687dbe92a252a10b76",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r92/native-rear.png",
+      "bytes": 4272802,
+      "sha256": "875dac469b1f78b2729ad032eda37069796e5cdb7ed35e2c7e415d50f2a687db",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r93/native-release-boundary.png",
+      "bytes": 427111,
+      "sha256": "83edb535d7fc68bfe9ae81f59335efd73bb3b4a57f7a13b70de439f73715530a",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r93/native-release-mikoshiko.png",
+      "bytes": 173514,
+      "sha256": "1e24717464fdc516a3d890cdba1dd6dc7e7ea12e7f48276699b6f7a6362d47fe",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r93/native-reviewed-service-overview.png",
+      "bytes": 340135,
+      "sha256": "0bff7cc38c3c3116401878793ad1a2842d21c003f0338a29a08277ec38f026c7",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/explicit-lanes.json",
+      "bytes": 8071,
+      "sha256": "3fe03b08aeaf423eeead088c355b453730519333fa0b25b6269321c5f9d30c1a",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/gehaiden-comparison.jpg",
+      "bytes": 270245,
+      "sha256": "de76e6332b86eed9c45c01c04af9e9b19b550318ec9dda94ed3eb7e5cc3edb51",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/okusha-arrival.png",
+      "bytes": 852833,
+      "sha256": "ff53aca0f5c18d393bc735e49dc37b5daf3a2fd22c4af73a40b0b69b5cc60ecf",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/romon-comparison.jpg",
+      "bytes": 244590,
+      "sha256": "90ef648d8928f11694f3eca77c4a473ec87d82ee8c64974626cb5326ca3dbd1d",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/routes.json",
+      "bytes": 840149,
+      "sha256": "a46d358f9e9a2f018b384536efa834557259b4f6b8dea8851c5f6f27602270b4",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/source-hashes.json",
+      "bytes": 4908,
+      "sha256": "8901779399ab3dca9ea57505f35d2b394953166d7087c1d64e120457d0c02fa6",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/tamayama-choja-overlap.png",
+      "bytes": 919015,
+      "sha256": "38f81d8355edc56a0d9b26f782bc7385687ecb29d08d9f1be0388385d52b1aa3",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r95/yotsutsuji-arrival.png",
+      "bytes": 715557,
+      "sha256": "08b57e00e74dcb9c4514c717b2275f7425c5991ab86972fa96b5f6cd87614d0e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/arrival.json",
+      "bytes": 1106,
+      "sha256": "847b12091adc3a6ab290cce34b76b930c3f0365cb6ee69330b6a4a6993e98d5e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/assembly-audit.json",
+      "bytes": 116314,
+      "sha256": "0b7c8518c96641f20e65d300c01eb7aca9d4350235f13ce00a99ce899c2497b5",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/cameras.json",
+      "bytes": 5093,
+      "sha256": "a05262386f1f84d73b3a8f39ed4fd7c67aa8d0a5dc42d53288fe46bf4bae2e3d",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/gehaiden-front.png",
+      "bytes": 864222,
+      "sha256": "5dae51bec826dd8f45a3e6aea206489f6312c781100641d4bc410e16c0357377",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/honden-closeup.png",
+      "bytes": 824202,
+      "sha256": "dd9a9885798798575f26a41a1c24e50109ecff3b0cfa344ad0d95aeb38ff09d6",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/inspect-route-owners.json",
+      "bytes": 37960,
+      "sha256": "29af85afb8e5fd80ce86a5e65ea0c3cd34f56afee678d30d0ccb0c8a2cb3f3b1",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/naihaiden-side.png",
+      "bytes": 876168,
+      "sha256": "8a9c3c0862961a4270bcdeb55991a6344c895a73a8b1fad19fb840af8a6b4e36",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/omokaru-chamber-ray-fixed.jsonl",
+      "bytes": 3725,
+      "sha256": "28a39645e795277fd128859548d69c64942532cceefaa56c8656fe181b437d5c",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/omokaru-context.png",
+      "bytes": 739238,
+      "sha256": "d8a27e34bbf4822367c783bd62fbee910930f73184963e904a4b13aa9166083e",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/omokaru-west.png",
+      "bytes": 800357,
+      "sha256": "5093c8ce2c81503ae2388f7fbfd96a868e504a1fbf1d280842623d6563851194",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/omotesando-oblique.png",
+      "bytes": 783875,
+      "sha256": "1d9346a64b3aa5da85527f3fbe67bf562ce9ff5057a92cf23439a820c679d8bc",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/path-top-ownership-benchmark.json",
+      "bytes": 1460,
+      "sha256": "d5635e202e8455fbd6bb5fd5087e8974d93f1e0900c4b3cdf52f1f3326d579da",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/README.md",
+      "bytes": 4024,
+      "sha256": "e0fa0ea4dbc3abd4a3e46eba5be61ec66f18fc859ebe69edb1b445abbbde0cd9",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/review-final-chamber-overlap-fixed.md",
+      "bytes": 1440,
+      "sha256": "970aa091ac41039edde5368dc5cefa3f3625afafaffba9b22fcb3b9460845865",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/review-final-notice-hedge.md",
+      "bytes": 1753,
+      "sha256": "e65d4d81eb321e99a52f4231c225a38770cf7d67819ffd7d8aabd1ec54b21e66",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/romon-closeup.png",
+      "bytes": 753784,
+      "sha256": "4258f7fd53a82e0739627e9dc7e4b666d5599f0e1396b67cecfb88bc1c0b6534",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/source-sha256.json",
+      "bytes": 4828,
+      "sha256": "dc639aaf57109aad1fd5cd8e1135d0111f9dd2f9ab1f07417c2c9234641c9858",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/tamayama-aerial.png",
+      "bytes": 962115,
+      "sha256": "58b467def579946d2ac64292a7cb230413efab1df6e160aa4e0f3ad47dad8f85",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/tests.txt",
+      "bytes": 239,
+      "sha256": "ffd342bbf2bc6c687ecaad7e42fc113cc05fbc1d5e21b86589e1e76687dd01f4",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/well-context.png",
+      "bytes": 804139,
+      "sha256": "8e6ae003164c7112a6b066086e85451c31363eb2abb1f97bcec0879ec866f4f5",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r96/yotsutsuji-aerial.png",
+      "bytes": 911199,
+      "sha256": "32c82be7f970114d4f1e6193840ab01ee484d45100b9fb679cb3a4443023553a",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/accepted-actual-audit.json",
+      "bytes": 42170,
+      "sha256": "94e50556710d2fd189d2a78f97307c3232f646ec1a1d90d22d7a728632d4069f",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/accepted-cpu-review.md",
+      "bytes": 4445,
+      "sha256": "e670a129b0cdd2fea1ff4ae111afde61ce351ee5c7e595f8e469502881f9d286",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/before-aerial.png",
+      "bytes": 871908,
+      "sha256": "fd16ac755b1d218661061d23c26fb758a10c57ce81c2ecb466577ac7f8252c12",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/before-arrival.png",
+      "bytes": 786097,
+      "sha256": "9d740a0bd8d4010510167cca8cf4418b6509828fd7777da73a7ce5487c31e19d",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/build-reports.json",
+      "bytes": 28677,
+      "sha256": "d9bc2c2a6412b69b7194d91440b09a21510e4124686aa5e2310a8ee5b11d3680",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/cameras.json",
+      "bytes": 998,
+      "sha256": "2ce1cbaea50f323147e313affe9c218e85f934791234c68e40868e1584f6b1d5",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/kumataka-aerial.png",
+      "bytes": 950107,
+      "sha256": "12571a5a79659c6a32d52c97ba2f7eec8f3d4b818d42ef082c3f5e00ee255c83",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/kumataka-arrival.png",
+      "bytes": 834254,
+      "sha256": "038d7cd01a7d3dac01f978c074b922ea42aa93a51e21275d72cf736e397fbd69",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/kumataka-court.png",
+      "bytes": 821480,
+      "sha256": "42686de862c754b72369aff21d3e07f8f4782dd2cc621f5041ac5aab2509dc08",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/kumataka-pondedge.png",
+      "bytes": 773413,
+      "sha256": "6585dc945f0ba077138c494d119606826df51d86fbf2217355705ea913d79ea6",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/kumataka-shoreline.png",
+      "bytes": 719762,
+      "sha256": "6512d84b47c8194a6fc69d354824860dcbd7314293a38eecd83771b7918cd7cd",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/README.md",
+      "bytes": 3171,
+      "sha256": "ffe4a03b29003a086988795d2bde5dd63908732000e4f65540f2645e8d9a6a22",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/source-sha256.json",
+      "bytes": 2061,
+      "sha256": "440e73b70a615687e8f777ab02ed3d0147f804b2def81c536d1244e87fbe4225",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r97/tests.txt",
+      "bytes": 238,
+      "sha256": "7e08d145ffd91e95c5e2ee213c3739a50b2259e27f12a8f1c4e1b87c3d92b203",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/accepted-actual-audit.json",
+      "bytes": 43050,
+      "sha256": "a23ff1817601c5489584453ba0d6cb5eb395b150a3c273b845553b6a1adadd38",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/accepted-cpu-review.md",
+      "bytes": 2128,
+      "sha256": "1fabec5fe76fff2cac8c2d9251fffba0f6b61237251d296cb5efa2d2c0122af1",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/cameras.json",
+      "bytes": 1232,
+      "sha256": "44f1e23a46c9ca5445bd911f73fd6352efd95327783d0253f0548b990ac45345",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/kumataka-shoreline.png",
+      "bytes": 719173,
+      "sha256": "48167c48b2fb5337a087379a3d256b39d81238f66d5418d5ba17b68a947013e0",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/kumataka-swclosure.png",
+      "bytes": 766750,
+      "sha256": "ffd8197af299d70d233dcbe34b7951bc9a3e9d1dae5e8c3c9e6d92266ac51dc0",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/review-r98/README.md",
+      "bytes": 631,
+      "sha256": "d29ac6d8797d465a56f55e51dbbbb144377d7e82f268c4f3b2faa9608e82baf4",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/aerial-context.png",
+      "bytes": 158698,
+      "sha256": "1a08ebd65718cdbd72f9d74a83050becb5240d6d9134d8c5a5b789556e64af83",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/inariyama-overview.png",
+      "bytes": 2381867,
+      "sha256": "f95f7cdf51351e7864fbb58ddb74de8e83152db04ef5a31b28fa5292ab8d540c",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/reception.png",
+      "bytes": 103890,
+      "sha256": "eacac62800ce34e8bb2f2f36feefb6d3444f24c15a3a2c57a94b8bc815ba15a4",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/romon-current.png",
+      "bytes": 3493481,
+      "sha256": "bab07acebdbecc61202bb5780e1d865feba57ad8785c92cfd0cda81944c92408",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/romon.png",
+      "bytes": 160761,
+      "sha256": "dad8ca941ce4854aa12cd3998c6f87a7e8bdc605781c02b50259b3c3dfceb4e6",
+      "status": "tracked"
+    },
+    {
+      "path": "docs/images/yotsutsuji-current.png",
+      "bytes": 4646041,
+      "sha256": "76cdda5021293ce2a8d015515cc8151fdeb6ea221a1841e085538010b5cad6f0",
+      "status": "tracked"
+    },
+    {
+      "path": "outputs/r95-integrated/cameras.json",
+      "bytes": 2034,
+      "sha256": "9d890d6e9c2840d2c58b37f977bdbdb5befa45ebd793e29a565778074062e22a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/cameras.log",
+      "bytes": 4779,
+      "sha256": "0fff11a197dc14f7eb562204186ac0ed4a53d23dc6ac8659184c822687792f53",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-latest.log",
+      "bytes": 5302,
+      "sha256": "8f7594ed8c8d3fac2b562bf89361a9f5e0520787e8ebe0e6c5932bacf39fa45e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-okusha-final.log",
+      "bytes": 4906,
+      "sha256": "efc2aebcf8013939c612003b5440ab84885cc1fcb49f2e180e933351639f4f67",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-okusha-round3.log",
+      "bytes": 4906,
+      "sha256": "f788d5dcd0fe24aff6c6ed3ce7216b8999d7b9b8d12f383be6922437b723de8e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-okusha.log",
+      "bytes": 4906,
+      "sha256": "e69109260f73621e18b437357c7e27e17c52dfa11a219469b8202dc834ed7535",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-omotesando-round3.log",
+      "bytes": 4912,
+      "sha256": "4a307f288cd96b5f2ebd160879fe74968d73093d67375e4fcb73ad71b060a243",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-resumed-precinct-fix.log",
+      "bytes": 4906,
+      "sha256": "15f0b93ac6e50dc1bc731780e7199d036868bb53b792642ad7bce20333c52e9e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-tamayama-choja.log",
+      "bytes": 4906,
+      "sha256": "42a53334fc42155af39ca6a5ac9362021a0a70317b27c2ffbeeaf3d761425264",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-tamayama-final.log",
+      "bytes": 4906,
+      "sha256": "c8b16e070f35532f27740bf35736404f1465377f2ebaa570c16ef5f00df6948b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-tamayama-round3.log",
+      "bytes": 4906,
+      "sha256": "995a77847fa555bcefb5b70e81df92730a25f72e2ef32f73e943e7fec73993be",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-yotsutsuji-final.log",
+      "bytes": 4913,
+      "sha256": "f7a9f8cd1bdc5813f766bd708e8a7ad1588e2a179c8bb3c02f91e7ec4f56963d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export-yotsutsuji-round3.log",
+      "bytes": 4913,
+      "sha256": "b8bf0bbc879624c266c092fbed930146dc579052d1fea50675f3156552409d87",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export.log",
+      "bytes": 5303,
+      "sha256": "e5167f707643967bc766f5eafe83939ffce4d00172427764f57c11a228689560",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/export.mjs",
+      "bytes": 7657,
+      "sha256": "3839659b7eafa7c2073c9c52589b0b7fc0ec5110e269a92909802ce556c5daf4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/manifest.json",
+      "bytes": 9479,
+      "sha256": "adef16e6e26402a8c2fdd0647864e3aacc9b50d9b8f8dab28291829db610d96e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-aerial.png",
+      "bytes": 966093,
+      "sha256": "aff2dfa59f261220e7939d15c859428bd45473aa09c7907dfd360402258c7066",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-all-walking-floor-grid.json",
+      "bytes": 1319,
+      "sha256": "0d4821b5bb45b3f3053496681614f2818bfb0cce96ac7f585c7026979781d7c0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-all-walking-floor-grid.mjs",
+      "bytes": 1580,
+      "sha256": "bd951beca7760031fc5a30d88df35152d3a78f559401480fef39715161e61405",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-arrival.png",
+      "bytes": 852833,
+      "sha256": "ff53aca0f5c18d393bc735e49dc37b5daf3a2fd22c4af73a40b0b69b5cc60ecf",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-floor-grid.json",
+      "bytes": 849,
+      "sha256": "ccd87dea21110e74082930b0ba50e19b83fd50894f3e4be94a599f566da44a97",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-floor-grid.mjs",
+      "bytes": 1450,
+      "sha256": "b93d073fd36b4fee1219f0017ab6bd433022b7a0b22a1d14b7d20c8d571e8175",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-newtriangle-after.jsonl",
+      "bytes": 2726,
+      "sha256": "db3502f38d40c4eec1a043a40ac4a54f28c52c34a8c84e08c1aff7bc6693f676",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-newtriangle-probe.mjs",
+      "bytes": 1156,
+      "sha256": "e892e509058081fc8234f8a2c66dcb57bdb542ede0659b88736c8b5e62360d34",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-ray-after.jsonl",
+      "bytes": 6086,
+      "sha256": "28c726b145f06a7c934d4ec9f1e04b996d630b7e959496a3f1453073f871ce63",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-ray-probe.mjs",
+      "bytes": 1193,
+      "sha256": "2a16e4fb33fc4864805c2c859fc3b09259e152fe0691656d67629d816eb45131",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-sliver-after.jsonl",
+      "bytes": 8676,
+      "sha256": "98e1eaec102ae022d34b1c4f25afbbd3c72c75c851315e4dbe7058b71105e7c6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-sliver-before.jsonl",
+      "bytes": 7739,
+      "sha256": "38e8f85370ed48c57b5298d1227077a321ef5655c1f33458d0e36a96bc4a36ed",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha-sliver-probe.mjs",
+      "bytes": 1196,
+      "sha256": "b7a94a76ee5284a91d156b18f8f231259b44e925c99cf85c3a7157aae7200f4a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha.blend",
+      "bytes": 17017423,
+      "sha256": "bfe2c25261e09e00ce051d8723b73d8bc90d145e3d403978b107a323f48f847e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha.blend1",
+      "bytes": 16565146,
+      "sha256": "1820165e1cf4bd6824dbddcf38e6d742957f3da48c5dcd5aa33b74f72cbbfb4e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/okusha.json",
+      "bytes": 94786802,
+      "sha256": "0b9a197e27980e7e6b8099c4e054737c826d02de5f4e76787309fde9add6ac7e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/omotesando-aerial.png",
+      "bytes": 945908,
+      "sha256": "62612de594d7e222fb5367b487e4dd8ef97574a2a9f19d953fb8025eddf8be2b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/omotesando-arrival.png",
+      "bytes": 767856,
+      "sha256": "7a8cd1d91391b65bb53c0e03992918b10e4dd898e91a2bb2b8f1c3ce96a31d53",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/omotesando.blend",
+      "bytes": 24737341,
+      "sha256": "69d8c313241f8fe8b126570e6f21adb5c4dca69fdc249e4a89bd447239736a1f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/omotesando.blend1",
+      "bytes": 24734563,
+      "sha256": "e1130b200bc64aa24e5985f41c22b819e0c59b3d65b9d1aec0943a991f0002dd",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/omotesando.json",
+      "bytes": 172777339,
+      "sha256": "ae50b22daa1f0fe8700b6654df7492b3e2ae5ea6835558a1ab2ba4ab77418789",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-choja-front.log",
+      "bytes": 975,
+      "sha256": "17b548fa8bc5ba3c8d24e06f261447f0a131a3ab7e39869f6b41ed904ad47ae4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha-arrival.log",
+      "bytes": 961,
+      "sha256": "34c97ebab976ca4cf30f713d7603c4027822138e57e15a6a6f38cb89c075fa44",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha-convex.log",
+      "bytes": 1104,
+      "sha256": "04b73b044579b2e4b2350f315d823c709672eacae14496120907933dbb8f32c5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha-exact.log",
+      "bytes": 1104,
+      "sha256": "29384943dfb0e2107447f929f4b49cd637d1b4b92dabd349d540fc71e62d5d54",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha-final.log",
+      "bytes": 1104,
+      "sha256": "e110300255d56c930eee97b3626feeaf2239415fdbbfe2a5128b48b21a53b6f3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha-round3.log",
+      "bytes": 1104,
+      "sha256": "846470c39dbcf0398f2b76232d763493c867ea35333a78a2e207a3e6d5bf0aba",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-okusha.log",
+      "bytes": 1104,
+      "sha256": "6372428e291414632a5bef64952b6c1fec87e6739b62734d4052706ed95ca6d2",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-omotesando-round3.log",
+      "bytes": 1124,
+      "sha256": "14b3915313ed515f01a2c8d479ddc334a94a1a19249e67628d5ea117f6ca8b08",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-omotesando.log",
+      "bytes": 1124,
+      "sha256": "64e7b0ab845d52927fc532f2c11954da35071cd219d089a2086fd467a57d60e4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-resumed-final.log",
+      "bytes": 1136,
+      "sha256": "ea2b4ffcc43361408e18b7473f69cb2e2e4e0c03c3107d04cbe12ee099bce5d8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-resumed-precinct-fix.log",
+      "bytes": 979,
+      "sha256": "cf36d30e315954a8b364c33318ea4cb6ed23d128f0f22bd96fc9269de9d07abd",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-tamayama-choja-overlap.log",
+      "bytes": 1432,
+      "sha256": "a46df4cb65c4a77a619e55aabe8f84a7f79c6f519065f3a455c229e24004b5ff",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-tamayama-choja.log",
+      "bytes": 1114,
+      "sha256": "bee9f0620cb7066f26ded17b656053ed6a749b111863fd12565214ae9746fcc3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-tamayama-final.log",
+      "bytes": 1136,
+      "sha256": "836fa7c8e3af43be62bfb993792b161eb472d99b34a7dd614b9b34e1bb04befc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-tamayama-round3.log",
+      "bytes": 1114,
+      "sha256": "5ac4d94a095526f8c455cd6495ac27f0fe1a24be49fa8ccdb849718998b40cc3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-tamayama.log",
+      "bytes": 1114,
+      "sha256": "240851a53b5b3b7714e492f61517c7ef4ab4beb8d1acd16ffe76ac505a6be2a0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-yotsutsuji-final.log",
+      "bytes": 1124,
+      "sha256": "d1a760ae02784ce91248e846184b3695d5693e1d58b370f362e43756392db7e9",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-yotsutsuji-round3.log",
+      "bytes": 1124,
+      "sha256": "f0b02ef87c17b9a4d89cf80b99ced12854b59ca7dcdbc9155b590a063fabeb2e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render-yotsutsuji.log",
+      "bytes": 1124,
+      "sha256": "2318472f3b7c7e0dee1997165234071bba06686945d8c53a7d59a0b75233146a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/render.py",
+      "bytes": 3392,
+      "sha256": "819494570f1a3df50a3383c6b669b141ad5ebc3d043fa10fed992d6c7d1f2a2b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review-convex-okusha-and-choja.md",
+      "bytes": 1583,
+      "sha256": "9c42b35916ea05172a2ba744356f3788cd98815bc7a88c5e28db61a36fb4b6f1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review-exact-okusha.md",
+      "bytes": 819,
+      "sha256": "73e04ad9ce6b90a7ffe636aa8975af8be7090699e8ed539cc967e28d4ee4bd4a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review-final.md",
+      "bytes": 1502,
+      "sha256": "f234fb7e3cd599b6431960667901dfaf1e9d706039f69fe8f5a93f59b0fd864a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review-resumed-final.md",
+      "bytes": 2582,
+      "sha256": "7141cea932b505eaf6a3b0359dfa1068c770abebed99c73349052eb6b7803536",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review-round3.md",
+      "bytes": 2717,
+      "sha256": "4ad31eddc6bc5726a275725042324ace7c2c8443ed3073a5eeb115cdf508c177",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/review.md",
+      "bytes": 3520,
+      "sha256": "1b25f5f28907621155feafb8873218be6933773e515e6d5e18d39dbddd1cd0c8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama-aerial.png",
+      "bytes": 932848,
+      "sha256": "65ad7a44f7297b4503e6330fdae8ebc1c45cfcbe45c3ecd907ff128cbe0964d4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama-arrival.png",
+      "bytes": 846606,
+      "sha256": "bfa2f5f9c28249484a5e458074600297e55c7edbe7cfca9148387d3c16b0f309",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama-choja-front.png",
+      "bytes": 707088,
+      "sha256": "cbf2046c39ce630d081ba63cf75193440d9aba22b39b55948adde1da700597dd",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama-choja-overlap.png",
+      "bytes": 919015,
+      "sha256": "38f81d8355edc56a0d9b26f782bc7385687ecb29d08d9f1be0388385d52b1aa3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama.blend",
+      "bytes": 6588993,
+      "sha256": "736f0ef866bd5b467370c6e93005d6ebcebe74eb5cf505e94f1c77d833ad206b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama.blend1",
+      "bytes": 6588514,
+      "sha256": "6189c05f37192595c0267d59c28ccb32ff7f943f30beb7fa250f9bfca98512de",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/tamayama.json",
+      "bytes": 40057148,
+      "sha256": "8a041d7c02304003166b2d672e2faf8857d2a7bf9ce20d28c31d0c73a462029f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/yotsutsuji-aerial.png",
+      "bytes": 906231,
+      "sha256": "992a754db9f5e621b491a9fc3ceb5c33842970ea251675f8c4d89f9424fb2ae0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/yotsutsuji-arrival.png",
+      "bytes": 715557,
+      "sha256": "08b57e00e74dcb9c4514c717b2275f7425c5991ab86972fa96b5f6cd87614d0e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/yotsutsuji.blend",
+      "bytes": 14805476,
+      "sha256": "18b7a828bc6c5c0dc5800c0348b3b09edbad0ad2a2f2e887a54be0c0b921d2d4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/yotsutsuji.blend1",
+      "bytes": 14323597,
+      "sha256": "5f96dc71a96c592d5a4ca296394e80bf78aee2a322a3732c9f06e187a892c740",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/yotsutsuji.json",
+      "bytes": 82290072,
+      "sha256": "1ac1b8c66fd857ea2c4ced51c2bc292e03e0c49de28934a755f6f6aa712328dd",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-choja/tamayama-aerial.png",
+      "bytes": 933060,
+      "sha256": "dc2ed8abbc936b54ad3b4fe1eab02d4346f2ab61285644f506fba8e4611e4579",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-choja/tamayama-arrival.png",
+      "bytes": 847052,
+      "sha256": "a0d781dbb8ca437a6fd51b804843e548f59a02e51d85ca14ab2ffea141351675",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-convex-okusha/okusha-aerial.png",
+      "bytes": 966520,
+      "sha256": "133ab92c6012d2f8881fd663cff95739a6fc5b6334213d18cef3b965141334f7",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-convex-okusha/okusha-arrival.png",
+      "bytes": 855390,
+      "sha256": "d4d1dfbf42c7c02a49fb7638ad038c394220e624302a6d85f0f869ba1cd8aa8d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-exact-okusha/okusha-aerial.png",
+      "bytes": 969234,
+      "sha256": "969931bbc4f3d297d529ffb3f6ccab3507e43cdeffa4fee3591b56e810732568",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-exact-okusha/okusha-arrival.png",
+      "bytes": 858863,
+      "sha256": "1b37ad2ed98c6ce47a942c85becd6fa74d4ddd4dd4d897350db92771fb4164b8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-resumed-final/tamayama-choja-front.png",
+      "bytes": 707088,
+      "sha256": "def3409d4ef63612a0a03285cfe6dc420f33b10e316021d0d0db36ee8e83b8bc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-resumed-final/tamayama-choja-overlap-before-precinct-fix.png",
+      "bytes": 920439,
+      "sha256": "200c92c087447bce234c3ba0f0dbbfd87a215f6298794e3e6f4a19a88c5271da",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-resumed-final/tamayama-choja-overlap.png",
+      "bytes": 920439,
+      "sha256": "78c2c975988db24bbbbfb8126509635b04cfb5214b6ab85a93fb233ee9ffc396",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-sanctuary-partition/tamayama-choja-front.png",
+      "bytes": 705892,
+      "sha256": "507a925fc77725a3ecca4604601ee1990560b5893e5255f3c28380f477176c3a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/pre-sanctuary-partition/tamayama-choja-overlap.png",
+      "bytes": 920122,
+      "sha256": "1266e0b1c62ced2e2106199495b78761b8e73289ec53053804f6deeba0e3a6ca",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/okusha-aerial.png",
+      "bytes": 969416,
+      "sha256": "c9be34855120cdbd0429c9ff6c6aff0cce3cebdc82db2b4d5db97b7b7af8d429",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/okusha-arrival.png",
+      "bytes": 861226,
+      "sha256": "4027cd083024227ea0b7238244412d4e37ce8e1815bf2e9ab86d6ebf130c6ed7",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/omotesando-aerial.png",
+      "bytes": 946355,
+      "sha256": "da732052c5b5f03f1278ed732900a5110ef8e8d39c656d74f59768b37d0b8727",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/omotesando-arrival.png",
+      "bytes": 768359,
+      "sha256": "275eafd5aaa771904cdfe4024e2d2cce5342b791e3ba46647857f9aaf1b0d3fc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/yotsutsuji-aerial.png",
+      "bytes": 903261,
+      "sha256": "6eaa2d2c23c14d40790783c8bfd85c68849d38ea1abff129b59ab8b7ac87e3f6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2/yotsutsuji-arrival.png",
+      "bytes": 809636,
+      "sha256": "83bb8835793142845ce79158414249618006d99b7bcfdb14299e454558953baa",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2-tamayama/tamayama-aerial.png",
+      "bytes": 925587,
+      "sha256": "8baa919da071779390f519b5abe8219f05b3d2156967e8096cf95d85122f9238",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round2-tamayama/tamayama-arrival.png",
+      "bytes": 781373,
+      "sha256": "5d5bff37dde395948c31b674391cacf68959070e31031bd443301dfd18a75509",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round3/okusha-aerial.png",
+      "bytes": 970902,
+      "sha256": "4b43d6dea8172cb685dba7b9e5548264053a60afcdf7b4f480812fe7d41ca640",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round3/okusha-arrival.png",
+      "bytes": 861531,
+      "sha256": "90cf505e150d76a1673a82db2b8bed130365b443f1f862b7d80c6d25d27de2ce",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round3/yotsutsuji-aerial.png",
+      "bytes": 904143,
+      "sha256": "bdc49d495b232dc92140f68879a4ab462539fd6146a33a5dc910056012491830",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/round3/yotsutsuji-arrival.png",
+      "bytes": 715573,
+      "sha256": "4a869de70a74e83a163a8b6d90d404ae0adae21552e6d0a3da9d5c4db82344d2",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r95-integrated/__pycache__/render.cpython-313.pyc",
+      "bytes": 8556,
+      "sha256": "f5c8f62d12fec643f2ab99aa14a44b39cb2026ac80c3144694a27d3994063236",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/cameras.json",
+      "bytes": 5093,
+      "sha256": "a05262386f1f84d73b3a8f39ed4fd7c67aa8d0a5dc42d53288fe46bf4bae2e3d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-chamber-overlap-fixed.log",
+      "bytes": 7735,
+      "sha256": "38278b379b393c0065c1143a463f60d47eaa831747568d79bebba4b8d7b23647",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-closeups.log",
+      "bytes": 5958,
+      "sha256": "1ab2619b76d25f5f45a20dc0c8307c4ffb1d9bb74531147812b0095e72a2872e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-final-source-fix.log",
+      "bytes": 7871,
+      "sha256": "c59c96cca9f497c53be8aaa9bf3f9bae5883b96d6bba8dcf732f1fbb822c7820",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-final.log",
+      "bytes": 7979,
+      "sha256": "83201557549018fbb4055a405cdf107a58e2e0c143a8df51ee81aa646e402dc2",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-notice-hedge.log",
+      "bytes": 7725,
+      "sha256": "3f0dcbf20f2680ba2e7804a2502e6166e406dd9909a00ed09667823d300f69de",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-omokaru-source-detail.log",
+      "bytes": 7499,
+      "sha256": "1ac065433c87065b94be366272d3d255373248ab86c02b62b55f69b3408a2b8f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-round2.log",
+      "bytes": 7278,
+      "sha256": "3de9147a75f17bd4023eb0440ddd74bfa58c43a1c7531badef91df58f6022896",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-solid-chambers.log",
+      "bytes": 7735,
+      "sha256": "b1f3a712d79edc1167b181160e90f586a742a7fd9f6210958a30b9b8ccc82231",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export-well.log",
+      "bytes": 7094,
+      "sha256": "88b24b7f10c8c7b57e950c2332997674981c10a5fe2dc0f0839e75df92fc963b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export.log",
+      "bytes": 6269,
+      "sha256": "9cf03c924c8b946541f126b091fd8c5eacdb625c260be51b024b47af78891479",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/export.mjs",
+      "bytes": 11872,
+      "sha256": "8113613d11eb09e603b7b4413cdc259b10acb72fb38e4e37739c6e1fd0b3a7d5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden-ceiling.png",
+      "bytes": 642739,
+      "sha256": "0123d2c8fc0aa797b478fb9d9d390db9e7f9f4508f186afd18d3c4fd02b439fb",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden-front.png",
+      "bytes": 864222,
+      "sha256": "5dae51bec826dd8f45a3e6aea206489f6312c781100641d4bc410e16c0357377",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden-side.png",
+      "bytes": 837271,
+      "sha256": "e68aab6a957e6d944b5e6e077c7d8fc1b22f5ad1f39a7e42b3ef9c65db6ae7b8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden.blend",
+      "bytes": 2566325,
+      "sha256": "2269c9cd41e69ca859e064aa3e1b5bbca4d69b6ed31e7954d5aad2ba8c83153d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden.blend1",
+      "bytes": 2625122,
+      "sha256": "6bb9bc61f409d4fb7c9b097516c621a7e1a2f83deb0d57fd363c4e482df3adaf",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/gehaiden.json",
+      "bytes": 18301275,
+      "sha256": "a48b3b518fdd744d02099fa6fbc4646a8a20c9b0ad2b5d9cd03ec89f21eb42f0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden-closeup.png",
+      "bytes": 824202,
+      "sha256": "dd9a9885798798575f26a41a1c24e50109ecff3b0cfa344ad0d95aeb38ff09d6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden-ray-evidence.jsonl",
+      "bytes": 3785,
+      "sha256": "c3f32842f284de3c99ce804bf6b8f4b671177cb3d641a980f361bd137917b3c1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden-ray-probe.mjs",
+      "bytes": 1144,
+      "sha256": "92cfb9424657dcaba3f65cb4c2a1503437eae0183a43a53aa04f2265c78928b5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden.blend",
+      "bytes": 2992691,
+      "sha256": "567b565ba87c0448583d828ccc4ae598d5d36bc30fe2602720d34f0ee6e63ab9",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden.blend1",
+      "bytes": 2932388,
+      "sha256": "2eb7ea5e5a6499938062e9ee913399f45de4db9a2da4f0812836b5659c3d1f38",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/honden.json",
+      "bytes": 19752076,
+      "sha256": "5c728df8bcfbe5b7f701968c2e512624702242e203f46df9fcb61c862525e59e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/inspect-route-owners.json",
+      "bytes": 37960,
+      "sha256": "29af85afb8e5fd80ce86a5e65ea0c3cd34f56afee678d30d0ccb0c8a2cb3f3b1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/manifest.json",
+      "bytes": 10951,
+      "sha256": "f3e46084331aebc600115c70745783520e0b51d6684dd31da8e0d30c467c62e4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/naihaiden-front.png",
+      "bytes": 872009,
+      "sha256": "81a652fa537bbb02b915aa4f5c36bea7d05dc93e5380c82b44c76763b6d757e4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/naihaiden-side.png",
+      "bytes": 876168,
+      "sha256": "8a9c3c0862961a4270bcdeb55991a6344c895a73a8b1fad19fb840af8a6b4e36",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/naihaiden.blend",
+      "bytes": 2121990,
+      "sha256": "f2587e83127af560b12c7e75926f83cad78dd0924dbb3725a0578f5a597ae62d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/naihaiden.json",
+      "bytes": 13613344,
+      "sha256": "e6f8192f418558b225e93628131be49bf9a176a5623fdb3d09272587ddceacab",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/okusha-aerial.png",
+      "bytes": 972492,
+      "sha256": "ad93ec3e1ab6ce92bb501f6c218b358181494d3f00af6a837c0c0c58da2fd523",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/okusha-arrival.png",
+      "bytes": 864781,
+      "sha256": "73311ebf02bb04edc0cbc950a25309f56cc7c65e04a276a7758343df18276ae4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/okusha.blend",
+      "bytes": 17450108,
+      "sha256": "15cf9205c55cc5f1e5691814b9bb3bc787690d8560c395d3578d23b8626d9fbc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/okusha.blend1",
+      "bytes": 17284186,
+      "sha256": "30430b665d9450cd5c844b071129e49d1a20a7f5ee5da005ee8601da96c51f0d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/okusha.json",
+      "bytes": 98273720,
+      "sha256": "531809961e6378fbbaa2ed52fb77805f42fc1fb981225267da5cfa928a05f6d7",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-chamber-ray-evidence.jsonl",
+      "bytes": 3607,
+      "sha256": "04a51d10806b7f6f65399ed7797f8c449459b14cadf1c592ba01012e4c89b4e8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-chamber-ray-fixed.jsonl",
+      "bytes": 3725,
+      "sha256": "28a39645e795277fd128859548d69c64942532cceefaa56c8656fe181b437d5c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-chamber-ray.mjs",
+      "bytes": 1143,
+      "sha256": "7e3b5fe778ae2c3041d75f7eddf24a424be60d331087a5a301a4056e6dadcb32",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-context-occluded.png",
+      "bytes": 583208,
+      "sha256": "0a51f4eca21cc22eb7e08099236fcce60bf0e25a61d0e80411a6cd7699d730a5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-context.png",
+      "bytes": 739238,
+      "sha256": "d8a27e34bbf4822367c783bd62fbee910930f73184963e904a4b13aa9166083e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru-west.png",
+      "bytes": 800357,
+      "sha256": "5093c8ce2c81503ae2388f7fbfd96a868e504a1fbf1d280842623d6563851194",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru.blend",
+      "bytes": 695553,
+      "sha256": "c42fc1c8cad75d8f51454e4c9711a047a242760008ab588f2608497aafc59614",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru.blend1",
+      "bytes": 695477,
+      "sha256": "ffddd14982ad6bee5960aa7c15d67820ae0c8b17834fd5d4c86672fb36261d60",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omokaru.json",
+      "bytes": 3795210,
+      "sha256": "8031a69b18df56ec8af3f3a7759802bb1d4b0f620e39f970133f3a69cd007d2d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando-aerial.png",
+      "bytes": 945429,
+      "sha256": "204d9429a53d624a5f632c0869def3c5c0390d7e37f4bfde907671bf484a4e7a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando-arrival.png",
+      "bytes": 768273,
+      "sha256": "23c175b6d9c60e28758ebb22b947ce5369625a3582be12312e64f071323c470d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando-crossing.png",
+      "bytes": 788266,
+      "sha256": "e4bdc3f9949fc3a27c06bce830e3ca4a092b49efca9fe9e9144ae415a7476d39",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando-oblique-rear.png",
+      "bytes": 660098,
+      "sha256": "3d670a35b7a235c5d94289486f41541581cca2043f2051487e209674c9a5e3e1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando-oblique.png",
+      "bytes": 783875,
+      "sha256": "1d9346a64b3aa5da85527f3fbe67bf562ce9ff5057a92cf23439a820c679d8bc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando.blend",
+      "bytes": 25704665,
+      "sha256": "007558483903ead9a32fcb047bff5c52abefc9f76bab5f8afafb46660f81d802",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando.blend1",
+      "bytes": 24816034,
+      "sha256": "9fd2be8212a7a204e6ccffeffaadee3dc6a752180040e5bc5caab39088e5497c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/omotesando.json",
+      "bytes": 174918409,
+      "sha256": "73ca3012c43f16829383055a6772e3be66c3ae6ecd35c23db7ba00e73c25714d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/path-top-ownership-benchmark.json",
+      "bytes": 1460,
+      "sha256": "d5635e202e8455fbd6bb5fd5087e8974d93f1e0900c4b3cdf52f1f3326d579da",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-cap-brace-fixed.log",
+      "bytes": 1105,
+      "sha256": "72569f4c23ab27c54bdfea5d3d6bcce77b16a3cdb0b9e927abeb86cd1d654f8a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-chamber-overlap-fixed.log",
+      "bytes": 1105,
+      "sha256": "e060a2dc33a40f647bb8eeb9278bdbf00d66b774c862c77b94532d13d03c98e5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-entrance-frontage-oblique.log",
+      "bytes": 973,
+      "sha256": "aa4a494387df52f1fab7e6cd70fd3075fe0888c9a166d4cc8dd3d6c4673ca291",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-entrance-frontage.log",
+      "bytes": 1128,
+      "sha256": "c282c7fbb7811ed80f6f14e1b552ceae65fb4d12c30381df55d856bfcd6df044",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-final-gehaiden.log",
+      "bytes": 963,
+      "sha256": "ed18f031b11d2817a752abe8d4e917802c05cd3c726c459d7687d50031c12f7f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-final-okusha.log",
+      "bytes": 1104,
+      "sha256": "2090c9eea07d3d0fb95633fc65ac07b493ff376a457049366f685198154b5ba5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-final-omokaru-context.log",
+      "bytes": 964,
+      "sha256": "1e66401482793b953dc379c7db10f2723c1a71aa274aec49e3633a25a6fafba3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-final-omokaru.log",
+      "bytes": 1105,
+      "sha256": "dea1b9bc91c1a9976bd55638aa635283c1c0ed9552aa01ec7e3b77de8724717d",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-final-well.log",
+      "bytes": 955,
+      "sha256": "64ca885b41b3b42ff06b679de0fedce9e8627a73ceb6e34f48b0425f9d44b40b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-honden.log",
+      "bytes": 961,
+      "sha256": "c74b1f60a49c46eeb05bc9fc71906267b0a57ffea8d9c4a13fff85445342b397",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-notice-hedge.log",
+      "bytes": 1128,
+      "sha256": "1e60e6661c0844b352fbd74297007aaf92fee867bb486aab1abe9ddfb8de42aa",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-okusha.log",
+      "bytes": 1104,
+      "sha256": "898860d265192716ae1336bc193a4725d7307ca92ff50a5e1d0a9fcc923b9beb",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-omokaru-source-detail.log",
+      "bytes": 1105,
+      "sha256": "69411dc62b03fcc86989fd8ad3361dfa540cc1a7d5347584ee809cfa0816f148",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-omotesando.log",
+      "bytes": 1124,
+      "sha256": "dcbf12fab85a803cf085254fd7c8f2436ecfcc87bdd49cc918fb244a3f204861",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-romon.log",
+      "bytes": 958,
+      "sha256": "2d79eeec497e36e0e355a801bcee75dcad0a840913347490ce6f0f4302cfe0c0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-gehaiden-ceiling.log",
+      "bytes": 967,
+      "sha256": "1fad8118bc3e9fc88e7c8718694c2596b0670610663f7e55bb514eec8035997c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-gehaiden.log",
+      "bytes": 1106,
+      "sha256": "e2e9dfbe6a0560ffc5e58f0f997b17e9f236d7c5af682c3984e7173f8b15268e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-honden.log",
+      "bytes": 961,
+      "sha256": "f5ff5c3ba9b8a1bfa3b932ef3d5f87b9aeee4432bbbbe0d018525db2957e5611",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-naihaiden.log",
+      "bytes": 1111,
+      "sha256": "428c73ace5c9ce5622c8b3b5e6829296ca42d1ca87844464fb81033ce9aaeee4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-okusha.log",
+      "bytes": 961,
+      "sha256": "fad2054e1ac854137a60b0e49f0b5474172a28e14ae467c8e3ac0072db74e767",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-round2-omotesando.log",
+      "bytes": 971,
+      "sha256": "4f298fef4dfb63586f8516b3b6c503e4d155d9b7622510b4957b53a2d6c44806",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-solid-chambers.log",
+      "bytes": 1105,
+      "sha256": "c43c9efe5300d6d3650dca44325106c59d9906eac630080e7d854692802da1fb",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-tamayama.log",
+      "bytes": 1114,
+      "sha256": "70ed7ad811b22aba442f2bcf7ee574808b0b102a535fbf38a100ad14916a989e",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-well-front-corrected.log",
+      "bytes": 951,
+      "sha256": "9ba9c3b579e8b019b3ad8bb123e9df391930800d6bb6f78c1a38826118b701f0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-well.log",
+      "bytes": 1092,
+      "sha256": "987d9b9e98366aef3eac500e35027e88a0e82a66a9996ef9f3fafdf37a1682aa",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render-yotsutsuji.log",
+      "bytes": 1124,
+      "sha256": "206e5dcc98573a65eb1348f904ca71d2a41fc2c98463eaaaedeb015ed6d85091",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/render.py",
+      "bytes": 3449,
+      "sha256": "33b3c725afa31df7fc0e803034a7a5d80c14df2814f1a9c8d2cd24a61490a878",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-final-cap-entrance.md",
+      "bytes": 2487,
+      "sha256": "ac0bb5f73b7062f9755d2eedf75817d86892165e32aa7ad1c3b3f9b563b67414",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-final-chamber-overlap-fixed.md",
+      "bytes": 1440,
+      "sha256": "970aa091ac41039edde5368dc5cefa3f3625afafaffba9b22fcb3b9460845865",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-final-notice-hedge.md",
+      "bytes": 1753,
+      "sha256": "e65d4d81eb321e99a52f4231c225a38770cf7d67819ffd7d8aabd1ec54b21e66",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-final.md",
+      "bytes": 2798,
+      "sha256": "f85ea2b721c387ba9b3c0450bc3474235929e502c4e55770a2def76522284acd",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-omokaru-source-detail.md",
+      "bytes": 1316,
+      "sha256": "ee25f996f8bc6735fc60941729d13fa945677bcd9cefba0d83fa79656d1f3463",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-round1.md",
+      "bytes": 3480,
+      "sha256": "a2be4977809e609df17ab9f5978d98af3b6fe7dccda85ba3de54ea1ee7937957",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-round2.md",
+      "bytes": 2342,
+      "sha256": "50341864062ff2906ed334b288036ddddc6557db5337ae21b6e93a7b038f28cc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-solid-chambers.md",
+      "bytes": 926,
+      "sha256": "03990247a7d2f2a03b445ca80c34bada67aeee35f7ae6db4d8f60bdf75d1bbf7",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/review-well.md",
+      "bytes": 2322,
+      "sha256": "e9f047bfc02e2e6d6d4afd3f238c87c451cfb649873e2ead4d8f4bbcda8e9a46",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/romon-closeup.png",
+      "bytes": 753784,
+      "sha256": "4258f7fd53a82e0739627e9dc7e4b666d5599f0e1396b67cecfb88bc1c0b6534",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/romon.blend",
+      "bytes": 9498035,
+      "sha256": "6b9723eabff5c45fcd22bfc3aeda84392805217a430fc86d123acf4feffec748",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/romon.json",
+      "bytes": 66330467,
+      "sha256": "5ffac15d38af5b032e2b58e3b6205086bc351eb1f609c5593908d0001c825e03",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/tamayama-aerial.png",
+      "bytes": 962115,
+      "sha256": "58b467def579946d2ac64292a7cb230413efab1df6e160aa4e0f3ad47dad8f85",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/tamayama-arrival.png",
+      "bytes": 864049,
+      "sha256": "aec105eb0d3857fe196fbfd6c79fe3a6577f1ffae32d4db1f04b4a48aa0a4145",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/tamayama.blend",
+      "bytes": 6927495,
+      "sha256": "49c75762badbbf09f5683d214ba7bca1506d9655a3bf3fee8a0357a18235c023",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/tamayama.json",
+      "bytes": 42336740,
+      "sha256": "8afdd2bd2eb4084a693845deb8d1d3ac51cf85497cf8ec6b641cfafc7981db4a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-context.png",
+      "bytes": 804139,
+      "sha256": "8e6ae003164c7112a6b066086e85451c31363eb2abb1f97bcec0879ec866f4f5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-front-occluded.png",
+      "bytes": 587439,
+      "sha256": "c6c6fc8aa29318462a9607c427a26b076ec83fd0e2106265b426db92425736a2",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-front.png",
+      "bytes": 711192,
+      "sha256": "615855e33fde7ba1d3e163ff9413923b23c63c90598c3caf8d0ce0eda08a5235",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-ray-evidence.jsonl",
+      "bytes": 2307,
+      "sha256": "ce2c9d66cc77a891b3c4e1177b35bf50d2e1f3a71b67f3e1cfc18b16555fd0ee",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-ray-final-evidence.jsonl",
+      "bytes": 1630,
+      "sha256": "25fb3fefd41bd94088341d10960053bd72f3c52120f8255a2365369157a4eef5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well-ray-probe.mjs",
+      "bytes": 1130,
+      "sha256": "4f2f41e5d33b275e8f95e11297dafe7a900c20343162133a675b440fda086f08",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well.blend",
+      "bytes": 388387,
+      "sha256": "e59cc4fc1f1632fe0756b8645ba09321bc828b3f74d804329ddd88c360b64167",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well.blend1",
+      "bytes": 388334,
+      "sha256": "95c81a421a78a8bb1a40613a817fa8854f0d9f26ce2353e9c82650f4b7c2ba5a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/well.json",
+      "bytes": 2024896,
+      "sha256": "274de54981de3839fa7ef81130cdb45876900f3681e1b827d4aff337ee29e2ce",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/yotsutsuji-aerial.png",
+      "bytes": 911199,
+      "sha256": "32c82be7f970114d4f1e6193840ab01ee484d45100b9fb679cb3a4443023553a",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/yotsutsuji-arrival.png",
+      "bytes": 722272,
+      "sha256": "febf2b9af7cdba7bcf9afb3670a5dbc1e9a64a7d9bea6d47465d959ff0c2fe0f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/yotsutsuji.blend",
+      "bytes": 14917974,
+      "sha256": "b4188c9cd63f4b8f6eeda783dfe3eaa63533c7b62a7eb8cf769fedb850751081",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/yotsutsuji.json",
+      "bytes": 82962748,
+      "sha256": "416e7472f9bc21b45a097b86362aeb96e052f08ddfbac7f7ea6dfb734f2d71b0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-cap-brace-fix/omokaru-context.png",
+      "bytes": 740953,
+      "sha256": "fa45fa0aaaf3aa73cd756142aeb321b6fc72ff4300c29fdde0e17ac6fc5a4103",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-cap-brace-fix/omokaru-west.png",
+      "bytes": 808149,
+      "sha256": "a625984f67a2077608429ad3b4966920d20f02b05d9b1040b4f25dd99a75cfc6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-chamber-overlap-fix/omokaru-context.png",
+      "bytes": 740881,
+      "sha256": "f48a93c3a20eb433b5b0e79dcdce891937f27f5ef72c7aebaaa35e6d44dc1687",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-chamber-overlap-fix/omokaru-west.png",
+      "bytes": 805891,
+      "sha256": "4e487f7120f40db6b7812771285cd8947047db8e6f1a2326ff6aa884da6e06cc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-notice-hedge/cameras.json",
+      "bytes": 5094,
+      "sha256": "fd627b96d0a066134eb147fc3d5d37a2e645ef0000553a555a6c618215b328ac",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-notice-hedge/omotesando-crossing.png",
+      "bytes": 758929,
+      "sha256": "d55c7db76c1a74da8621141e4f1384b5c4da88ab785fa93f5dc1f74e31c24e39",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-notice-hedge/omotesando-oblique.png",
+      "bytes": 775020,
+      "sha256": "17107ede35743c62e6cb3bc6430e7ee84ea2d6ee6247c9adcb9ae766ca1e0c47",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-solid-chambers/omokaru-context.png",
+      "bytes": 740719,
+      "sha256": "30aa52abc0b2b90efcc92953cf6728c96890db2214bd77774f18535b130d755c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-solid-chambers/omokaru-west.png",
+      "bytes": 804481,
+      "sha256": "7ab6418d44ce0af586aad8a7e9ee83405003b888d8543563607f308f74da27d1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-source-detail/omokaru-context.png",
+      "bytes": 736255,
+      "sha256": "da96119f3a6bf1eb15f617f044ea94821603f8fbf132077a0e6b9a3548dbc814",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/before-source-detail/omokaru-west.png",
+      "bytes": 791514,
+      "sha256": "ef9d3ca195590032fd875d6c09a57334c153d72040d6c6095aedde51ca8a19e3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-final/gehaiden-front.png",
+      "bytes": 864113,
+      "sha256": "8aeef8574679bdfc686779a92a8587a1467fed2bfa16aa1992ad28f3bdf084f9",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-final/okusha-aerial.png",
+      "bytes": 967005,
+      "sha256": "f4be0867dbce094000429a3155b041846986184d2fef13b8f20076308db7d0e6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-final/okusha-arrival.png",
+      "bytes": 858271,
+      "sha256": "dbc83624b5b668c737a9a7c6dffab2955a77590d742b265585baa39370e0dd0f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-final/well-context.png",
+      "bytes": 806142,
+      "sha256": "a3e2715799860f85c55ea5bdbdcacd8f5ecb7cf83bb2a9e5d159f1bb44ace80c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-round2/honden-closeup.png",
+      "bytes": 824757,
+      "sha256": "e2be3d238f67bad576f1a2adbf2d8b13421d94c89a472b83e986b000cc7f99f4",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-round2/okusha-arrival.png",
+      "bytes": 858230,
+      "sha256": "1ecd5dade0912ebf8395fcbfe36b3fc1b42d38cff649fdeccd972016dd08f8b7",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r96-integrated/pre-round2/omotesando-aerial.png",
+      "bytes": 946278,
+      "sha256": "01a0e36cfde6e68bb70efd739dc3b08cb6b9f56c61e8cc98353a0e051e7a686b",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/apartment-detail.png",
+      "bytes": 679995,
+      "sha256": "ff28f5a6f707ea7ecf44ecabd198b2ac63db83120aeea7661f1ec1d3a6ddfb09",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/apartment-notice-occluded.png",
+      "bytes": 728292,
+      "sha256": "6b2a3065d466c776b7ca222c764e3d2a4eff58bc027fde086c7e46ddc03636e6",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/apartment.blend",
+      "bytes": 464549,
+      "sha256": "4904c95eec195319f2ac28371295da410a532e06a2494cfe8248a4e48539456c",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/apartment.blend1",
+      "bytes": 464550,
+      "sha256": "45a5070997f72b3bc27964821fadaebc46b9d07e859ac13a32ee3859d8b623c8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/apartment.json",
+      "bytes": 2587962,
+      "sha256": "d93341ec116e9f671cd7c4838e8dac05f7a48c8a178ed73556a17a4ca7287257",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/build-reports.json",
+      "bytes": 4070,
+      "sha256": "9a37cdcc9f4d30a428baac205fac5b717f010b99d9738892611b67c31dda6cd0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/cameras.json",
+      "bytes": 1169,
+      "sha256": "857d4c5c94b2afc7df1cfa14465cb28ac6cfc7374fec3331471bcbcf08e72fe3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/counter-detail.png",
+      "bytes": 777810,
+      "sha256": "97fe4f056822a48716ff6b276852c6b36f235946615547353c30d8f2873ba9e2",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/counter-occluded.png",
+      "bytes": 590567,
+      "sha256": "00cea0f8fc6dd3fa1655eb972ccbabb08e3d3967d89bfd9525bc6bf5201c4252",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/counter.blend",
+      "bytes": 2221337,
+      "sha256": "ef027f61def88fc86d09370fcbcd6f49b0d89360f82402fbbf3f18a7dd7a1bc0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/counter.blend1",
+      "bytes": 2221264,
+      "sha256": "426ec8e5e23a6a2b24a8f271376a7da7dbfe90f6c44a67bf084cf89cae706a36",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/counter.json",
+      "bytes": 12930565,
+      "sha256": "11c7f0965208dc2b3dd19adfd581159ac23e72906d4fe95f1c88f0a09a503eb0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/entry-detail.png",
+      "bytes": 712280,
+      "sha256": "f73db6d61f7c24e1212a26d2e8b802575ce8429bdf0baf3a9dc982725c629c60",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/entry.blend",
+      "bytes": 356405,
+      "sha256": "8f6265e65cc443538c5d73862c34878875b0ddabc50384c10548dc40b893b4a8",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/entry.json",
+      "bytes": 2364045,
+      "sha256": "6ae44929d0d9adbe5b3754c3166491a5498eb030faa8aac9f024f9d1982709c5",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/export-counter-corrected.log",
+      "bytes": 4904,
+      "sha256": "42b253d3e28f0f2feca87b1770a43f2f7f79afb4c32aab8d8c51b17fca4ddf04",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/export.log",
+      "bytes": 5407,
+      "sha256": "b89cffa0c44ed5bc34b638091bbe871e3c0e5282efbe5fd70930c89bdfb4237f",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/export.mjs",
+      "bytes": 9143,
+      "sha256": "422e3762522c87abe213c8b7debbd486c905905e2473bf31a2f154a139458ada",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/manifest.json",
+      "bytes": 9660,
+      "sha256": "6af404fc8b4729e075ba46d6c530dd4ec86ada8790f3aa435a68f103b12a8293",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/okusha-detail.png",
+      "bytes": 746062,
+      "sha256": "cb1a0b587d6379178ba550a18add43a20967a1cdb2eba8608813468ffdd0ab97",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/okusha.blend",
+      "bytes": 1033721,
+      "sha256": "cc521f86cc18f030e66a2e457dadc58321a1c55bcd3fbd7034c848922a5776f0",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/okusha.json",
+      "bytes": 6754066,
+      "sha256": "485ab68f260ba72d91eeffdd7d87c0a096c350e49b5ba04605184f0a5d18e6c1",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/render-apartment-corrected.log",
+      "bytes": 956,
+      "sha256": "396c4dc7b55a8b97e133a2d026d176d89d55ed21d28b9b29df55d35931afd6bc",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/render-counter-corrected.log",
+      "bytes": 950,
+      "sha256": "68f8a6b7a77ebb82b4be0e923db105a0daa653d18c604646701df07a357c8c59",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/render.log",
+      "bytes": 1625,
+      "sha256": "e66ce7064b2a470339ba8a81a213a5290403dcddc660c843da801e18dca52523",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/render.py",
+      "bytes": 3390,
+      "sha256": "c2261012a53fb284239465bbbc8c2a53f151b9f962e966263875148ca88e21ad",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/review-final.md",
+      "bytes": 2526,
+      "sha256": "f4fb5038920ef0676096bd629885ae2f85d9445bf793db97d2de5da8c78ef676",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/romon-detail.png",
+      "bytes": 809729,
+      "sha256": "0adc1fffa37a7d8aafcbe80cb0acac617a197ccea73bc396b51c4833563a7827",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/romon.blend",
+      "bytes": 8268999,
+      "sha256": "b40eedc4a645343a5502cf76e045cd7222da4be7feeaa3556d7a41f76c1d65d3",
+      "status": "ignored"
+    },
+    {
+      "path": "outputs/r101-visual/romon.json",
+      "bytes": 60418456,
+      "sha256": "4fa96b8ff45d1f078f2f5a8a2f3d9697c036366a1c046c01fa33a976413e2387",
+      "status": "ignored"
+    }
+  ],
+  "totals": {
+    "files": 360,
+    "bytes": 1411858438,
+    "trackedFiles": 104,
+    "trackedBytes": 75173042
+  },
+  "verification": {
+    "allCopies": "SHA-256 and length verified before removal; sources rechecked immediately before deletion",
+    "recoveryProbe": "outputs/r95-integrated/tamayama.json restored separately, SHA-256 matched, JSON parsed"
+  },
+  "originalMissingLinks": []
+}

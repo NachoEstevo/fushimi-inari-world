@@ -1,5 +1,7 @@
 # R96 investigation of the two retained inspect routes
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 CPU audit of the actual integrated assembly, final colliders and walking-floor
 raycasts. Evidence: `outputs/r96-integrated/inspect-route-owners.json` and
 `.tmp/r96-inspect-final-evidence.mjs`. No graph, collider or geometry was changed.

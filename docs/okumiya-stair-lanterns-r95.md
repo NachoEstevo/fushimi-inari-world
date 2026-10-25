@@ -1,5 +1,7 @@
 # R95 critical upper stair architecture correction
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 Root's actual integrated `outputs/r95-integrated/tamayama-arrival.png` exposed
 two tall blank blocks flanking the upper flight and a blank brown rectangle
 covering Okumiya. Compared against fresh actual June 2012 Street View captures

@@ -1,5 +1,7 @@
 # R95 baseline Naihaiden–Honden public route conflict
 
+Historical local exports cited below are now in the verified private archive; see [recovery and original paths](repository-archive.md#historical-local-exports).
+
 ## Evidence and diagnosis
 
 All 24 R94/R95 sector audit records were identical, so the 50 blocked samples
