@@ -60,7 +60,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
  return {
   get announcementActive(){return voiceLoading||(enabled&&!voiceRunStarted&&['moving','decelerating','stopped'].includes(currentPhase))||[...shots].some(s=>s.id.startsWith('announcement'));},
   pause(value){paused=!!value;if(paused)stopAll();report();},
-  setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of Object.keys(RECORDED_CLIPS))load(id);report();},
+  setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of ['rolling','doors','announcementJa','announcementEn'])load(id);report();},
   setVolume(value){bus.gain.setTargetAtTime(Math.max(0,Math.min(1,Number(value)||0)),ctx.currentTime,.08);},
   update({position,gate,gateState,arrival,rail,time=0,paused:pause=false}){
    if(paused!==pause){paused=pause;if(paused)stopAll();report();}
@@ -72,6 +72,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
    if(phase!=='closing')for(const item of shots)if(item.id==='doors'){stop(item);shots.delete(item);}
    for(const event of events.update({position,gate,gateState,arrivalPhase:phase,time,enabled,paused}))oneShot(event);
    for(const item of shots)if(item.id==='gate'&&gate)item.gain.gain.setTargetAtTime(RECORDED_CLIPS.gate.gain*attenuation(position,gate.center,7),ctx.currentTime,.08);
+   if(enabled&&!paused&&gate&&attenuation(position,gate.center,16)>.01)load('gate');
    wanted.clear();
    if(enabled&&!paused){
     if(['moving','decelerating'].includes(phase))loop('rolling',phase==='moving'?.8:.45);

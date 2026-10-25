@@ -67,6 +67,18 @@ function rack(b,w){
  for(const y of [.23,.56,.97,1.30,1.88])b.box(w,.025,.025,0,y,.64,'#635a48');
  for(const y of [.24,.57,.98])b.box(w,.028,.48,0,y,.43,'#aa8060');
  for(let i=0;i<7;i++)b.box(.012,1.55,.012,-edge+i*edge/3,1.05,.65,'#706953');
+ // 0:51 shows a wire rack with hanging packets above a shallow cup shelf.
+ // Keep the shapes anonymous: tiny labels are plain backing cards, no prices.
+ for(let i=0;i<6;i++){
+  const x=(i-2.5)*w*.14,y=.68;
+  b.box(w*.105,.19,.018,x,y,.47,'#e8dfc7');
+  b.box(w*.075,.115,.026,x,y-.015,.448,['#b84432','#d5aa52','#567d80'][i%3]);
+ }
+ for(let i=0;i<2;i++){
+  const x=(i-.5)*w*.18;
+  b.shape(new THREE.CylinderGeometry(.047,.037,.105,8,1,true),x,.335,.23,'#eee7d6');
+  const lip=new THREE.CylinderGeometry(.049,.049,.012,8,1,true);b.shape(lip,x,.389,.23,'#f6f0e4');
+ }
  // Six dimensional masks; ears and nose project from the illustrated face.
  for(let row=0;row<2;row++)for(let i=0;i<3;i++){
   const x=(i-1)*w*.28,y=1.25+row*.37;

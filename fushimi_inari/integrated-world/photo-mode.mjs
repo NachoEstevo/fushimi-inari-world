@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,render=()=>renderer.render(scene,camera)}){
+export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,allowDebugCamera=false,render=()=>renderer.render(scene,camera)}){
   const button=document.createElement('button');button.id='photo-open';button.setAttribute('aria-label','Photo mode');button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Photo mode</span>';document.body.append(button);
   const panel=document.createElement('section');panel.id='photo-panel';panel.hidden=true;panel.setAttribute('aria-label','Photo settings');
   panel.innerHTML=`<div class="menu-heading"><h2>Photo mode</h2><button id="photo-close" aria-label="Close photo mode">×</button></div>
@@ -38,23 +38,33 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
     if(!saved||busy)return;
     camera.quaternion.copy(saved.rotation);camera.fov=saved.fov;camera.updateProjectionMatrix();renderer.toneMappingExposure=saved.exposure;
     saved.objects.forEach(([o,v])=>o.visible=v);
-    if(walker.mode!==saved.mode){if(saved.mode==='fly')walker.fly();else if(saved.mode==='walk')walker.start();else walker.stop();}
-    controls.enabled=saved.controls;walker.pause(false);saved=null;
+    const restoreMode=allowDebugCamera?saved.mode:'walk';
+    if(walker.mode!==restoreMode){if(restoreMode==='fly')walker.fly();else if(restoreMode==='walk')walker.start();else walker.stop();}
+    controls.enabled=allowDebugCamera&&saved.controls;walker.pause(false);saved=null;
     panel.hidden=true;grid.hidden=true;$('photo-grid-toggle').checked=false;document.body.classList.remove('photo-mode');button.focus();
   }
   async function capture(){
     if(busy||!saved)return;busy=true;$('photo-save').disabled=true;$('photo-status').textContent='Rendering photo…';
     const size=renderer.getSize(new THREE.Vector2()),ratio=renderer.getPixelRatio(),aspect=camera.aspect;
-    const max=Math.min(Number($('photo-size').value),renderer.capabilities.maxTextureSize,3840);
+    // 3840 fits the minimum texture limit of both supported graphics backends.
+    const max=Math.min(Number($('photo-size').value),3840);
     const width=Math.round(aspect>=1?max:max*aspect),height=Math.round(aspect>=1?max/aspect:max);
     try{
       let image;
       try{
         renderer.setPixelRatio(1);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();
-        render();
-        image=new Promise((resolve,reject)=>renderer.domElement.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG encoding failed')),'image/png'));
+        // Copy in the same task as submission, before resizing the GPU canvas or
+        // yielding to another animation frame. This works with WebGPU's transient
+        // canvas texture as well as WebGL without preserveDrawingBuffer.
+        const rendered=render();
+        if(rendered?.then)await rendered;
+        const snapshot=document.createElement('canvas');snapshot.width=width;snapshot.height=height;
+        const context=snapshot.getContext('2d');
+        if(!context)throw new Error('Photo canvas unavailable');
+        context.drawImage(renderer.domElement,0,0,width,height);
+        image=new Promise((resolve,reject)=>snapshot.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG encoding failed')),'image/png'));
       }finally{
-        renderer.setPixelRatio(ratio);renderer.setSize(size.x,size.y,false);camera.aspect=aspect;camera.updateProjectionMatrix();render();
+        renderer.setPixelRatio(ratio);renderer.setSize(size.x,size.y,false);camera.aspect=aspect;camera.updateProjectionMatrix();await render();
       }
       const blob=await image,url=URL.createObjectURL(blob),link=document.createElement('a');
       if(lastURL)URL.revokeObjectURL(lastURL);lastURL=url;

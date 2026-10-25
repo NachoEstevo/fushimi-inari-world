@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fushimi Inari · Integrated world</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="theme-color" content="#f5f5f1">
   <meta name="description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
   <!-- Planned public URL. Update these absolute URLs if the deployment hostname changes. -->
   <link rel="canonical" href="https://kyoto.nachoestevo.com/">
@@ -21,8 +23,8 @@
   <meta name="twitter:description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
   <meta name="twitter:image" content="https://kyoto.nachoestevo.com/assets/social-preview.png">
   <meta name="twitter:image:alt" content="Fushimi Inari cover with vermilion torii gates, stone steps and trees beside the project title on an ivory background.">
-  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=photo-align-1">
-  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script>
+  <link rel="stylesheet" href="../geography/style.css"><link rel="stylesheet" href="world.css?v=immersion-20261025">
+  <script type="importmap">{"imports":{"./seasons.mjs?v=welcome-hud-1":"./seasons-nodes.mjs","./render-quality.mjs?v=ultra-2":"./render-quality-nodes.mjs","./water-appearance.mjs":"./webgpu-water-appearance.mjs","./render-quality.mjs":"./render-quality-nodes.mjs","./shinike-reflections.mjs":"./webgpu-shinike-reflections.mjs","./torii-materials.mjs":"./torii-materials-nodes.mjs","three/tsl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js","three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js","./route-lighting.mjs":"./route-lighting-nodes.mjs","./shinike-reflections.mjs?v=repair-20261025b":"./webgpu-shinike-reflections.mjs","three/webgpu":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","./water-appearance.mjs?v=immersion-20261025c":"./webgpu-water-appearance.mjs","./torii-materials.mjs?v=29":"./torii-materials-nodes.mjs","./sky.mjs?v=ambience-4":"./sky-nodes.mjs"}}</script>
 </head>
 <body class="welcome-open">
   <main id="world" aria-label="3D geographic model of Inariyama"></main>
@@ -53,10 +55,10 @@
       <label><input type="checkbox" id="landmarks"> Shrines and mapped landmarks</label>
       <p>Terrain has no vertical exaggeration. Untagged widths and building heights are estimates. Detailed buildings preserve the original project; local layouts remain interpretive.</p>
       <p>The map includes surrounding neighborhoods, not a legal property boundary. Disconnected paths are not artificially joined. Bridges and tunnels are excluded from ground-level routing.</p>
-      <a href="../geography/manifest.json" target="_blank">Manifest and sources</a> · <a href="../interactive_viewer/index.html">Original scene</a>
+      <a href="../geography/manifest.json" target="_blank">Manifest and sources</a>
     </details>
   </aside>
-  <section id="map-panel"><div class="row"><span class="eyebrow">N ↑ · TERRAIN PLAN</span><span>500 m ━</span></div><canvas id="map" width="600" height="580" aria-label="Map of trails, landmarks and current location"></canvas><p>Drag to orbit · scroll to zoom · click a landmark to choose a destination</p></section>
+  <section id="map-panel"><div class="row"><span class="eyebrow">N ↑ · TERRAIN PLAN</span><span>500 m ━</span></div><canvas id="map" width="600" height="580" aria-label="Map of trails, landmarks and current location"></canvas><p>Click a landmark to choose a destination</p></section>
   <div id="position">Horizontal and vertical scale 1:1</div>
   <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terrain derived from <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Official shrine map</a></footer>
   <div id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
@@ -82,14 +84,14 @@
       <p class="welcome-kanji" lang="ja">伏見稲荷大社</p>
       <h2 id="welcome-title">Fushimi Inari</h2>
       <p class="welcome-lede">Arrive by train at Keihan Fushimi-Inari, then walk the vermilion gates up Inariyama.</p>
-      <p id="loading" role="status">Preparing terrain and trails…</p>
+      <p id="loading" role="status" aria-live="polite" aria-atomic="true">Preparing terrain and trails…</p>
       <div class="welcome-bar" aria-hidden="true"><span></span></div>
       <button id="welcome-enter" class="primary" hidden>Enter <span lang="ja">入る</span></button>
       <p class="welcome-sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>Sound on · press <kbd>M</kbd> to mute</p>
-      <ul class="welcome-keys"><li><kbd>W A S D</kbd> walk</li><li><kbd>Drag</kbd> look</li><li><kbd>Shift</kbd> run</li><li><kbd>Esc</kbd> menu</li></ul>
+      <ul class="welcome-keys"><li><kbd>W A S D</kbd> walk</li><li><kbd>Mouse</kbd> look</li><li><kbd>Shift</kbd> run</li><li><kbd>Esc</kbd> menu</li></ul>
     </div>
     <p class="welcome-credit">Made by <a href="https://nachoestevo.com" target="_blank" rel="noopener noreferrer">Ignacio Estevo</a></p>
   </div>
-  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=ultra-2"></script>
+  <div id="interaction" hidden></div><div id="crosshair" hidden>+</div><script type="module" src="viewer.mjs?v=world-webgpu-1"></script>
 </body>
 </html>

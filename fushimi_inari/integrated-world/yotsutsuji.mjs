@@ -130,7 +130,7 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   {
     const x=794.15,z=-219.85,y=ground(x,z)+.11;
     const turf=new THREE.MeshStandardMaterial({color:0x537d39,roughness:1});
-    box(1.45,.045,1.55,x,y-.045,z,turf);
+    box(1.45,.045,1.55,x,y-.045,z,turf).userData.publicWalkSupport=true;
     for(const dz of [-.48,-.24,0,.24,.48])box(.55,.075,.20,x,y+.45,z+dz,wood);
     box(.08,.30,1.45,x+.28,y+.77,z,wood);
     for(const dz of [-.52,.52]){

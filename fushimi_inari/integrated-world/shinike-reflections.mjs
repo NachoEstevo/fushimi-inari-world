@@ -15,7 +15,9 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
     pmrem=new THREE.PMREMGenerator(renderer);
     scene.traverse(object=>{
       const materials=Array.isArray(object.material)?object.material:[object.material];
-      if(materials.some(m=>m?.userData.waterAppearance)||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
+      // The visual backing closes the alpha surface; it is not surrounding
+      // scenery and must not become a dark near-field reflection hemisphere.
+      if(materials.some(m=>m?.userData.waterAppearance)||object.userData.shinikeSubmergedBacking||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
       if(object.isLOD)for(const level of object.levels)remember(level.object,level.object.visible);
     });
     for(const object of overlays())remember(object,false);

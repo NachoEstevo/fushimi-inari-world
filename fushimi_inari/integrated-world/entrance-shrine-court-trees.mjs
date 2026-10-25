@@ -1,3 +1,4 @@
+import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
 import * as THREE from 'three';
 import {evergreenCanopy} from './evergreen-canopy.mjs';
 import {makeOmotesandoShoulderExclusion} from './omotesando-shoulders-layout.mjs';
@@ -83,7 +84,7 @@ export function buildEntranceShrineCourtTrees(root,features,surfaces,colliders){
   });
   if(!leaves.length&&!pineLeaves.length)return null;
   const group=new THREE.Group();group.name='Photo-estimated mature tree backdrop behind entrance shrines';
-  const barkMap=new THREE.TextureLoader().load(new URL('../assets/textures/nanobanana/bark_mossy_roots_color.png',import.meta.url).href);
+  const barkMap=textureStreaming.load(new URL('../assets/textures/nanobanana/bark_mossy_roots_color.png',import.meta.url).href);
   barkMap.colorSpace=THREE.SRGBColorSpace;barkMap.wrapS=barkMap.wrapT=THREE.RepeatWrapping;barkMap.repeat.set(1,5);barkMap.anisotropy=4;
   const bark=new THREE.MeshStandardMaterial({color:'#a9a79a',map:barkMap,bumpMap:barkMap,bumpScale:.055,roughness:1});
   const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.78,1,1,7),bark,wood.length);

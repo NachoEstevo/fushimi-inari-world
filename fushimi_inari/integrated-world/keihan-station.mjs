@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {detailKeihanCar,detailKeihanDoor,keihanServiceMaterial,keihanDisplayPlane} from './keihan-train-detail.mjs';
 import {staticParts} from './mountain-landmarks-geometry.mjs';
 import {createKeihanStationSpec} from './keihan-station-spec.mjs?v=recorded-immersion-8';
 import {keihanRampMaterial} from './keihan-ramp-material.mjs';
@@ -10,16 +11,25 @@ function labelMaterial(text,background='#27343e',color='#f1eee0'){
  if(globalThis.document?.createElement){const c=document.createElement('canvas');c.width=1024;c.height=160;const ctx=c.getContext('2d');if(ctx){ctx.fillStyle=background;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle=color;ctx.font='bold 66px sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(text,512,84,1000);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;material.map=map;material.emissiveMap=map;material.color.set('#ffffff');}}
  return material;
 }
-// Original visitor graphics occupy the photographed poster frames. They are
-// not copies of a historical advertisement or an operating timetable.
+// Interpretive information based on Keihan station information and shrine access.
+// https://www.keihan.co.jp/traffic/station/151/info.html
+// https://inari.jp/en/access/ — not replicas of photographed advertisements.
+export const KEIHAN_POSTER_CONTENT=Object.freeze(['Keihan line guide','Platform 2 information','Shrine access']);
 function visitorPosterMaterial(){
- const material=new THREE.MeshStandardMaterial({color:'#e8dec8',roughness:.84,emissive:'#ddd2b7',emissiveIntensity:.035});material.userData.label='Original Kyoto visitor posters in source-observed frames';
+ const material=new THREE.MeshStandardMaterial({color:'#f3f2eb',roughness:.84,emissive:'#dddcd3',emissiveIntensity:.035});material.name='Keihan passenger information atlas';material.userData.label='Interpretive passenger information';material.userData.panels=KEIHAN_POSTER_CONTENT;
  if(globalThis.document?.createElement){const c=document.createElement('canvas');c.width=1536;c.height=640;const ctx=c.getContext('2d');if(ctx){
-  for(let i=0;i<3;i++){ctx.save();ctx.translate(i*512,0);ctx.fillStyle='#efe6d0';ctx.fillRect(0,0,512,640);ctx.fillStyle=i===1?'#275c4e':'#a43c2d';ctx.fillRect(0,0,512,100);ctx.fillStyle='#fff8e8';ctx.textAlign='center';ctx.font='bold 40px sans-serif';ctx.fillText(i===1?'伏見稲荷 KH34':'京都を歩く',256,62);ctx.fillStyle='#413d38';ctx.font='bold 37px sans-serif';ctx.fillText(i===1?'Fushimi-inari':'Walk Kyoto',256,153);ctx.font='24px sans-serif';ctx.fillText(i===1?'Keihan Main Line':'Fushimi Inari Taisha',256,190);
-   if(i===1){ctx.fillStyle='#d5dacd';ctx.fillRect(37,226,438,206);ctx.strokeStyle='#29745b';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(85,335);ctx.lineTo(430,335);ctx.stroke();for(const x of [95,256,417]){ctx.fillStyle=x===256?'#c83d29':'#fffaf0';ctx.beginPath();ctx.arc(x,335,x===256?25:15,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#34463f';ctx.font='bold 23px sans-serif';ctx.fillText('2  Osaka',256,275);ctx.font='25px sans-serif';ctx.fillText('淀屋橋・中之島方面',256,397);ctx.fillStyle='#d3b139';ctx.fillRect(37,471,438,82);ctx.fillStyle='#302b21';ctx.font='bold 32px sans-serif';ctx.fillText('出口  Exit  →',256,522);
-   }else{for(const [x,y,r,color]of [[156,302,94,'#b3442e'],[356,389,91,'#57755b'],[157,475,72,'#ca9846']]){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f3e7ca';if(y===302){ctx.fillRect(x-52,y-39,104,14);ctx.fillRect(x-46,y-12,92,10);ctx.fillRect(x-34,y-33,10,91);ctx.fillRect(x+24,y-33,10,91);}else{ctx.beginPath();ctx.moveTo(x-55,y+34);ctx.lineTo(x-7,y-49);ctx.lineTo(x+8,y-12);ctx.lineTo(x+34,y-34);ctx.lineTo(x+56,y+34);ctx.fill();}}ctx.fillStyle='#51493a';ctx.font='26px sans-serif';ctx.fillText(i===0?'参道・稲荷山':'Torii · Streets · Kyoto',256,592);}
-   ctx.restore();
-  }const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;material.map=map;material.emissiveMap=map;material.color.set('#ffffff');
+ const text=(value,x,y,size=24,color='#243c3b',weight='normal')=>{ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Noto Sans JP", "Yu Gothic", sans-serif`;ctx.fillText(value,x,y,448);};
+ const line=(points,color,width)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();};
+ for(let i=0;i<3;i++){ctx.save();ctx.translate(i*512,0);ctx.fillStyle='#f5f4ed';ctx.fillRect(0,0,512,640);ctx.textAlign='left';ctx.fillStyle=['#17634f','#204f68','#943e2b'][i];ctx.fillRect(0,0,512,12);
+ text(['京阪電車 路線案内','伏見稲荷','伏見稲荷大社'][i],32,67,i===1?46:34,'#203d37','bold');text(['Keihan Main Line','Fushimi-inari','Fushimi Inari Taisha'][i],32,106,25);line([[32,128],[480,128]],'#a6b3ac',2);
+ if(i===0){text('京都・大阪 / KYOTO – OSAKA',32,164,21);line([[86,205],[86,533]],'#246d54',12);
+ const stops=[['三条','Sanjo'],['祇園四条','Gion-shijo'],['東福寺','Tofukuji'],['伏見稲荷','Fushimi-inari'],['中書島','Chushojima'],['淀屋橋','Yodoyabashi']];
+ stops.forEach(([jp,en],j)=>{const y=211+j*65;if(j===3){ctx.fillStyle='#dce9dd';ctx.fillRect(32,y-32,448,60);}ctx.fillStyle=j===3?'#a63729':'#f5f4ed';ctx.strokeStyle='#246d54';ctx.lineWidth=4;ctx.beginPath();ctx.arc(86,y-7,10,0,Math.PI*2);ctx.fill();ctx.stroke();text(jp,120,y-2,25,'#243c3b','bold');text(en,120,y+20,18);});text('主要駅のみ表示 / Selected stations',32,595,17);text('模式図 / Not to scale',32,620,16);
+ }else if(i===1){ctx.fillStyle='#205a48';ctx.fillRect(32,151,112,112);text('KH',53,193,28,'#fff','bold');text('34',50,245,50,'#fff','bold');text('ふしみいなり',168,185,23);text('京阪本線',168,224,32,'#243c3b','bold');text('Keihan Main Line',168,253,20);
+ ctx.fillStyle='#e0e8e5';ctx.fillRect(32,294,448,178);text('2',52,383,80,'#205a48','bold');text('のりば / PLATFORM',139,331,22);text('淀屋橋・中之島線方面',139,377,25,'#243c3b','bold');text('for Yodoyabashi',139,414,22);text('& Nakanoshima Line',139,445,21);ctx.fillStyle='#ead45b';ctx.fillRect(32,503,448,77);text('出口  Exit',52,553,36,'#202c29','bold');text('→',405,555,48,'#202c29','bold');text('駅のご案内 / Station information',32,618,18);
+ }else{ctx.fillStyle='#e9dfc9';ctx.fillRect(32,149,448,251);ctx.fillStyle='#a53b28';for(const [x,y,w,h]of [[78,187,356,20],[102,225,308,14],[124,202,20,171],[368,202,20,171]])ctx.fillRect(x,y,w,h);ctx.fillStyle='#513a31';ctx.fillRect(70,179,372,8);line([[36,389],[476,389]],'#b5a68a',3);text('東へ 徒歩約5分',32,447,34,'#7f3224','bold');text('5 minutes on foot · east',32,487,27);text('参拝のご案内 / Shrine access',32,541,23);line([[32,565],[480,565]],'#c7b9a6',2);text('京阪 伏見稲荷駅から',32,597,20);text('From Keihan Fushimi-inari Station',32,623,18);}
+ ctx.restore();}
+ const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=4;material.map=map;material.emissiveMap=map;material.color.set('#ffffff');
  }}return material;
 }
 // This station owns only its real mapped railway/gate envelopes. The old JR
@@ -111,6 +121,7 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
  // length and 2.792m width, three doors, green/white livery. No JR labels.
  const trainGroup=new THREE.Group();trainGroup.name='Keihan 13000 appearance local';trainGroup.position.set(spec.track.origin[0],spec.train.floor,spec.track.origin[1]);trainGroup.rotation.y=spec.track.yaw;trainGroup.userData.dynamic=true;group.add(trainGroup);
  const trainParts=staticParts(trainGroup),doors=[];
+ const destination=keihanServiceMaterial(),trainPalette={...p,service:destination};labels.push(destination);
  for(const [carIndex,center]of spec.train.carCenters.entries()){
   const {carWidth:W,carLength:L}=spec.train,selectedCar=carIndex===spec.train.selectedCar;
   trainParts.box(W,.16,L,0,-.08,center,p.floor);trainParts.box(W,.15,L,0,2.98,center,p.cream);trainParts.box(2.0,.27,L-1,0,3.18,center,p.metal);
@@ -122,21 +133,24 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
     trainParts.box(.075,1.08,span,side*W/2,.54,center+mid,p.green);trainParts.box(.075,.22,span,side*W/2,1.19,center+mid,p.cream);trainParts.box(.075,.21,span,side*W/2,2.50,center+mid,p.cream);
     for(const edge of [lo+.04,hi-.04])trainParts.box(.08,1.10,.08,side*W/2,1.85,center+edge,p.dark);
     trainParts.box(.02,1.08,Math.max(.04,span-.16),side*W/2,1.85,center+mid,p.glass);
-    if(selectedCar&&span>1){trainParts.box(.48,.18,span-.16,side*.98,.47,center+mid,p.seat);trainParts.box(.12,.58,span-.16,side*1.17,.81,center+mid,p.seat);}
+    // Bucket seats and end partitions are built by detailKeihanCar.
    }
    for(const [doorIndex,v]of spec.train.doorOffsets.entries())for(const half of [-1,1]){
     const selected=selectedCar&&doorIndex===spec.train.selectedDoor&&side===1,leaf=new THREE.Group();leaf.name=`Keihan car ${carIndex+1} door ${doorIndex+1} ${side} ${half}`;leaf.position.set(side*(W/2+.01),0,center+v+half*.325);
     const lp=selected?staticParts(leaf):trainParts,lb=(w,h,d,x,y,z,mat)=>lp.box(w,h,d,x+(selected?0:leaf.position.x),y,z+(selected?0:leaf.position.z),mat);
     lb(.06,1.22,.64,0,.61,0,p.green);lb(.06,.30,.64,0,2.25,0,p.cream);for(const edge of [-1,1])lb(.06,.88,.085,0,1.66,edge*.2775,p.cream);lb(.02,.88,.47,0,1.66,0,p.glass);lb(.075,.045,.64,0,.025,0,p.yellow);
+    if(selectedCar)detailKeihanDoor(lb,p,side);
     if(selected){lp.flush();trainGroup.add(leaf);doors.push({leaf,base:leaf.position.z,half});}
    }
   }
+  detailKeihanCar(trainParts,spec,trainPalette,carIndex,center);
   for(const bogie of [-6.0,6.0])trainParts.box(2.1,.45,2.1,0,-.42,center+bogie,p.dark);
   if(selectedCar)for(const u of [-.72,.72]){trainParts.box(.035,.035,L-1,u,2.51,center,p.metal);for(let v=-8;v<=8;v+=1.4){trainParts.beam([u,2.51,center+v],[u,2.26,center+v],.012,p.metal,.012,5);trainParts.box(.12,.10,.018,u,2.22,center+v,p.cream);}trainParts.box(.13,.04,L-1,u,2.87,center,p.light);}
  }
  const cab=spec.train.carLength/2+.08;trainParts.box(2.48,.92,.04,0,1.94,cab,p.dark);for(const u of [-.79,.79])trainParts.box(.22,.14,.06,u,.99,cab+.03,p.light);
+ keihanDisplayPlane(trainParts,destination,{x:0,y:2.68,z:cab+.04,width:2,height:.28});
  const trainStats=trainParts.flush();
- const destination=labelMaterial('普通 Local  淀屋橋 Yodoyabashi'),dest=new THREE.Mesh(new THREE.PlaneGeometry(2.0,.28),destination);dest.position.set(0,2.68,cab+.04);trainGroup.add(dest);labels.push(destination);
+
  const selectedV=spec.train.selectedV;
  const thresholdGroup=new THREE.Group();thresholdGroup.name='Keihan selected doorway threshold';thresholdGroup.position.copy(trainGroup.position);thresholdGroup.rotation.y=spec.track.yaw;thresholdGroup.userData.dynamic=true;group.add(thresholdGroup);const threshold=staticParts(thresholdGroup);threshold.box(.38,.035,1.30,spec.train.bodyHalfWidth+.10,-.0175,selectedV,p.metal);threshold.flush();
  const doorCenter=spec.track.local(spec.train.carWidth/2,selectedV),closedDoorCollider={type:'box',args:[doorCenter[0],doorCenter[1],.05,.65,spec.track.yaw,spec.train.floor,spec.train.floor+2.4,'keihan-closed-train-door']};

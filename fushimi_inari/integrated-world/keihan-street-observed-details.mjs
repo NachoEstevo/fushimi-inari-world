@@ -66,6 +66,18 @@ export function buildKeihanStreetObservedDetails(assembly){
  }
  const stores=assembly.keihanFrontages?.storefronts??[],south=stores.find(s=>s.id==='way/305213538'),north=stores.find(s=>s.id==='way/305213554');
  const facadePoint=(s,u,y,v=.04)=>{const a=s.points[s.edge];return new THREE.Vector3(a[0]+s.t[0]*u+s.n[0]*v,s.floor+y,a[2]+s.t[1]*u+s.n[1]*v);};
+ // Streetview-01: narrow wall-edge rainwater pipes, sockets and fixing bands.
+ // Existing wall frames register interpreted fittings, not surveyed drainage.
+ for(const s of stores.filter(s=>['senbei','soft-serve','grill'].includes(s.kind))){
+  if(!Number.isFinite(s.floor)||s.width<3||s.height<5)continue;
+  const u=s.width-.10,center=facadePoint(s,u,2.35,.055),o=owner('Observed wall-edge rainwater pipe '+s.id,center.toArray());
+  const vertical=new THREE.CylinderGeometry(.035,.035,4.35,8);vertical.translate(center.x,s.floor+2.35,center.z);put(o,vertical,'dark');
+  for(const y of [.24,2.05,4.35]){
+   const p=facadePoint(s,u,y,.055),socket=new THREE.CylinderGeometry(.044,.044,.075,8);socket.translate(...p.toArray());put(o,socket,'metal');
+   const band=new THREE.BoxGeometry(.12,.025,.035);band.rotateY(s.yaw);const q=facadePoint(s,u,y,.018);band.translate(...q.toArray());put(o,band,'metal');
+  }
+  records.push({kind:'wall-edge-rainwater-pipe',sourceId:s.id,position:center.toArray(),height:4.35,radius:.035,reference:SOURCES.west,inferred:'Visible facade-edge pipe family; parcel attribution, sockets and dimensions are interpreted.'});
+ }
  if(south&&north&&[south,north].every(s=>Number.isFinite(s.floor)&&s.height>=5&&s.width>2)){
   const a=facadePoint(south,.22,4.75),b=facadePoint(north,.22,4.75),distance=a.distanceTo(b);
   if(distance>4&&distance<20){

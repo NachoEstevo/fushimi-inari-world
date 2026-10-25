@@ -40,6 +40,13 @@ test('local pond capture is deferred until nearby and reused across frames, trav
   c.dispose();c.dispose();assert.equal(targets[2].disposed,1);assert.equal(f.water.material.envMap,null);
   c.update(near,'day:autumn');assert.equal(targets.length,3);
 });
+test('submerged visual backing is absent from every cube face and restored afterwards',()=>{
+ const f=fixture(),bed=new THREE.Mesh(new THREE.PlaneGeometry(40,70),new THREE.MeshBasicMaterial());bed.userData.shinikeSubmergedBacking=true;f.scene.add(bed);
+ const {renderer}=pmremRenderer(),render=renderer.render;let faces=0;
+ renderer.render=function(scene,camera){if(scene===f.scene){assert.equal(bed.visible,false);faces++;}return render.call(this,scene,camera);};
+ const output=captureShinikeEnvironment({...f,renderer,center:new THREE.Vector3(550,65.12,-110)});
+ assert.equal(faces,6);assert.equal(bed.visible,true);output.dispose();
+});
 test('failed appearance refresh retains the last usable reflection and does not retry every frame',()=>{
   const f=fixture(),old=new THREE.Texture();f.water.material.envMap=old;f.water.material.envMapIntensity=.4;
   let calls=0;const valid={texture:new THREE.Texture(),disposed:0,dispose(){this.disposed++;}};

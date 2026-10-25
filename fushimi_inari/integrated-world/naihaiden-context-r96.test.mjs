@@ -18,7 +18,18 @@ test('actual refined Naihaiden gains photographed hanging lanterns, shade header
  for(const [o,g,p,uv,parent]of before){assert.equal(o.parent,parent);assert.equal(o.geometry,g);assert.deepEqual(Array.from(g.attributes.position.array),p);if(uv)assert.deepEqual(Array.from(g.attributes.uv.array),uv);}
  assert.equal(refineNaihaidenContextR96(scene),r);
  for(const mesh of scene.children.at(-1).children){const p=mesh.geometry.attributes.position;assert.equal(mesh.geometry.attributes.uv.count,p.count);for(let i=0;i<p.count;i++)for(const [axis,read]of [['x','getX'],['y','getY'],['z','getZ']]){const v=p[read](i);assert.ok(Number.isFinite(v));assert.ok(v>=r.bounds[axis][0]-.001&&v<=r.bounds[axis][1]+.001,axis+': '+v);}}
- assert.equal(r.triangles,3052);assert.equal(r.primitives,246);
+ // Three r180 omits the zero-area apex triangles emitted by older cone
+ // geometry. Check the actual authored surface, independent of that topology.
+ let surfaceTriangles=0;
+ const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+ for(const mesh of scene.children.at(-1).children){
+  const p=mesh.geometry.attributes.position;
+  for(let i=0;i<p.count;i+=3){
+   a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1);c.fromBufferAttribute(p,i+2);
+   if(b.sub(a).cross(c.sub(a)).lengthSq()>1e-20)surfaceTriangles++;
+  }
+ }
+ assert.equal(surfaceTriangles,3044);assert.equal(r.primitives,246);
 });
 test('unrefined or shifted source rejects addition without altering scene',()=>{
  const source=load();const count=source.children.length;assert.equal(refineNaihaidenContextR96(source).built,false);assert.equal(source.children.length,count);

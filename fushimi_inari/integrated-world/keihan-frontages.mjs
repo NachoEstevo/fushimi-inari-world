@@ -15,20 +15,27 @@ const definitions=[
 const routeId='way/946510942';
 
 function labelTexture(){
- // One local atlas for the two confirmed business names. No photographs,
+ // One local atlas for two confirmed business names and two product categories. No photographs,
  // advertising, remote fonts or runtime canvas redraws enter the scene.
  if(typeof document==='undefined'){
   const texture=new THREE.DataTexture(new Uint8Array([230,223,203,255]),1,1);texture.needsUpdate=true;return texture;
  }
- const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
+ const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=256;
  const ctx=canvas.getContext('2d');
  if(!ctx)return null;
- ctx.fillStyle='#ded8c7';ctx.fillRect(0,0,1024,256);
+ ctx.fillStyle='#ded8c7';ctx.fillRect(0,0,2048,256);
  ctx.textAlign='center';ctx.textBaseline='middle';
  for(const [i,japanese,english]of [[0,'総本家 宝玉堂','SOHONKE HOGYOKUDO'],[1,'京豆庵','KYOZUAN']]){
   const x=256+i*512;ctx.fillStyle=i?'#e9dfc4':'#74685a';ctx.fillRect(i*512,0,512,256);
   ctx.fillStyle=i?'#242a28':'#f4f0df';ctx.font='bold 76px serif';ctx.fillText(japanese,x,104,480);
   ctx.font='24px sans-serif';ctx.fillText(english,x,191,470);
+ }
+ // The association listing confirms tofu and matcha tofu soft serve. Original
+ // category boards convey that distinction without prices or copied artwork.
+ for(const [i,title,subtitle]of [[2,'お豆腐ソフト','TOFU SOFT SERVE'],[3,'濃厚抹茶豆腐ソフト','MATCHA TOFU SOFT SERVE']]){
+  const x=i*512;ctx.fillStyle=i===2?'#f2ead7':'#53683e';ctx.fillRect(x,0,512,256);
+  ctx.fillStyle=i===2?'#393d2c':'#fff5d8';ctx.font='bold 43px serif';ctx.fillText(title,x+256,102,480);
+  ctx.font='23px sans-serif';ctx.fillText(subtitle,x+256,184,480);
  }
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
@@ -78,9 +85,10 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   red:new THREE.MeshStandardMaterial({color:'#bd4834',roughness:.86}),
   food:new THREE.MeshStandardMaterial({color:'#ca9c53',roughness:.95}),
   cloth:new THREE.MeshStandardMaterial({color:'#ffffff',map:clothTexture(),roughness:1,vertexColors:true}),
+  lamp:new THREE.MeshStandardMaterial({color:'#fff0ca',emissive:'#ffc16b',emissiveIntensity:1.2,roughness:.6}),
   labels:new THREE.MeshStandardMaterial({color:'#ffffff',map:labelTexture(),roughness:.88})
  };
- const batches=new Map(),pending=[];
+ const batches=new Map(),pending=[],lightPositions=[];
  const put=(g,m,tint)=>{const geom=g.index?g.toNonIndexed():g;if(g!==geom)g.dispose();if(m.vertexColors){const c=new THREE.Color(tint??'#ffffff'),colors=new Float32Array(geom.attributes.position.count*3);for(let i=0;i<colors.length;i+=3){colors[i]=c.r;colors[i+1]=c.g;colors[i+2]=c.b;}geom.setAttribute('color',new THREE.BufferAttribute(colors,3));}if(!batches.has(m))batches.set(m,[]);batches.get(m).push(geom);};
  const box=(w,h,d,x,y,z,mat,yaw=0,tint)=>{if(w<=0||h<=0||d<=0)return;const g=new THREE.BoxGeometry(w,h,d);g.rotateY(yaw);g.translate(x,y,z);put(g,mat,tint);};
  for(const [storeIndex,s]of stores.entries()){
@@ -119,14 +127,30 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    fb(w,h-2.65,.14,w/2,(h+2.65)/2,-.07,palette.plaster);
    for(let i=0;i<3;i++){
     const u=bay*(i+.5),bw=bay-.18;
-    if(i===openBay){
+    if(i===openBay||i===1){
      // An interpretive open service bay occupies the existing parcel. It is
      // backed, floored and bounded; no new business identity is implied.
      fb(bw,2.65,.10,u,1.325,-1.35,palette.dark);blocker(bw,.10,u,-1.35,0,2.65,'keihan_row_recess_back');
      for(const du of [-bw/2,bw/2]){fb(.09,2.65,1.35,u+du,1.325,-.675,palette.plaster);blocker(.09,1.35,u+du,-.675,0,2.65,'keihan_row_recess_jamb');}
-     const caseW=bw-1.35,caseU=green?u+.55:u-.55;
+     const extra=i===1,caseW=extra?bw-.18:bw-1.35,caseU=extra?u:green?u+.55:u-.55;
      fb(caseW,.87,.64,caseU,.435,-.54,palette.timber);fb(caseW+.06,.055,.69,caseU,.90,-.54,palette.stone);blocker(caseW,.69,caseU,-.54,0,1.10,'keihan_row_food_case');
      for(let r=0;r<2;r++)for(let c=0;c<5;c++){const x=caseU-caseW*.38+c*caseW*.19;fb(.14,.085,.12,x,.97+r*.10,-.36-r*.18,palette.food);fb(.16,.015,.14,x,.935+r*.10,-.36-r*.18,palette.red);}
+     // Additional anonymous tea/sweets counters inside the existing row.
+     // These open bays are interpretation, not verified current tenants.
+     for(const y of [1.55,2.02]){
+      fb(bw-.20,.055,.32,u,y,-1.10,palette.timber);
+      for(let c=0;c<7;c++){
+       const x=u-bw*.38+c*bw*.126;
+       if(green){shaped(new THREE.CylinderGeometry(.065,.05,.15,8),x,y+.10,-1.07,palette.plaster);fb(.06,.025,.065,x,y+.19,-1.07,palette.red);}
+       else{fb(.18,.16,.13,x,y+.11,-1.07,c%2?palette.food:palette.red);fb(.13,.035,.014,x,y+.12,-.998,palette.plaster);}
+      }
+     }
+     fb(bw-.26,.07,.12,u,2.49,-.22,palette.lamp);
+     const [lx,lz]=at(u,-.38);lightPositions.push([lx,floor+2.35,lz]);
+     for(const du of [-bw*.35,bw*.35]){
+      shaped(new THREE.CylinderGeometry(.11,.11,.26,10),u+du,2.22,-.13,palette.lamp);
+      for(const y of [2.07,2.37])fb(.17,.035,.17,u+du,y,-.13,palette.dark);
+     }
     }else{
      fb(bay,2.65,.14,u,1.325,-.07,palette.plaster);blocker(bay,.14,u,-.07,0,2.65,'keihan_observed_row_front');
      fb(bw,2.28,.05,u,1.27,.015,i===2?palette.dark:palette.stone);
@@ -157,7 +181,7 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   fb(w-.24,.12,.10,w/2,2.64,-.035,palette.timber);
   if(kind!=='grill'){
    const sign=new THREE.PlaneGeometry(kind==='senbei'?2.25:1.25,kind==='senbei'?.66:.75),uv=sign.attributes.uv;
-   for(let i=0;i<uv.count;i++)uv.setX(i,(uv.getX(i)+storeIndex)/2);
+   for(let i=0;i<uv.count;i++)uv.setX(i,(uv.getX(i)+storeIndex)/4);
    const sw=kind==='senbei'?2.25:1.25,sh=kind==='senbei'?.66:.75;
    fb(sw+.18,sh+.16,.08,w/2,3.54,-.022,palette.timber);
    for(const yy of [3.54-sh/2-.025,3.54+sh/2+.025])fb(sw+.14,.045,.09,w/2,yy,.015,palette.food);
@@ -202,7 +226,7 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
      fb(.17,.025,.11,x,y-.063,-.20-row*.16,palette.red);
     }else{
      const bowl=new THREE.CylinderGeometry(.065,.048,.055,8);shaped(bowl,x,y,-.21-row*.16,palette.plaster);
-     shaped(new THREE.SphereGeometry(.052,8,4),x,y+.046,-.21-row*.16,col%2?palette.food:palette.plaster);
+     shaped(new THREE.SphereGeometry(.052,8,4),x,y+.046,-.21-row*.16,palette.plaster,col%2?'#6b814b':'#f2e8cd');
     }
    }
    if(kind==='senbei')for(let col=0;col<4;col++){
@@ -217,12 +241,20 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    // Source-visible framed lower counter shelf and central door opening.
    for(const u of [.35,w-.35])fb(.20,.40,.05,u,1.98,-.04,palette.food);
   }else if(kind==='soft-serve'){
+   // Readable original category boards sit beside the confirmed shop name. The
+   // exact arrangement is inferred, rather than a claim about today's menu.
+   for(let i=0;i<2;i++){
+    const u=i?.94:w-.83,board=new THREE.PlaneGeometry(1.15,.42),uv=board.attributes.uv;
+    for(let j=0;j<uv.count;j++)uv.setX(j,(uv.getX(j)+2+i)/4);
+    board.rotateY(Math.PI);shaped(board,u,3.54,.035,palette.labels);
+    fb(1.21,.48,.035,u,3.54,-.022,palette.timber);
+   }
    // Long illustrated menu strip is interpreted with simple product motifs,
    // no copied prices or advertisements. Eight panels share existing batches.
    for(let i=0;i<8;i++){
     const u=.29+i*(w-.58)/7;fb((w-.35)/8,.34,.04,u,2.43,-.015,palette.plaster);
     shaped(new THREE.ConeGeometry(.06,.14,8),u,2.40,.02,palette.food);
-    shaped(new THREE.SphereGeometry(.06,8,4),u,2.49,.02,i%3===0?palette.red:palette.food);
+    shaped(new THREE.SphereGeometry(.06,8,4),u,2.49,.02,palette.plaster,i%2?'#6b814b':'#f2e8cd');
    }
    for(const center of [1.00,w-1.0]){
     fb(1.44,.95,.06,center,4.64,-.015,palette.dark);
@@ -278,6 +310,7 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   for(const s of stores){if(!s.publicRecess&&!s.machineRecess)continue;const a=s.points[s.edge],dx=x-a[0],dz=z-a[2],u=dx*s.t[0]+dz*s.t[1],v=dx*s.n[0]+dz*s.n[1];if(s.machineRecess&&u>=s.machineRecess.uMin&&u<=s.machineRecess.uMax&&v<=0&&v>=-s.machineRecess.depth)return s.floor;if(s.publicRecess&&u>=.22&&u<=s.width-.22&&v<=0&&v>=-s.publicRecess)return s.floor;}
   return null;
  };
- group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://www.youtube.com/watch?v=K0UC5GkHbaU&t=35s','https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Two open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions. Cloth seams, sloped canopies and piped soft-serve/product forms use the user video as typological reference; its edited sequence does not establish these exact parcel details.'};
+ group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,lightPositions,openServiceBays:4,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://www.youtube.com/watch?v=K0UC5GkHbaU&t=35s','https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Four open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions. Cloth seams, sloped canopies and piped soft-serve/product forms use the user video as typological reference; its edited sequence does not establish these exact parcel details.'};
+ group.userData.productDetails={source:'https://inari-kyoto.com/kyozuan',categories:['tofu-soft-serve','matcha-tofu-soft-serve'],boards:2,inferred:'Original product-category typography, colors and board placement; not a current menu or stock claim.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

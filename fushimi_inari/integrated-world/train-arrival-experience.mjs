@@ -2,7 +2,7 @@ import {createTrainArrivalSequence} from './train-arrival-sequence.mjs';
 
 // Camera/walking adapter only: no scene construction, DOM, timers, or input hooks.
 export function createTrainArrivalExperience({sequenceOptions,station,camera,controls,walker,
-  onBegin=()=>{},onFallback=()=>false,onState=()=>{}}){
+  onBegin=()=>{},onFallback=()=>false,onState=()=>{},allowDebugCamera=false}){
   let sequence=createTrainArrivalSequence(sequenceOptions),owned=false,externalPaused=false;
   let handoff=null,lastEmission=null,pendingSkip=false;
   const snapshot=()=>({...sequence.getSnapshot(),paused:owned&&externalPaused,handoff,skipPending:pendingSkip});
@@ -25,7 +25,7 @@ export function createTrainArrivalExperience({sequenceOptions,station,camera,con
     if(walker.teleport(floor,[...state.pose.target]))handoff='walking';
     else if(onFallback(state))handoff='fallback';
     else{walker.stop();handoff='unavailable';}
-    controls.enabled=!walker.active;
+    controls.enabled=allowDebugCamera&&!walker.active;
     return emit();
   }
   return {
@@ -60,7 +60,7 @@ export function createTrainArrivalExperience({sequenceOptions,station,camera,con
       const wasOwned=owned;
       owned=false;externalPaused=false;handoff=null;pendingSkip=false;
       const state=sequence.cancel();applyStation(state);
-      if(wasOwned){walker.pause(false);controls.enabled=!walker.active;}
+      if(wasOwned){walker.pause(false);controls.enabled=allowDebugCamera&&!walker.active;}
       return emit();
     }
   };

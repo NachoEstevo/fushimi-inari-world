@@ -20,10 +20,10 @@ export function routeLightPositions(route,ground,spacing=28){
  return result;
 }
 
-export function installRouteLighting(scene,route,ground,{extraRoutes=[],existingLights=[]}={}){
+export function installRouteLighting(scene,route,ground,{extraRoutes=[],existingLights=[],extraEmitters=[]}={}){
  const positions=routeLightPositions(route,ground);
  for(const extra of extraRoutes)for(const p of routeLightPositions(extra,ground,20))if(positions.every(q=>Math.hypot(p[0]-q[0],p[2]-q[2])>12))positions.push(p);
- const emitters=positions.map(([x,y,z])=>[x,y+.9,z]);
+ const emitters=[...positions.map(([x,y,z])=>[x,y+.9,z]),...extraEmitters];
  for(const light of existingLights){const p=light.getWorldPosition(new THREE.Vector3());emitters.push(p.toArray());light.visible=false;light.intensity=0;}
  const group=new THREE.Group();group.name='Interpretive trail light markers';scene.add(group);
  const posts=new THREE.InstancedMesh(new THREE.BoxGeometry(.13,.82,.13),new THREE.MeshStandardMaterial({color:0x353c36,roughness:.85}),positions.length);

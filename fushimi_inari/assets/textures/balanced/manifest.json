@@ -1,0 +1,452 @@
+[
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_BaseColor.png",
+    "balanced": "balanced/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_BaseColor.webp",
+    "bytes": 10714,
+    "originalBytes": 535844
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Height.png",
+    "balanced": "balanced/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Height.webp",
+    "bytes": 78562,
+    "originalBytes": 283010
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Metallic.png",
+    "balanced": "balanced/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Metallic.webp",
+    "bytes": 54,
+    "originalBytes": 3158
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Normal.png",
+    "balanced": "balanced/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Normal.webp",
+    "bytes": 103934,
+    "originalBytes": 381912
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Roughness.png",
+    "balanced": "balanced/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Roughness.webp",
+    "bytes": 76456,
+    "originalBytes": 243243
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_BaseColor.png",
+    "balanced": "balanced/Granite_Stone_Moss/Granite_Stone_Moss_BaseColor.webp",
+    "bytes": 102580,
+    "originalBytes": 515418
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Height.png",
+    "balanced": "balanced/Granite_Stone_Moss/Granite_Stone_Moss_Height.webp",
+    "bytes": 139310,
+    "originalBytes": 430282
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Metallic.png",
+    "balanced": "balanced/Granite_Stone_Moss/Granite_Stone_Moss_Metallic.webp",
+    "bytes": 52,
+    "originalBytes": 1097
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Normal.png",
+    "balanced": "balanced/Granite_Stone_Moss/Granite_Stone_Moss_Normal.webp",
+    "bytes": 595648,
+    "originalBytes": 652164
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Roughness.png",
+    "balanced": "balanced/Granite_Stone_Moss/Granite_Stone_Moss_Roughness.webp",
+    "bytes": 139216,
+    "originalBytes": 148300
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_BaseColor.png",
+    "balanced": "balanced/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_BaseColor.webp",
+    "bytes": 65554,
+    "originalBytes": 384379
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Height.png",
+    "balanced": "balanced/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Height.webp",
+    "bytes": 152750,
+    "originalBytes": 537982
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Metallic.png",
+    "balanced": "balanced/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Metallic.webp",
+    "bytes": 52,
+    "originalBytes": 1097
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Normal.png",
+    "balanced": "balanced/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Normal.webp",
+    "bytes": 483382,
+    "originalBytes": 532567
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Roughness.png",
+    "balanced": "balanced/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Roughness.webp",
+    "bytes": 94350,
+    "originalBytes": 109339
+  },
+  {
+    "original": "nanobanana/bark_mossy_roots_color.png",
+    "balanced": "balanced/nanobanana/bark_mossy_roots_color.webp",
+    "bytes": 112450,
+    "originalBytes": 570449
+  },
+  {
+    "original": "nanobanana/bark_mossy_roots_normal.png",
+    "balanced": "balanced/nanobanana/bark_mossy_roots_normal.webp",
+    "bytes": 611506,
+    "originalBytes": 653817
+  },
+  {
+    "original": "nanobanana/bark_mossy_roots_roughness.png",
+    "balanced": "balanced/nanobanana/bark_mossy_roots_roughness.webp",
+    "bytes": 133576,
+    "originalBytes": 146587
+  },
+  {
+    "original": "nanobanana/bark_sugi_cedar_moss.png",
+    "balanced": "balanced/nanobanana/bark_sugi_cedar_moss.webp",
+    "bytes": 112450,
+    "originalBytes": 570449
+  },
+  {
+    "original": "nanobanana/foliage_bamboo_fern.png",
+    "balanced": "balanced/nanobanana/foliage_bamboo_fern.webp",
+    "bytes": 50456,
+    "originalBytes": 413739
+  },
+  {
+    "original": "nanobanana/foliage_bamboo_fern_normal.png",
+    "balanced": "balanced/nanobanana/foliage_bamboo_fern_normal.webp",
+    "bytes": 332322,
+    "originalBytes": 439198
+  },
+  {
+    "original": "nanobanana/foliage_bamboo_fern_roughness.png",
+    "balanced": "balanced/nanobanana/foliage_bamboo_fern_roughness.webp",
+    "bytes": 65140,
+    "originalBytes": 85450
+  },
+  {
+    "original": "nanobanana/foliage_momiji_maple.png",
+    "balanced": "balanced/nanobanana/foliage_momiji_maple.webp",
+    "bytes": 66262,
+    "originalBytes": 473848
+  },
+  {
+    "original": "nanobanana/foliage_momiji_maple_normal.png",
+    "balanced": "balanced/nanobanana/foliage_momiji_maple_normal.webp",
+    "bytes": 380406,
+    "originalBytes": 475905
+  },
+  {
+    "original": "nanobanana/foliage_momiji_maple_roughness.png",
+    "balanced": "balanced/nanobanana/foliage_momiji_maple_roughness.webp",
+    "bytes": 77692,
+    "originalBytes": 97722
+  },
+  {
+    "original": "nanobanana/foliage_sugi_cedar.png",
+    "balanced": "balanced/nanobanana/foliage_sugi_cedar.webp",
+    "bytes": 72070,
+    "originalBytes": 465946
+  },
+  {
+    "original": "nanobanana/foliage_sugi_cedar_normal.png",
+    "balanced": "balanced/nanobanana/foliage_sugi_cedar_normal.webp",
+    "bytes": 367290,
+    "originalBytes": 477136
+  },
+  {
+    "original": "nanobanana/foliage_sugi_cedar_roughness.png",
+    "balanced": "balanced/nanobanana/foliage_sugi_cedar_roughness.webp",
+    "bytes": 75486,
+    "originalBytes": 92675
+  },
+  {
+    "original": "nanobanana/foliage_yatsude_aoki_fern.png",
+    "balanced": "balanced/nanobanana/foliage_yatsude_aoki_fern.webp",
+    "bytes": 69134,
+    "originalBytes": 479818
+  },
+  {
+    "original": "nanobanana/foliage_yatsude_aoki_fern_normal.png",
+    "balanced": "balanced/nanobanana/foliage_yatsude_aoki_fern_normal.webp",
+    "bytes": 393272,
+    "originalBytes": 490728
+  },
+  {
+    "original": "nanobanana/foliage_yatsude_aoki_fern_roughness.png",
+    "balanced": "balanced/nanobanana/foliage_yatsude_aoki_fern_roughness.webp",
+    "bytes": 79970,
+    "originalBytes": 99338
+  },
+  {
+    "original": "nanobanana/prop_chaya_lantern_noren.png",
+    "balanced": "balanced/nanobanana/prop_chaya_lantern_noren.webp",
+    "bytes": 57692,
+    "originalBytes": 462770
+  },
+  {
+    "original": "nanobanana/prop_kitsune_bib_stone.png",
+    "balanced": "balanced/nanobanana/prop_kitsune_bib_stone.webp",
+    "bytes": 99018,
+    "originalBytes": 583553
+  },
+  {
+    "original": "nanobanana/prop_kitsune_ema_rack.png",
+    "balanced": "balanced/nanobanana/prop_kitsune_ema_rack.webp",
+    "bytes": 78076,
+    "originalBytes": 503553
+  },
+  {
+    "original": "nanobanana/prop_nobori_banners.png",
+    "balanced": "balanced/nanobanana/prop_nobori_banners.webp",
+    "bytes": 45898,
+    "originalBytes": 400984
+  },
+  {
+    "original": "nanobanana/prop_sudare_bamboo_blind.png",
+    "balanced": "balanced/nanobanana/prop_sudare_bamboo_blind.webp",
+    "bytes": 48550,
+    "originalBytes": 350278
+  },
+  {
+    "original": "nanobanana/prop_sudare_bamboo_blind_normal.png",
+    "balanced": "balanced/nanobanana/prop_sudare_bamboo_blind_normal.webp",
+    "bytes": 430616,
+    "originalBytes": 459651
+  },
+  {
+    "original": "nanobanana/prop_sudare_bamboo_blind_roughness.png",
+    "balanced": "balanced/nanobanana/prop_sudare_bamboo_blind_roughness.webp",
+    "bytes": 76170,
+    "originalBytes": 87946
+  },
+  {
+    "original": "nanobanana/prop_suzu_rope_maku.png",
+    "balanced": "balanced/nanobanana/prop_suzu_rope_maku.webp",
+    "bytes": 41996,
+    "originalBytes": 378368
+  },
+  {
+    "original": "nanobanana/roof_copper_patina_color.png",
+    "balanced": "balanced/nanobanana/roof_copper_patina_color.webp",
+    "bytes": 56904,
+    "originalBytes": 412218
+  },
+  {
+    "original": "nanobanana/roof_copper_patina_normal.png",
+    "balanced": "balanced/nanobanana/roof_copper_patina_normal.webp",
+    "bytes": 415004,
+    "originalBytes": 502016
+  },
+  {
+    "original": "nanobanana/roof_copper_patina_roughness.png",
+    "balanced": "balanced/nanobanana/roof_copper_patina_roughness.webp",
+    "bytes": 87062,
+    "originalBytes": 106909
+  },
+  {
+    "original": "nanobanana/roof_hiwadabuki_bark_color.png",
+    "balanced": "balanced/nanobanana/roof_hiwadabuki_bark_color.webp",
+    "bytes": 65554,
+    "originalBytes": 384379
+  },
+  {
+    "original": "nanobanana/roof_hiwadabuki_bark_normal.png",
+    "balanced": "balanced/nanobanana/roof_hiwadabuki_bark_normal.webp",
+    "bytes": 483382,
+    "originalBytes": 532567
+  },
+  {
+    "original": "nanobanana/roof_hiwadabuki_bark_roughness.png",
+    "balanced": "balanced/nanobanana/roof_hiwadabuki_bark_roughness.webp",
+    "bytes": 94350,
+    "originalBytes": 109339
+  },
+  {
+    "original": "nanobanana/stone_flagstone_paving_color.png",
+    "balanced": "balanced/nanobanana/stone_flagstone_paving_color.webp",
+    "bytes": 102580,
+    "originalBytes": 515418
+  },
+  {
+    "original": "nanobanana/stone_flagstone_paving_normal.png",
+    "balanced": "balanced/nanobanana/stone_flagstone_paving_normal.webp",
+    "bytes": 595648,
+    "originalBytes": 652164
+  },
+  {
+    "original": "nanobanana/stone_flagstone_paving_roughness.png",
+    "balanced": "balanced/nanobanana/stone_flagstone_paving_roughness.webp",
+    "bytes": 139216,
+    "originalBytes": 148300
+  },
+  {
+    "original": "nanobanana/stone_ishigaki_moss_leaves_color.png",
+    "balanced": "balanced/nanobanana/stone_ishigaki_moss_leaves_color.webp",
+    "bytes": 99278,
+    "originalBytes": 518028
+  },
+  {
+    "original": "nanobanana/stone_ishigaki_moss_leaves_normal.png",
+    "balanced": "balanced/nanobanana/stone_ishigaki_moss_leaves_normal.webp",
+    "bytes": 598902,
+    "originalBytes": 643013
+  },
+  {
+    "original": "nanobanana/stone_ishigaki_moss_leaves_roughness.png",
+    "balanced": "balanced/nanobanana/stone_ishigaki_moss_leaves_roughness.webp",
+    "bytes": 130664,
+    "originalBytes": 143381
+  },
+  {
+    "original": "nanobanana/stone_otsuka_carved_kanji.png",
+    "balanced": "balanced/nanobanana/stone_otsuka_carved_kanji.webp",
+    "bytes": 122358,
+    "originalBytes": 636468
+  },
+  {
+    "original": "nanobanana/surface_courtyard_gravel_color.png",
+    "balanced": "balanced/nanobanana/surface_courtyard_gravel_color.webp",
+    "bytes": 113766,
+    "originalBytes": 559042
+  },
+  {
+    "original": "nanobanana/surface_courtyard_gravel_normal.png",
+    "balanced": "balanced/nanobanana/surface_courtyard_gravel_normal.webp",
+    "bytes": 621660,
+    "originalBytes": 676120
+  },
+  {
+    "original": "nanobanana/surface_courtyard_gravel_roughness.png",
+    "balanced": "balanced/nanobanana/surface_courtyard_gravel_roughness.webp",
+    "bytes": 131812,
+    "originalBytes": 141441
+  },
+  {
+    "original": "nanobanana/surface_forest_soil_leaves.png",
+    "balanced": "balanced/nanobanana/surface_forest_soil_leaves.webp",
+    "bytes": 102606,
+    "originalBytes": 546864
+  },
+  {
+    "original": "nanobanana/surface_forest_soil_leaves_normal.png",
+    "balanced": "balanced/nanobanana/surface_forest_soil_leaves_normal.webp",
+    "bytes": 573470,
+    "originalBytes": 637867
+  },
+  {
+    "original": "nanobanana/surface_forest_soil_leaves_roughness.png",
+    "balanced": "balanced/nanobanana/surface_forest_soil_leaves_roughness.webp",
+    "bytes": 117906,
+    "originalBytes": 134739
+  },
+  {
+    "original": "nanobanana/surface_mossy_granite.png",
+    "balanced": "balanced/nanobanana/surface_mossy_granite.webp",
+    "bytes": 99278,
+    "originalBytes": 518028
+  },
+  {
+    "original": "nanobanana/torii_weathered_kanji_color.png",
+    "balanced": "balanced/nanobanana/torii_weathered_kanji_color.webp",
+    "bytes": 90474,
+    "originalBytes": 493789
+  },
+  {
+    "original": "nanobanana/torii_weathered_kanji_normal.png",
+    "balanced": "balanced/nanobanana/torii_weathered_kanji_normal.webp",
+    "bytes": 541446,
+    "originalBytes": 593490
+  },
+  {
+    "original": "nanobanana/torii_weathered_kanji_roughness.png",
+    "balanced": "balanced/nanobanana/torii_weathered_kanji_roughness.webp",
+    "bytes": 130252,
+    "originalBytes": 144676
+  },
+  {
+    "original": "nanobanana/wood_vermilion_shuiro_color.png",
+    "balanced": "balanced/nanobanana/wood_vermilion_shuiro_color.webp",
+    "bytes": 27236,
+    "originalBytes": 296612
+  },
+  {
+    "original": "nanobanana/wood_vermilion_shuiro_normal.png",
+    "balanced": "balanced/nanobanana/wood_vermilion_shuiro_normal.webp",
+    "bytes": 302936,
+    "originalBytes": 375246
+  },
+  {
+    "original": "nanobanana/wood_vermilion_shuiro_roughness.png",
+    "balanced": "balanced/nanobanana/wood_vermilion_shuiro_roughness.webp",
+    "bytes": 58362,
+    "originalBytes": 69089
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.png",
+    "balanced": "balanced/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.webp",
+    "bytes": 35886,
+    "originalBytes": 776779
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Height.png",
+    "balanced": "balanced/Torii_Kanji_Column/Torii_Kanji_Column_Height.webp",
+    "bytes": 142356,
+    "originalBytes": 510545
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Metallic.png",
+    "balanced": "balanced/Torii_Kanji_Column/Torii_Kanji_Column_Metallic.webp",
+    "bytes": 120,
+    "originalBytes": 1601
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Normal.png",
+    "balanced": "balanced/Torii_Kanji_Column/Torii_Kanji_Column_Normal.webp",
+    "bytes": 340110,
+    "originalBytes": 1482634
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Roughness.png",
+    "balanced": "balanced/Torii_Kanji_Column/Torii_Kanji_Column_Roughness.webp",
+    "bytes": 148826,
+    "originalBytes": 505614
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_BaseColor.png",
+    "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_BaseColor.webp",
+    "bytes": 27236,
+    "originalBytes": 296612
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Height.png",
+    "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_Height.webp",
+    "bytes": 191650,
+    "originalBytes": 660168
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Metallic.png",
+    "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_Metallic.webp",
+    "bytes": 52,
+    "originalBytes": 1097
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Normal.png",
+    "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_Normal.webp",
+    "bytes": 302936,
+    "originalBytes": 375246
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Roughness.png",
+    "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_Roughness.webp",
+    "bytes": 58362,
+    "originalBytes": 69089
+  }
+]

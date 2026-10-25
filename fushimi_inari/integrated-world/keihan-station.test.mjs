@@ -92,3 +92,9 @@ test('ramp head has one top on both sides of the diagonal join, without coplanar
   const y=api.surfaceHeight(x,z);assert.ok(Number.isFinite(y));const hits=new THREE.Raycaster(new THREE.Vector3(x,y+.02,z),new THREE.Vector3(0,-1,0),0,.04).intersectObject(api.group,true).filter(h=>Math.abs(h.point.y-y)<1e-5);assert.equal(hits.length,1,`${x},${z}`);
  }
 });
+
+test('passenger posters have three distinct purposes and retain one bounded material batch',()=>{
+ const api=fixture(),posters=[];api.group.traverse(o=>{if(o.isMesh&&o.material.name==='Keihan passenger information atlas')posters.push(o);});
+ assert.equal(posters.length,1);assert.deepEqual(posters[0].material.userData.panels,['Keihan line guide','Platform 2 information','Shrine access']);
+ const uv=posters[0].geometry.attributes.uv;assert.ok(uv.count>=18);for(const value of uv.array)assert.ok(value>=0&&value<=1);
+});

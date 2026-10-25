@@ -1,3 +1,4 @@
+import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
 import * as THREE from 'three';
 import {pathWidth} from '../geography/geo-core.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs';
@@ -25,7 +26,7 @@ export function buildEntranceMappedTrees(root,data,features,surfaces,colliders){
   const nodes=(data.greenery??[]).filter(n=>n.tags?.natural==='tree'&&n.point);
   const group=new THREE.Group();group.name='Mapped entrance specimen trees';
   const branches=[],crowns=[],pineCrowns=[],built=[],skipped=[],dummy=new THREE.Object3D();
-  const barkMap=new THREE.TextureLoader().load(new URL('../assets/textures/nanobanana/bark_mossy_roots_color.png',import.meta.url).href);
+  const barkMap=textureStreaming.load(new URL('../assets/textures/nanobanana/bark_mossy_roots_color.png',import.meta.url).href);
   barkMap.colorSpace=THREE.SRGBColorSpace;barkMap.wrapS=barkMap.wrapT=THREE.RepeatWrapping;barkMap.repeat.set(1,5);barkMap.anisotropy=4;
   const up=new THREE.Vector3(0,1,0),bark=new THREE.MeshStandardMaterial({color:'#aaa699',map:barkMap,bumpMap:barkMap,bumpScale:.05,roughness:1});
   // Keep the generator's green per-leaf pigment and brown twigs. Disabling

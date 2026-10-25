@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {readFileSync} from 'node:fs';
+import {makeEntranceGroundMask} from './entrance-ground.mjs';
+import {createTextureStreaming} from './texture-streaming.mjs';
+
+test('TSL terrain layers preserve entrance attributes and mapped street ownership', {skip:Number(THREE.REVISION)<180}, async()=>{
+ const {blendCourtyardGround}=await import('./courtyard-ground-nodes.mjs');
+ const {blendEntranceGround}=await import('./entrance-ground-nodes.mjs');
+ const {blendKeihanStreetGround}=await import('./keihan-street-ground-nodes.mjs');
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,40,0,0,40,0,25,400,0,400],3));
+ geometry.setAttribute('groundCover',new THREE.Float32BufferAttribute([0,.2,.5,1],1));
+ geometry.setAttribute('precinctGrass',new THREE.Float32BufferAttribute([1,.5,.2,0],1));
+ const position=geometry.attributes.position.array.slice();
+ const material=new THREE.MeshStandardNodeMaterial(),gravel={map:new THREE.Texture()};
+ const romon={target:[0,0,0],source:[0,0,0],yaw:.2};
+ const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url)));
+ const hook=material.onBeforeCompile;
+ blendCourtyardGround(material,gravel,romon);
+ assert.equal(material.terrainGravelMap,gravel.map);
+ assert.ok(Object.values(material).includes(gravel.map));
+ const courtColor=material.colorNode,courtNormal=material.normalNode;
+ assert.ok(courtColor.isNode&&courtNormal.isNode);
+ blendEntranceGround(geometry,material,gravel,romon,features);
+ assert.notEqual(material.colorNode,courtColor);assert.notEqual(material.normalNode,courtNormal);
+ const mask=makeEntranceGroundMask(romon,features);
+ for(let i=0;i<3;i++)assert.ok(Math.abs(geometry.attributes.entranceGround.getX(i)-mask(geometry.attributes.position.getX(i),geometry.attributes.position.getZ(i)))<1e-6);
+ assert.equal(geometry.attributes.entranceGround.getX(3),0);
+ const entranceColor=material.colorNode;
+ const report=blendKeihanStreetGround(geometry,material,features);
+ assert.equal(report.segments,23);assert.equal(report.geometryUnchanged,true);assert.notEqual(material.colorNode,entranceColor);
+ assert.deepEqual(geometry.attributes.position.array,position);assert.equal(material.onBeforeCompile,hook);
+ const lastColor=material.colorNode;
+ assert.equal(blendKeihanStreetGround(geometry,material,{paths:[]}).built,false);
+ assert.equal(material.colorNode,lastColor);
+});
+
+test('terrain-only gravel streams into the Texture already captured by TSL', {skip:Number(THREE.REVISION)<180}, async()=>{
+ const {blendCourtyardGround}=await import('./courtyard-ground-nodes.mjs');
+ const requests=[],stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:8,height:8};}});
+ const map=stream.load('../assets/textures/terrain-test.png');
+ const material=new THREE.MeshStandardNodeMaterial();
+ blendCourtyardGround(material,{map},{target:[0,0,0],yaw:0});
+ const scene=new THREE.Scene();scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),material));
+ await stream.prepare(scene,new THREE.Vector3());
+ assert.equal(requests.length,1);assert.equal(map.image.width,8);assert.equal(material.terrainGravelMap,map);
+ assert.equal(stream.stats.users,1);
+});

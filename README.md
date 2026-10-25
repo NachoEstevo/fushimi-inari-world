@@ -12,7 +12,7 @@ Start aboard a Keihan train: Japanese and English arrival announcements finish b
 
 ![Daylight along the mountain shrine approach](docs/images/inariyama-day-ultra.webp)
 
-**Day** reveals the timber, stone paving, inscriptions and woodland. Walk the route yourself, follow its guide line, or explore with free flight and orbit controls.
+**Day** reveals the timber, stone paving, inscriptions and woodland. Walk the public paths and courtyards. Checkpoints, free flight and orbit remain available through explicit debug URLs.
 
 ![Night lighting in the shrine grounds](docs/images/inariyama-night-ultra.webp)
 
@@ -22,7 +22,7 @@ These photographs were exported from the actual viewer on **24 October 2026** wi
 
 ## Run locally
 
-Use Python 3 and a desktop browser with WebGL 2. The pinned Three.js CDN requires internet on first load.
+Use Python 3 and a modern desktop browser. WebGPU is preferred, with a WebGL 2 backend fallback. The pinned Three.js CDN requires internet on first load.
 
 ```powershell
 python -m http.server 8420 --bind 127.0.0.1 --directory fushimi_inari
@@ -47,15 +47,17 @@ Open [Inariyama Explorer](http://127.0.0.1:8420/integrated-world/index.html). Wa
 
 | Preset | Rendering |
 | --- | --- |
-| Balanced | Original direct render; device pixel ratio capped at 1.25; 2048 px sun shadows |
-| High resolution | Same rendering with pixel ratio capped at 1.7 |
-| Ultra | Supersampling up to 2×, capped at 4 million viewport pixels; 4096 px sun shadows; 16-sample ambient occlusion at reduced resolution; up to 16× texture filtering; 25% farther nearby detail |
+| Balanced | Up to 2 million pixels, 1024 px shadows, nearby 512 px WebP textures |
+| High resolution | Up to 3 million pixels, 2048 px shadows, balanced textures |
+| Ultra | Up to 4 million pixels, 4096 px shadows, nearby original textures and increased filtering/detail range |
 
-Ultra improves shading and sampling of the existing scene; it does not turn approximate buildings into surveyed geometry. Day, sunset, night, water and photo export retain their controls. Switching back releases the additional postprocessing targets and restores texture filtering and shadows.
+Natural, Sakura and Dreamcore atmospheres share WebGPU materials, bloom and environment lighting. Station reflections and nearby lights are locally tuned. Cloud shade is a lightweight terrain approximation. Architectural dimensions remain partly inferred.
 
-At the same 1467 × 852 camera view, local samples measured approximately **101 FPS Balanced / 63 FPS Ultra at Rōmon**, and **147 / 87 FPS beside Shin-ike**. These are short observations from one desktop/browser, with animated characters and water—not GPU requirements, mobile certification or a guaranteed frame rate. See [validation and limits](docs/ultra-quality-and-release.md).
+## Loading and hosting
 
-Static geometry is batched, repeated objects are instanced, and nearby detail uses spatial activation. The optional entire-world detail setting costs more. Recorded crossing audio is **44.6% smaller** than its previous runtime MP3; voices and their ordering remain unchanged.
+The station loads first; four detailed shrine models (24.3 MB compressed) load one at a time near the precinct. Permanent floors and collision data remain available independently. Nearby textures stream progressively; loaded assets remain cached rather than being evicted.
+
+Run `node scripts/build-static.mjs` to build the selected static site in `dist/` (approximately 85 MB total, not the initial download). Vercel uses `vercel.json`. Internal reports, source models, tests and captures are excluded from the published site. Current cold-load time and performance depend on browser, device and network; historical screenshots are not performance measurements for this version.
 
 ## What is reconstructed
 

@@ -18,7 +18,7 @@ export function prepareGehaidenLanternCleanupR96(legacy){
   if(found.length!==1){reason=`Legacy Gehaiden ${d.kind} signature missing or ambiguous`;break;}matched.push(found[0]);
  }
  let completed=null;
- return {prepared:!reason&&matched.length===36,matched:matched.length,reason,commit(replacement){
+ return {retainedObjects:matched,prepared:!reason&&matched.length===36,matched:matched.length,reason,commit(replacement){
   if(completed)return completed;
   if(reason||matched.length!==36)return {built:false,reason:reason??'Incomplete legacy Gehaiden lantern signature',removedElements:[]};
   if(!replacement?.built||replacement.zone!=='gehaiden'||replacement.lanterns!==12)return {built:false,reason:'Real twelve Gehaiden zodiac lanterns not yet built',removedElements:[]};

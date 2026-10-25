@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fushimi · Laboratorio de luz</title>
+  <style>
+    :root{color-scheme:dark;font:14px/1.5 system-ui,sans-serif;color:#f6f0e7;background:#101916}*{box-sizing:border-box}body{margin:0}canvas{display:block;width:100%;height:100%;touch-action:none}#stage{position:fixed;inset:0}.panel{max-height:calc(100dvh - 48px);overflow:auto;position:fixed;top:24px;left:24px;width:300px;padding:24px;background:#14231de8;border:1px solid #d3e1ca25;border-radius:20px;backdrop-filter:blur(20px);box-shadow:0 16px 60px #0004}h1{font:500 27px/1.15 Georgia,serif;margin:9px 0 12px}.eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9d4ab}p{color:#bdc8be;font-size:12px;margin:8px 0 18px}#status{display:block;color:#dae5b9;font-size:11px;margin:12px 0}fieldset{border:0;padding:0;margin:20px 0}legend{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#93a997;margin-bottom:9px}.buttons{display:flex;gap:5px;flex-wrap:wrap}button,a{font:inherit}button{border:1px solid #dbe3cb30;background:#e5ecc009;border-radius:8px;padding:8px 11px;color:inherit;cursor:pointer;font-size:12px}button:hover{background:#e5ecc020}button[aria-pressed=true]{background:#d6e5aa;color:#16251b;border-color:#d6e5aa}label{display:block;font-size:12px;margin:13px 0}label output{float:right;font-variant-numeric:tabular-nums;color:#d5dfb6}input[type=range]{width:100%;accent-color:#d6e5aa;margin:8px 0 0}input[type=checkbox]{accent-color:#d6e5aa;margin:0 7px 0 0}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #f4d8ac;outline-offset:4px}.footer{font-size:10px;color:#8fa594;margin-top:18px}.footer a{color:#bccca5}#error{position:fixed;bottom:24px;left:24px;max-width:600px;padding:18px;background:#502b27;border:1px solid #d68b79;border-radius:12px;white-space:pre-wrap}#error[hidden]{display:none}.hint{position:fixed;bottom:20px;right:24px;font-size:11px;color:#edf1da;pointer-events:none;text-shadow:0 1px 5px #000}@media(max-width:600px){.panel{top:12px;left:12px;width:235px;padding:16px}h1{font-size:22px}fieldset{margin:13px 0}.hint{display:none}.footer{margin-top:12px}#error{left:12px;right:12px;bottom:12px}}
+  </style>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js","three/webgpu":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js","three/tsl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+</head>
+<body>
+  <main id="stage" aria-label="Vista interactiva de la estación Keihan"></main>
+  <aside class="panel" aria-label="Controles del laboratorio">
+    <span class="eyebrow">Fushimi Inari / Visual lab</span>
+    <h1>El mismo lugar.<br>Otra luz.</h1>
+    <p id="description">Geometría real del proyecto · Keihan KH34</p>
+    <span id="status" role="status">Preparando renderer…</span>
+    <fieldset><legend>Escena · estudio aislado</legend><div class="buttons" id="subjects"><button data-subject="station" aria-pressed="true">Keihan</button><button data-subject="romon" aria-pressed="false">Rōmon</button></div></fieldset>
+    <fieldset id="study-controls"><legend>Comparación · mismo encuadre</legend><label><input id="materials-study" type="checkbox">Materiales físicos</label><label><input id="lighting-study" type="checkbox">Luz del andén</label><label><input id="reflection-study" type="checkbox">Reflejos locales</label><small id="study-status">Activá cada capa para comparar con la base.</small></fieldset>
+    <fieldset><legend>Atmósfera</legend><div class="buttons" id="looks"><button data-look="natural" aria-pressed="true">Natural</button><button data-look="sakura" aria-pressed="false">Sakura</button><button data-look="dreamcore" aria-pressed="false">Dreamcore</button></div></fieldset>
+    <label for="exposure">Exposición <output id="exposure-value">1.00</output><input id="exposure" type="range" min="0.3" max="2.6" step="0.01" value="1"></label>
+    <label for="bloom">Halo de luz <output id="bloom-value">0.20</output><input id="bloom" type="range" min="0" max="1.8" step="0.01" value="0.2"></label>
+    <fieldset><legend>Encuadre</legend><div class="buttons" id="views"><button data-view="entrance" aria-pressed="true">Acceso</button><button data-view="platform" aria-pressed="false">Andén</button><button data-view="train" aria-pressed="false">Tren</button></div></fieldset>
+    <label><input id="motion" type="checkbox">Animar pétalos</label>
+    <button id="reset">Restablecer</button>
+    <div class="footer">Three r180 · estudio aislado<br><a href="?backend=webgl">Probar WebGL2</a> · <a href="?">Detectar WebGPU</a></div>
+  </aside>
+  <div class="hint">Arrastrá para orbitar · rueda para acercarte</div>
+  <div id="error" role="alert" hidden></div>
+  <script type="module">
+    const showError=error=>{const box=document.querySelector('#error');box.hidden=false;box.textContent=`No pudimos iniciar el laboratorio.\n${error.message||error}`;document.querySelector('#status').textContent='Error de inicialización';};
+    window.addEventListener('error',event=>showError(event.error||event.message));
+    window.addEventListener('unhandledrejection',event=>showError(event.reason));
+    import('./webgpu-lab.mjs').catch(showError);
+  </script>
+</body>
+</html>

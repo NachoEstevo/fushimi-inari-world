@@ -6,7 +6,35 @@ import {buildShinikeWaterR97,shinikeLayoutR97,SHINIKE_ID} from './shinike-water-
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))),level=65.71652051629592;
 const h=(x,z)=>66.20+.03*(x-530)+.015*(z+150);
+test('natural bank lighting shares normals across clipped triangle seams without changing its positions',()=>{
+ const f=fixture();buildShinikeWaterR97(f.root,features,{}, {terrainPositions:terrain()});
+ const bank=f.root.getObjectByName('Shin-ike bounded inward natural bank collar R97'),p=bank.geometry.attributes.position,n=bank.geometry.attributes.normal,seen=new Map();let shared=0;
+ for(let i=0;i<p.count;i++){const key=[p.getX(i),p.getY(i),p.getZ(i)].map(v=>Math.round(v*1e4)).join(','),normal=new THREE.Vector3().fromBufferAttribute(n,i);assert.ok(Math.abs(normal.length()-1)<1e-5);if(seen.has(key)){assert.ok(normal.distanceTo(seen.get(key))<1e-6);shared++;}else seen.set(key,normal);}
+ assert.ok(shared>20);
+});
+test('bank toe meets existing submerged backing and leaves a measurable wet margin beneath the waterline',()=>{
+ const f=fixture(),r=buildShinikeWaterR97(f.root,features,{}, {terrainPositions:terrain()}),bank=f.root.getObjectByName('Shin-ike bounded inward natural bank collar R97'),p=bank.geometry.attributes.position;let submerged=0,projected=0;
+ for(let i=0;i<p.count;i++){if(Math.abs(p.getY(i)-r.bedLevel)<1e-5)submerged++;if(i%3===0)projected+=Math.abs(polygonArea([0,1,2].map(k=>[p.getX(i+k),p.getZ(i+k)])));}
+ assert.ok(submerged>20);assert.equal(r.bankToeLevel,r.bedLevel);assert.equal(r.waterLevel,level);assert.ok(r.dryBankArea>0);assert.ok(r.dryBankArea<projected*.9,'part of the collar is submerged rather than consuming the open water');assert.equal(r.visibleWaterArea,r.pondArea-r.dryBankArea);assert.equal(r.collidersAdded,0);assert.equal(r.walkingChanged,false);
+});
+test('bank preserves forest material maps with nondegenerate texture density on steep and shallow faces',()=>{
+ const f=fixture(),map=new THREE.Texture(),normalMap=new THREE.Texture(),source=new THREE.MeshStandardMaterial({map,normalMap,roughness:1,normalScale:new THREE.Vector2(.35,.35)});
+ buildShinikeWaterR97(f.root,features,{shinikeBankMat:source}, {terrainPositions:terrain()});const bank=f.root.getObjectByName('Shin-ike bounded inward natural bank collar R97'),p=bank.geometry.attributes.position,uv=bank.geometry.attributes.uv;
+ assert.notEqual(bank.material,source);assert.equal(bank.material.map,map);assert.equal(bank.material.normalMap,normalMap);assert.deepEqual(bank.material.normalScale.toArray(),[.35,.35]);assert.equal(source.side,THREE.FrontSide);
+ let steep=0;for(let i=0;i<p.count;i+=3){const points=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,i+k)),normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])),area=normal.length()/2,uvArea=Math.abs(polygonArea([0,1,2].map(k=>[uv.getX(i+k),uv.getY(i+k)])));if(area<1e-4)continue;
+  assert.ok(uvArea>0);assert.ok(uvArea*2.25>area*.57-.001,'dominant projection retains at least1/sqrt(3) of surface area at1.5m density');assert.ok(uvArea*2.25<area+.001);if(Math.abs(normal.y)<Math.max(Math.abs(normal.x),Math.abs(normal.z)))steep++;
+ }assert.ok(steep>20,'fixture exercises steep bank faces');
+});
 function terrain(){const p=[];for(let x=520;x<590;x+=5)for(let z=-160;z< -60;z+=5)for(const [dx,dz]of [[0,0],[5,0],[0,5],[0,5],[5,0],[5,5]])p.push(x+dx,h(x+dx,z+dz),z+dz);return p;}
+test('bank grades a rounded shoulder and toe through narrow contour bands while retaining its exact crest',()=>{
+ const f=fixture(),r=buildShinikeWaterR97(f.root,features,{}, {terrainPositions:terrain()}),plan=shinikeLayoutR97(features),p=f.root.getObjectByName('Shin-ike bounded inward natural bank collar R97').geometry.attributes.position;
+ const center=[0,0],area=polygonArea(plan.ring);
+ for(let i=0;i<plan.ring.length;i++){const a=plan.ring[i],b=plan.ring[(i+1)%plan.ring.length],cross=a[0]*b[1]-b[0]*a[1];center[0]+=(a[0]+b[0])*cross/(6*area);center[1]+=(a[1]+b[1])*cross/(6*area);}
+ const [x,z]=plan.ring[0],crest=h(x,z),dx=center[0]-x,dz=center[1]-z,distance=Math.hypot(dx,dz),inset=Math.min(4,Math.max(.35,(crest-r.waterLevel)*1.25),distance*.3),drop=crest-r.bedLevel;
+ const at=t=>{const tx=x+dx/distance*inset*t,tz=z+dz/distance*inset*t;let best=Infinity,height;for(let i=0;i<p.count;i++){const distance=Math.hypot(p.getX(i)-tx,p.getZ(i)-tz);if(distance<best){best=distance;height=p.getY(i);}}assert.ok(best<.0001,`contour station ${t} exists`);return height;};
+ assert.equal(r.bankBands,8);assert.ok(Math.abs(at(0)-crest)<.00001);assert.ok(Math.abs(at(1)-r.bedLevel)<.00001);
+ assert.ok(crest-at(1/8)<drop*.05,'rounded crest has a shallow shoulder');assert.ok(at(7/8)-r.bedLevel<drop*.05,'submerged toe eases into backing');assert.ok(Math.abs(at(.5)-(crest+r.bedLevel)/2)<.00001);
+});
 function fixture(){const root=new THREE.Group(),owner=new THREE.Group();owner.userData.zone='kumataka';owner.position.y=level+.18;root.add(owner);const plane=new THREE.Mesh(new THREE.PlaneGeometry(18,22),new THREE.MeshPhysicalMaterial({roughness:.07}));plane.position.set(10.5,-.18,0);plane.rotation.x=-Math.PI/2;owner.add(plane);return {root,plane,owner};}
 test('actual Shin-ike ring yields one lower horizontal olive water and only removes exact legacy signature',()=>{
  const f=fixture(),plan=shinikeLayoutR97(features);assert.ok(plan);const other=new THREE.Mesh(new THREE.PlaneGeometry(18,22),new THREE.MeshPhysicalMaterial({roughness:.07}));f.root.add(other);
@@ -21,7 +49,7 @@ test('exact water cut preserves exterior planes and distant triangles, with no r
 });
 test('inward natural bank stays inside mapped pond with disjoint projected triangles and bounded inset',()=>{
  const f=fixture(),r=buildShinikeWaterR97(f.root,features,{}, {terrainPositions:terrain()}),plan=shinikeLayoutR97(features),mesh=f.root.getObjectByName('Shin-ike bounded inward natural bank collar R97'),p=mesh.geometry.attributes.position,triangles=[];
- for(let i=0;i<p.count;i+=3){const tri=[0,1,2].map(k=>[p.getX(i+k),p.getZ(i+k)]),area=Math.abs(polygonArea(tri));if(area<1e-7)continue;let inside=0;for(const cut of plan.triangles)inside+=Math.abs(polygonArea(clipConvex(tri,cut)));assert.ok(Math.abs(area-inside)<.003);for(const old of triangles)assert.ok(Math.abs(polygonArea(clipConvex(tri,old)))<.003);triangles.push(tri);for(let k=0;k<3;k++){assert.ok(Number.isFinite(p.getY(i+k)));assert.ok(p.getY(i+k)>=level-.041);}}
+ for(let i=0;i<p.count;i+=3){const tri=[0,1,2].map(k=>[p.getX(i+k),p.getZ(i+k)]),area=Math.abs(polygonArea(tri));if(area<1e-4)continue;let inside=0;for(const cut of plan.triangles)inside+=Math.abs(polygonArea(clipConvex(tri,cut)));assert.ok(Math.abs(area-inside)<.003);for(const old of triangles)assert.ok(Math.abs(polygonArea(clipConvex(tri,old)))<.003);triangles.push(tri);for(let k=0;k<3;k++){assert.ok(Number.isFinite(p.getY(i+k)));assert.ok(p.getY(i+k)>=level-.601);}}
  assert.ok(triangles.length>20);assert.equal(r.maximumBankInset,4);assert.equal(mesh.geometry.attributes.uv.count,p.count);
 });
 test('downward ray sees exposed flat water below shrine court rather than coarse terrain in pond center',()=>{

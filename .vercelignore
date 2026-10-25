@@ -1,0 +1,18 @@
+# Build output is regenerated on Vercel.
+dist/
+outputs/
+.tmp/
+.agents/
+node_modules/
+docs/
+**/__pycache__/
+**/*.blend
+**/*.blend1
+**/*.fbx
+**/*.test.mjs
+fushimi_inari/outputs/
+fushimi_inari/references/
+fushimi_inari/assets/models/*.glb
+fushimi_inari/integrated-world/*.glb
+fushimi_inari/index.html
+fushimi_inari/scripts/

@@ -12,7 +12,7 @@ function fixture(){const root=new THREE.Group(),colliders=[],surfaces=makePathSu
 test('four photographed detail families are source registered, bounded and idempotent',()=>{
  const a=fixture(),before=[...a.colliders],height=a.walkHeight,r=buildKeihanStreetObservedDetails(a);
  assert.equal(r.built,true);assert.equal(r.stats.covers,6);assert.equal(r.stats.grates,12);assert.equal(r.stats.cableSpans,1);assert.equal(r.stats.panels,1);
- assert.equal(r.stats.groups,5);assert.ok(r.stats.drawBatches<=9);assert.ok(r.stats.triangles<2500,JSON.stringify(r.stats));
+ assert.equal(r.stats.groups,8);assert.ok(r.stats.drawBatches<=15);assert.ok(r.stats.triangles<3100,JSON.stringify(r.stats));
  assert.deepEqual(a.colliders,before);assert.equal(a.walkHeight,height);assert.equal(r.surfaceHeight,undefined);
  assert.equal(buildKeihanStreetObservedDetails(a),r);assert.equal(a.root.children.filter(g=>g.name===r.group.name).length,1);
  let lights=0;r.group.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite));});assert.equal(lights,0);
@@ -48,5 +48,17 @@ test('service cables attach to existing food-store elevations and remain above h
 test('missing or malformed street ownership fails before scene mutation',()=>{
  for(const change of [a=>delete a.walkHeight,a=>a.surfaces.segments=[],a=>a.surfaces.segments=a.surfaces.segments.map(s=>({...s,width:NaN}))]){
   const a=fixture();change(a);const before=a.root.children.length,colliders=a.colliders.length,r=buildKeihanStreetObservedDetails(a);assert.equal(r.built,false);assert.equal(a.root.children.length,before);assert.equal(a.colliders.length,colliders);
+ }
+});
+
+test('rainwater fittings stay at registered facade edges without entering shop openings',()=>{
+ const a=fixture(),r=buildKeihanStreetObservedDetails(a),pipes=r.records.filter(r=>r.kind==='wall-edge-rainwater-pipe');
+ assert.equal(pipes.length,3);
+ for(const pipe of pipes){
+  const s=a.keihanFrontages.storefronts.find(s=>s.id===pipe.sourceId),origin=s.points[s.edge],dx=pipe.position[0]-origin[0],dz=pipe.position[2]-origin[2];
+  assert.ok(Math.abs(dx*s.t[0]+dz*s.t[1]-(s.width-.10))<1e-7);
+  assert.ok(Math.abs(dx*s.n[0]+dz*s.n[1]-.055)<1e-7);
+  assert.ok(pipe.position[1]-pipe.height/2>s.floor);
+  assert.ok(pipe.inferred.includes('interpreted'));
  }
 });

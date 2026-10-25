@@ -12,7 +12,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 test('recordings load only after enable, use bounded loops, and mute stops them',async()=>{
  let requests=0;const f=fixture(async()=>{requests++;return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};});
  f.audio.update(frame);assert.equal(requests,0);f.audio.setEnabled(true);await flush();
- assert.equal(requests,6);for(let i=0;i<100;i++)f.audio.update({...frame,time:i});
+ assert.equal(requests,4);for(let i=0;i<100;i++)f.audio.update({...frame,time:i});
  assert.equal(f.sources.length,1);assert.equal(f.sources[0].loop,true);
  f.audio.setEnabled(false);assert.equal(f.sources[0].stops,1);assert.equal(f.stats.at(-1).activeLoops.length,0);
 });
@@ -29,7 +29,7 @@ test('hidden/menu pause stops sounds and crossing gate remains edge-triggered af
 });
 test('bad recording fails once without replacing it with synthesized audio',async()=>{
  let requests=0;const f=fixture(async()=>{requests++;return {ok:false,status:404};});f.audio.setEnabled(true);await flush();
- for(let i=0;i<10;i++)f.audio.update({...frame,time:i});await flush();assert.equal(requests,6);assert.equal(f.sources.length,0);assert.equal(f.stats.at(-1).failed.length,6);
+ for(let i=0;i<10;i++)f.audio.update({...frame,time:i});await flush();assert.equal(requests,5);assert.equal(f.sources.length,0);assert.equal(f.stats.at(-1).failed.length,5);
 });
 
 test('door warning stops at handoff and crossing ambience survives railway phase changes',async()=>{
@@ -38,7 +38,8 @@ test('door warning stops at handoff and crossing ambience survives railway phase
  const door=f.sources[0];assert.equal(door.starts,1);
  f.audio.update({...frame,arrival:{phase:'complete'},time:2});assert.equal(door.stops,1);
  const rail={group:{userData:{crossingState:{phase:'clear'}}},spec:{crossing:frame.position}};
- f.audio.update({...frame,arrival:{phase:'complete'},rail,time:3});
+ f.audio.update({...frame,arrival:{phase:'complete'},rail,time:3});await flush();
+ f.audio.update({...frame,arrival:{phase:'complete'},rail,time:3.1});
  const ambience=f.sources[1];assert.equal(ambience.loop,true);
  rail.group.userData.crossingState.phase='warning';
  f.audio.update({...frame,arrival:{phase:'complete'},rail,time:4});

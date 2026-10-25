@@ -3,8 +3,10 @@ import {routeSpec} from './route-spec.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs?v=10';
 import {outlookOpening} from './panorama-policy.mjs?v=33';
 import {refineBamboo} from './bamboo-details.mjs';
+import {understoryGeometry,createUnderstoryPlacement,understoryGround,understoryLOD,understoryBudget} from './forest-understory.mjs';
 
-// Reuses original trunk, crown and understory assets. A mixed, irregular canopy
+// Reuses original trunk/crown assets with lightweight procedural understory.
+// A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.
 export function extendForest(root,legacy,features,anchors,ground,pathDistance,colliders){
   const bamboo=refineBamboo(legacy);
@@ -33,7 +35,9 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     buckets.get(key).push(tree);
   }
   const crownMat=legacy.foliage[1].material.clone();crownMat.color.set('#879e70');crownMat.roughness=.9;
-  const broadMat=legacy.foliage[3].material.clone();broadMat.color.set('#8b9a75');broadMat.roughness=.9;
+  const understoryMaterial=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.95});
+  const understoryNear=understoryGeometry(),understoryFar=understoryGeometry('far');
+  const placeUnderstory=createUnderstoryPlacement(features.paths??[],anchors);
   const evergreen=evergreenCanopy();
   const distantEvergreen=evergreenCanopy(48);
   const horizonEvergreen=evergreenCanopy(12);
@@ -64,16 +68,28 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
         // Consume the same random values so unrelated forest placement stays stable.
         const sx=.6+random()*.65,sy=.45+random()*.75,sz=.6+random()*.65,yaw=random()*6.28;
         if((forbidden.get(`${Math.floor(ux/cell)},${Math.floor(uz/cell)}`)??[]).some(b=>ux>b.minX&&ux<b.maxX&&uz>b.minZ&&uz<b.maxZ))continue;
-        put(3,ux,ground(ux,uz),uz,sx,sy,sz,yaw);understory++;
+        // Keep every legacy random draw above: new filtering must never move
+        // unrelated trees, their branches or the authoritative colliders.
+        const radius=understoryBudget.radius*Math.max(sx,sz),height=understoryGround(ground,ux,uz,radius);
+        if(height===null||!placeUnderstory(ux,uz,radius))continue;
+        put(3,ux,height-.012,uz,sx,sy,sz,yaw);understory++;
       }
       colliders.push({type:'cylinder',args:[x,z,.40*scale,y,y+9*scale,'forest_tree']});
     }
-    const assets=[[legacy.foliage[0].geometry,legacy.foliage[0].material],[legacy.foliage[1].geometry,crownMat],[evergreen.geometry,evergreen.material],[legacy.foliage[3].geometry,broadMat],[branchGeo,legacy.foliage[0].material]];
+    const assets=[[legacy.foliage[0].geometry,legacy.foliage[0].material],[legacy.foliage[1].geometry,crownMat],[evergreen.geometry,evergreen.material],[understoryNear,understoryMaterial],[branchGeo,legacy.foliage[0].material]];
     matrices.forEach((list,index)=>{
       if(!list.length)return;
       const mesh=new THREE.InstancedMesh(...assets[index],list.length);
       list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=index!==3;mesh.receiveShadow=true;mesh.computeBoundingSphere();
-      if(index===2){
+      if(index===3){
+        const tint=new THREE.Color(),position=new THREE.Vector3();
+        list.forEach((matrix,i)=>{
+          position.setFromMatrixPosition(matrix);
+          const patch=.5+.5*Math.sin(position.x*.13+Math.sin(position.z*.11));
+          tint.setRGB(.80+patch*.20,.86+patch*.14,.72+patch*.18);mesh.setColorAt(i,tint);
+        });
+        root.add(understoryLOD(mesh,understoryFar));
+      }else if(index===2){
         const tint=new THREE.Color();
         const tintLeaves=target=>list.forEach((_,i)=>{
           const n=(Math.sin(i*12.9898+trees[0].x*.13)*43758.5453)%1;

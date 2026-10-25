@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=counter-reach-3';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {SpatialCollisionWorld} from './collision.mjs';
@@ -19,7 +20,12 @@ export const STREET_PATROLS=[
  ['omotesando-west','way/105449722',-133,10],
  ['omotesando-middle','way/105449722',-108,9],
  ['omotesando-torii','way/105449722',-83,7],
- ['urasando-street','way/297888106',-129,-85]
+ ['urasando-street','way/297888106',-129,-85],
+ // Additional walkers occupy separate clear eight-metre portions of the
+ // existing streets; appended seeds preserve every earlier starting pose.
+ ['west-food-street-arrival','way/946510942',-306,-119],
+ ['hommachi-between','way/79699850',-157,-51],
+ ['hommachi-south-rest','way/79699850',-157,-23]
 ];
 const distance=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
 
@@ -135,6 +141,8 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
  for(const p of people){
   p.root=new THREE.Group();p.root.name=p.vendor?`Food attendant · ${p.state.id}`:`Street visitor · ${p.state.route.zone}`;
   p.root.position.set(p.state.x,p.state.y+.015,p.state.z);p.root.rotation.y=p.state.yaw;p.root.visible=false;
+  p.interaction=createPersonInteraction({vendor:p.vendor});p.root.userData.interactable=p.interaction.data;
+  assembly.legacy?.interactables?.push(p.root);
   p.root.matrixAutoUpdate=false;p.root.updateMatrix();owner.add(p.root);
  }
  const stats={pedestrians:plan.routes.length,attendants:plan.vendors.length,omitted:plan.omitted,active:0,animated:0,loadedModels:0,assetRequests:0,loadErrors:0,loading:false};
@@ -170,7 +178,8 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
     if(d<72&&dy<26)beginLoading();
     p.root.visible=streetPersonVisible(p.root.visible,d,dy)&&!!p.bones;
     if(!p.root.visible)continue;stats.active++;
-    if(!p.vendor){stepVisitor(s,dt,blockers.filter(b=>b!==s));p.root.position.set(s.x,s.y+.015,s.z);p.root.rotation.y=s.yaw;p.root.updateMatrix();}
+    const greeting=p.interaction.progress(time*1000);
+    if(!p.vendor){if(greeting===null)stepVisitor(s,dt,blockers.filter(b=>b!==s));else{s.travel=0;s.yaw=Math.atan2(eye.x-s.x,eye.z-s.z);}p.root.position.set(s.x,s.y+.015,s.z);p.root.rotation.y=s.yaw;p.root.updateMatrix();}
     // The animation clock advances only nearby. Far bodies update at 15 Hz,
     // close faces at 30 Hz; movement remains frame-rate independent.
     p.animationDebt=(p.animationDebt??0)+dt;
@@ -183,8 +192,9 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
      p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,animationDt);poseVisitorGait(p.bones,s.phase,p.gait);
      if(s.state!=='walk')p.bones.Head.bone.rotateY(Math.sin(time*.45+p.index)*.14);
     }
+    posePersonGreeting(p.bones,greeting);
    }
    if(time-lastReport>1){lastReport=time;onStats?.({...stats});}
-  },dispose(){disposed=true;owner.removeFromParent();for(const p of people){p.mixer?.stopAllAction();if(p.model)p.mixer?.uncacheRoot(p.model);} }
+  },dispose(){disposed=true;owner.removeFromParent();for(const p of people){const targets=assembly.legacy?.interactables,index=targets?.indexOf(p.root);if(index>=0)targets.splice(index,1);p.mixer?.stopAllAction();if(p.model)p.mixer?.uncacheRoot(p.model);} }
  };
 }

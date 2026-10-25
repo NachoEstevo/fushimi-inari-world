@@ -29,6 +29,15 @@ test('four supported machines and three counter groups are batched without light
  assert.equal(installKeihanStreetCommerce(a),r);assert.equal(a.legacy.interactables.length,4);assert.equal(a.colliders.length,before+2);
 });
 
+test('direct machine interaction dispenses and collects with a live proximity prompt',()=>{
+ const machine=installKeihanStreetCommerce(fixture()).machines[0],data=machine.group.userData.interactable;
+ assert.equal(data.prompt,'Get a drink');assert.equal(data.proximity,true);
+ data.directAction();assert.equal(machine.can.visible,true);assert.equal(data.prompt,'Collect drink');
+ assert.match(data.directAction(),/Green tea collected/);assert.equal(machine.can.visible,false);
+ assert.equal(machine.controller.state.selected,1);assert.equal(data.prompt,'Get a drink');
+ data.directAction();assert.equal(machine.can.material.color.getHexString(),new THREE.Color(STREET_DRINKS[1].color).getHexString());
+});
+
 test('platform machines preserve original equipment clearance and all cabinets meet their support',()=>{
  const a=fixture(),r=installKeihanStreetCommerce(a);a.root.updateMatrixWorld(true);
  for(const m of r.machines){const b=new THREE.Box3().setFromObject(m.group),size=b.getSize(new THREE.Vector3());assert.ok(Math.abs(b.min.y-m.spec.position[1])<1e-6);assert.ok(size.y<=1.850001);

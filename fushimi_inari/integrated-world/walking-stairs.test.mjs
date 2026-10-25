@@ -4,14 +4,14 @@ import * as THREE from 'three';
 import {installWalking} from './walking.mjs';
 import {SpatialCollisionWorld} from './collision.mjs';
 
-function fixture({height=()=>0,colliders=[],canMove=()=>true,segment={kind:'stone'}}={}){
+function fixture({height=()=>0,colliders=[],canMove=()=>true,segment={kind:'stone'},allowDebugCamera=false}={}){
   const saved={document:globalThis.document,location:globalThis.location,addEventListener:globalThis.addEventListener},els=new Map(),events=new Map(),steps=[],heightQueries=[],moves=[];
-  globalThis.document={body:{dataset:{},classList:{add(){},remove(){}}},getElementById(id){if(!els.has(id))els.set(id,{hidden:false,textContent:''});return els.get(id);}};
+  globalThis.document={createElement(){return {append(){},setAttribute(){},hidden:false};},querySelector(){return null;},body:{append(){},dataset:{},classList:{add(){},remove(){},contains(){return false;}}},getElementById(id){if(!els.has(id))els.set(id,{hidden:false,textContent:''});return els.get(id);}};
   globalThis.location={search:''};globalThis.addEventListener=(type,fn)=>events.set(type,fn);
   const camera=new THREE.PerspectiveCamera(),controls={enabled:true,target:new THREE.Vector3()};camera.position.set(0,1.7,0);camera.lookAt(1,1.7,0);
   let time=0;
   const assembly={colliders,spatial:{main:[],returning:[]},surfaces:{segments:[],sample:()=>({segment}),height},walkHeight(x,z,previous){heightQueries.push({x,z,previous});return height(x,z);}};
-  const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:height,assembly,audio:{step(stone){steps.push({time,stone});}},onStart(){},canMove(from,to){moves.push({from:[...from],to:[...to]});return canMove(from,to);}});
+  const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:height,assembly,audio:{step(stone){steps.push({time,stone});}},onStart(){},allowDebugCamera,canMove(from,to){moves.push({from:[...from],to:[...to]});return canMove(from,to);}});
   walker.start();
   return {camera,walker,steps,heightQueries,moves,key(code,down=true){events.get(down?'keydown':'keyup')({code,target:{},preventDefault(){}});},tick(dt){time+=dt;walker.update(dt);},restore(){for(const [k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}};
 }
@@ -49,7 +49,7 @@ test('walking is frame-rate independent and stair material reaches the unchanged
   }
 });
 test('pause, teleport and flight transitions clear cadence and reset the visual eye',()=>{
-  const f=fixture({height:x=>x>=1?.18:0});
+  const f=fixture({allowDebugCamera:true,height:x=>x>=1?.18:0});
   try{
     f.key('KeyW');for(let i=0;i<20;i++)f.tick(1/60);
     f.walker.pause(true);f.tick(.1);f.walker.pause(false);f.key('KeyW');f.tick(1/60);assert.equal(f.steps.length,0);

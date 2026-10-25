@@ -29,3 +29,34 @@ test('elevated overview restores distant details without modifying individual tr
  manager.update(camera(0),.01,6);assert.equal(mesh.visible,true);assert.equal(mesh.position.x,800);
  manager.update(camera(0),.02,1);assert.equal(mesh.visible,false);
 });
+
+test('stationary frames do no additional residency checks or stats callbacks, while force still evaluates',()=>{
+ let callbacks=0;
+ const manager=createWorldDetailChunks({onStats:()=>callbacks++});
+ for(let x=0;x<1000;x+=100)manager.add(object(x));
+ const view=camera(0);manager.update(view,0);
+ const initial=manager.stats();
+ for(let frame=1;frame<=600;frame++)manager.update(view,frame/60);
+ assert.equal(manager.stats().totalChecks,initial.totalChecks);
+ assert.equal(manager.stats().visibilityWrites,initial.visibilityWrites);
+ assert.equal(manager.stats().skippedUpdates,600);
+ assert.equal(callbacks,1);
+ manager.update(view,11,1,true);
+ assert.equal(manager.stats().updates,2);assert.ok(manager.stats().totalChecks>initial.totalChecks);assert.equal(callbacks,2);
+});
+
+test('registration and restore invalidate stationary residency even within the movement throttle',()=>{
+ const manager=createWorldDetailChunks(),view=camera(0),first=object(900);
+ manager.add(first);manager.update(view,0);assert.equal(first.visible,false);
+ const added=object(1000);manager.add(added);manager.add(added);
+ manager.update(view,.01);assert.equal(added.visible,false);assert.equal(manager.stats().registered,2);
+ manager.restore();assert.equal(first.visible,true);assert.equal(added.visible,true);
+ manager.update(view,.02);assert.equal(first.visible,false);assert.equal(added.visible,false);
+});
+
+test('moving views retain the throttle and the exact twenty metre bypass',()=>{
+ const manager=createWorldDetailChunks();manager.add(object(0));manager.update(camera(0),0);
+ manager.update(camera(19),.01);assert.equal(manager.stats().updates,1);
+ manager.update(camera(20),.02);assert.equal(manager.stats().updates,2);
+ manager.update(camera(21),.2);assert.equal(manager.stats().updates,3);
+});

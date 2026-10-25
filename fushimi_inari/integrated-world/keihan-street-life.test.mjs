@@ -5,10 +5,27 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {planKeihanStreetLife,streetPersonClearance,streetPersonVisible,installKeihanStreetLife,poseStreetVendor,bindStreetPersonRig} from './keihan-street-life.mjs';
 import {resetVisitorRig,captureVisitorPose} from './visitor-rig.mjs';
+import {heightAt} from '../geography/geo-core.mjs';
+import {makePathSurfaces} from './path-surfaces.mjs';
 
 const patrol=[['test-street','mapped-street',-280,-100]];
 const makeAssembly=()=>({root:new THREE.Group(),colliders:[],walkHeight:()=>2,isWalkable:()=>true,
  surfaces:{segments:[{id:'mapped-street',a:[-290,2,-100],b:[-270,2,-100],distance:0,width:4,kind:'street'}]}});
+
+test('three extra walkers use separate clear portions of existing mapped streets',()=>{
+ const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))),terrain=JSON.parse(fs.readFileSync(new URL('../geography/terrain.json',import.meta.url)));
+ const surfaces=makePathSurfaces(features,(x,z)=>heightAt(terrain,x,z));
+ const assembly={root:new THREE.Group(),colliders:[],surfaces,walkHeight:(x,z)=>surfaces.height(x,z)};
+ const plan=planKeihanStreetLife(assembly),extras=plan.routes.filter(r=>['west-food-street-arrival','hommachi-between','hommachi-south-rest'].includes(r.zone));
+ assert.equal(extras.length,3);
+ for(const route of extras)for(const other of plan.routes){
+  if(route===other)continue;
+  const minimum=Math.min(...route.points.flatMap(a=>other.points.map(b=>Math.hypot(a[0]-b[0],a[2]-b[2]))));
+  assert.ok(minimum>1.4,`${route.zone} overlaps ${other.zone}`);
+ }
+ const blocked=extras[0].center;assembly.colliders.push({type:'box',args:[blocked[0],blocked[2],12,12,0,blocked[1]-1,blocked[1]+3]});
+ assert.ok(!planKeihanStreetLife(assembly).routes.some(r=>r.zone===extras[0].zone),'Obstructed extra route must fail closed');
+});
 
 test('street routes preserve public support, offsets and sampled capsule clearance',()=>{
  const assembly=makeAssembly();assembly.walkHeight=x=>2+(x+290)*.03;

@@ -1,11 +1,27 @@
 import * as THREE from 'three';
-import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
+import {createWaterAppearance} from './water-appearance.mjs?v=immersion-20261025c';
 import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 export const SHINIKE_ID='way/105449705';
 const NAME='Shin-ike single horizontal water owner R97';
 const xy=p=>[p[0],p[2]];
 const geometry=(positions,uv)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv??positions.flatMap((_,i)=>i%3===0?[positions[i]/3,positions[i+2]/3]:[]),2));g.computeVertexNormals();return g;};
+// The clipped annulus is triangle soup. Share its area-weighted lighting normal
+// at coincident vertices so its tessellation does not appear as giant facets.
+// Positions stay untouched: this changes neither retained shore nor wet area.
+function smoothBankGeometry(positions,uv){
+ const g=geometry(positions,uv),p=g.attributes.position,n=g.attributes.normal,sums=new Map(),keys=[];
+ for(let i=0;i<p.count;i++){const key=[p.getX(i),p.getY(i),p.getZ(i)].map(v=>Math.round(v*1e4)).join(',');keys.push(key);if(!sums.has(key))sums.set(key,new THREE.Vector3());}
+ for(let i=0;i<p.count;i+=3){const a=new THREE.Vector3().fromBufferAttribute(p,i),b=new THREE.Vector3().fromBufferAttribute(p,i+1),c=new THREE.Vector3().fromBufferAttribute(p,i+2),normal=b.sub(a).cross(c.sub(a));for(let k=0;k<3;k++)sums.get(keys[i+k]).add(normal);}
+ for(let i=0;i<p.count;i++){const v=sums.get(keys[i]).clone().normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;
+}
+function exposedBankArea(positions,waterLevel){
+ let area=0;
+ for(let i=0;i<positions.length;i+=9){const tri=[0,1,2].map(k=>positions.slice(i+k*3,i+k*3+3)),dry=[];
+  for(let j=0;j<3;j++){const a=tri[j],b=tri[(j+1)%3],above=a[1]>waterLevel,nextAbove=b[1]>waterLevel;if(above)dry.push(a);if(above!==nextAbove){const t=(waterLevel-a[1])/(b[1]-a[1]);dry.push(a.map((v,k)=>v+(b[k]-v)*t));}}
+  if(dry.length>=3)area+=Math.abs(polygonArea(dry.map(xy)));
+ }return area;
+}
 export function shinikeLayoutR97(features){
  const feature=features.water?.find(f=>f.id===SHINIKE_ID),p=feature?.points;
  if(!p||p.length!==21||feature.tags?.name!=='新池'||!p.every(q=>q.every(Number.isFinite)))return null;
@@ -70,22 +86,43 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
   points.sort((p,q)=>p.t-q.t);for(const {p,t}of points){if(t>1-1e-6)continue;if(!outer.length||Math.hypot(p[0]-outer.at(-1)[0],p[2]-outer.at(-1)[2])>1e-5)outer.push(p);}
  }
  const signedArea=polygonArea(plan.ring),center=[0,0];for(let i=0;i<plan.ring.length;i++){const a=plan.ring[i],b=plan.ring[(i+1)%plan.ring.length],cross=a[0]*b[1]-b[0]*a[1];center[0]+=(a[0]+b[0])*cross/(6*signedArea);center[1]+=(a[1]+b[1])*cross/(6*signedArea);}
- const toe=outer.map(p=>{const dx=center[0]-p[0],dz=center[1]-p[2],distance=Math.hypot(dx,dz),inset=Math.min(4,Math.max(.35,(p[1]-waterLevel)*1.25),distance*.3);return [p[0]+dx/distance*inset,waterLevel-.04,p[2]+dz/distance*inset];});
+ // Seat the inward bank on the existing submerged enclosure. A toe only40mm
+ // below water made almost all of the collar dry, followed by a hidden step
+ // down to the backing. The same bank footprint now descends continuously to
+ // that backing, placing the visible waterline naturally partway up the slope.
+ const backingDepth=.6,bedLevel=waterLevel-backingDepth;
+ const toe=outer.map(p=>{const dx=center[0]-p[0],dz=center[1]-p[2],distance=Math.hypot(dx,dz),inset=Math.min(4,Math.max(.35,(p[1]-waterLevel)*1.25),distance*.3);return [p[0]+dx/distance*inset,bedLevel,p[2]+dz/distance*inset];});
  const inner=toe.map(xy),cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
  let selfIntersection=false;for(let i=0;i<inner.length;i++)for(let j=i+2;j<inner.length;j++){if(i===0&&j===inner.length-1)continue;const a=inner[i],b=inner[(i+1)%inner.length],c=inner[j],d=inner[(j+1)%inner.length];if(cross(a,b,c)*cross(a,b,d)<-1e-10&&cross(c,d,a)*cross(c,d,b)<-1e-10)selfIntersection=true;}
  const innerFaces=THREE.ShapeUtils.triangulateShape(inner.map(p=>new THREE.Vector2(...p)),[]);let innerCovered=0;for(const f of innerFaces)for(const cut of plan.triangles)innerCovered+=Math.abs(polygonArea(clipConvex(f.map(i=>inner[i]),cut)));
  if(selfIntersection||Math.abs(innerCovered-Math.abs(polygonArea(inner)))>.025){water.geometry.dispose();water.material.dispose();return {built:false,builtIds:[],reason:'inward-bank-ring-conflict'};}
- const combined=outer.concat(toe),faces=THREE.ShapeUtils.triangulateShape(outer.map(p=>new THREE.Vector2(p[0],p[2])),[inner.map(p=>new THREE.Vector2(...p))]);
+ // Grade eight narrow contour bands rather than letting an ear-cut diagonal
+ // bridge the entire crest-to-bed drop. The cosine profile rounds both the
+ // retained shoulder and submerged toe. It is interpretive grading, entirely
+ // inside the same bounded collar; the exterior DEM and mapped ring stay exact.
+ const bankBands=8,bankRings=Array.from({length:bankBands+1},(_,band)=>{
+  const t=band/bankBands,drop=(1-Math.cos(Math.PI*t))/2;
+  return outer.map((p,i)=>[p[0]+(toe[i][0]-p[0])*t,p[1]+(bedLevel-p[1])*drop,p[2]+(toe[i][2]-p[2])*t]);
+ });
+ for(let band=0;band<bankBands;band++){
+ const bandOuter=bankRings[band],bandInner=bankRings[band+1],combined=bandOuter.concat(bandInner),faces=THREE.ShapeUtils.triangulateShape(bandOuter.map(p=>new THREE.Vector2(p[0],p[2])),[bandInner.map(p=>new THREE.Vector2(p[0],p[2]))]);
  for(const face of faces){const tri=face.map(i=>combined[i]),projection=tri.map(xy),det=polygonArea(projection)*2;if(Math.abs(det)<1e-9)continue;const [a,b,c]=tri;
   const height=p=>{const u=((p[0]-a[0])*(c[2]-a[2])-(p[1]-a[2])*(c[0]-a[0]))/det,v=((b[0]-a[0])*(p[1]-a[2])-(b[2]-a[2])*(p[0]-a[0]))/det;return a[1]+u*(b[1]-a[1])+v*(c[1]-a[1]);};
-  for(const cut of plan.triangles){let p=clipConvex(projection,cut);if(Math.abs(polygonArea(p))<1e-8)continue;if(polygonArea(p)>0)p=p.toReversed();for(let i=1;i<p.length-1;i++)for(const q of [p[0],p[i],p[i+1]]){bankPositions.push(q[0],height(q),q[1]);bankUV.push(q[0]/2,q[1]/2);}}
+  for(const cut of plan.triangles){let p=clipConvex(projection,cut);if(Math.abs(polygonArea(p))<1e-8)continue;if(polygonArea(p)>0)p=p.toReversed();for(let i=1;i<p.length-1;i++)for(const q of [p[0],p[i],p[i+1]])bankPositions.push(q[0],height(q),q[1]);}
  }
- const bankMaterial=materials.shinikeBankMat?.clone()??new THREE.MeshStandardMaterial({color:'#565d46',roughness:1});bankMaterial.side=THREE.DoubleSide;const bank=new THREE.Mesh(geometry(bankPositions,bankUV),bankMaterial);bank.name='Shin-ike bounded inward natural bank collar R97';bank.receiveShadow=bank.castShadow=true;group.add(bank);
+ }
+ // Use each face's dominant projection at the terrain's1.5m texture density.
+ // XZ alone collapses texture height on steep banks into vertical streaks.
+ for(let i=0;i<bankPositions.length;i+=9){const points=[0,1,2].map(k=>new THREE.Vector3().fromArray(bankPositions,i+k*3)),normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])),nx=Math.abs(normal.x),ny=Math.abs(normal.y),nz=Math.abs(normal.z);
+  for(const p of points)bankUV.push(...(ny>=nx&&ny>=nz?[p.x/1.5,p.z/1.5]:nx>=nz?[p.z/1.5,p.y/1.5]:[p.x/1.5,p.y/1.5]));
+ }
+ const bankMaterial=materials.shinikeBankMat?.clone()??new THREE.MeshStandardMaterial({color:'#565d46',roughness:1});bankMaterial.side=THREE.DoubleSide;const bank=new THREE.Mesh(smoothBankGeometry(bankPositions,bankUV),bankMaterial);bank.name='Shin-ike bounded inward natural bank collar R97';bank.receiveShadow=bank.castShadow=true;group.add(bank);
  // A bounded opaque visual backing keeps modest alpha from revealing the
  // terrain cut or sky. Its 0.6m offset is a rendering enclosure, not bathymetry.
- const bedLevel=waterLevel-.6,bedPositions=waterPositions.map((v,i)=>i%3===1?bedLevel:v);
+ const bedPositions=waterPositions.map((v,i)=>i%3===1?bedLevel:v);
  const bedMaterial=new THREE.MeshStandardMaterial({color:'#30382a',roughness:1,metalness:0,side:THREE.DoubleSide,transparent:false,opacity:1,depthWrite:true});
  const bed=new THREE.Mesh(geometry(bedPositions),bedMaterial);bed.name='Shin-ike bounded dark silt visual backing R98';bed.receiveShadow=true;bed.userData.shinikeSubmergedBacking=true;group.add(bed);
- group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:3,bedLevel,backingDepth:.6,backingTriangles:bedPositions.length/9,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankSlope:'Inward toward centroid, inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset inferred. No external terrain, route, shrine pier, reflection pass or GPU work.'};
+ const dryBankArea=exposedBankArea(bankPositions,waterLevel);
+ group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:3,bedLevel,backingDepth,dryBankArea,visibleWaterArea:plan.area-dryBankArea,bankToeLevel:bedLevel,backingTriangles:bedPositions.length/9,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankBands,bankProfile:'cosine shoulder and submerged toe',bankSlope:'Eight nested inward contour bands toward centroid; inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset and cosine shoulder profile inferred, not surveyed. No external terrain, route, shrine pier, reflection pass or GPU work.'};
  root.add(group);legacy.removeFromParent();const fallenLog=legacyFallenLog(root,plan);if(fallenLog){fallenLog.removeFromParent();group.userData.removedLegacyLogs=1;}return group.userData;
 }

@@ -7,7 +7,7 @@ const ICONS={
 const icon=name=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 // One top-right bar (pace · sound · photo · menu) and a three-tab sheet.
-export function installExplorationMenu({walker,controls,camera,assembly,places,sound,onNavigate=()=>{},cameraOwned=()=>false,onRenderQuality=()=>{},onDetailDistance=()=>{}}){
+export function installExplorationMenu({walker,controls,camera,assembly,places,sound,onNavigate=()=>{},cameraOwned=()=>false,onRenderQuality=()=>{},onDetailDistance=()=>{},allowDebugCamera=false,allowFastTravel=false}){
   const $=id=>document.getElementById(id);
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Explore','Routes','Settings'];
@@ -16,12 +16,14 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   document.body.append(menu);
 
   $('pane-0').innerHTML=`<h3 class="menu-section">How to move</h3>
-    <div class="movement-modes"><button id="mode-walk">Walk</button><button id="mode-fly">Fly</button><button id="mode-orbit">Orbit</button></div>
-    <ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Drag</kbd> look</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li><li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li></ul>
-    <h3 class="menu-section">Go to a place</h3>`;
-  $('pane-0').append(places);
-  $('overview').textContent='Aerial overview';$('overview').classList.add('menu-link');$('pane-0').append($('overview'));
+    <div class="movement-modes"><button id="mode-walk">Walk</button>${allowDebugCamera?'<button id="mode-fly">Fly</button><button id="mode-orbit">Orbit</button>':''}</div>
+    <ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Click</kbd> enter mouse look · <kbd>Esc</kbd> release</li><li><kbd>Drag</kbd> look on touch screens</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li>${allowDebugCamera?'<li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li>':''}</ul>
+    ${allowFastTravel?'<h3 class="menu-section">Go to a place</h3>':''}`;
+  places.hidden=!allowFastTravel;$('pane-0').append(places);
+  $('overview').hidden=!allowDebugCamera;$('overview').textContent='Aerial overview';$('overview').classList.add('menu-link');$('pane-0').append($('overview'));
   $('pane-1').append(document.querySelector('aside'));
+  for(const id of ['walk','stop','speed'])$(id).hidden=!allowFastTravel;
+  document.querySelector('label[for="speed"]').hidden=!allowFastTravel;
 
   $('pane-2').innerHTML=`<h3 class="menu-section">Sound</h3>
     <label class="switch"><input id="sound-switch" type="checkbox"> Sound</label>
@@ -30,12 +32,12 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
     <label class="check"><input id="ambient-wind" type="checkbox" checked> Breeze and leaves</label>
     <label class="check"><input id="ambient-chimes" type="checkbox" checked> Chimes near tea houses</label></div>
     <h3 class="menu-section">Scene</h3><div id="scene-settings"></div>
-    <label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High resolution</option><option value="ultra">Ultra · enhanced shadows and depth</option></select>
-    <label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby · 220 m</option><option value="full">Entire world</option></select>
+    <label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High resolution</option><option value="ultra">Ultra · enhanced shadows and resolution</option></select>
+    ${allowDebugCamera?'<label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby - 220 m</option><option value="full">Entire world</option></select>':''}
     <div id="menu-arrival"></div>`;
   const light=document.querySelector('label[for="light"]');light.textContent='Time of day';$('scene-settings').append(light,$('light'));
   $('render-quality').onchange=()=>onRenderQuality($('render-quality').value);
-  $('detail-distance').onchange=()=>onDetailDistance($('detail-distance').value);
+  if(allowDebugCamera)$('detail-distance').onchange=()=>onDetailDistance($('detail-distance').value);
   document.querySelector('label[for="place"]').hidden=true;$('place').hidden=true;$('visit').parentElement.hidden=true;
 
   const bar=document.createElement('nav');bar.id='hud-actions';bar.setAttribute('aria-label','Quick controls');
@@ -68,11 +70,11 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   function open(){if(menu.open||document.body.classList.contains('welcome-open'))return;walker.pause(true);controls.enabled=false;$('interaction').hidden=true;menu.showModal();$('menu-close').focus();}
   function close(){if(menu.open)menu.close();}
   trigger.onclick=open;$('menu-close').onclick=close;
-  $('mode-walk').onclick=()=>{onNavigate();walker.start();close();};$('mode-fly').onclick=()=>{onNavigate();walker.fly();close();};$('mode-orbit').onclick=()=>{onNavigate();walker.stop();close();};
-  menu.addEventListener('close',()=>{walker.pause(cameraOwned());controls.enabled=!cameraOwned()&&!walker.active&&$('stop').disabled;trigger.focus();});
+  $('mode-walk').onclick=()=>{onNavigate();walker.start();close();};if(allowDebugCamera){$('mode-fly').onclick=()=>{onNavigate();walker.fly();close();};$('mode-orbit').onclick=()=>{onNavigate();walker.stop();close();};}
+  menu.addEventListener('close',()=>{walker.pause(cameraOwned());controls.enabled=allowDebugCamera&&!cameraOwned()&&!walker.active&&$('stop').disabled;trigger.focus();});
   menu.addEventListener('cancel',e=>{e.preventDefault();close();});
   menu.addEventListener('click',e=>{if(e.target===menu){const r=menu.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
-  addEventListener('keydown',e=>{if(e.code!=='Escape')return;e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
+  addEventListener('keydown',e=>{if(e.code!=='Escape')return;if(document.pointerLockElement||walker.pointerLooking){walker.releasePointerLock?.();document.exitPointerLock?.();e.preventDefault();e.stopImmediatePropagation();return;}e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
   addEventListener('keydown',e=>{
     if(e.code!=='KeyM'||e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.target.closest?.('input,select,textarea'))return;
     if(document.body.classList.contains('welcome-open'))return;
@@ -88,6 +90,6 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
     title.textContent=camera.position.y>400?'Inariyama':nearest.distance<45?nearest.a.label:`Trail · ${nearest.a.label}`;
     $('menu-context').textContent=`${title.textContent} · ${Math.round(camera.position.y-1.7)} m ASL`;
     document.body.dataset.movementMode=walker.mode;
-    for(const mode of ['walk','fly','orbit'])$(`mode-${mode}`).setAttribute('aria-pressed',String(walker.mode===mode));
+    for(const mode of allowDebugCamera?['walk','fly','orbit']:['walk'])$(`mode-${mode}`).setAttribute('aria-pressed',String(walker.mode===mode));
   }};
 }

@@ -27,11 +27,25 @@ export function repairShinikeVegetationR97(root,legacy,shinikeReport,colliders){
   if(!verified||matches.length>1||matches.length!==atRoot.length){skipped.push({index,root:origin,reason:'Unverified paired crown or ambiguous exact tree collider'});continue;}
   const distance=shoreDistance(point.x,point.z,shinikeReport.ring),ray=new THREE.Raycaster(new THREE.Vector3(point.x,Math.max(point.y,shinikeReport.waterLevel)+100,point.z),new THREE.Vector3(0,-1,0)),hits=ray.intersectObject(bank,false),collarHit=hits.find(h=>Number.isFinite(h.point.y)),hit=hits.find(h=>Number.isFinite(h.point.y)&&h.point.y>shinikeReport.waterLevel+.04);
   if(hit){
-   const next=hit.point.y-.25,dy=next-point.y;
-   // Retain original 25cm trunk-root burial from the source tree constructor.
+   // A flared, slightly tilted trunk spans more than its center ray. Seat its
+   // actual basal perimeter on the sloping collar, preserving the original
+   // 25cm center burial as a minimum. Do not discard a dry tree merely because
+   // a footprint ray leaves this owner's collar (exterior support is unknown).
+   const vertices=trunks.geometry.attributes.position;let bottom=Infinity;
+   for(let i=0;i<vertices.count;i++)bottom=Math.min(bottom,vertices.getY(i));
+   const supports=[],seen=new Set();let next=hit.point.y-.25,unsupported=false;
+   for(let i=0;i<vertices.count;i++){
+    if(vertices.getY(i)>bottom+1e-5)continue;
+    const local=new THREE.Vector3().fromBufferAttribute(vertices,i),world=local.applyMatrix4(matrix),key=`${world.x.toFixed(5)},${world.z.toFixed(5)}`;if(seen.has(key))continue;seen.add(key);
+    const supportRay=new THREE.Raycaster(new THREE.Vector3(world.x,Math.max(point.y,shinikeReport.waterLevel)+100,world.z),new THREE.Vector3(0,-1,0)),support=supportRay.intersectObject(bank,false).find(h=>Number.isFinite(h.point.y));
+    if(!support){unsupported=true;break;}
+    const relativeY=world.y-point.y;next=Math.min(next,support.point.y-relativeY-.03);supports.push({point:[world.x,world.z],bankHeight:support.point.y,relativeY});
+   }
+   if(unsupported||!supports.length){skipped.push({index,root:origin,reason:'Dry center but basal footprint support outside owned collar is unknown'});continue;}
+   const dy=next-point.y;
    for(const [mesh,i]of [[trunks,index],...paired]){mesh.getMatrixAt(i,matrix);matrix.elements[13]+=dy;mesh.setMatrixAt(i,matrix);}
    for(const c of matches){c.args[3]+=dy;c.args[4]+=dy;}
-   moved.push({index,root:origin,bankHeight:hit.point.y,newRoot:[point.x,next,point.z],dy,crownIndices:paired.map(([m,i])=>({role:m===sugi?'sugi':'momiji',index:i})),colliders:matches.length});
+   moved.push({index,root:origin,bankHeight:hit.point.y,basalSupports:supports,newRoot:[point.x,next,point.z],dy,crownIndices:paired.map(([m,i])=>({role:m===sugi?'sugi':'momiji',index:i})),colliders:matches.length});
   }else if(collarHit||distance>shinikeReport.maximumBankInset+.05){
    removals.get(trunks).add(index);for(const [mesh,i]of paired)removals.get(mesh).add(i);for(const c of matches)removeColliders.add(c);
    removed.push({index,root:origin,distanceToMappedShore:distance,reason:collarHit?'Verified wet collar toe without dry support':'Open water beyond maximum bank inset',bankHeight:collarHit?.point.y??null,crownIndices:paired.map(([m,i])=>({role:m===sugi?'sugi':'momiji',index:i})),colliders:matches.length});

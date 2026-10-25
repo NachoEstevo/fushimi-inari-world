@@ -1,0 +1,189 @@
+import * as THREE from 'three/webgpu';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
+import {createStationReflectionStudy} from './webgpu-station-reflections.mjs';
+import {LIGHT_PRESETS} from './route-lighting.mjs';
+
+// The caller owns renderer initialization, the render loop and time-of-day.
+export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
+  const previousEnvironment=scene.environment,previousIntensity=scene.environmentIntensity;
+  const room=new RoomEnvironment(),generator=new THREE.PMREMGenerator(renderer);
+  let environment;
+  try {environment=generator.fromScene(room,.04);}
+  finally {room.dispose();generator.dispose();}
+  scene.environment=environment.texture;scene.environmentIntensity=.3;
+  const station=assembly.keihanStation;
+  const materials=station?.group?createStationMaterialStudy(station):null;
+  materials?.setEnabled(true);
+  const reflections=station?.group?await createStationReflectionStudy({renderer,scene,station}):null;
+  const practicals=new THREE.Group();practicals.name='Station platform practical lights';
+  for(const z of [-163,-176,-189]) {
+    const light=new THREE.SpotLight('#fff1dc',18,11,1.25,.8,2);
+    light.position.set(-302.4,33.65,z);light.target.position.set(-302.4,30.93,z);
+    practicals.add(light,light.target);
+  }
+  practicals.visible=false;scene.add(practicals);
+
+  // Only named, already-metallic plain finishes qualify outside the station.
+  // Shared replacements retain sharing, while mapped art and shrine paint stay intact.
+  const replacements=new Map(),bindings=[];
+  function finish(original) {
+    if(!original?.isMeshStandardMaterial||original.isMeshPhysicalMaterial||original.map||original.normalMap||original.bumpMap||
+      original.metalness<.5||!/(metal|steel|iron|bronze|alumin)/i.test(original.name)||/torii|sign|label/i.test(original.name))return original;
+    if(!replacements.has(original)) {
+      const material=new THREE.MeshPhysicalMaterial();
+      THREE.MeshStandardMaterial.prototype.copy.call(material,original);
+      material.defines={STANDARD:'',PHYSICAL:''};
+      material.roughness=Math.max(.3,original.roughness);
+      material.envMapIntensity=.55;
+      replacements.set(original,material);
+    }
+    return replacements.get(original);
+  }
+  function applyTo(root) {
+    if(disposed)return;
+    root.traverse(object=>{
+    if(!object.isMesh)return;
+    // Station replacements already have their approved finish.
+    const original=object.material,next=Array.isArray(original)?original.map(finish):finish(original);
+    if(Array.isArray(original)?next.some((m,i)=>m!==original[i]):next!==original) {
+      bindings.push({object,original,next});object.material=next;
+    }
+    });
+  }
+  const motion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const petalField=createSakuraPetalField(),petals=petalField.mesh;
+  petals.name='Local sakura petals';petals.frustumCulled=false;petals.visible=false;
+  petals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(petals);
+  const center=new THREE.Vector3(-302.4,31,-176);
+  let look='natural',disposed=false,near=false,dirty=true,reflectionFailed=false,prepared=false;
+  applyTo(scene);
+  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false};
+  const lighting=createWorldLookLighting({scene,hemi,sun,onChange:()=>{dirty=true;}});
+  const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);if(prepared)prepare();}};
+  // The welcome/loading owner calls this before starting the train timeline.
+  // Rendering never triggers a six-view capture, including when prepare is omitted.
+  function prepare() {
+    if(disposed||reflectionFailed)return;
+    if(reflections&&dirty) {
+      const visible=practicals.visible;
+      try {practicals.visible=true;reflections.capture();dirty=false;}
+      catch(error) {
+        reflectionFailed=true;stats.reflectionError=String(error.message??error);
+        reflections.setEnabled(false);
+        console.warn('Station reflection unavailable; retaining global environment.',error);
+      } finally {practicals.visible=visible;}
+    }
+    prepared=true;stats.prepared=true;
+  }
+  function setLook(name) {
+    if(disposed)return;
+    const next=['sakura','dreamcore'].includes(name)?name:'natural';
+    quality?.setLook(next);
+    if(look!==next)dirty=true;
+    look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;
+    lighting.setLook(next);
+    if(prepared)prepare();
+  }
+  function update(time=0) {
+    if(disposed)return;
+    near=!!station?.group&&Math.hypot(camera.position.x-center.x,camera.position.z-center.z)<70;
+    practicals.visible=near;stats.nearStation=near;
+    if(reflections&&prepared&&!reflectionFailed) {
+      try {
+        if(near) {
+          if(reflections.stats.captures&&!reflections.stats.enabled)reflections.setEnabled(true);
+        } else if(reflections.stats.enabled)reflections.setEnabled(false);
+      } catch(error) {
+        reflectionFailed=true;stats.reflectionError=String(error.message??error);
+        reflections.setEnabled(false);
+        console.warn('Station reflection unavailable; retaining global environment.',error);
+      }
+    }
+    petals.visible=look==='sakura'&&!motion?.matches;
+    if(!petals.visible)return;
+    petalField.update(camera.position,time);
+  }
+  function dispose() {
+    if(disposed)return;disposed=true;
+    reflections?.dispose();materials?.dispose();
+    for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
+    for(const material of replacements.values())material.dispose();
+    scene.remove(practicals,petals);petalField.dispose();
+    practicals.traverse(object=>{if(object.isLight)object.dispose?.();});
+    if(scene.environment===environment.texture)scene.environment=previousEnvironment;
+    scene.environmentIntensity=previousIntensity;environment.dispose();
+  }
+  return {prepare,update,setLook,updateBaseLighting,applyTo,dispose,stats};
+}
+
+// A sparse shell leaves the immediate view clear. All petals share one small,
+// gently folded silhouette and draw call; distance supplies the size variation.
+export function createSakuraPetalField() {
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute([
+    0,0,-.055, -.028,0,-.012, -.021,0,.035,
+    0,.006,.052, .021,0,.035, .028,0,-.012
+  ],3));
+  geometry.setIndex([0,1,2,0,2,3,0,3,4,0,4,5]);geometry.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({color:'#f2d5df',roughness:.9,side:THREE.DoubleSide,
+    transparent:true,opacity:.65,depthWrite:false});
+  const mesh=new THREE.InstancedMesh(geometry,material,64),dummy=new THREE.Object3D();
+  function update(position,time=0) {
+    const t=Number.isFinite(time)?time:0;
+    for(let i=0;i<mesh.count;i++) {
+      const phase=i*2.3999632297,radius=8+(i*37%64)/64*25;
+      const angle=phase+Math.sin(t*.12+phase)*.025;
+      dummy.position.set(position.x+Math.cos(angle)*radius,
+        position.y-3+(((i*31%64)/64*16-t*.32)%16+16)%16,
+        position.z+Math.sin(angle)*radius);
+      dummy.rotation.set(phase+t*.3,phase*.5,t*.2+phase);
+      dummy.scale.setScalar(.75+(i*17%64)/64*.5);
+      dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate=true;
+  }
+  return {mesh,update,dispose(){geometry.dispose();material.dispose();}};
+}
+
+// Synchronous composition is separate from GPU resources and never owns day presets.
+export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
+  const baseline={hemi:hemi.color.clone(),floor:hemi.groundColor.clone(),ambient:hemi.intensity,sun:sun.color.clone(),intensity:sun.intensity};
+  const looks={
+    sakura:{hemi:'#f4c7e4',floor:'#766278',sun:'#ffbc91',ambient:.88,intensity:1.06,environment:.35},
+    dreamcore:{hemi:'#d6dbff',floor:'#8c9e76',sun:'#ffffe7',ambient:1.06,intensity:1.15,environment:.42}
+  };
+  let look='natural';
+  function restoreBaseLighting() {
+    hemi.color.copy(baseline.hemi);hemi.groundColor.copy(baseline.floor);sun.color.copy(baseline.sun);
+    hemi.intensity=baseline.ambient;sun.intensity=baseline.intensity;
+  }
+  function applyLookLighting() {
+    restoreBaseLighting();
+    const values=looks[look];
+    if(values) {
+      hemi.color.lerp(new THREE.Color(values.hemi),.35);
+      hemi.groundColor.lerp(new THREE.Color(values.floor),.35);sun.color.lerp(new THREE.Color(values.sun),.35);
+      hemi.intensity*=values.ambient;sun.intensity*=values.intensity;
+    }
+    // The studio probe must follow daylight energy rather than lighting night as day.
+    const daylight=LIGHT_PRESETS.day.sun+LIGHT_PRESETS.day.fill;
+    const energy=THREE.MathUtils.clamp((baseline.intensity+baseline.ambient)/daylight,0,1);
+    scene.environmentIntensity=(values?.environment??.3)*energy;
+  }
+  // Wrap the caller's synchronous day setter. Restoring before it runs also
+  // supports setters that change only intensities, without saving tinted colors
+  // or multiplying an already-styled intensity into the new baseline.
+  function updateBaseLighting(applyBaseLighting) {
+    if(typeof applyBaseLighting!=='function')throw new TypeError('updateBaseLighting requires a synchronous day-lighting callback');
+    restoreBaseLighting();
+    try {
+      applyBaseLighting();
+      baseline.hemi.copy(hemi.color);baseline.floor.copy(hemi.groundColor);baseline.sun.copy(sun.color);
+      baseline.ambient=hemi.intensity;baseline.intensity=sun.intensity;
+      onChange();
+    } finally {applyLookLighting();}
+  }
+  applyLookLighting();
+  return {updateBaseLighting,setLook(name){look=Object.hasOwn(looks,name)?name:'natural';applyLookLighting();}};
+}

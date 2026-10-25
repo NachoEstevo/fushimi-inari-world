@@ -104,6 +104,9 @@ export function installKeihanStreetCommerce(assembly){
   const can=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.15,12),new THREE.MeshStandardMaterial({color:STREET_DRINKS[0].color,roughness:.4,metalness:.22}));can.position.set(-.075,.37,.42);can.rotation.z=Math.PI/2;can.visible=false;can.name='Dispensed drink in collection tray';owner.add(can);
   const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.material.color.set(STREET_DRINKS[state.selected].color);lamp.position.x=-.37+state.selected*.118;});
   owner.userData.interactable={language:'en',title:'Street drink machine',description:'Choose a drink, dispense it, then collect it from the lower tray.',note:'Interactive scene prop · no payment required.',actions:[{label:'Next drink',run:()=>controller.select()},{label:'Dispense',run:()=>controller.dispense()},{label:'Collect drink',run:()=>controller.collect()}]};
+  Object.assign(owner.userData.interactable,{proximity:true,cooldownMs:650,
+   directAction(){if(controller.state.phase==='dispensed'){const result=controller.collect();controller.select();return result;}return controller.dispense();}});
+  Object.defineProperty(owner.userData.interactable,'prompt',{get:()=>controller.state.phase==='dispensed'?'Collect drink':'Get a drink',enumerable:true});
   if(!spec.existingCollider)colliders.push({type:'box',args:[spec.position[0],spec.position[2],.52,.35,spec.yaw,spec.position[1],spec.position[1]+1.85,'keihan-street-vending']});
   machines.push({group:owner,spec,controller,can,lamp});
  }

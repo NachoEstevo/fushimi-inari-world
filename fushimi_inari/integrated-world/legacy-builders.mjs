@@ -284,10 +284,10 @@ export async function buildLegacy(renderer, callbacks={}) {
     // 4. LOAD ALL SEAMLESS PBR TEXTURES & DE-FRINGED FOLIAGE SPRIGS
     // =========================================================================
     const texLoader = new THREE.TextureLoader(manager);
-    const maxAniso = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
+    const maxAniso = Math.min((renderer.getMaxAnisotropy?.() ?? renderer.capabilities.getMaxAnisotropy()), 16);
 
     function loadTex(url, isSRGB = true, repeatX = 1, repeatY = 1, clamp = false) {
-      const t = texLoader.load(url);
+      const t = callbacks.loadTexture ? callbacks.loadTexture(url) : texLoader.load(url);
       t.colorSpace = isSRGB ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       t.anisotropy = maxAniso;
       if (clamp) {
@@ -2646,6 +2646,7 @@ export async function buildLegacy(renderer, callbacks={}) {
 
       // Sanctuary compound is offset along local -Z so the front plaza (z > 0) is 100% open for walking!
       const compound = new THREE.Group();
+      if(includeSwordRock)compound.name='Mitsurugi authored sanctuary compound';
       compound.position.set(0, 0, isSummit ? -1.2 : -1.0);
       g.add(compound);
 
@@ -3274,7 +3275,7 @@ export async function buildLegacy(renderer, callbacks={}) {
 
     // =========================================================================
 
-  await texturesReady;
+  if(!callbacks.loadTexture)await texturesReady;
   if(failures.length)throw new Error('Missing original textures: '+failures.join(', '));
   return {scene,colliders,interactables,flickeringCandleMeshes,lanternPointLights,report,
     trailLookup,eastLoopLookup,sampleGroundHeight,

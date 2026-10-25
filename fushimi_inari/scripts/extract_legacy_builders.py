@@ -83,7 +83,7 @@ export async function buildLegacy(renderer, callbacks={}) {
   const manager=new THREE.LoadingManager(finishTextures,undefined,url=>failures.push(url));
 """
 footer = """
-  await texturesReady;
+  if(!callbacks.loadTexture)await texturesReady;
   if(failures.length)throw new Error('Missing original textures: '+failures.join(', '));
   return {scene,colliders,interactables,flickeringCandleMeshes,lanternPointLights,report,
     trailLookup,eastLoopLookup,sampleGroundHeight,
@@ -94,6 +94,7 @@ footer = """
     foliage:[instSugiTrunks,instSugiCrowns,instMomijiCrowns,instUnderstory,instBambooCulms,instBambooTops]};
 }
 """
+body = body.replace("const t = texLoader.load(url);", "const t = callbacks.loadTexture ? callbacks.loadTexture(url) : texLoader.load(url);")
 out = root / "integrated-world"
 out.mkdir(exist_ok=True)
 (out / "legacy-builders.mjs").write_text(header + body + footer, encoding="utf-8")

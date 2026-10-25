@@ -1,10 +1,18 @@
+import {prepareTrainArrival} from './arrival-render-preparation.mjs';
+import {attachCloudShade} from './cloud-shade.mjs';
+import {installRendererTextureBindings} from './renderer-texture-bindings.mjs';
+import {createForestWildlife} from './forest-wildlife.mjs';
+import {installWorldAppearance} from './world-appearance.mjs';
+import {buildKeihanStationDetailPolish} from './keihan-station-detail-polish.mjs';
+import {createPublicWalkDomain} from './public-walk-domain.mjs?v=repair-20261025b';
+import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
 import {createRenderQuality} from './render-quality.mjs?v=ultra-2';
 import {LIGHT_PRESETS,installRouteLighting} from './route-lighting.mjs';
 import {installKeihanFareGates} from './keihan-fare-gates.mjs?v=suica-2';
-import {buildKeihanVideoMerchandise} from './keihan-video-merchandise.mjs?v=video-shops-3';
-import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details.mjs';
-import {createWaterAppearance} from './water-appearance.mjs?v=98-water2';
-import {installShinikeReflections} from './shinike-reflections.mjs?v=98-water2';
+import {buildKeihanVideoMerchandise} from './keihan-video-merchandise.mjs?v=repair-20261025b';
+import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details.mjs?v=repair-20261025b';
+import {createWaterAppearance} from './water-appearance.mjs?v=immersion-20261025c';
+import {installShinikeReflections} from './shinike-reflections.mjs?v=repair-20261025b';
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=ultra-1';
 import {installWelcomeScreen} from './welcome-screen.mjs?v=welcome-hud-1';
@@ -13,33 +21,37 @@ import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approac
 import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs?v=recorded-immersion-5';
 import {advanceGuidedRoute} from './guided-route-motion.mjs';
 import {createWorldDetailChunks} from './world-detail-chunks.mjs';
-import {installKeihanStreetCommerce} from './keihan-street-commerce.mjs?v=keihan-street-3';
-import {installKeihanStreetLife} from './keihan-street-life.mjs?v=keihan-street-4';
+import {installKeihanStreetCommerce} from './keihan-street-commerce.mjs?v=immersion-20261025c';
+import {installKeihanStreetLife} from './keihan-street-life.mjs?v=immersion-20261025c';
 import {installTrainArrivalUI} from './train-arrival-ui.mjs?v=welcome-hud-3';
 import {installPhotoMode} from './photo-mode.mjs?v=ultra-1';
 import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs?v=ambience-4';
 import {installFlashlight} from './flashlight.mjs?v=welcome-hud-1';
-import {installVisitors} from './visitors.mjs?v=82';
+import {installVisitors} from './visitors.mjs?v=immersion-20261025c';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {renderStats} from './render-stats.mjs';
 import {installCandleFlameInstances} from './candle-flame-instances.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
-import {blendCourtyardGround} from './courtyard-ground.mjs?v=64';
-import {blendEntranceGround} from './entrance-ground.mjs?v=48';
-import {blendKeihanStreetGround} from './keihan-street-ground.mjs?v=keihan-street-3';
+import {blendCourtyardGround} from './courtyard-ground-nodes.mjs';
+import {blendEntranceGround} from './entrance-ground-nodes.mjs';
+import {blendKeihanStreetGround} from './keihan-street-ground-nodes.mjs';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=welcome-hud-1';
 import {buildPathMeshes} from './path-meshes.mjs?v=recorded-immersion-7';
 import {installExplorationHUD} from './exploration-hud.mjs?v=welcome-hud-1';
-import {integrate} from './integration.mjs?v=complete-route-2';
-import {installWalking} from './walking.mjs?v=ambience-4';
+import {integrate} from './integration.mjs?v=station-polish-20261025b';
+import {installWalking} from './walking.mjs?v=immersion-20261025c';
 import {createAudio} from './audio.mjs?v=audio-small-1';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {heightAt,buildGraph,nearestNode,shortestRoute,routeMetrics,resample,pathWidth,isRestricted,distance} from '../geography/geo-core.mjs';
 
 const $=id=>document.getElementById(id);
+// Inspection tools remain explicit, separate from the visitor experience.
+const query=new URLSearchParams(location.search);
+const allowDebugCamera=query.get('debugCamera')==='1';
+const allowFastTravel=allowDebugCamera||query.get('audit')==='1'||query.get('textureAudit')==='1';
 const welcome=installWelcomeScreen();
 try {
   const [terrain,features,manifest]=await Promise.all(['terrain','features','manifest'].map(async name=>{
@@ -50,13 +62,16 @@ try {
   let assembly=null;
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
-  const renderer=new THREE.WebGLRenderer({antialias:true});
+  const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
+  await renderer.init();
+  const textureBindings=installRendererTextureBindings(renderer);
+  document.body.dataset.rendererBackend=renderer.backend.isWebGPUBackend?'webgpu':'webgl2';
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
   $('world').append(renderer.domElement);
   renderer.domElement.tabIndex=0;
-  renderer.domElement.setAttribute('aria-label','Explore Inariyama: WASD to move, drag to look');
+  renderer.domElement.setAttribute('aria-label','Explore Inariyama: click to capture mouse, WASD to walk, mouse to look, Escape to release');
   const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.2,12000);
   const sky=installSky(scene,camera);
   const controls=new OrbitControls(camera,renderer.domElement);
@@ -64,7 +79,17 @@ try {
   const hemi=new THREE.HemisphereLight(0xe9f1e3,0x61765f,1.6);scene.add(hemi);
   const sun=new THREE.DirectionalLight(0xffebcd,2.3);sun.position.set(-800,1400,-600);scene.add(sun);
   const audio=createAudio();
-  assembly=await integrate(scene,renderer,terrain,features,{progress:message=>$('loading').textContent=message,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden')});
+  assembly=await integrate(scene,renderer,terrain,features,{progress:message=>$('loading').textContent=message,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+    appearance.applyTo(group);
+    quality.refreshTextures();
+    textureStreaming.index(scene);
+    textureStreaming.update(camera.position,1);
+    // Compile against the real environment and light set, not a bare Group.
+    await renderer.compileAsync(scene,camera);
+    detailChunks.add(group);
+    detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
+    sun.shadow.needsUpdate=true;
+  }});
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
@@ -78,10 +103,9 @@ try {
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
-  const soilLoader=new THREE.TextureLoader();
-  const soil=await soilLoader.loadAsync('../assets/textures/nanobanana/surface_forest_soil_leaves.png');
+  const soil=textureStreaming.load('../assets/textures/nanobanana/surface_forest_soil_leaves.png');
   soil.colorSpace=THREE.SRGBColorSpace;soil.wrapS=soil.wrapT=THREE.RepeatWrapping;soil.anisotropy=8;
-  const soilNormal=await soilLoader.loadAsync('../assets/textures/nanobanana/surface_forest_soil_leaves_normal.png');
+  const soilNormal=textureStreaming.load('../assets/textures/nanobanana/surface_forest_soil_leaves_normal.png');
   soilNormal.wrapS=soilNormal.wrapT=THREE.RepeatWrapping;
   const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
@@ -99,12 +123,20 @@ try {
   terrainGeo.setAttribute('groundCover',new THREE.Float32BufferAttribute(cover,1));
   terrainGeo.setAttribute('precinctGrass',new THREE.Float32BufferAttribute(precinctGrass,1));
   coverCache.clear();
-  const terrainMaterial=new THREE.MeshStandardMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
+  const terrainMaterial=new THREE.MeshStandardNodeMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
+  // Reuse the terrain's streamed earth maps, with matching world-space UVs.
+  const pondBank=scene.getObjectByName('Shin-ike bounded inward natural bank collar R97');
+  if(pondBank){
+    pondBank.material.map=soil;pondBank.material.normalMap=soilNormal;
+    pondBank.material.normalScale.copy(terrainMaterial.normalScale);
+    pondBank.material.color.set(0xffffff);pondBank.material.needsUpdate=true;
+  }
   const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
   blendCourtyardGround(terrainMaterial,courtyard,romon);
   blendEntranceGround(terrainGeo,terrainMaterial,courtyard,romon,features);
   blendKeihanStreetGround(terrainGeo,terrainMaterial,features);
+  const cloudShade=attachCloudShade(terrainMaterial);
   const landscape=spatialMeshes(terrainGeo,terrainMaterial,160);scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
@@ -126,6 +158,7 @@ try {
   assembly.walkHeight=approachFloors.walkHeight;
   const streetCommerce=installKeihanStreetCommerce(assembly);
   const observedStreet=buildKeihanStreetObservedDetails(assembly);
+  const stationDetails=buildKeihanStationDetailPolish(assembly);
   const videoMerchandise=buildKeihanVideoMerchandise(assembly);
   document.body.dataset.videoMerchandise=JSON.stringify(videoMerchandise.stats);
   document.body.dataset.observedStreet=JSON.stringify(observedStreet.stats);
@@ -232,9 +265,12 @@ try {
     ctx.fillStyle='#593a33';ctx.font='20px system-ui';ctx.fillText(`${Math.round(lo)}–${Math.round(hi)} m`,12,20);
   }
   function clearRoute(){
-    walking=false;controls.enabled=true;activeRoute=[];routeProgress=0;travelled=0;marker.visible=false;
+    const resumeWalking=walking&&!allowDebugCamera;
+    walking=false;controls.enabled=allowDebugCamera;activeRoute=[];routeProgress=0;travelled=0;marker.visible=false;
     $('walk').disabled=true;$('stop').disabled=true;$('profile').style.display='none';$('route-stops').textContent='';$('route-gaps').textContent='';
     if(routeLine){scene.remove(routeLine);routeLine.geometry.dispose();routeLine.material.dispose();routeLine=null;}
+    // A route replan releases the guided camera back to public walking.
+    if(resumeWalking)walker.start();
   }
   function trace(){
     clearRoute();
@@ -290,7 +326,7 @@ try {
   }
   $('route').onclick=trace;
   $('itinerary').onchange=trace;$('branch').onchange=trace;
-  $('overview').onclick=()=>{interruptArrival();walker.stop();overview();};
+  $('overview').onclick=()=>{if(!allowDebugCamera)return;interruptArrival();walker.stop();overview();};
   $('walk').onclick=()=>{
     if(!activeRoute.length)return;
     if(routeProgress>=activeRoute.length-1){routeProgress=0;travelled=0;}
@@ -298,7 +334,7 @@ try {
   };
   $('stop').onclick=()=>{
     walking=false;controls.target.copy(camera.position).add(new THREE.Vector3(0,0,-10).applyQuaternion(camera.quaternion));
-    controls.enabled=true;controls.update();$('stop').disabled=true;$('walk').textContent='Resume';
+    controls.enabled=allowDebugCamera;if(allowDebugCamera)controls.update();else walker.start();$('stop').disabled=true;$('walk').textContent='Resume';
   };
   $('buildings').onchange=e=>buildingGroup.visible=e.target.checked;
   $('aerial-canopy').onchange=e=>canopy.group.visible=e.target.checked;
@@ -339,7 +375,7 @@ try {
   map.onclick=e=>{
     const rect=map.getBoundingClientRect(),x=(e.clientX-rect.left)*map.width/rect.width,z=(e.clientY-rect.top)*map.height/rect.height;
     let best=null,d=18;for(const p of landmarks){const gap=Math.hypot(mx(p.point[0])-x,mz(p.point[2])-z);if(gap<d){d=gap;best=p;}}
-    if(best){interruptArrival();walker.stop();$('itinerary').value='custom';$('destination').value=best.id;trace();controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}
+    if(best){interruptArrival();if(allowDebugCamera)walker.stop();$('itinerary').value='custom';$('destination').value=best.id;trace();if(allowDebugCamera){controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}}
   };
   const raycaster=new THREE.Raycaster();
   renderer.domElement.addEventListener('dblclick',e=>{
@@ -349,8 +385,9 @@ try {
   });
   $('summary').textContent=`${(width/1000).toFixed(2)} × ${(depth/1000).toFixed(2)} km study area · ${features.paths.length.toLocaleString('es')} mapped segments · ${landmarks.length} identified landmarks`;
   const fareGates=installKeihanFareGates(assembly.keihanStation);
+  const publicWalkDomain=createPublicWalkDomain(assembly);
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
-  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
+  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     for(const [id,label,x,z,tx,tz] of [
@@ -366,8 +403,9 @@ try {
   for(const a of assembly.spatial.anchors){const option=document.createElement('option');option.value=a.id;option.textContent=a.label;$('place').append(option);}
   function visit(){
     interruptArrival();
-    walker.stop();walking=false;controls.enabled=true;
+    walker.stop();walking=false;controls.enabled=allowDebugCamera;
     const a=assembly.spatial.byId[$('place').value],near=a.checkpoint??nearestNode(graph,a.target,80)?.node.point??a.target;
+    if(!allowDebugCamera){walker.teleport(near,a.lookAt??a.target);return;}
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
     if(a.id==='romon'){
       camera.position.set(near[0]-35,ground(near[0]-35,near[2]+14)+8,near[2]+14);
@@ -384,8 +422,9 @@ try {
     controls.update();
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m ASL`;
   }
-  $('visit').onclick=visit;$('place').value='romon';visit();
+  $('visit').onclick=()=>{if(allowFastTravel)visit();};$('place').value='romon';visit();
   const hud=installExplorationHUD({camera,features,assembly,getRoute:()=>activeRoute,teleport:id=>{
+    if(!allowFastTravel)return;
     const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
     if(!node)return;
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
@@ -398,12 +437,12 @@ try {
       document.body.dataset.checkpoint=id;
     }else $('position').textContent='No clear access found at this checkpoint.';
   }});
-  const startGuided=$('walk').onclick;$('walk').onclick=()=>{interruptArrival();walker.stop();startGuided();};
+  const startGuided=$('walk').onclick;$('walk').onclick=()=>{if(!allowFastTravel)return;interruptArrival();walker.stop();startGuided();};
   const toggleWalking=$('freewalk').onclick;$('freewalk').onclick=()=>{
     if(arrival?.active){interruptArrival();walker.start();}else toggleWalking();
   };
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
-  const routeLighting=installRouteLighting(scene,assembly.spatial.main,assembly.ground,{extraRoutes:[assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point))],existingLights:assembly.legacy.lanternPointLights});
+  const routeLighting=installRouteLighting(scene,assembly.spatial.main,assembly.ground,{extraRoutes:[assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point))],extraEmitters:assembly.keihanFrontages.lightPositions??[],existingLights:assembly.legacy.lanternPointLights});
   document.body.dataset.routeLighting=JSON.stringify(routeLighting.stats);
   const sunOffset=new THREE.Vector3();
   $('light').onchange=()=>{
@@ -417,7 +456,10 @@ try {
     for(const water of waterControllers)water.setMode(mode);
   };$('light').onchange();
   const quality=createRenderQuality({renderer,scene,camera,sun});
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,render:quality.render,overlays:()=>[routeLine,marker,landmarkGroup]});
+  const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
+  const applyTimeOfDay=$('light').onchange;
+  $('light').onchange=()=>appearance.updateBaseLighting(applyTimeOfDay);
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:quality.render,overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -425,26 +467,51 @@ try {
   for(const mesh of assembly.staticBatches.meshes)detailChunks.add(mesh);
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
   for(const group of videoMerchandise.detailGroups??[])detailChunks.add(group,{radius:28,margin:8});
+  for(const group of stationDetails.detailGroups??[])detailChunks.add(group,{radius:70,margin:15});
   for(const group of observedStreet.detailGroups??[])detailChunks.add(group,{radius:100,margin:20});
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
-  const menu=installExplorationMenu({walker,controls,camera,assembly,places:hud.places,onNavigate:interruptArrival,
+  const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:value=>quality.setMode(value),
+    onRenderQuality:value=>{textureStreaming.setMode(value);quality.setMode(value);},
     onDetailDistance:value=>{detailDistance=value;}});
+  const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
+  const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
+  $('scene-settings').append(lookLabel,lookSelect);
+  lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
   document.getElementById('ambient-volume').addEventListener('input',event=>audio.setRecordedVolume(Number(event.target.value)/100));
   document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
+  const wildlife=createForestWildlife(assembly);
+  document.body.dataset.forestWildlife=JSON.stringify({count:wildlife.count});
   const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
   installSeasons(assembly,canopy);
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){pondReflections.dispose();quality.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){appearance.dispose();pondReflections.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   $('loading').textContent='Preparing materials for the arrival…';
-  await renderer.compileAsync(scene,camera);
+  await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
+  const prepareNearby=()=>{
+    detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
+    sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
+    sun.position.copy(sun.target.position).add(sunOffset);sky.update();
+    canopy.update(camera);panorama.update(camera,$('buildings').checked);
+  };
+  $('loading').textContent='Preparing train, platform and reflections…';
+  const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
+    prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
+    compile:()=>{appearance.update(0);return renderer.compileAsync(scene,camera);},
+    render:()=>quality.render(),settle:()=>renderer.waitForGPU()});
+  if(!arrivalPrepared){await assembly.deferredBuildings.ensure();prepareNearby();await renderer.compileAsync(scene,camera);}
+  if(arrivalPrepared){
+    const preview=(assembly.keihanStation??assembly.inariStation).spec.arrival.interiorPose;
+    camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
+  }
+  document.body.dataset.arrivalRenderPrepared=String(arrivalPrepared);
+  if(new URLSearchParams(location.search).has('audit'))document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
   trace();
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
@@ -457,11 +524,11 @@ try {
   if(arrivalStation?.built){
     const isKeihan=arrivalStation===assembly.keihanStation;
     arrival=createTrainArrivalExperience({sequenceOptions:arrivalStation.spec.arrival,
-      station:arrivalStation,camera,controls,walker,
+      station:arrivalStation,camera,controls,walker,allowDebugCamera,
       onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
     arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active,
-      labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · drag to look'}:{}});
+      labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · click the scene, then move the mouse to look · Esc releases the cursor'}:{}});
     // The train waits behind the welcome sheet so its sound and motion start together.
     welcome.ready().then(({gesture})=>{if(gesture){audio.setEnabled(true);menu.syncSound();}arrival.start({reducedMotion:arrivalUI.reducedMotion});});
     document.body.dataset.startLocation=isKeihan?'Keihan Fushimi-Inari train arrival · Platform 2':'JR Inari fallback · Platform 2';
@@ -492,10 +559,10 @@ try {
         ? [b[0]+b[0]-a[0],b[1],b[2]+b[2]-a[2]]
         : activeRoute[Math.min(routeProgress+5,activeRoute.length-1)];
       camera.lookAt(look[0],look[1]+1.7,look[2]);marker.position.set(x,y+5,z);
-      if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=true;}
+      if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=allowDebugCamera;if(!allowDebugCamera)walker.start();}
       $('position').textContent=motion.blocked?'Train crossing · Please wait':arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!photo.active&&!menu.active&&!walker.update(dt)){
+    }else if(!photo.active&&!menu.active&&!walker.update(dt)&&allowDebugCamera){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
@@ -508,20 +575,27 @@ try {
     for(const water of waterControllers)water.update(time/1000);
     fareGates?.update(camera.position.toArray(),time/1000,document.hidden||menu.active||photo.active);
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
-    sky.update();flashlight.update();visitors.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    cloudShade.update(time/1000,$('light').value);
+    if(!arrival?.active&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
+    if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
     const elevated=camera.position.y-assembly.ground(camera.position.x,camera.position.z)>22;
-    detailChunks.update(camera,time/1000,detailDistance==='full'?60:elevated?6:quality.detailScale);
+    detailChunks.update(camera,time/1000,allowDebugCamera&&detailDistance==='full'?60:allowDebugCamera&&elevated?6:quality.detailScale);
     // The neighbourhood massing is an aerial backdrop, never a replacement for
     // detailed architecture at walking distance. Chunk bounds make this cheap.
     for(const chunks of buildingGroup.children)for(const mesh of chunks.children){
       const b=mesh.geometry.boundingSphere;
       mesh.visible=camera.position.distanceTo(b.center)>b.radius+100;
     }
-    pondReflections.update(camera.position,[$('light').value,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked].join(':'));
+    // Capture only settled images; a probe made from placeholders must refresh.
+    const textureState=textureStreaming.stats;
+    if(!arrival?.active&&textureState.pending===0)pondReflections.update(camera.position,[$('light').value,appearance.stats.look,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked,textureState.revision].join(':'));
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
+    appearance.update(time/1000);
     const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
-    document.body.dataset.drawCalls=renderer.info.render.calls;
+    document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
+    document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});
 

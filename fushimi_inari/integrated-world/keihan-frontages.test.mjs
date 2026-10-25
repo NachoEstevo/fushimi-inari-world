@@ -15,7 +15,7 @@ const at=(s,u,v)=>{const a=s.points[s.edge];return [a[0]+s.t[0]*u+s.n[0]*v,a[2]+
 test('named shops and observed anonymous facades retain source footprints and bounded static detail',()=>{
  const before=JSON.stringify(features),root=new THREE.Group(),colliders=[],built=buildKeihanFrontages(root,features,surfaces,{},colliders);
  assert.equal(built.built,true);assert.deepEqual(built.builtIds,keihanFrontageIds);
- assert.equal(built.materialBatches,9);assert.equal(built.drawBatches,9);assert.ok(built.triangles<15272);assert.ok(built.collidersAdded<55);
+ assert.equal(built.materialBatches,10);assert.equal(built.drawBatches,10);assert.ok(built.triangles<19000);assert.ok(built.collidersAdded<55);
  for(const store of built.storefronts){assert.deepEqual(store.points,features.buildings.find(b=>b.id===store.id).points.slice(0,-1));assert.ok(store.width>store.widthRange[0]&&store.width<store.widthRange[1]);assert.equal(store.height,6);}
  let lights=0;root.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)for(const value of o.geometry.attributes.position.array)assert.ok(Number.isFinite(value));});assert.equal(lights,0);
  assert.equal(buildKeihanFrontages(root,features,surfaces,{},colliders).group,built.group);assert.equal(root.children.length,1);assert.equal(colliders.length,built.collidersAdded);assert.equal(JSON.stringify(features),before);
@@ -63,7 +63,7 @@ test('unnamed counter and row registrations carry dated provenance without inven
  assert.ok(built.sources.some(s=>s.includes('October 2024')));assert.ok(built.sources.some(s=>s.includes('November 2020')));
  const closed=built.storefronts.filter(s=>s.kind.endsWith('-row')),colliders=[];buildKeihanFrontages(new THREE.Group(),features,surfaces,{},colliders);
  const world=new SpatialCollisionWorld();for(const c of colliders)world.addBox(...c.args);
- for(const s of closed){const [x,z]=at(s,s.width/2,-.05),r=world.resolvePlayer(x,s.floor+1.7,z);assert.ok(Math.hypot(r.x-x,r.z-z)>.15);}
+ for(const s of closed){const [x,z]=at(s,s.width*(s.kind==='green-awning-row'?5/6:1/6),-.05),r=world.resolvePlayer(x,s.floor+1.7,z);assert.ok(Math.hypot(r.x-x,r.z-z)>.15);}
 });
 
 test('the observed soft-serve model has a physical plinth touching its shop floor',()=>{
@@ -94,5 +94,27 @@ test('fabric canopies slope toward the street and preserve head clearance in one
   const back=height(.02),front=height(s.kind.endsWith('-row')?.40:.60);
   assert.ok(back-front>.10,`${s.kind}: visibly sloped canopy`);assert.ok(front>2.60,`${s.kind}: head clearance`);
  }
- assert.equal(built.collidersAdded,48);
+ assert.equal(built.collidersAdded,54);
+});
+
+test('two extra anonymous counters add four registered light emitters without adding scene lights',()=>{
+ const built=buildKeihanFrontages(new THREE.Group(),features,surfaces);
+ assert.equal(built.openServiceBays,4);assert.equal(built.lightPositions.length,4);
+ for(const p of built.lightPositions){assert.ok(p.every(Number.isFinite));assert.ok(built.storefronts.some(s=>Math.hypot(p[0]-s.center[0],p[2]-s.center[1])<12&&Math.abs(p[1]-s.floor-2.35)<1e-6));}
+});
+
+test('Kyozuan product boards are visible beside the shop name and use distinct shared atlas cells',()=>{
+ const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces),s=built.storefronts.find(s=>s.kind==='soft-serve');root.updateMatrixWorld(true);
+ assert.deepEqual(built.productDetails.categories,['tofu-soft-serve','matcha-tofu-soft-serve']);
+ assert.equal(built.productDetails.source,'https://inari-kyoto.com/kyozuan');
+ const labelMesh=built.group.children.find(m=>m.material.map&&m.material.color.getHex()===0xffffff&&!m.material.vertexColors);
+ assert.ok(labelMesh);
+ for(const [u,min,max]of [[s.width-.83,.50,.75],[.94,.75,1]]){
+  const [x,z]=at(s,u,.10),hits=new THREE.Raycaster(new THREE.Vector3(x,s.floor+3.54,z),new THREE.Vector3(-s.n[0],0,-s.n[1]),0,1.6).intersectObject(root,true);
+  assert.ok(hits[0]?.object===labelMesh,'category board must face the street without shelf occlusion: '+hits[0]?.distance);
+  assert.ok(hits[0].uv.x>min&&hits[0].uv.x<max,'board selects its own product cell');
+ }
+ const uv=labelMesh.geometry.attributes.uv;
+ assert.ok([...uv.array].every(Number.isFinite));
+ assert.equal(built.drawBatches,10,'category boards reuse the name atlas material');
 });

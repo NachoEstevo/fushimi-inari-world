@@ -11,7 +11,12 @@ export function preservedForestLOD(chunks,maple=false){
     far.userData.seasonalMaple=maple;far.computeBoundingSphere();
     const position=near.boundingSphere.center.clone(),lod=new THREE.LOD();lod.position.copy(position);
     near.position.copy(position).negate();far.position.copy(near.position);
-    lod.addLevel(near,0);lod.addLevel(far,300,.12);chunks.add(lod);
+    // LOD measures distance to the cell center, not its closest crown. Include
+    // the whole cell radius so a distant cell center cannot simplify nearby
+    // trees. Account for hysteresis too: returning from the far level must
+    // restore detailed foliage before any crown enters the 300 m foreground.
+    const hysteresis=.12,distance=(300+near.boundingSphere.radius)/(1-hysteresis);
+    lod.addLevel(near,0);lod.addLevel(far,distance,hysteresis);chunks.add(lod);
   }
   return chunks;
 }
