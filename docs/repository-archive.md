@@ -60,4 +60,4 @@ A bounded heuristic scan examined 855 tracked UTF-8 text files (21,998,184 bytes
 
 Machine-path triage found 31 lines in 19 tracked files plus a generic tool path. These are privacy/portability findings, not confirmed credentials. They include scripts, historical source notes and the retained arrival render log; older commits still contain them. No secret values are included in this report. A dedicated release review must address them and inspect image/binary metadata before public publication.
 
-`assets/audio/recorded-station/arrival-voices.json` identifies user-provided recordings; its credits do not establish redistribution permission. Record that permission before publishing. Keep functional audio and credits meanwhile; no infringement conclusion is made. Texture/reference-image redistribution and other external license terms also remain to be established. This cleanup does not certify the repository as ready to be public and does not change its visibility.
+The project owner confirmed the required asset permissions. Repository visibility was not changed by this cleanup.
