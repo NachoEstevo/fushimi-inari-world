@@ -27,6 +27,6 @@ Open `/integrated-world/index.html`, complete arrival, walk east to the wall, tu
 - Other selected native images document earlier station/bridge/canal/food-counter review. Their original terrain appearance may predate the last shoulder correction.
 - `candle-benchmark.mjs/json`: reproducible final same-assembly candle comparison. The earlier flames-only/first reports and native flames-only sample are retained as explicitly intermediate evidence.
 
-Google Street View screenshots are local research references only and are not included in this evidence commit or shipped as scene textures. Reference URLs and interpretation boundaries are documented in `docs/keihan-*-evidence.md` and `docs/keihan-arrival-production.md`.
+Google Street View screenshots are local research references only and are not included in this evidence commit or shipped as scene textures. Current reference context is consolidated in [sources and reconstruction limits](../../docs/sector-review.md). Detailed `docs/keihan-*-evidence.md` and `docs/keihan-arrival-production.md` reports are archived locally.
 
 The native page includes the user's separate, unstaged social metadata; it has no runtime effect on this scene. The manifest identifies the staged HTML blob separately. High-DPI/mobile performance, controlled first-load latency and production deployment remain unverified.

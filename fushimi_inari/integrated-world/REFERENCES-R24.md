@@ -26,4 +26,4 @@ The aerial forest uses seeded jitter, asymmetric scales, tilted crowns and multi
 - Fine granite and connected stair foot inspected after final terrain replacement. No console errors in the final browser session.
 - Aerial render telemetry at 1205 x 812, DPR 1: 3,062 calls, 17,517,007 triangles, 1,770 geometries, 95 textures. This remains a heavy legacy scene; these counters are not a cross-device performance guarantee. Season changes add no geometry. Mobile / low-end GPU and all lateral circulation corridors are not validated.
 
-Screenshots: README `docs/images/autumn.png`; local QA captures in `outputs/r24/` (not committed). No third-party video frames or personal visit photos are republished.
+Historical screenshot `docs/images/autumn.png` is archived locally; current README photographs replace it. Local QA captures remain in `outputs/r24/` (not committed). No third-party video frames or personal visit photos are republished.
