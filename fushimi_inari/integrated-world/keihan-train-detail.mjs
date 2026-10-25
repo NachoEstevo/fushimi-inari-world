@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 
 export function keihanServiceMaterial(){
- const m=new THREE.MeshStandardMaterial({color:'#eff2d9',roughness:.38,metalness:.12,emissive:'#e4ecc2',emissiveIntensity:.08});
+ const m=new THREE.MeshStandardMaterial({color:'#eff2d9',roughness:.38,metalness:.12,emissive:'#ffffff',emissiveIntensity:.7,toneMapped:false});
  m.name='Keihan inferred service and carriage display atlas';
  m.userData={service:'Local / Yodoyabashi',provenance:'Interpretive P2 direction display, not an observed departure or scheduled service',carIdentifier:'Selected carriage position, not a surveyed fleet vehicle number'};
  if(globalThis.document?.createElement){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(ctx){
   ctx.fillStyle='#142322';ctx.fillRect(0,0,1024,256);ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='#f2f3d8';ctx.font='bold 43px "Yu Gothic",sans-serif';ctx.fillText('普通  Local',256,57);ctx.font='bold 48px "Yu Gothic",sans-serif';ctx.fillText('淀屋橋',256,126);ctx.font='31px sans-serif';ctx.fillText('Yodoyabashi',256,195);
+  // Service tile uses a 512 x 128 crop matching the long LED panel.
+  ctx.fillStyle='#ffb657';ctx.textAlign='left';ctx.font='bold 25px "Yu Gothic",sans-serif';ctx.fillText('\u666e\u901a',20,96);ctx.font='18px sans-serif';ctx.fillText('LOCAL',20,127);
+  ctx.textAlign='center';ctx.font='bold 46px "Yu Gothic",sans-serif';ctx.fillText('\u6dc0\u5c4b\u6a4b',320,98);ctx.font='24px sans-serif';ctx.fillText('Yodoyabashi',320,147);
+  ctx.fillStyle='#142322';for(let x=0;x<512;x+=4)ctx.fillRect(x,64,1,128);for(let y=64;y<192;y+=4)ctx.fillRect(0,y,512,1);
   ctx.strokeStyle='#a7b4a4';ctx.lineWidth=5;ctx.strokeRect(568,32,400,192);ctx.fillStyle='#f1f2dd';ctx.font='bold 62px sans-serif';ctx.fillText('KEIHAN',768,99);ctx.font='30px sans-serif';ctx.fillText('京阪電車',768,166);
   m.map=new THREE.CanvasTexture(c);m.map.colorSpace=THREE.SRGBColorSpace;m.map.anisotropy=4;m.emissiveMap=m.map;m.color.set('#ffffff');
  }}return m;
@@ -14,7 +17,7 @@ export function keihanServiceMaterial(){
 
 export function keihanDisplayPlane(parts,material,{x,y,z,width,height,side=0,identity=false}){
  const g=new THREE.PlaneGeometry(width,height),uv=g.attributes.uv;
- for(let i=0;i<uv.count;i++)uv.setX(i,(uv.getX(i)+(identity?1:0))*.5);
+ for(let i=0;i<uv.count;i++){uv.setX(i,(uv.getX(i)+(identity?1:0))*.5);if(!identity)uv.setY(i,.25+uv.getY(i)*.5);}
  if(side)g.rotateY(side*Math.PI/2);g.translate(x,y,z);parts.put(g,material,false);
 }
 

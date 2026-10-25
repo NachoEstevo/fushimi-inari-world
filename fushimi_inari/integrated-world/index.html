@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fushimi Inari · Integrated world</title>
+  <title>Fushimi Inari</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="theme-color" content="#f5f5f1">
   <meta name="description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
@@ -10,7 +10,7 @@
   <link rel="canonical" href="https://kyoto.nachoestevo.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Fushimi Inari">
-  <meta property="og:title" content="Fushimi Inari · Inariyama Explorer">
+  <meta property="og:title" content="Fushimi Inari">
   <meta property="og:description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
   <meta property="og:url" content="https://kyoto.nachoestevo.com/">
   <meta property="og:image" content="https://kyoto.nachoestevo.com/assets/social-preview.png">
@@ -19,7 +19,7 @@
   <meta property="og:image:height" content="535">
   <meta property="og:image:alt" content="Fushimi Inari cover with vermilion torii gates, stone steps and trees beside the project title on an ivory background.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Fushimi Inari · Inariyama Explorer">
+  <meta name="twitter:title" content="Fushimi Inari">
   <meta name="twitter:description" content="A walkable reconstruction of Kyoto's mountain shrine, built in Three.js.">
   <meta name="twitter:image" content="https://kyoto.nachoestevo.com/assets/social-preview.png">
   <meta name="twitter:image:alt" content="Fushimi Inari cover with vermilion torii gates, stone steps and trees beside the project title on an ivory background.">
@@ -63,21 +63,16 @@
   <footer>© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors · ODbL</a> · Terrain derived from <a href="https://maps.gsi.go.jp/development/demtile.html" target="_blank">GSI Japan</a> · <a href="https://inari.jp/trip/map01/" target="_blank">Official shrine map</a></footer>
   <div id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
     <div class="welcome-gates" aria-hidden="true">
-      <svg viewBox="-100 -100 200 200">
-        <defs><g id="torii-mark">
-          <path class="torii-black" d="M-64-52Q0-38 64-52L61-42Q0-29-61-42Z"/>
-          <path d="M-56-40Q0-28 56-40L55-33Q0-21-55-33Z"/>
-          <rect x="-5" y="-30" width="10" height="14"/>
-          <rect x="-53" y="-17" width="106" height="8"/>
-          <path d="M-41-33H-31L-29 46H-43ZM31-33H41L43 46H29Z"/>
-          <path class="torii-black" d="M-45 44H-27V52H-45ZM27 44H45V52H27Z"/>
-        </g></defs>
-        <use href="#torii-mark" class="gate" style="--i:0;--s:.24;--o:.35"/>
-        <use href="#torii-mark" class="gate" style="--i:1;--s:.36;--o:.55"/>
-        <use href="#torii-mark" class="gate" style="--i:2;--s:.52;--o:.75"/>
-        <use href="#torii-mark" class="gate" style="--i:3;--s:.76;--o:.9"/>
-        <use href="#torii-mark" class="gate" style="--i:4;--s:1.1;--o:1"/>
-        <use href="#torii-mark" class="gate" style="--i:5;--s:1.6;--o:0"/>
+      <svg viewBox="0 0 240 180" fill="none">
+        <path class="welcome-trail" d="M83 164C83 146 156 148 156 130S110 116 120 97"/>
+        <g class="gate">
+          <path class="torii-crown" d="M60 35Q120 49 180 35L177 43Q120 56 63 43Z"/>
+          <path d="M67 48Q120 60 173 48L171 55Q120 66 69 55Z"/>
+          <path d="M83 55H92L90 115H79ZM148 55H157L161 115H150Z"/>
+          <path d="M73 73H167V80H73ZM116 59H124V74H116Z"/>
+          <path class="torii-crown" d="M77 113H93V119H77ZM147 113H163V119H147Z"/>
+        </g>
+        <circle class="welcome-wayfarer" r="3" cx="120" cy="97"/>
       </svg>
     </div>
     <div class="welcome-copy">

@@ -31,9 +31,9 @@ export function createRenderQuality({renderer,scene,camera,sun}){
   function resize(width=innerWidth,height=innerHeight){
     renderer.setPixelRatio(qualityPixelRatio(mode,devicePixelRatio,width,height));renderer.setSize(width,height);report();
   }
-  function textures(){
+  function textures(root=scene){
     const maxAnisotropy=Math.min(16,renderer.getMaxAnisotropy());
-    scene.traverse(o=>{for(const material of [o.material].flat().filter(Boolean))for(const texture of Object.values(material)){
+    root.traverse(o=>{for(const material of [o.material].flat().filter(Boolean))for(const texture of Object.values(material)){
       if(!texture?.isTexture||!texture.image||texture.isRenderTargetTexture)continue;
       if(!originalTextures.has(texture))originalTextures.set(texture,texture.anisotropy);
       const next=mode==='ultra'?maxAnisotropy:originalTextures.get(texture);
@@ -44,7 +44,9 @@ export function createRenderQuality({renderer,scene,camera,sun}){
     if(disposed)return;
     mode=['balanced','high','ultra'].includes(next)?next:'balanced';textures();
     const shadowSize=presets[mode].shadowSize;
-    if(sun.shadow.mapSize.x!==shadowSize){sun.shadow.map?.dispose();sun.shadow.map=null;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.needsUpdate=true;}
+    // ShadowNode owns its cached render target and resizes it on the next shadow
+    // render. Preserve its target/texture identities so compiled bindings stay valid.
+    if(sun.shadow.mapSize.x!==shadowSize){sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.needsUpdate=true;}
     setLook(look);resize();
   }
   function render(){if(!disposed)post.render();}

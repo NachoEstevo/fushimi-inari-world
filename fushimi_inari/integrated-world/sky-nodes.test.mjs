@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {installSky,SKY_SUN_DIRECTIONS} from './sky-nodes.mjs';
+import {installSky,SKY_SUN_DIRECTIONS,skyDistanceScale} from './sky-nodes.mjs';
 
 test('sun follows sunset horizon, clouds drift without repainting and night preserves stars',()=>{
   const previous=globalThis.document;
@@ -25,5 +25,15 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     sky.setMode('night');assert.equal(sun.visible,false);
     assert.ok(scene.children.find(object=>object.isSprite&&object!==sun).visible);
     sky.setLook('sakura');sky.setLook('dreamcore');sky.setMode('day');sky.update();assert.ok(sun.visible);
+    const dome=scene.children.find(object=>object.geometry?.parameters.radius===6000);
+    for(const far of [700,1000,1400,12000]){
+      camera.far=far;sky.update();const scale=skyDistanceScale(far);
+      assert.equal(dome.scale.x,scale);assert.equal(clouds.scale.x,scale);
+      assert.ok(6000*scale<far);assert.ok(5800*scale<far);
+      assert.ok(sun.position.distanceTo(camera.position)+sun.scale.x/Math.sqrt(2)<far);
+      assert.ok(5000*scale<far,'star positions remain inside the far plane');
+      assert.ok(Math.abs(sun.scale.x/sun.position.distanceTo(camera.position)-350/5400)<1e-10,'solar angular size stays constant');
+    }
+    for(const object of scene.children)assert.equal(object.material.fog,false);
   }finally{globalThis.document=previous;}
 });

@@ -6,6 +6,15 @@ export function installKeihanFareGates(station){
  const floor=station.spec.platformFloor,z=station.spec.gate.center[2];
  const group=new THREE.Group();group.name='Keihan automatic Suica flaps';
  const material=new THREE.MeshStandardMaterial({color:'#bd4936',roughness:.65});
+ const readerCase=new THREE.MeshStandardMaterial({color:'#1b2830',roughness:.38});
+ const readerLight=new THREE.MeshBasicMaterial({color:'#58d9ca',toneMapped:false});
+ // Reader plates sit on the existing shared gate housings, with an illuminated
+ // contact ring visible from both directions; no new obstruction enters a lane.
+ for(const x of [-305,-303.4,-301.8]){
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(.27,.045,.36),readerCase);plate.position.set(x,floor+1.015,z);group.add(plate);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.082,.009,6,20),readerLight);ring.rotation.x=-Math.PI/2;ring.position.set(x,floor+1.041,z);group.add(ring);
+  const indicator=new THREE.Mesh(new THREE.BoxGeometry(.12,.012,.025),readerLight);indicator.position.set(x,floor+1.043,z-.135);group.add(indicator);
+ }
  const lanes=[-304.2,-302.6].map(x=>{
   const leaves=[-1,1].map(side=>{const pivot=new THREE.Group();pivot.position.set(x+side*.60,floor+.52,z);const flap=new THREE.Mesh(new THREE.BoxGeometry(.58,.52,.055),material);flap.position.x=-side*.29;pivot.add(flap);group.add(pivot);return {pivot,side};});
   return {x,leaves,open:0,near:false};

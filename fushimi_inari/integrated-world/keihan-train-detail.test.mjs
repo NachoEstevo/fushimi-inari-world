@@ -13,6 +13,8 @@ test('shared service atlas preserves explicit inferred provenance and panel UVs'
   assert.equal(p.material,m);assert.equal(p.metricUV,false);
   assert.equal(Math.min(...Array.from({length:4},(_,k)=>p.g.attributes.uv.getX(k))),i*.5);
   assert.equal(Math.max(...Array.from({length:4},(_,k)=>p.g.attributes.uv.getX(k))),(i+1)*.5);
+  assert.equal(Math.min(...Array.from({length:4},(_,k)=>p.g.attributes.uv.getY(k))),i===0?.25:0);
+  assert.equal(Math.max(...Array.from({length:4},(_,k)=>p.g.attributes.uv.getY(k))),i===0?.75:1);
   assert.ok(Math.sign(p.g.attributes.normal.getX(0))===(i===0?1:-1));p.g.dispose();
  }
  m.dispose();

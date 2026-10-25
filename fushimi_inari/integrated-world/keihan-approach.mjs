@@ -31,7 +31,9 @@ export function keihanApproachLayout(features,surfaces,spec=createKeihanStationS
  const roadSegments=surfaces.segments.filter(s=>['way/946510942','way/79699849'].includes(s.id)),westY=projectedHeight(roadSegments,west[0],west[2]),eastY=projectedHeight(roadSegments,east[0],east[2]);
  if(!Number.isFinite(westY)||!Number.isFinite(eastY)||Math.abs(eastY-westY)>1.8)throw Error('Keihan bridge street grade needs reconciliation');
  const bridgeHeight=(x,z)=>westY+(eastY-westY)*Math.max(0,Math.min(1,relative(x,z)[0]/length)),rect=(u0,u1,v0,v1)=>ccw([[u0,v0],[u1,v0],[u1,v1],[u0,v1]].map(p=>local(...p)));
- const tops=pathTops(surfaces).filter(t=>t.polygon.some(p=>p[0]>-310&&p[0]<-195&&p[1]>-140&&p[1]<-70)),portions=[];
+ // Include long ribbons spanning the exit even when their vertices lie outside
+ // the approach bounds; otherwise the infill duplicates their street tops.
+ const tops=pathTops(surfaces),portions=[];
  const addMissing=(id,polygon,height,kind)=>{let pieces=[ccw(polygon)];for(const cut of [...tops.map(t=>t.polygon),...portions.map(p=>p.polygon)])pieces=pieces.flatMap(p=>clipConvex(p,cut).length?subtractConvex(p,cut):[p]);for(const [i,p]of pieces.entries())portions.push({id:id+'-'+i,polygon:p,height,kind});};
  // Road and parallel pedestrian deck share an edge. The mapped centreline
  // separation fixes the broad deck; thickness, edge widths and rail sizes

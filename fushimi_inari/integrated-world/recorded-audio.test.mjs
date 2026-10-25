@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRecordedAudio} from './recorded-audio.mjs';
+import {createRecordedAudio,gateSoundOffset} from './recorded-audio.mjs';
+
+test('gate prefix trim preserves the attack and detects either stereo channel',()=>{
+ const left=new Float32Array(1000),right=new Float32Array(1000);left.fill(.0001);right[240]=.6;
+ const buffer={length:1000,sampleRate:1000,numberOfChannels:2,getChannelData:i=>[left,right][i]};
+ assert.ok(Math.abs(gateSoundOffset(buffer)-.232)<1e-9);
+ right[0]=.3;assert.equal(gateSoundOffset(buffer),0);
+ right.fill(0);assert.equal(gateSoundOffset(buffer),0);
+ right[700]=.6;assert.equal(gateSoundOffset(buffer),0,'never skips an unmeasured prefix beyond half a second');
+ assert.equal(gateSoundOffset({duration:4}),0);
+});
 function fixture(fetcher=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)})){
  const sources=[],stats=[];const ctx={currentTime:0,destination:{},decodeAudioData:async()=>({duration:4}),
   createGain(){return {gain:{value:0,setTargetAtTime(){},cancelScheduledValues(){}},connect(){return this;},disconnect(){}};},
@@ -12,7 +22,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 test('recordings load only after enable, use bounded loops, and mute stops them',async()=>{
  let requests=0;const f=fixture(async()=>{requests++;return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};});
  f.audio.update(frame);assert.equal(requests,0);f.audio.setEnabled(true);await flush();
- assert.equal(requests,4);for(let i=0;i<100;i++)f.audio.update({...frame,time:i});
+ assert.equal(requests,5);for(let i=0;i<100;i++)f.audio.update({...frame,time:i});
  assert.equal(f.sources.length,1);assert.equal(f.sources[0].loop,true);
  f.audio.setEnabled(false);assert.equal(f.sources[0].stops,1);assert.equal(f.stats.at(-1).activeLoops.length,0);
 });

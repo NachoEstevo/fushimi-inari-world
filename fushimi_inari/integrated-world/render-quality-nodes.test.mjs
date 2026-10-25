@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three/webgpu';
 import {qualityPixelRatio,createRenderQuality} from './render-quality-nodes.mjs';
+import ShadowNode from 'three/src/nodes/lighting/ShadowNode.js';
 
 test('WebGPU presets bound pixel cost on ultrawide and high-DPI screens in increasing order',()=>{
   for(const [width,height] of [[3431,1264],[3840,2160],[8000,4000]]){
@@ -27,12 +28,18 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),sun=new THREE.DirectionalLight();
   const texture=new THREE.Texture({width:1,height:1});texture.anisotropy=4;
   scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial({map:texture})));
-  sun.shadow.map={dispose(){disposed++;}};
+  // Exercise r180's real cached shadow target and resize implementation.
+  const shadowNode=new ShadowNode(sun);
+  const target=new THREE.RenderTarget(512,512,{depthTexture:new THREE.DepthTexture(512,512)});
+  const depthTexture=target.depthTexture,colorTexture=target.texture;
+  target.addEventListener('dispose',()=>disposed++);
+  shadowNode.shadowMap=target;sun.shadow.map=target;
+  const frame={scene,renderer:{render(){} }};
   const quality=createRenderQuality({renderer,scene,camera,sun});
   const report=()=>JSON.parse(document.body.dataset.renderQuality);
   try{
     assert.equal(report().shadowSize,1024);
-    assert.equal(disposed,1);
+    assert.equal(disposed,0);
     assert.equal(report().maxPixels,2000000);
     quality.setLook('dreamcore');
     assert.equal(report().look,'dreamcore');assert.equal(report().bloom,.65*.65);
@@ -41,11 +48,20 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(texture.anisotropy,4);
     await quality.setMode('ultra');
     assert.equal(report().shadowSize,4096);assert.equal(texture.anisotropy,16);
+    assert.equal(sun.shadow.map,target);
+    assert.equal(disposed,0,'the menu must not dispose cached GPU resources');
+    shadowNode.renderShadow(frame);
+    assert.equal(target.width,4096);assert.equal(target.height,4096);
+    assert.equal(target.depthTexture,depthTexture);assert.equal(target.texture,colorTexture);
+    assert.equal(disposed,1,'ShadowNode resizes its own render target');
     assert.equal(quality.detailScale,1.25);
     await quality.setMode('balanced');
     assert.equal(report().shadowSize,1024);assert.equal(texture.anisotropy,4);
     assert.equal(quality.detailScale,1);assert.equal(report().look,'dreamcore');
     await quality.setMode('invalid');assert.equal(quality.mode,'balanced');
+    assert.equal(disposed,1,'quality changes leave the shadow target lifecycle to ShadowNode');
+    shadowNode.renderShadow(frame);
+    assert.equal(target.width,1024);assert.equal(target.depthTexture,depthTexture);
     quality.dispose();quality.dispose();
   }finally{
     for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}

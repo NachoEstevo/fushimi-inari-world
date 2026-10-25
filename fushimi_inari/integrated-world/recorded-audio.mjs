@@ -9,18 +9,31 @@ export const RECORDED_CLIPS=Object.freeze({
  gate:{url:'../assets/audio/recorded-station/suica-ticket-gate-hinoki-owo.ogg',gain:.30}
 });
 
+// Inspect only a bounded prefix once at decode time. Keep 8 ms before the
+// first audible sample so the gate attack stays intact; silent clips stay whole.
+export function gateSoundOffset(buffer){
+ if(!buffer?.getChannelData||!Number.isFinite(buffer.sampleRate)||buffer.sampleRate<=0)return 0;
+ const frames=Math.min(buffer.length,Math.floor(buffer.sampleRate*.5)),channels=[];
+ for(let channel=0;channel<buffer.numberOfChannels;channel++)channels.push(buffer.getChannelData(channel));
+ let peak=0;for(const samples of channels)for(let i=0;i<frames;i++)peak=Math.max(peak,Math.abs(samples[i]));
+ if(peak<.002)return 0;
+ const threshold=Math.max(.002,peak*.08);
+ for(let i=0;i<frames;i++)if(channels.some(samples=>Math.abs(samples[i])>=threshold))return Math.max(0,i/buffer.sampleRate-.008);
+ return 0;
+}
+
 // Real field recordings. Different railway sources are credited explicitly;
 // Arrival voices are the original Japanese/English files supplied by the user.
 export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
  const bus=ctx.createGain();bus.gain.value=.8;bus.connect(ctx.destination);
- const buffers=new Map(),pending=new Map(),failed=new Set(),loops=new Map(),shots=new Set(),wanted=new Map();
+ const buffers=new Map(),offsets=new Map(),pending=new Map(),failed=new Set(),loops=new Map(),shots=new Set(),wanted=new Map();
  const events=createRecordedSoundEvents(),plays={};let enabled=false,paused=false,generation=0,lastReport=-Infinity,currentPhase='idle',voiceGeneration=0,lastArrivalTime=-1;let voiceSchedule=[],voiceLoading=false,voiceRunStarted=false;
  const report=()=>onStats({enabled,paused,loaded:[...buffers.keys()],loading:[...pending.keys()],failed:[...failed],activeLoops:[...loops.keys()],activeShots:shots.size,plays:{...plays},voiceSchedule,mode:'credited field recordings'});
  async function load(id){
   if(buffers.has(id))return buffers.get(id);if(failed.has(id))return null;
   if(!pending.has(id))pending.set(id,(async()=>{
    try{const response=await fetcher(RECORDED_CLIPS[id].url);if(!response.ok)throw Error(`Audio HTTP ${response.status}`);
-    const buffer=await ctx.decodeAudioData(await response.arrayBuffer());buffers.set(id,buffer);return buffer;
+    const buffer=await ctx.decodeAudioData(await response.arrayBuffer());buffers.set(id,buffer);if(id==='gate')offsets.set(id,gateSoundOffset(buffer));return buffer;
    }catch{failed.add(id);return null;}finally{pending.delete(id);report();}
   })());
   return pending.get(id);
@@ -31,7 +44,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
   gain.gain.value=loop?0:RECORDED_CLIPS[id].gain*volume;
   source.connect(gain).connect(bus);const item={source,gain,id};
   source.onended=()=>{shots.delete(item);source.disconnect();gain.disconnect();};
-  source.start(when);plays[id]=(plays[id]??0)+1;return item;
+  source.start(when,offsets.get(id)??0);plays[id]=(plays[id]??0)+1;return item;
  }
  function stop(item){item.gain.gain.cancelScheduledValues(ctx.currentTime);item.gain.gain.setTargetAtTime(0,ctx.currentTime,.025);try{item.source.stop(ctx.currentTime+.12);}catch{}}
  function stopAll(){generation++;voiceGeneration++;voiceLoading=false;for(const item of loops.values())stop(item);loops.clear();for(const item of shots)stop(item);shots.clear();wanted.clear();}
@@ -60,7 +73,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
  return {
   get announcementActive(){return voiceLoading||(enabled&&!voiceRunStarted&&['moving','decelerating','stopped'].includes(currentPhase))||[...shots].some(s=>s.id.startsWith('announcement'));},
   pause(value){paused=!!value;if(paused)stopAll();report();},
-  setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of ['rolling','doors','announcementJa','announcementEn'])load(id);report();},
+  setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of ['rolling','doors','announcementJa','announcementEn','gate'])load(id);report();},
   setVolume(value){bus.gain.setTargetAtTime(Math.max(0,Math.min(1,Number(value)||0)),ctx.currentTime,.08);},
   update({position,gate,gateState,arrival,rail,time=0,paused:pause=false}){
    if(paused!==pause){paused=pause;if(paused)stopAll();report();}

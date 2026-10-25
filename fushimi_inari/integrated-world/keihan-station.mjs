@@ -6,9 +6,9 @@ import {keihanRampMaterial} from './keihan-ramp-material.mjs';
 
 const NAME='Keihan Fushimi-Inari P2 arrival';
 const clamp=n=>Math.max(0,Math.min(1,Number.isFinite(n)?n:0));
-function labelMaterial(text,background='#27343e',color='#f1eee0'){
- const material=new THREE.MeshStandardMaterial({color:background,roughness:.82,emissive:background,emissiveIntensity:.08});material.userData.label=text;
- if(globalThis.document?.createElement){const c=document.createElement('canvas');c.width=1024;c.height=160;const ctx=c.getContext('2d');if(ctx){ctx.fillStyle=background;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle=color;ctx.font='bold 66px sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(text,512,84,1000);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;material.map=map;material.emissiveMap=map;material.color.set('#ffffff');}}
+function labelMaterial(text,background='#27343e',color='#f1eee0',aspect=6.4){
+ const material=new THREE.MeshBasicMaterial({color:background,toneMapped:false});material.userData.label=text;
+ if(globalThis.document?.createElement){const c=document.createElement('canvas');c.height=192;c.width=Math.min(2048,Math.round(c.height*aspect));const ctx=c.getContext('2d');if(ctx){ctx.fillStyle=background;ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle=color;ctx.font='bold 80px sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(text,c.width/2,c.height/2,c.width-40);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;material.map=map;material.color.set('#ffffff');}}
  return material;
 }
 // Interpretive information based on Keihan station information and shrine access.
@@ -54,7 +54,7 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
   }
   for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];parts.sheet([a[0],bottom,a[1],a[0],y(...a),a[1],b[0],y(...b),b[1],a[0],bottom,a[1],b[0],y(...b),b[1],b[0],bottom,b[1]],p.stone);}
  }
- const label=(text,width,height,position,rotation=0,bg)=>{const mat=labelMaterial(text,bg),mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),mat);mesh.position.set(...position);mesh.rotation.y=rotation;mesh.name=text;group.add(mesh);labels.push(mat);return mesh;};
+ const label=(text,width,height,position,rotation=0,bg)=>{const mat=labelMaterial(text,bg,undefined,width/height),mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),mat);mesh.position.set(...position);mesh.rotation.y=rotation;mesh.name=text;group.add(mesh);labels.push(mat);return mesh;};
  for(const platform of [spec.platform2,spec.platform1])slab(platform.points,spec.platformFloor,spec.railTop-.35);
  // The east outer wall is the real obstacle seen directly after disembarking.
  // It never opens toward the shrine: the public exit is SOUTH, on the right.

@@ -13,11 +13,14 @@ function nodeCopy(source){
 // walking distance. Instance tint remains active (multiply, never overwrite).
 export function toriiMaterials(legacy,{separateInk=false}={}){
   const fresh=nodeCopy(legacy.torii.fresh);
-  fresh.normalScale.set(.45,.45);fresh.roughness=.4;fresh.clearcoat=.35;
+  fresh.normalScale.set(.45,.45);fresh.roughness=.68;fresh.clearcoat=.06;fresh.metalness=0;fresh.envMapIntensity=.3;
   const weathered=nodeCopy(legacy.torii.weathered);
-  weathered.normalScale.set(.55,.55);weathered.roughness=.78;
+  weathered.normalScale.set(.55,.55);weathered.roughness=.78;weathered.clearcoat=.02;weathered.metalness=0;weathered.envMapIntensity=.3;
   const beam=nodeCopy(legacy.materials.vermilionMat);
-  beam.color.set(0xffffff);beam.normalScale.set(.18,.18);beam.roughness=.57;
+  // Painted timber is dielectric. Copied metallic/lacquer settings turn the
+  // horizontal beam toward white under the bright studio environment.
+  beam.color.set(0xffffff);beam.normalScale.set(.18,.18);beam.roughness=.72;
+  beam.metalness=0;beam.clearcoat=.02;beam.envMapIntensity=.25;
   if(separateInk){
     // The old column colour/normal maps contain baked, identical donor text.
     // Reuse the original unlettered timber maps below our separate curved ink.

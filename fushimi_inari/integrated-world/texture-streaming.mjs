@@ -10,7 +10,7 @@ export function textureTierURL(url,mode){
 // byte-identical original PNGs and swaps them in without replacing materials.
 export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false}={}){
  const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0;
- const cells=new Map(),largeUsers=[],ready=[];let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
+ const cells=new Map(),largeUsers=[],ready=[],indexedObjects=new Set();let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
  const tier=()=>mode==='ultra'?'ultra':'balanced';
  const pending=()=>queue.length+active+ready.length;
  // Reporting can serialize many texture clones in audit mode. Keep it off the
@@ -65,10 +65,14 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   if(r.current)texture.image=r.images.get(r.current);
   texture.needsUpdate=true;r.textures.add(texture);sources.set(texture.source,r);return texture;
  }
- function index(scene){users=[];cells.clear();largeUsers.length=0;lastPosition=null;for(const r of records.values())r.userCount=0;scene.updateMatrixWorld(true);scene.traverse(o=>{
-  if(!o.geometry)return;const used=new Set();
+ function index(scene,{append=false}={}){
+  // Deferred assets already belong to the live scene. Index their own subtree
+  // without revisiting every static mesh and recomputing instanced bounds.
+  if(!append){users=[];cells.clear();largeUsers.length=0;indexedObjects.clear();for(const r of records.values())r.userCount=0;}
+  lastPosition=null;elapsed=1;scene.updateWorldMatrix(true,true);scene.traverse(o=>{
+  if(!o.geometry||indexedObjects.has(o))return;const used=new Set();
   for(const m of [o.material].flat().filter(Boolean))for(const t of Object.values(m)){if(!t?.isTexture)continue;const r=sources.get(t.source);if(r){r.textures.add(t);used.add(r);}}
-  if(!used.size)return;
+  if(!used.size)return;indexedObjects.add(o);
   if(o.isInstancedMesh)o.computeBoundingSphere();else if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();
   const sphere=(o.boundingSphere??o.geometry.boundingSphere).clone().applyMatrix4(o.matrixWorld);
   const user={sphere,used};users.push(user);for(const r of used)r.userCount++;

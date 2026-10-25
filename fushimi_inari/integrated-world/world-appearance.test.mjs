@@ -90,7 +90,8 @@ test('station capture is prepared during loading and never initiated by frame up
   try {
     const scene=new GPU.Scene(),group=new GPU.Group(),camera=new GPU.PerspectiveCamera();scene.add(group);
     camera.position.set(-302.4,32,-176);
-    appearance=await installWorldAppearance({scene,renderer,camera,assembly:{keihanStation:{group}},
+    const quality={mode:'balanced',setLook(){}};
+    appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group}},
       hemi:new GPU.HemisphereLight(),sun:new GPU.DirectionalLight()});
     const deferred=new GPU.Group(),metal=new GPU.MeshStandardMaterial({metalness:.8});metal.name='Deferred steel';
     const first=new GPU.Mesh(new GPU.BoxGeometry(),metal),second=new GPU.Mesh(first.geometry,metal);
@@ -100,12 +101,20 @@ test('station capture is prepared during loading and never initiated by frame up
     appearance.applyTo(deferred);assert.equal(first.material,finish,'repeated application keeps the same finish');
     for(let i=0;i<5;i++)appearance.update(i);
     assert.equal(captures,0,'arrival frames do not lazily capture');
-    appearance.prepare();appearance.prepare();assert.equal(captures,1,'preparation is idempotent');
+    const globalEnvironment=scene.environment;
+    appearance.prepare();appearance.prepare();assert.equal(captures,0,'Balanced loading avoids six-view captures');
+    assert.equal(appearance.stats.prepared,true);assert.equal(scene.environment,globalEnvironment);
+    appearance.setLook('sakura');assert.equal(captures,0,'Balanced look changes retain pending capture');
+    quality.mode='high';appearance.prepare();appearance.prepare();assert.equal(captures,1,'High captures pending state once');
     for(let i=0;i<5;i++)appearance.update(i);
     camera.position.x=0;appearance.update(10);camera.position.x=-302.4;appearance.update(11);
     assert.equal(captures,1,'proximity changes reuse the prepared probe');
-    appearance.setLook('sakura');assert.equal(captures,2,'an explicit look event refreshes before frames resume');
-    appearance.setLook('sakura');appearance.update(12);assert.equal(captures,2);
+    appearance.setLook('dreamcore');assert.equal(captures,2,'an explicit look event refreshes before frames resume');
+    appearance.setLook('dreamcore');appearance.update(12);assert.equal(captures,2);
+    quality.mode='balanced';appearance.prepare();appearance.update(13);
+    assert.equal(scene.environment,globalEnvironment);assert.equal(captures,2);
+    quality.mode='ultra';appearance.prepare();appearance.update(14);
+    assert.equal(captures,2,'Ultra reuses the clean cached probe');assert.notEqual(scene.environment,globalEnvironment);
     appearance.dispose();assert.equal(first.material,metal,'disposal restores deferred materials');
     first.geometry.dispose();metal.dispose();
   } finally {appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=original;}

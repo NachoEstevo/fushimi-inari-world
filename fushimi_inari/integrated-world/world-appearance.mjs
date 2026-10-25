@@ -58,13 +58,17 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const center=new THREE.Vector3(-302.4,31,-176);
   let look='natural',disposed=false,near=false,dirty=true,reflectionFailed=false,prepared=false;
   applyTo(scene);
-  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false};
+  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false};
+  const allowsLocalReflections=()=>quality?.mode==='high'||quality?.mode==='ultra';
   const lighting=createWorldLookLighting({scene,hemi,sun,onChange:()=>{dirty=true;}});
   const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);if(prepared)prepare();}};
   // The welcome/loading owner calls this before starting the train timeline.
   // Rendering never triggers a six-view capture, including when prepare is omitted.
   function prepare() {
     if(disposed||reflectionFailed)return;
+    prepared=true;stats.prepared=true;
+    stats.localReflections=allowsLocalReflections();
+    if(!stats.localReflections){reflections?.setEnabled(false);return;}
     if(reflections&&dirty) {
       const visible=practicals.visible;
       try {practicals.visible=true;reflections.capture();dirty=false;}
@@ -74,7 +78,6 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
         console.warn('Station reflection unavailable; retaining global environment.',error);
       } finally {practicals.visible=visible;}
     }
-    prepared=true;stats.prepared=true;
   }
   function setLook(name) {
     if(disposed)return;
@@ -91,7 +94,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     practicals.visible=near;stats.nearStation=near;
     if(reflections&&prepared&&!reflectionFailed) {
       try {
-        if(near) {
+        if(near&&allowsLocalReflections()) {
           if(reflections.stats.captures&&!reflections.stats.enabled)reflections.setEnabled(true);
         } else if(reflections.stats.enabled)reflections.setEnabled(false);
       } catch(error) {

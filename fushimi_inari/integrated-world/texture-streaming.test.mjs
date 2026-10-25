@@ -131,3 +131,20 @@ test('audit reports are throttled during uploads and finish with indexed user co
  scene.remove(scene.children[0]);stream.index(scene);await stream.prepare(scene,new THREE.Vector3());
  assert.equal(reports.at(-1).diagnostics.find(record=>record.file==='foliage_audit.png').users,2);
 });
+
+
+test('deferred subtree indexing preserves existing residency without revisiting static world geometry',async()=>{
+ const requests=[],stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:64,height:64};}}),scene=new THREE.Scene();
+ const first=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:stream.load('../assets/textures/existing.png')}));scene.add(first);
+ stream.index(scene);stream.update(new THREE.Vector3());await flush();
+ // A full-world rebuild would touch this geometry again. Incremental indexing
+ // must only inspect the newly attached subtree and its ancestor transforms.
+ const geometry=first.geometry;Object.defineProperty(first,'geometry',{get(){throw new Error('static world revisited');},configurable:true});
+ const group=new THREE.Group();group.position.x=1000;scene.add(group);
+ group.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:stream.load('../assets/textures/deferred.png')})));
+ stream.index(group,{append:true});stream.index(group,{append:true});
+ assert.equal(stream.stats.users,2);stream.update(new THREE.Vector3());await flush();assert.equal(requests.length,1);
+ stream.update(new THREE.Vector3(1000,0,0));await flush();assert.equal(requests.length,2);
+ Object.defineProperty(first,'geometry',{value:geometry,configurable:true});
+ scene.remove(group);stream.index(scene);assert.equal(stream.stats.users,1);
+});

@@ -17,5 +17,6 @@ test('official platform directions remain distinct and canopy signs clear head h
  assert.equal(buildKeihanStationDetailPolish(assembly),report);assert.equal(station.group.children.length,1);
  const faces=[];report.group.traverse(o=>{if(o.isMesh&&o.geometry.type==='PlaneGeometry')faces.push(o);});
  assert.equal(faces.length,3);assert.equal(new Set(faces.map(o=>o.material)).size,1);
+ for(const face of faces){assert.equal(face.material.isMeshBasicMaterial,true);assert.equal(face.material.toneMapped,false);assert.ok(Math.abs(face.geometry.parameters.width/face.geometry.parameters.height-6)<1e-8);}
  for(const face of faces){const uv=face.geometry.attributes.uv;for(let i=0;i<uv.count;i++)assert.ok(uv.getY(i)>=0&&uv.getY(i)<=1);}
 });

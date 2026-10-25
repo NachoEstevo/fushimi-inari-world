@@ -28,7 +28,7 @@ export function buildKeihanStationDetailPolish(assembly){
  const previous=station.group.getObjectByName(OWNER);if(previous)return previous.userData.report;
  const group=new THREE.Group();group.name=OWNER;group.userData.detailRadius=70;
  const parts=staticParts(group),frame=new THREE.MeshStandardMaterial({color:'#3b4448',metalness:.35,roughness:.65}),map=atlas();
- const print=new THREE.MeshStandardMaterial({color:map?'#ffffff':'#e3e9db',map,roughness:.84,side:THREE.DoubleSide});
+ const print=new THREE.MeshBasicMaterial({color:map?'#ffffff':'#e3e9db',map,toneMapped:false,side:THREE.DoubleSide});
  const floor=station.spec.platformFloor,records=[];
  function board(index,position,yaw,width,height,suspended=false){
   const g=new THREE.Group();g.name=`Keihan ${KEIHAN_DETAIL_BOARDS[index].id} sign`;g.position.set(...position);g.rotation.y=yaw;group.add(g);
@@ -41,10 +41,10 @@ export function buildKeihanStationDetailPolish(assembly){
  }
  // Suspended below existing canopy. Lowest edge > 2.4m; walking volumes
  // remain owned entirely by keihan-station.mjs.
- board(0,[-302.5,floor+2.70,-176],Math.PI,3.45,.54,true);
- board(1,[-319.0,floor+2.70,-176],0,3.25,.54,true);
+ board(0,[-302.5,floor+2.70,-176],Math.PI,3.45,3.45/6,true);
+ board(1,[-319.0,floor+2.70,-176],0,3.25,3.25/6,true);
  const z=-188,x=-299.854+(z+152.04)/(-49.215)*1.514;
- board(2,[x-.205,floor+1.94,z],-Math.PI/2,2.55,.48);
+ board(2,[x-.205,floor+1.94,z],-Math.PI/2,2.55,2.55/6);
  const stats=parts.flush();station.group.add(group);
  const report={built:true,group,detailGroups:[group],records,stats:{...stats,signFaces:3,atlasTextures:map?1:0,colliders:0},provenance:'Official Keihan KH34 plan, current 2026-04-01, establishes platform directions. Original sign graphics and inferred dimensions; no timetable or new facility claims.'};
  Object.defineProperty(group.userData,'report',{value:report});return report;

@@ -4,24 +4,25 @@ import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,va
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
 export const SKY_SUN_DIRECTIONS={day:[-45,65,35],gold:[-65,8,35]};
 export const SKY_CLOUD_DRIFT=.0018;
+export const skyDistanceScale=far=>Math.min(1,far/7500);
 export function installSky(scene,camera){
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
   const ctx=canvas.getContext('2d'),texture=new THREE.CanvasTexture(canvas);
   texture.colorSpace=THREE.SRGBColorSpace;
-  const material=new THREE.MeshBasicMaterial({map:texture,side:THREE.BackSide,depthWrite:false,toneMapped:false});
+  const material=new THREE.MeshBasicMaterial({map:texture,side:THREE.BackSide,depthWrite:false,toneMapped:false,fog:false});
   const dome=new THREE.Mesh(new THREE.SphereGeometry(6000,48,24),material);
   dome.name='Atmosphere · sparse clouds';dome.frustumCulled=false;dome.renderOrder=-100;
   scene.add(dome);
   const cloudCanvas=document.createElement('canvas');cloudCanvas.width=2048;cloudCanvas.height=1024;
   const cloudCtx=cloudCanvas.getContext('2d'),cloudTexture=new THREE.CanvasTexture(cloudCanvas);
   cloudTexture.colorSpace=THREE.SRGBColorSpace;
-  const cloudMaterial=new THREE.MeshBasicMaterial({map:cloudTexture,side:THREE.BackSide,transparent:true,depthWrite:false,toneMapped:false});
+  const cloudMaterial=new THREE.MeshBasicMaterial({map:cloudTexture,side:THREE.BackSide,transparent:true,depthWrite:false,toneMapped:false,fog:false});
   const clouds=new THREE.Mesh(new THREE.SphereGeometry(5800,48,24),cloudMaterial);
   clouds.name='Drifting sky clouds';clouds.frustumCulled=false;clouds.renderOrder=-95;scene.add(clouds);
   const sunRadius=uv().sub(.5).length();
   const sunCore=float(1).sub(smoothstep(.104,.115,sunRadius));
   const sunHalo=exp(sunRadius.mul(sunRadius).mul(-24)).mul(.25);
-  const sunMaterial=new THREE.SpriteNodeMaterial({transparent:true,depthWrite:false,toneMapped:false});
+  const sunMaterial=new THREE.SpriteNodeMaterial({transparent:true,depthWrite:false,toneMapped:false,fog:false});
   const sunTint=uniform(new THREE.Color('#fff4d0'));
   sunMaterial.colorNode=vec3(sunTint);
   sunMaterial.opacityNode=sunCore.add(sunHalo).mul(float(1).sub(smoothstep(.4,.5,sunRadius)));
@@ -38,16 +39,16 @@ export function installSky(scene,camera){
   }
   // WebGPU point primitives are always one pixel: instanced sprite quads retain
   // the original circular profile and screen-space sizes on both backends.
-  const starTime=uniform(0);
+  const starTime=uniform(0),distanceScale=uniform(skyDistanceScale(camera.far));
   const phase=varying(instancedBufferAttribute(new THREE.InstancedBufferAttribute(new Float32Array(phases),1)));
   const radius=uv().sub(.5).length();
   const core=float(1).sub(smoothstep(.07,.22,radius));
   const halo=exp(radius.mul(radius).mul(-22)).mul(.32);
   const alpha=core.add(halo).mul(sin(starTime.mul(.7).add(phase)).mul(.12).add(.88))
     .mul(float(1).sub(smoothstep(.43,.5,radius)));
-  const starsMat=new THREE.PointsNodeMaterial({transparent:true,depthWrite:false,toneMapped:false,
+  const starsMat=new THREE.PointsNodeMaterial({transparent:true,depthWrite:false,toneMapped:false,fog:false,
     blending:THREE.AdditiveBlending,sizeAttenuation:false,alphaToCoverage:false});
-  starsMat.positionNode=instancedBufferAttribute(new THREE.InstancedBufferAttribute(new Float32Array(positions),3));
+  starsMat.positionNode=instancedBufferAttribute(new THREE.InstancedBufferAttribute(new Float32Array(positions),3)).mul(distanceScale);
   starsMat.sizeNode=instancedBufferAttribute(new THREE.InstancedBufferAttribute(new Float32Array(sizes),1)).mul(screenDPR.min(1.7)).div(screenDPR);
   starsMat.colorNode=mix(vec3(.75,.86,1),vec3(1,.95,.84),sin(phase).mul(.5).add(.5));
   starsMat.opacityNode=alpha;
@@ -108,9 +109,11 @@ export function installSky(scene,camera){
   }
   paint();
   return {setMode,setLook,update(){
-    const seconds=performance.now()/1000;
+    const seconds=performance.now()/1000,scale=skyDistanceScale(camera.far);
+    dome.scale.setScalar(scale);clouds.scale.setScalar(scale);distanceScale.value=scale;
+    sunDisc.scale.setScalar(350*scale);
     dome.position.copy(camera.position);clouds.position.copy(camera.position);stars.position.copy(camera.position);
-    sunDisc.position.copy(camera.position).add(sunDirection);
+    sunDisc.position.copy(camera.position).addScaledVector(sunDirection,scale);
     clouds.rotation.y=(seconds-startedAt)*SKY_CLOUD_DRIFT;starTime.value=seconds;
   }};
 }

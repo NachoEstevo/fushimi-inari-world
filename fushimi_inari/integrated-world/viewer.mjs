@@ -1,5 +1,7 @@
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
 import {attachCloudShade} from './cloud-shade.mjs';
+import {compileAddedGroup} from './scoped-compilation.mjs';
+import {createViewingDistance} from './viewing-distance.mjs';
 import {installRendererTextureBindings} from './renderer-texture-bindings.mjs';
 import {createForestWildlife} from './forest-wildlife.mjs';
 import {installWorldAppearance} from './world-appearance.mjs';
@@ -53,6 +55,12 @@ const query=new URLSearchParams(location.search);
 const allowDebugCamera=query.get('debugCamera')==='1';
 const allowFastTravel=allowDebugCamera||query.get('audit')==='1'||query.get('textureAudit')==='1';
 const welcome=installWelcomeScreen();
+const loadingStages=[];
+function loadingStage(message){
+  $('loading').textContent=message;
+  loadingStages.push({message,ms:Math.round(performance.now())});
+  document.body.dataset.loadingStages=JSON.stringify(loadingStages);
+}
 try {
   const [terrain,features,manifest]=await Promise.all(['terrain','features','manifest'].map(async name=>{
     const response=await fetch(`../geography/${name}.json`);if(!response.ok)throw new Error(`${name}: HTTP ${response.status}`);return response.json();
@@ -73,19 +81,20 @@ try {
   renderer.domElement.tabIndex=0;
   renderer.domElement.setAttribute('aria-label','Explore Inariyama: click to capture mouse, WASD to walk, mouse to look, Escape to release');
   const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.2,12000);
+  const viewingDistance=createViewingDistance({scene,camera,debugCamera:allowDebugCamera});
   const sky=installSky(scene,camera);
   const controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=3;controls.maxDistance=6000;
   const hemi=new THREE.HemisphereLight(0xe9f1e3,0x61765f,1.6);scene.add(hemi);
   const sun=new THREE.DirectionalLight(0xffebcd,2.3);sun.position.set(-800,1400,-600);scene.add(sun);
   const audio=createAudio();
-  assembly=await integrate(scene,renderer,terrain,features,{progress:message=>$('loading').textContent=message,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+  loadingStage('Building nearby streets and walking surfaces…');
+  assembly=await integrate(scene,renderer,terrain,features,{progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
     appearance.applyTo(group);
-    quality.refreshTextures();
-    textureStreaming.index(scene);
+    quality.refreshTextures(group);
+    textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    // Compile against the real environment and light set, not a bare Group.
-    await renderer.compileAsync(scene,camera);
+    await compileAddedGroup(renderer,scene,group,camera);
     detailChunks.add(group);
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
@@ -450,7 +459,7 @@ try {
     const preset=LIGHT_PRESETS[mode]??LIGHT_PRESETS.day;
     sun.intensity=preset.sun;sun.color.set(preset.color);sunOffset.fromArray(preset.offset);
     hemi.intensity=preset.fill;hemi.color.set(preset.sky);hemi.groundColor.set(preset.ground);
-    renderer.toneMappingExposure=preset.exposure;sky.setMode(mode);routeLighting.setMode(mode);
+    renderer.toneMappingExposure=preset.exposure;sky.setMode(mode);routeLighting.setMode(mode);viewingDistance.setTimeOfDay(mode);
     assembly.inariStation?.setMode(mode);
     assembly.keihanStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
@@ -473,7 +482,7 @@ try {
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:value=>{textureStreaming.setMode(value);quality.setMode(value);},
+    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(value);textureStreaming.setMode(value);appearance.prepare();},
     onDetailDistance:value=>{detailDistance=value;}});
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
@@ -492,7 +501,7 @@ try {
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
   addEventListener('pagehide',event=>{if(!event.persisted){appearance.dispose();pondReflections.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
-  $('loading').textContent='Preparing materials for the arrival…';
+  loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
   const prepareNearby=()=>{
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
@@ -500,7 +509,7 @@ try {
     sun.position.copy(sun.target.position).add(sunOffset);sky.update();
     canopy.update(camera);panorama.update(camera,$('buildings').checked);
   };
-  $('loading').textContent='Preparing train, platform and reflections…';
+  loadingStage('Preparing train and platform…');
   const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
     prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
     compile:()=>{appearance.update(0);return renderer.compileAsync(scene,camera);},
@@ -511,7 +520,7 @@ try {
     camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
   }
   document.body.dataset.arrivalRenderPrepared=String(arrivalPrepared);
-  if(new URLSearchParams(location.search).has('audit'))document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
+  document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
   trace();
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
