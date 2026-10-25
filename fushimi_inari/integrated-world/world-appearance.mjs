@@ -1,7 +1,6 @@
 import * as THREE from 'three/webgpu';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
-import {createStationReflectionStudy} from './webgpu-station-reflections.mjs';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
 
 // The caller owns renderer initialization, the render loop and time-of-day.
@@ -15,14 +14,15 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const station=assembly.keihanStation;
   const materials=station?.group?createStationMaterialStudy(station):null;
   materials?.setEnabled(true);
-  const reflections=station?.group?await createStationReflectionStudy({renderer,scene,station}):null;
   const practicals=new THREE.Group();practicals.name='Station platform practical lights';
   for(const z of [-163,-176,-189]) {
     const light=new THREE.SpotLight('#fff1dc',18,11,1.25,.8,2);
     light.position.set(-302.4,33.65,z);light.target.position.set(-302.4,30.93,z);
     practicals.add(light,light.target);
   }
-  practicals.visible=false;scene.add(practicals);
+  // Distance-limited lights stay registered, avoiding pipeline rebuilds when
+  // crossing the station radius; their physical range already limits their reach.
+  scene.add(practicals);
 
   // Only named, already-metallic plain finishes qualify outside the station.
   // Shared replacements retain sharing, while mapped art and shrine paint stay intact.
@@ -56,60 +56,37 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   petals.name='Local sakura petals';petals.frustumCulled=false;petals.visible=false;
   petals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(petals);
   const center=new THREE.Vector3(-302.4,31,-176);
-  let look='natural',disposed=false,near=false,dirty=true,reflectionFailed=false,prepared=false;
+  let look='natural',disposed=false,near=false;
   applyTo(scene);
   const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false};
-  const allowsLocalReflections=()=>quality?.mode==='high'||quality?.mode==='ultra';
-  const lighting=createWorldLookLighting({scene,hemi,sun,onChange:()=>{dirty=true;}});
-  const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);if(prepared)prepare();}};
-  // The welcome/loading owner calls this before starting the train timeline.
-  // Rendering never triggers a six-view capture, including when prepare is omitted.
+  const lighting=createWorldLookLighting({scene,hemi,sun});
+  const updateBaseLighting=callback=>{if(!disposed)lighting.updateBaseLighting(callback);};
+  // Keep one environment texture for the lifetime of the world. Capturing the
+  // complete city synchronously stalls menu events, and swapping scene-wide IBL
+  // at the station boundary invalidates material pipelines throughout the city.
+  // The isolated reflection study remains available outside the live viewer.
   function prepare() {
-    if(disposed||reflectionFailed)return;
-    prepared=true;stats.prepared=true;
-    stats.localReflections=allowsLocalReflections();
-    if(!stats.localReflections){reflections?.setEnabled(false);return;}
-    if(reflections&&dirty) {
-      const visible=practicals.visible;
-      try {practicals.visible=true;reflections.capture();dirty=false;}
-      catch(error) {
-        reflectionFailed=true;stats.reflectionError=String(error.message??error);
-        reflections.setEnabled(false);
-        console.warn('Station reflection unavailable; retaining global environment.',error);
-      } finally {practicals.visible=visible;}
-    }
+    if(disposed)return;
+    stats.prepared=true;
   }
   function setLook(name) {
     if(disposed)return;
     const next=['sakura','dreamcore'].includes(name)?name:'natural';
     quality?.setLook(next);
-    if(look!==next)dirty=true;
     look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;
     lighting.setLook(next);
-    if(prepared)prepare();
   }
   function update(time=0) {
     if(disposed)return;
     near=!!station?.group&&Math.hypot(camera.position.x-center.x,camera.position.z-center.z)<70;
-    practicals.visible=near;stats.nearStation=near;
-    if(reflections&&prepared&&!reflectionFailed) {
-      try {
-        if(near&&allowsLocalReflections()) {
-          if(reflections.stats.captures&&!reflections.stats.enabled)reflections.setEnabled(true);
-        } else if(reflections.stats.enabled)reflections.setEnabled(false);
-      } catch(error) {
-        reflectionFailed=true;stats.reflectionError=String(error.message??error);
-        reflections.setEnabled(false);
-        console.warn('Station reflection unavailable; retaining global environment.',error);
-      }
-    }
+    stats.nearStation=near;
     petals.visible=look==='sakura'&&!motion?.matches;
     if(!petals.visible)return;
     petalField.update(camera.position,time);
   }
   function dispose() {
     if(disposed)return;disposed=true;
-    reflections?.dispose();materials?.dispose();
+    materials?.dispose();
     for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
     for(const material of replacements.values())material.dispose();
     scene.remove(practicals,petals);petalField.dispose();

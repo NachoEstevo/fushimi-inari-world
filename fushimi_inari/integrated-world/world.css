@@ -761,3 +761,8 @@ button:active {
   .welcome-lede {font-size:15px;margin-bottom:16px}
   .welcome-credit {position:static;margin-top:12px}
 }
+/* Diagnostic stays quiet and does not intercept walking controls. */
+#render-stats {position:fixed;left:16px;bottom:36px;z-index:30;padding:7px 10px;border-radius:5px;background:rgba(24,30,27,.84);color:#edf1e9;font:12px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums;pointer-events:none;max-width:calc(100vw - 32px)}
+#render-stats[data-health="stall"] {color:#ffc596}
+#render-stats[data-health="slow"] {color:#ffe6a0}
+.welcome-open #render-stats {visibility:hidden}

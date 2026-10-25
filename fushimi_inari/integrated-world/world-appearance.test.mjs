@@ -76,7 +76,7 @@ test('return to daylight restores daylight environment and latest preset hue',{s
   assert.ok(sun.color.equals(new THREE.Color(LIGHT_PRESETS.day.color)));
 });
 
-test('station capture is prepared during loading and never initiated by frame updates',{skip:THREE.REVISION!=='180'},async()=>{
+test('live quality, look and station transitions retain one environment without scene captures',{skip:THREE.REVISION!=='180'},async()=>{
   const GPU=await import('three/webgpu');
   const {installWorldAppearance}=await import('./world-appearance.mjs');
   const original=GPU.PMREMGenerator.prototype.fromScene;
@@ -101,20 +101,24 @@ test('station capture is prepared during loading and never initiated by frame up
     appearance.applyTo(deferred);assert.equal(first.material,finish,'repeated application keeps the same finish');
     for(let i=0;i<5;i++)appearance.update(i);
     assert.equal(captures,0,'arrival frames do not lazily capture');
+    const practicals=scene.getObjectByName('Station platform practical lights');
+    assert.equal(practicals.visible,true);
     const globalEnvironment=scene.environment;
     appearance.prepare();appearance.prepare();assert.equal(captures,0,'Balanced loading avoids six-view captures');
     assert.equal(appearance.stats.prepared,true);assert.equal(scene.environment,globalEnvironment);
-    appearance.setLook('sakura');assert.equal(captures,0,'Balanced look changes retain pending capture');
-    quality.mode='high';appearance.prepare();appearance.prepare();assert.equal(captures,1,'High captures pending state once');
+    appearance.setLook('sakura');assert.equal(captures,0,'Balanced look changes do not capture');
+    quality.mode='high';appearance.prepare();appearance.prepare();assert.equal(captures,0,'High does not synchronously capture the city');
     for(let i=0;i<5;i++)appearance.update(i);
-    camera.position.x=0;appearance.update(10);camera.position.x=-302.4;appearance.update(11);
-    assert.equal(captures,1,'proximity changes reuse the prepared probe');
-    appearance.setLook('dreamcore');assert.equal(captures,2,'an explicit look event refreshes before frames resume');
-    appearance.setLook('dreamcore');appearance.update(12);assert.equal(captures,2);
+    camera.position.x=0;appearance.update(10);assert.equal(practicals.visible,true,'leaving the station retains the light pipeline');
+    camera.position.x=-302.4;appearance.update(11);
+    assert.equal(captures,0,'proximity changes do not capture');assert.equal(scene.environment,globalEnvironment);
+    appearance.setLook('dreamcore');assert.equal(captures,0,'look changes do not capture the city');
+    appearance.setLook('dreamcore');appearance.update(12);assert.equal(captures,0);
     quality.mode='balanced';appearance.prepare();appearance.update(13);
-    assert.equal(scene.environment,globalEnvironment);assert.equal(captures,2);
+    assert.equal(scene.environment,globalEnvironment);assert.equal(captures,0);
     quality.mode='ultra';appearance.prepare();appearance.update(14);
-    assert.equal(captures,2,'Ultra reuses the clean cached probe');assert.notEqual(scene.environment,globalEnvironment);
+    assert.equal(captures,0,'Ultra retains the studio probe');assert.equal(scene.environment,globalEnvironment);
+    appearance.updateBaseLighting(()=>{});assert.equal(captures,0);assert.equal(scene.environment,globalEnvironment);
     appearance.dispose();assert.equal(first.material,metal,'disposal restores deferred materials');
     first.geometry.dispose();metal.dispose();
   } finally {appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=original;}

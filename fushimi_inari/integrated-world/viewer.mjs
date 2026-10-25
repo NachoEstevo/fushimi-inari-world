@@ -549,6 +549,7 @@ try {
 
   renderer.info.autoReset=false;
   const recordRender=renderStats(renderer);
+  document.addEventListener('visibilitychange',recordRender.reset);
   lastTime=performance.now();
   let mapTimer=0;
   function animate(time){
