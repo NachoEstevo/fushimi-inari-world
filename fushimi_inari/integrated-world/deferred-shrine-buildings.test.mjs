@@ -42,3 +42,26 @@ test('load and viewer preparation serialize, deduplicate and continue after a fa
  assert.equal(loader.stats().buildings.honden.status,'ready');
  loader.update({x:0,z:0});await Promise.resolve();assert.equal(calls.length,4);
 });
+
+test('approach prefetch prepares once without activation and retains stage timings',async()=>{
+ const calls=[];let yields=0;
+ const loader=createDeferredShrineBuildings({anchor:[0,0,0],yieldWork:async()=>{yields++;},
+  prefetch:async(id,timing)=>{calls.push(`prepare:${id}`);timing('parse',12);return {id};},
+  load:async(id,scene,timing)=>{assert.equal(scene.id,id);calls.push(`activate:${id}`);timing('prepare',3);return scene;}});
+ loader.update({x:-302,z:-169});await Promise.resolve();assert.deepEqual(calls,[]);
+ loader.update({x:250,z:0});await loader.prefetch();
+ assert.equal(calls.length,4);assert.ok(calls.every(c=>c.startsWith('prepare:')));
+ assert.ok(Object.values(loader.stats().buildings).every(s=>s.status==='prepared'&&s.timings.parse===12));
+ loader.update({x:200,z:0});await loader.ensure();
+ assert.equal(calls.length,8);assert.equal(yields,8);
+ assert.ok(Object.values(loader.stats().buildings).every(s=>s.status==='ready'&&s.timings.prepare===3));
+});
+
+test('failed prefetch does not strand the queue or retry on approach frames',async()=>{
+ let attempts=0;
+ const loader=createDeferredShrineBuildings({anchor:[0,0,0],prefetch:async id=>{if(id==='romon'&&++attempts===1)throw Error('offline');return id;},load:async(id,value)=>value});
+ const results=await Promise.allSettled(shrineBuildingIds.map(id=>loader.prefetch(id)));
+ assert.equal(results[0].status,'rejected');assert.equal(results[3].status,'fulfilled');
+ loader.update({x:250,z:0});await Promise.resolve();assert.equal(attempts,1);
+ assert.equal(await loader.ensure('romon'),'romon');assert.equal(attempts,2);
+});

@@ -97,7 +97,7 @@ try {
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    await compileAddedGroup(renderer,scene,group,camera);
+    await compileAddedGroup(renderer,scene,group,camera,{report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});
     detailChunks.add(group);
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
@@ -581,6 +581,7 @@ try {
       document.body.dataset.orbitClearance=JSON.stringify(guard);
     }
     sunShadows.update(time,camera.position,sunOffset);
+    viewingDistance.update(camera.position,dt);
     routeLighting.update(camera,dt);
     candleFlames.update(time);
 

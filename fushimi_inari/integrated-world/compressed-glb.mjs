@@ -7,8 +7,12 @@ export async function decodeGLBTransport(bytes){
 }
 // Lossless transport compression: refinement and collisions receive the exact
 // original geometry. Embedded PNGs are shared as byte-identical external files.
-export async function loadCompressedGLB(url){
+export async function loadCompressedGLB(url,{timing=()=>{},yieldWork=()=>new Promise(resolve=>setTimeout(resolve,0))}={}){
+ let start=performance.now();
  const response=await fetch(url+'.gz');if(!response.ok)throw new Error(`${url}: HTTP ${response.status}`);
- const bytes=await decodeGLBTransport(await response.arrayBuffer());
- return new GLTFLoader().register(sharePrecinctImageSources).parseAsync(bytes,new URL('.',new URL(url,location.href)).href);
+ const transport=await response.arrayBuffer();timing('fetch',performance.now()-start);
+ start=performance.now();const bytes=await decodeGLBTransport(transport);timing('decode',performance.now()-start);
+ await yieldWork();start=performance.now();
+ const gltf=await new GLTFLoader().register(sharePrecinctImageSources).parseAsync(bytes,new URL('.',new URL(url,location.href)).href);
+ timing('parse',performance.now()-start);return gltf;
 }

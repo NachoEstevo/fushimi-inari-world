@@ -30,7 +30,7 @@ test('TSL terrain layers preserve entrance attributes and mapped street ownershi
  assert.equal(geometry.attributes.entranceGround.getX(3),0);
  const entranceColor=material.colorNode;
  const report=blendKeihanStreetGround(geometry,material,features);
- assert.equal(report.segments,23);assert.equal(report.geometryUnchanged,true);assert.notEqual(material.colorNode,entranceColor);
+ assert.equal(report.segments,43);assert.equal(report.geometryUnchanged,true);assert.notEqual(material.colorNode,entranceColor);
  assert.deepEqual(geometry.attributes.position.array,position);assert.equal(material.onBeforeCompile,hook);
  const lastColor=material.colorNode;
  assert.equal(blendKeihanStreetGround(geometry,material,{paths:[]}).built,false);

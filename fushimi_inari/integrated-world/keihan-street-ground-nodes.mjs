@@ -6,7 +6,7 @@ export {makeKeihanStreetGroundMask} from './keihan-street-ground.mjs';
 export function blendKeihanStreetGround(geometry,material,features){
  const layout=makeKeihanStreetGroundMask(features);
  if(!layout||!geometry.attributes?.position)return {built:false,reason:'Keihan street trace unavailable or changed'};
- // Static graph expansion retains all 23 mapped corners and the original
+ // Static graph expansion retains all mapped corners and the original
  // per-fragment distance mask, including the half-metre smooth transition.
  let weight=float(0);
  for(const segment of layout.segments){

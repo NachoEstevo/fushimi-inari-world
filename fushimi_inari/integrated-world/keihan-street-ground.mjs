@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import {pathWidth} from '../geography/geo-core.mjs';
 
 const sourceIds=['way/946510942','way/79699849','way/1057050892','way/297888106','way/79699850'],shoulder=2,fade=.5;
+// Existing paved ways omitted by the original road-only blend. Keep the alley
+// at the east gate and the canal-bank walk at the bridge, not their full traces.
+const pedestrianTraces=[{id:'way/777222941',from:0,to:5},{id:'way/118027062',from:0,to:3},{id:'way/790920573',from:3,to:10}];
+// South of the level crossing, the station rail mesh stops while mapped
+// Keihan tracks continue. OSM API map checked 2026-10-25, projected with the
+// geography origin (34.96714,135.77267); GSI aerial confirms rail/verge use.
+// Only the 64m crossing-to-residential-road tract receives mineral ballast.
+const railTraces=[{id:'way/30430501',points:[[-311.750,-128.329],[-312.406,-97.137],[-312.826,-63.775]]},{id:'way/335685468',points:[[-314.815,-130.322],[-315.234,-108.581],[-315.909,-80.996],[-316.028,-63.931]]}];
 const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t);};
 
 export function makeKeihanStreetGroundMask(features){
@@ -15,11 +23,20 @@ export function makeKeihanStreetGroundMask(features){
    if(dx*dx+dz*dz>1e-8)segments.push({a:[a[0],a[2]],b:[b[0],b[2]],radius});
   }
  }
- // The frozen street and Urasando source has twenty-three segments. Stop at the
+ for(const trace of pedestrianTraces){
+  const path=features.paths?.find(p=>p.id===trace.id);
+  if(!path||path.points.length<=trace.to||!path.points.flat().every(Number.isFinite))return null;
+  // A narrow inferred mineral edge belongs to the mapped paving only; it
+  // must not paint the unsurveyed parcels or manufacture building coverage.
+  const radius=pathWidth(path.tags??{})/2+.35;
+  for(let i=trace.from+1;i<=trace.to;i++){const a=path.points[i-1],b=path.points[i];segments.push({a:[a[0],a[2]],b:[b[0],b[2]],radius});}
+ }
+ for(const trace of railTraces)for(let i=1;i<trace.points.length;i++)segments.push({a:trace.points[i-1],b:trace.points[i],radius:1.65});
+ // The frozen road, local pedestrian and rail-verge source has 43 segments. Stop at the
  // stone-torii approach; way/105449676 beyond the garden is not included.
  // A substantially changed trace
  // needs review instead of silently increasing every terrain fragment's work.
- if(!segments.length||segments.length>32)return null;
+ if(!segments.length||segments.length>48)return null;
  const bounds=[Math.min(...segments.flatMap(s=>[s.a[0]-s.radius-fade,s.b[0]-s.radius-fade])),Math.max(...segments.flatMap(s=>[s.a[0]+s.radius+fade,s.b[0]+s.radius+fade])),Math.min(...segments.flatMap(s=>[s.a[1]-s.radius-fade,s.b[1]-s.radius-fade])),Math.max(...segments.flatMap(s=>[s.a[1]+s.radius+fade,s.b[1]+s.radius+fade]))];
  const mask=(x,z)=>{
   if(x<bounds[0]||x>bounds[1]||z<bounds[2]||z>bounds[3])return 0;
@@ -27,7 +44,7 @@ export function makeKeihanStreetGroundMask(features){
   for(const s of segments){const dx=s.b[0]-s.a[0],dz=s.b[1]-s.a[1],t=Math.max(0,Math.min(1,((x-s.a[0])*dx+(z-s.a[1])*dz)/(dx*dx+dz*dz))),distance=Math.hypot(x-s.a[0]-dx*t,z-s.a[1]-dz*t);weight=Math.max(weight,1-smooth(s.radius-fade,s.radius+fade,distance));}
   return weight;
  };
- return {mask,segments,bounds,sourceIds:[...sourceIds],shoulder,fade};
+ return {mask,segments,bounds,sourceIds:[...sourceIds,...pedestrianTraces.map(t=>t.id),...railTraces.map(t=>t.id)],shoulder,fade};
 }
 
 // Appearance on existing terrain only. Call after the entrance blend and

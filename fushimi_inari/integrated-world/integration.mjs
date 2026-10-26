@@ -1,8 +1,8 @@
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
 import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
-import {createDeferredShrineBuildings} from './deferred-shrine-buildings.mjs';
-import {refineShrineBuilding} from './shrine-building-refinements.mjs';
+import {createDeferredShrineBuildings,yieldShrineWork} from './deferred-shrine-buildings.mjs';
+import {refineShrineBuildingAsync} from './shrine-building-refinements.mjs';
 import {loadCompressedGLB} from './compressed-glb.mjs';
 import {buildOkushaReceptionDisplay} from './okusha-reception-display.mjs';
 import {buildOkushaExitFlanks} from './okusha-exit-flanks.mjs';
@@ -445,14 +445,24 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   root.add(shrineFloors);
   const deferredBuildings=createDeferredShrineBuildings({anchor:byId.romon.target,
-    load:async id=>{
-      const gltf=await loadCompressedGLB(`${id}.glb`);
-      refineShrineBuilding(gltf.scene,id,legacy.materials,{diagnostics:document.body.dataset,gehaidenLanternCleanupR96});
-      gltf.scene.applyMatrix4(matrix(byId[id]));root.add(gltf.scene);root.updateMatrixWorld(true);
-      batchStaticScene(gltf.scene);
-      try{await callbacks.buildingAdded?.(gltf.scene,id);}
-      catch(error){gltf.scene.removeFromParent();throw error;}
+    prefetch:async (id,timing)=>{
+      const gltf=await loadCompressedGLB(`${id}.glb`,{timing});
+      await yieldShrineWork();let start=performance.now();
+      await refineShrineBuildingAsync(gltf.scene,id,legacy.materials,{diagnostics:document.body.dataset,gehaidenLanternCleanupR96,timing:(name,ms)=>timing('refine:'+name,ms)});
+      timing('refine',performance.now()-start);
+      gltf.scene.applyMatrix4(matrix(byId[id]));gltf.scene.updateMatrixWorld(true);
+      await yieldShrineWork();start=performance.now();
+      batchStaticScene(gltf.scene);timing('batch',performance.now()-start);
+      // Compile detached visuals ahead of the activation boundary. The live
+      // renderer must not discover unprepared materials while this awaits.
+      await yieldShrineWork();start=performance.now();
+      await callbacks.buildingAdded?.(gltf.scene,id);
+      timing('prepare',performance.now()-start);
       return gltf.scene;
+    },
+    load:async (id,scene,timing)=>{
+      root.add(scene);scene.updateMatrixWorld(true);
+      return scene;
     },report:value=>{document.body.dataset.deferredBuildings=JSON.stringify(value);}});
   const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';
   for(const flight of [{count:11,width:9.2,start:6.5,end:3.4,bottom:0,rise:2.1},{count:4,width:3.6,start:-5,end:-3.4,bottom:1.6,rise:.5}]){
