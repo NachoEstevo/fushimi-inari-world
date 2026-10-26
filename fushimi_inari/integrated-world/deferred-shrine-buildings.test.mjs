@@ -65,3 +65,34 @@ test('failed prefetch does not strand the queue or retry on approach frames',asy
  loader.update({x:250,z:0});await Promise.resolve();assert.equal(attempts,1);
  assert.equal(await loader.ensure('romon'),'romon');assert.equal(attempts,2);
 });
+
+test('ready visuals activate before the next queued building starts expensive preparation',async()=>{
+ const calls=[];let releaseSecond;
+ const second=new Promise(resolve=>{releaseSecond=resolve;});
+ let active=0,maximum=0;
+ const loader=createDeferredShrineBuildings({anchor:[0,0,0],yieldWork:async()=>{},
+  prefetch:async id=>{
+   active++;maximum=Math.max(maximum,active);calls.push(`prepare:${id}`);
+   try{if(id==='gehaiden')await second;return {id};}finally{active--;}
+  },load:async(id,prepared)=>{assert.equal(prepared.id,id);assert.equal(active,0);calls.push(`activate:${id}`);return prepared;}});
+ loader.update({x:0,z:0});
+ const first=loader.ensure('romon');assert.equal(loader.ensure('romon'),first);
+ assert.equal((await first).id,'romon');
+ assert.deepEqual(calls.slice(0,2),['prepare:romon','activate:romon'],
+  'first ready facade must not wait for the three remaining preparations');
+ releaseSecond();await loader.ensure();
+ assert.equal(maximum,1);assert.ok(Object.values(loader.stats().buildings).every(s=>s.status==='ready'));
+ assert.deepEqual(calls,shrineBuildingIds.flatMap(id=>[`prepare:${id}`,`activate:${id}`]));
+});
+
+test('a failed task yield rejects its building and still drains later preparation',async()=>{
+ let yields=0;
+ const loader=createDeferredShrineBuildings({anchor:[0,0,0],
+  yieldWork:async()=>{if(++yields===1)throw Error('scheduler failed');},
+  prefetch:async id=>id,load:async(id,prepared)=>prepared});
+ const results=await Promise.allSettled(shrineBuildingIds.map(id=>loader.ensure(id)));
+ assert.equal(results[0].status,'rejected');assert.match(results[0].reason.message,/scheduler failed/);
+ assert.ok(results.slice(1).every(r=>r.status==='fulfilled'));
+ assert.equal(loader.stats().buildings.romon.status,'failed');
+ assert.equal(await loader.ensure('romon'),'romon');
+});

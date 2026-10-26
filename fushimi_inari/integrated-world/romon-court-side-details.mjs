@@ -6,6 +6,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 // one pale bamboo rail. romon-wings.mjs owns the physical outer window wall
 // and open court arcade; never duplicate its apertures at the court edge.
 export function buildRomonCourtSideDetails(root,romon,materials){
+  const existing=root.getObjectByName('Romon existing wings court-facing detail');if(existing)return existing;
   const group=new THREE.Group();group.name='Romon existing wings court-facing detail';
   const source=romon.source??[0,1.6,0],yaw=romon.yaw??0,c=Math.cos(yaw),s=Math.sin(yaw);
   group.rotation.y=yaw;group.position.set(romon.target[0]-c*source[0]-s*source[2],romon.target[1]-source[1],romon.target[2]+s*source[0]-c*source[2]);
@@ -17,12 +18,24 @@ export function buildRomonCourtSideDetails(root,romon,materials){
   const part=(geometry,material)=>{if(!batches.has(material))batches.set(material,[]);batches.get(material).push(geometry);};
   const box=(w,h,d,x,y,z,material)=>part(new THREE.BoxGeometry(w,h,d).translate(x,y,z),material);
   const cylinder=(r0,r1,h,x,y,z,material,segments=8)=>part(new THREE.CylinderGeometry(r0,r1,h,segments).translate(x,y,z),material);
+  let barrierFootplates=0,bambooNodes=0;
   for(const side of [-1,1]){
     const mid=side*12.5;
     // The pictured rail protects the gallery; it is not an invitation to
     // walk through it. Preserve the existing full Kairo collision envelope.
     const rail=new THREE.CylinderGeometry(.034,.034,12.55,8).rotateZ(Math.PI/2).translate(mid,2.88,-2.31);part(rail,pale);
-    for(let post=0;post<6;post++)box(.085,1.05,.085,mid-6+post*2.4,2.575,-2.31,red);
+    for(let post=0;post<6;post++){
+      const x=mid-6+post*2.4;box(.085,1.05,.085,x,2.575,-2.31,red);
+      // IMG6485 resolves the small pale square under EACH slender barrier
+      // post. These differ from R96's broad shoes under structural columns.
+      box(.20,.025,.20,x,2.0525,-2.31,pale);barrierFootplates++;
+    }
+    // Visible bamboo joints break the uninterrupted generic cylinder. The
+    // exact node stations/radii are interpreted, not surveyed measurements.
+    for(let node=0;node<11;node++){
+      const x=mid-5.8+node*1.16;
+      part(new THREE.CylinderGeometry(.040,.040,.035,8).rotateZ(Math.PI/2).translate(x,2.88,-2.31),pale);bambooNodes++;
+    }
     // Two modest bronze lanterns per wing, suspended beneath existing eaves.
     for(const offset of [-2.4,2.4]){
       const x=mid+offset,z=-2.32;
@@ -42,5 +55,9 @@ export function buildRomonCourtSideDetails(root,romon,materials){
     const geometry=mergeGeometries(parts);parts.forEach(p=>p.dispose());
     const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
   }
+  group.userData.barrierFootplates=barrierFootplates;group.userData.bambooNodes=bambooNodes;
+  group.userData.references=['https://fushimiinari-guide.com/wp-content/uploads/IMG_6485_20210317.jpg','https://fushimiinari-guide.com/wp-content/uploads/IMG_6487_20210317.jpg'];
+  group.userData.dimensions='Inherited Kairo source frame and existing post/rail placement. Small barrier footplate 0.20m square x0.025m thick, bamboo node radius0.040m and width0.035m inferred from2021 photo.';
+  group.userData.limits='Finish only on the existing barrier; no extra rail, structural column shoe, roof, screen, building, light, collider or public route. Exact node count and dimensions approximate; no claim of present condition.';
   root.add(group);return group;
 }

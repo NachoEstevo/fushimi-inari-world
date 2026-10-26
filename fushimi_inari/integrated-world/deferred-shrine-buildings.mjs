@@ -6,9 +6,29 @@ export const yieldShrineWork=()=>new Promise(resolve=>setTimeout(resolve,0));
 // Streaming owns only visuals. Permanent floor/collision data is built by integration.
 export function createDeferredShrineBuildings({anchor,load,prefetch,range=210,prefetchRange=280,report=()=>{},yieldWork=yieldShrineWork}){
  const states=new Map(shrineBuildingIds.map(id=>[id,{status:'deferred',promise:null,prefetchPromise:null,error:null,timings:{}}]));
- let tail=Promise.resolve();
+ const preparationQueue=[],activationQueue=[];let running=false;
  const stats=()=>({range,prefetchRange,buildings:Object.fromEntries([...states].map(([id,s])=>[id,{status:s.status,error:s.error,timings:{...s.timings}}]))});
- const enqueue=work=>{const promise=tail.then(async()=>{await yieldWork();return work();});tail=promise.catch(()=>{});return promise;};
+ // A prepared building must not wait behind every other building's parse,
+ // refinement and shader warmup. Keep CPU/GPU preparation serial, but activate
+ // ready visuals first at the next yielded task boundary.
+ async function runNext(){
+  let job;
+  try{
+   await yieldWork();
+   job=activationQueue.shift()??preparationQueue.shift();
+   if(job)job.resolve(await job.work());
+  }catch(error){
+   job??=activationQueue.shift()??preparationQueue.shift();
+   job?.reject(error);
+  }finally{
+   if(activationQueue.length||preparationQueue.length)queueMicrotask(runNext);
+   else running=false;
+  }
+ }
+ const enqueue=(work,activate=false)=>new Promise((resolve,reject)=>{
+  (activate?activationQueue:preparationQueue).push({work,resolve,reject});
+  if(!running){running=true;queueMicrotask(runNext);}
+ });
  function stage(id){
   const state=states.get(id);if(state.prefetchPromise)return state.prefetchPromise;
   state.status='prefetch-queued';state.error=null;
@@ -28,7 +48,7 @@ export function createDeferredShrineBuildings({anchor,load,prefetch,range=210,pr
   const prepared=prefetch?stage(id):Promise.resolve(undefined);
   state.promise=prepared.then(value=>enqueue(async()=>{
    state.status='loading';report(stats());return load(id,value,(name,ms)=>{state.timings[name]=ms;report(stats());});
-  })).then(value=>{state.status='ready';report(stats());return value;},error=>{
+  },true)).then(value=>{state.status='ready';report(stats());return value;},error=>{
    state.status='failed';state.error=String(error);state.promise=null;report(stats());throw error;
   });
   report(stats());return state.promise;
