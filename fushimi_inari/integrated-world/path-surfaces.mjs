@@ -2,6 +2,10 @@ import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
 import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=13';
 
+// Reviewed shrine approach, twin tunnels and Okusha court only. Street owners
+// rely on their historical sampling for mouth seals, finish and collision data.
+const sourceCornerPaths=new Set(['way/105449724','way/260121354','way/260121328','way/377968455','way/301527759','way/301527762']);
+
 export function makePathSurfaces(features,ground){
   const junctions=new Map(),pathNodes=new Map();
   for(const path of features.paths){
@@ -29,7 +33,21 @@ export function makePathSurfaces(features,ground){
       profile.conflict=true;profile.unresolved=true;profile.status='inferred-count-source-dem-conflict';
     }
     const resolved=stair?(mapped??inferredTreads(sampledStairAlignment(path.points),ground)):null;
-    const count=resolved?.length??(stair?profile.count:Math.ceil(length/1.5));
+    // Split each mapped edge independently. Sampling the whole way uniformly
+    // can jump across a source corner and replace it with an invented diagonal.
+    // Preserve every mapped node; this changes tessellation, not alignment.
+    const mappedSegments=[];
+    if(!stair&&sourceCornerPaths.has(path.id)){
+      let distance=0;
+      for(let edge=1;edge<path.points.length;edge++){
+        const a=path.points[edge-1],b=path.points[edge],run=Math.hypot(b[0]-a[0],b[2]-a[2]);
+        if(run<.000001)continue;
+        const divisions=Math.ceil(run/1.5),at=t=>a.map((v,j)=>v+(b[j]-v)*t);
+        for(let part=0;part<divisions;part++)mappedSegments.push({a:at(part/divisions),b:at((part+1)/divisions),distance:distance+run*part/divisions});
+        distance+=run;
+      }
+    }
+    const count=resolved?.length??(stair?profile.count:mappedSegments.length||Math.ceil(length/1.5));
     if(stair){
       const maxRise=Math.max(...resolved.map(t=>t.rise)),minimumRun=Math.min(...resolved.map(t=>Math.hypot(t.b[0]-t.a[0],t.b[2]-t.a[2])));
       const reasons=[];
@@ -48,7 +66,7 @@ export function makePathSurfaces(features,ground){
     stats.paths++;
     const kind=isRestricted(path.tags)?'restricted':['dirt','ground','earth','unpaved','gravel'].includes(path.tags.surface)?'earth':['footway','steps','pedestrian','path'].includes(path.tags.highway)?'stone':'street';
     for(let i=0;i<count;i++){
-      const tread=resolved?.[i],a=tread?.a??sampler.at(i/count).point,b=tread?.b??sampler.at((i+1)/count).point;
+      const tread=resolved?.[i]??mappedSegments[i],a=tread?.a??sampler.at(i/count).point,b=tread?.b??sampler.at((i+1)/count).point;
       const surfaceOffset=lowApproach ? .02 : .14;
       let ya=ground(a[0],a[2])+surfaceOffset,yb=ground(b[0],b[2])+surfaceOffset;
       if(stair){

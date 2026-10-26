@@ -24,10 +24,36 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   // crossing the station radius; their physical range already limits their reach.
   scene.add(practicals);
 
-  // Only named, already-metallic plain finishes qualify outside the station.
-  // Shared replacements retain sharing, while mapped art and shrine paint stay intact.
+  // Shrine paint is a dielectric finish, not exposed metal. The legacy red
+  // multiplies a roughness map by .32 and adds .55 clearcoat, producing a second
+  // sharp studio highlight. Keep its authored maps but give painted wood satin
+  // response. Exact source identity/names preserve torii red paint, glass and gold;
+  // shared black torii bases also receive the dielectric lacquer finish.
+  const shrineMaterials=assembly.legacy?.materials??{};
+  const shrineFinishes=new Map();
+  if(shrineMaterials.vermilionMat)shrineFinishes.set(shrineMaterials.vermilionMat,'paint');
+  if(shrineMaterials.blackNemakiMat)shrineFinishes.set(shrineMaterials.blackNemakiMat,'lacquer');
+  const sourceFinishes=new Map([['MAT_Vermilion_ShuIro','paint'],['MAT_Black_Lacquer_Nemaki','lacquer'],['MAT_Blue_Hengaku_Plaque','plaque']]);
+  // Only named, already-metallic plain finishes otherwise qualify outside the station.
+  // Shared replacements retain sharing; unrelated mapped art keeps its finish.
   const replacements=new Map(),bindings=[];
   function finish(original) {
+    if(original?.userData?.worldShrineFinish)return original;
+    const shrineKind=shrineFinishes.get(original)??sourceFinishes.get(original?.name);
+    if(original?.isMeshStandardMaterial&&shrineKind){
+      if(!replacements.has(original)){
+        const material=original.clone();
+        material.userData={...material.userData,worldShrineFinish:shrineKind};
+        material.metalness=0;
+        material.roughness=Math.max(original.roughness,shrineKind==='paint'?.68:shrineKind==='lacquer'?.42:.5);
+        if(material.isMeshPhysicalMaterial){
+          material.clearcoat=Math.min(material.clearcoat,.08);
+          material.clearcoatRoughness=Math.max(material.clearcoatRoughness,.38);
+        }
+        replacements.set(original,material);
+      }
+      return replacements.get(original);
+    }
     if(!original?.isMeshStandardMaterial||original.isMeshPhysicalMaterial||original.map||original.normalMap||original.bumpMap||
       original.metalness<.5||!/(metal|steel|iron|bronze|alumin)/i.test(original.name)||/torii|sign|label/i.test(original.name))return original;
     if(!replacements.has(original)) {

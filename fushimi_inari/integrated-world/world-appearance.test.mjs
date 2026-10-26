@@ -91,8 +91,25 @@ test('live quality, look and station transitions retain one environment without 
     const scene=new GPU.Scene(),group=new GPU.Group(),camera=new GPU.PerspectiveCamera();scene.add(group);
     camera.position.set(-302.4,32,-176);
     const quality={mode:'balanced',setLook(){}};
-    appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group}},
+    const red=new GPU.MeshPhysicalMaterial({roughness:.32,clearcoat:.55,clearcoatRoughness:.24});
+    red.map=new GPU.Texture();red.roughnessMap=new GPU.Texture();
+    const lacquer=new GPU.MeshStandardMaterial({roughness:.28,metalness:.2});lacquer.name='MAT_Black_Lacquer_Nemaki';
+    const gold=new GPU.MeshStandardMaterial({roughness:.2,metalness:.92});gold.name='MAT_Gold_Kanagu_Leaf';
+    const shrine=new GPU.Group(),redMesh=new GPU.Mesh(new GPU.BoxGeometry(),red),lacquerMesh=new GPU.Mesh(redMesh.geometry,lacquer),goldMesh=new GPU.Mesh(redMesh.geometry,gold);
+    shrine.add(redMesh,lacquerMesh,goldMesh);scene.add(shrine);
+    appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group},legacy:{materials:{vermilionMat:red}}},
       hemi:new GPU.HemisphereLight(),sun:new GPU.DirectionalLight()});
+    assert.equal(redMesh.material.roughness,.68);assert.equal(redMesh.material.clearcoat,.08);
+    assert.equal(redMesh.material.map,red.map);assert.equal(redMesh.material.roughnessMap,red.roughnessMap);
+    assert.equal(red.roughness,.32,'source material remains untouched');
+    assert.equal(lacquerMesh.material.metalness,0);assert.equal(lacquerMesh.material.roughness,.42);
+    assert.equal(goldMesh.material,gold,'authored gold keeps its metallic response');
+    const redFinish=redMesh.material;appearance.applyTo(shrine);assert.equal(redMesh.material,redFinish);
+    const importedRed=new GPU.MeshStandardMaterial({roughness:.3,metalness:1});importedRed.name='MAT_Vermilion_ShuIro';
+    const importedPlaque=new GPU.MeshStandardMaterial({roughness:.32,metalness:.15});importedPlaque.name='MAT_Blue_Hengaku_Plaque';
+    const imported=new GPU.Mesh(redMesh.geometry,[importedRed,importedPlaque]);shrine.add(imported);appearance.applyTo(shrine);
+    assert.equal(imported.material[0].metalness,0);assert.equal(imported.material[0].roughness,.68);
+    assert.equal(imported.material[1].metalness,0);assert.equal(imported.material[1].roughness,.5);
     const deferred=new GPU.Group(),metal=new GPU.MeshStandardMaterial({metalness:.8});metal.name='Deferred steel';
     const first=new GPU.Mesh(new GPU.BoxGeometry(),metal),second=new GPU.Mesh(first.geometry,metal);
     deferred.add(first,second);scene.add(deferred);appearance.applyTo(deferred);
@@ -120,6 +137,8 @@ test('live quality, look and station transitions retain one environment without 
     assert.equal(captures,0,'Ultra retains the studio probe');assert.equal(scene.environment,globalEnvironment);
     appearance.updateBaseLighting(()=>{});assert.equal(captures,0);assert.equal(scene.environment,globalEnvironment);
     appearance.dispose();assert.equal(first.material,metal,'disposal restores deferred materials');
+    assert.equal(redMesh.material,red);assert.equal(lacquerMesh.material,lacquer);
+    redMesh.geometry.dispose();red.map.dispose();red.roughnessMap.dispose();red.dispose();lacquer.dispose();gold.dispose();importedRed.dispose();importedPlaque.dispose();
     first.geometry.dispose();metal.dispose();
   } finally {appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=original;}
 });
