@@ -22,15 +22,26 @@ function fixture(){
   return {near,lod,far:lod.levels[1].object,update};
 }
 
-test('a cell with a distant center retains detailed crowns within 300 m of its bounds',()=>{
+test('a cell with a distant center retains detailed crowns within 45 m of its bounds',()=>{
   const {near,far,update}=fixture();
-  update(330);assert.equal(near.visible,true);assert.equal(far.visible,false);
+  update(100);assert.equal(near.visible,true);assert.equal(far.visible,false);
 });
 
 test('distant crowns preserve all instances and return to detail before entering foreground',()=>{
   const {near,far,update}=fixture();
   update(1000);assert.equal(far.visible,true);assert.equal(near.visible,false);
   assert.equal(far.count,near.count);
-  update(330);assert.equal(near.visible,true);assert.equal(far.visible,false);
+  update(100);assert.equal(near.visible,true);assert.equal(far.visible,false);
   update(1000);assert.equal(far.visible,true);
+});
+
+test('distant crowns simplify inside the walker view budget without replacing near geometry',()=>{
+  const {near,far,lod,update}=fixture();
+  const nearGeometry=near.geometry;
+  update(145);assert.equal(far.visible,true);assert.equal(near.visible,false);
+  assert.equal(far.geometry.attributes.position.count/3,20);
+  assert.equal(lod.levels[0].object.geometry,nearGeometry);
+  // Coming back from the cheap level restores detail at the protected edge.
+  update(near.boundingSphere.radius+44);
+  assert.equal(near.visible,true);assert.equal(far.visible,false);
 });

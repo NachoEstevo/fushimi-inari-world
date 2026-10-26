@@ -14,8 +14,11 @@ export function preservedForestLOD(chunks,maple=false){
     // LOD measures distance to the cell center, not its closest crown. Include
     // the whole cell radius so a distant cell center cannot simplify nearby
     // trees. Account for hysteresis too: returning from the far level must
-    // restore detailed foliage before any crown enters the 300 m foreground.
-    const hysteresis=.12,distance=(300+near.boundingSphere.radius)/(1-hysteresis);
+    // restore detailed foliage before any crown enters the 45 m foreground.
+    // The previous 300 m guard kept full crowns beyond the walker's entire
+    // view budget; this retains nearby path detail while using the existing
+    // solid crown proxy for distant cover.
+    const hysteresis=.12,distance=(45+near.boundingSphere.radius)/(1-hysteresis);
     lod.addLevel(near,0);lod.addLevel(far,distance,hysteresis);chunks.add(lod);
   }
   return chunks;

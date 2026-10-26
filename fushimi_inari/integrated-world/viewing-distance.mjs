@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {panoramaVisible} from './panorama-policy.mjs';
 
-export const VIEW_DISTANCES=Object.freeze({balanced:350,high:500,ultra:500});
-export const OUTLOOK_DISTANCES=Object.freeze({balanced:700,high:1000,ultra:1000});
+export const VIEW_DISTANCES=Object.freeze({balanced:150,high:200,ultra:200});
+export const OUTLOOK_DISTANCES=Object.freeze({balanced:150,high:200,ultra:200});
 export const HORIZON_COLORS=Object.freeze({day:'#d7e6e7',gold:'#f6b978',night:'#34465c'});
 
 // Render distance is independent of world construction and walking support.
