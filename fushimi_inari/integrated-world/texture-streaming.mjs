@@ -8,8 +8,8 @@ export function textureTierURL(url,mode){
 // Image ownership is separate from geometry/collision ownership. Shared maps
 // download once; only maps used near the camera are requested. High retains
 // byte-identical original PNGs and swaps them in without replacing materials.
-export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false}={}){
- const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0;
+export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false,maxSourceGroupsPerTick=1}={}){
+ const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0,maxUploadGroupTextures=0,maxUploadGroupPixels=0;
  const cells=new Map(),largeUsers=[],ready=[],indexedObjects=new Set();let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
  const tier=()=>mode;
  const pending=()=>queue.length+active+ready.length;
@@ -18,24 +18,49 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function emit(force=false){const now=performance.now(),outstanding=pending();
   if(!force&&now-lastReport<500&&!(outstanding===0&&lastReportedPending>0))return;
   lastReport=now;lastReportedPending=outstanding;
-  report({mode,registered:records.size,loaded:[...records.values()].filter(r=>r.current).length,pending:pending(),failed:[...records.values()].filter(r=>r.error).map(r=>r.url),
+  report({mode,maxUploadGroupTextures,maxUploadGroupPixels,registered:records.size,loaded:[...records.values()].filter(r=>r.current).length,pending:pending(),failed:[...records.values()].filter(r=>r.error).map(r=>r.url),
   ...(audit?{diagnostics:[...records.values()].filter(r=>!r.current||/foliage/i.test(r.url)).map(r=>({file:r.url.split('/').pop(),tier:r.current??null,pending:r.pending??null,users:r.userCount??0,textures:[...r.textures].map(t=>({size:[t.image?.width??0,t.image?.height??0],source:t.source.id,sourceVersion:t.source.version,textureVersion:t.version}))}))}:{})});
  }
- function apply(r,image,tier){
-  // WebGL2 storage is immutable after the placeholder's first upload. Release
-  // every registered texture before mutating a shared Source so larger image
-  // uploads (and quality tier changes) allocate storage at the new dimensions.
-  const resized=[...r.textures].filter(t=>t.image?.width!==image.width||t.image?.height!==image.height);
-  for(const texture of resized)texture.dispose();
-  for(const texture of r.textures){texture.image=image;texture.needsUpdate=true;}r.current=tier;revision++;
+ // Clones retain shared Source ownership, including GPU storage reuse in
+ // WebGL. Track clones immediately so late/index-appended clones join upgrades.
+ function register(r,texture){
+  if(r.textures.has(texture))return texture;
+  sources.set(texture.source,r);r.textures.add(texture);
+  if(!r.groups.has(texture.source))r.groups.set(texture.source,new Set());
+  r.groups.get(texture.source).add(texture);
+  const clone=texture.clone;
+  texture.clone=function(){return register(r,clone.call(this));};
+  return texture;
+ }
+ function applyBatch(job){
+  const {r,image,tier:loadedTier}=job;
+  let count=0;const started=performance.now();
+  while(count<Math.max(1,maxSourceGroupsPerTick)&&performance.now()-started<2){
+   const next=job.groups.next();
+   if(next.done){r.current=loadedTier;r.ready=false;revision++;return true;}
+   const textures=next.value;count++;
+   maxUploadGroupTextures=Math.max(maxUploadGroupTextures,textures.size);
+   maxUploadGroupPixels=Math.max(maxUploadGroupPixels,(image.width??0)*(image.height??0));
+   // A shared Source is an atomic resize unit: every old GPU reference must
+   // release before its image changes. Splitting a group across render frames
+   // would expose new dimensions through still-allocated immutable GL storage.
+   for(const texture of textures)if(texture.image?.width!==image.width||texture.image?.height!==image.height)texture.dispose();
+   for(const texture of textures){texture.image=image;texture.needsUpdate=true;}
+  }
+  return false;
  }
  // Decoding can complete together; pace texture invalidation as well as network
  // refill so resuming after arrival never uploads an entire completed batch.
  function schedule(){if(timer===null&&(queue.length||ready.length))timer=setTimeout(()=>{timer=null;drain();},50);}
  function drain(){
   if(ready.length&&performance.now()-lastApply>=50){
-   const {r,image,tier:loadedTier}=ready.shift();r.ready=false;
-   if(tier()===loadedTier&&r.current!==loadedTier){apply(r,image,loadedTier);lastApply=performance.now();}else if(tier()!==loadedTier)request(r);
+   const job=ready[0],{r,tier:loadedTier}=job;
+   if(tier()!==loadedTier){ready.shift();r.ready=false;request(r);}
+   else {
+    if(!job.groups){r.current=null;job.groups=r.groups.values();}
+    if(applyBatch(job))ready.shift();
+    lastApply=performance.now();
+   }
   }
   if(active<2&&queue.length){const r=queue.shift(),requestedTier=tier();r.queued=false;
    if(r.current!==requestedTier&&!r.pending){
@@ -52,7 +77,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function request(r){if(r.current===tier()||r.pending||r.queued||r.ready||r.error)return;r.queued=true;queue.push(r);}
  function load(url){
   const absolute=new URL(url,import.meta.url).href;let r=records.get(absolute);
-  if(!r){r={url:absolute,textures:new Set(),images:new Map()};records.set(absolute,r);}
+  if(!r){r={url:absolute,textures:new Set(),groups:new Map(),images:new Map()};records.set(absolute,r);}
   // These maps supply the painted wood color on otherwise white materials.
   // Keep that material identity while a nearby image loads (or fails), without
   // tinting stone gates or changing normal/roughness map semantics.
@@ -63,7 +88,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   const ctx=canvas.getContext?.('2d');if(ctx){ctx.fillStyle=`rgb(${rgba.slice(0,3).join(',')})`;ctx.fillRect(0,0,1,1);}
   const texture=new THREE.Texture(canvas);
   if(r.current)texture.image=r.images.get(r.current);
-  texture.needsUpdate=true;r.textures.add(texture);sources.set(texture.source,r);return texture;
+  texture.needsUpdate=true;return register(r,texture);
  }
  function index(scene,{append=false}={}){
   // Deferred assets already belong to the live scene. Index their own subtree
@@ -71,7 +96,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   if(!append){users=[];cells.clear();largeUsers.length=0;indexedObjects.clear();for(const r of records.values())r.userCount=0;}
   lastPosition=null;elapsed=1;scene.updateWorldMatrix(true,true);scene.traverse(o=>{
   if(!o.geometry||indexedObjects.has(o))return;const used=new Set();
-  for(const m of [o.material].flat().filter(Boolean))for(const t of Object.values(m)){if(!t?.isTexture)continue;const r=sources.get(t.source);if(r){r.textures.add(t);used.add(r);}}
+  for(const m of [o.material].flat().filter(Boolean))for(const t of Object.values(m)){if(!t?.isTexture)continue;const r=sources.get(t.source);if(r){register(r,t);used.add(r);}}
   if(!used.size)return;indexedObjects.add(o);
   if(o.isInstancedMesh)o.computeBoundingSphere();else if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();
   const sphere=(o.boundingSphere??o.geometry.boundingSphere).clone().applyMatrix4(o.matrixWorld);
@@ -92,6 +117,6 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   }
   drain();
  }
- return {load,index,update,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending()};}};
+ return {load,index,update,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending(),maxUploadGroupTextures,maxUploadGroupPixels};}};
 }
 export const textureStreaming=createTextureStreaming({audit:typeof location!=='undefined'&&(new URLSearchParams(location.search).has('audit')||new URLSearchParams(location.search).has('textureAudit')),report:value=>{if(typeof document!=='undefined')document.body.dataset.textureStreaming=JSON.stringify(value);}});

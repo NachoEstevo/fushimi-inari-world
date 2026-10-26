@@ -149,3 +149,28 @@ test('deferred subtree indexing preserves existing residency without revisiting 
  Object.defineProperty(first,'geometry',{value:geometry,configurable:true});
  scene.remove(group);stream.index(scene);assert.equal(stream.stats.users,1);
 });
+
+const until=async predicate=>{const end=performance.now()+3000;while(!predicate()){assert.ok(performance.now()<end,'stream work timed out');await new Promise(resolve=>setTimeout(resolve,5));}};
+
+test('distinct source groups apply across paced ticks while clones retain source sharing',async()=>{
+ const scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:async()=>({width:64,height:64})});
+ const textures=Array.from({length:5},()=>stream.load('../assets/textures/bounded.png')),clone=textures[0].clone();textures.push(clone);
+ let disposals=0;for(const map of textures){map.addEventListener('dispose',()=>disposals++);scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));}
+ assert.equal(textures[0].source,clone.source);
+ stream.index(scene);stream.update(new THREE.Vector3());await until(()=>disposals>0);
+ assert.equal(disposals,2,'one atomic source group, including its clone');assert.equal(textures.filter(t=>t.image.width===64).length,2);assert.equal(stream.stats.revision,0);assert.ok(stream.stats.pending>0);
+ const late=textures[1].clone();scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:late})));stream.index(scene,{append:true});
+ await until(()=>stream.stats.pending===0);assert.ok([...textures,late].every(t=>t.image.width===64));assert.equal(disposals,6);assert.equal(stream.stats.revision,1);assert.equal(stream.stats.maxUploadGroupTextures,2);assert.equal(stream.stats.maxUploadGroupPixels,4096);
+});
+
+test('reverting mode during a partially applied tier restores every source group from cache',async()=>{
+ const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}});
+ const textures=Array.from({length:4},()=>stream.load('../assets/textures/race.png')),base=textures[0];
+ for(const map of textures)scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));
+ await stream.prepare(scene,new THREE.Vector3());stream.setMode('high');stream.update(new THREE.Vector3());
+ await until(()=>textures.some(t=>t.image.width===256));assert.ok(textures.some(t=>t.image.width===64));
+ stream.setMode('balanced');stream.update(new THREE.Vector3());await until(()=>stream.stats.pending===0);
+ assert.ok(textures.every(t=>t.image.width===64));assert.equal(requests.length,2);assert.equal(stream.stats.revision,2);
+ const appended=base.clone(),group=new THREE.Group();group.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:appended})));scene.add(group);stream.index(group,{append:true});
+ stream.setMode('high');await stream.prepare(scene,new THREE.Vector3());assert.ok([...textures,appended].every(t=>t.image.width===256));assert.equal(stream.stats.pending,0);
+});
