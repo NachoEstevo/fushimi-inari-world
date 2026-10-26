@@ -13,3 +13,10 @@ test('every runtime streaming import resolves to the same browser singleton',asy
  }
  assert.equal(resolved.size,1,`Split streaming managers: ${[...resolved].join(', ')}`);
 });
+
+test('browser import map has no shadowed duplicate module mappings',async()=>{
+ const html=await readFile(new URL('index.html',import.meta.url),'utf8');
+ const raw=html.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1];
+ const keys=[...raw.matchAll(/"([^"\\]+)"\s*:/g)].map(match=>match[1]);
+ assert.equal(new Set(keys).size,keys.length,'Duplicate import-map keys silently discard earlier cache versions');
+});

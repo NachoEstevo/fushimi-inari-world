@@ -40,7 +40,7 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
  }
 }
 
-export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[]},capture=null){
+export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[],now=()=>performance.now()},capture=null){
   const stats={captures:0,resolution:128,facesPerCapture:6,error:null};
   if(!water?.isMesh||water.material?.userData.waterAppearance?.kind!=='shinike')return {stats,update(){},dispose(){}};
   // Keep both the capture graph and its two textures alive while renderer node
@@ -50,9 +50,26 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
   water.updateWorldMatrix(true,false);
   const bounds=new THREE.Box3().setFromObject(water),center=bounds.getCenter(new THREE.Vector3());center.y+=.12;
   const material=water.material,originalMap=material.envMap,originalIntensity=material.envMapIntensity;
-  let current=null,attemptedKey=null,disposed=false;
+  let current=null,attemptedKey=null,pendingKey=null,keySince=0,settledSince=null,settledAnchor=null,lastPosition=null,lastTime=null,disposed=false;
   return {stats,update(position,appearanceKey){
-    if(disposed||!position.toArray().every(Number.isFinite)||position.distanceTo(center)>220||attemptedKey===appearanceKey)return;
+    if(disposed||!position.toArray().every(Number.isFinite))return;
+    const time=now();
+    if(pendingKey!==appearanceKey){pendingKey=appearanceKey;keySince=time;}
+    const near=position.distanceTo(center)<=90;
+    // Frame-sized walking steps are small: measure speed as well as displacement
+    // from the settling anchor so continuous movement cannot unlock a probe.
+    const elapsed=lastTime===null?0:time-lastTime;
+    const movement=lastPosition?position.distanceTo(lastPosition):0;
+    const moving=movement>0&&(elapsed<=0||movement/(elapsed/1000)>=.1);
+    if(!near){settledSince=null;settledAnchor=null;}
+    else if(settledSince===null||moving||position.distanceTo(settledAnchor)>=.5){
+      settledSince=time;settledAnchor=position.clone();
+    }
+    if(lastPosition)lastPosition.copy(position);else lastPosition=position.clone();
+    lastTime=time;
+    if(!near||attemptedKey===appearanceKey||time-keySince<1000||settledSince===null||time-settledSince<300)return;
+    // Coalesce changing looks while walking. Keep the previous environment until
+    // one stable key can be captured after arrival; a failed key is not retried.
     attemptedKey=appearanceKey;
     try{
       const next=captureEnvironment({scene,renderer,center,forestChunks,overlays});

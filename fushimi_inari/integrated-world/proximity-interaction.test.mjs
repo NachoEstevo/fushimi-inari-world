@@ -24,6 +24,31 @@ test('shrine primary action works near the geometry and does not open any menu',
  assert.equal(runtime.find(),bell);runtime.run();assert.equal(calls,1);
 });
 
+test('cached static geometry avoids origin updates while moving people and empty groups stay live',()=>{
+ const camera=new PerspectiveCamera();camera.position.set(0,1.7,0);
+ let directionReads=0;const direction=camera.getWorldDirection;
+ camera.getWorldDirection=function(target){directionReads++;return direction.call(this,target);};
+ const bell=new Mesh(new BoxGeometry(.3,.3,.3),new MeshBasicMaterial());bell.position.set(0,1.7,-1.8);
+ const empty=new Group();empty.position.set(0,1.7,-2.5);
+ const person=new Group();person.position.set(0,.6,-2.4);
+ for(const object of [bell,empty,person]){object.userData.interactable={directAction:()=> 'Hello'};object.updateMatrixWorld(true);}
+ person.userData.interactable.proximity=true;
+ const reads=new Map();
+ for(const object of [bell,empty,person]){
+  const original=object.getWorldPosition;reads.set(object,0);
+  object.getWorldPosition=function(target){reads.set(this,reads.get(this)+1);return original.call(this,target);};
+ }
+ const runtime=createProximityInteractions({targets:[bell,empty,person],camera});
+ assert.equal(runtime.find(),bell);assert.equal(runtime.find(),bell);
+ assert.equal(reads.get(bell),0,'nonempty static bounds supply the point without reading the origin');
+ assert.equal(reads.get(empty),2,'empty geometry still uses its current world origin');
+ assert.equal(reads.get(person),2,'moving people retain a live world-position lookup');
+ assert.equal(directionReads,2,'camera direction is shared across candidates per find');
+ person.position.z=-1;assert.equal(runtime.find(),person,'unannounced person movement updates immediately');
+ person.position.z=-10;empty.position.z=-1;
+ assert.equal(runtime.find(),empty,'empty-group fallback also follows movement immediately');
+});
+
 test('attendants can be greeted across their reserved counter recess',()=>{
  const camera=new PerspectiveCamera();camera.position.set(-249.83,33.22,-100.06);camera.lookAt(-249.61,32.6,-103.05);
  const vendor=new Group();vendor.position.set(-249.61092193327073,31.530487575883743,-103.04687721203443);

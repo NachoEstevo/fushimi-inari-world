@@ -105,7 +105,7 @@ try {
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
-  const sunShadows=createSunShadowSchedule({sun});
+  const sunShadows=createSunShadowSchedule({sun,quality:'balanced'});
   const terrainGeo=new THREE.BufferGeometry();
   const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
   const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
@@ -486,7 +486,7 @@ try {
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(quality.mode);textureStreaming.setMode(quality.mode);appearance.prepare();},
+    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);appearance.prepare();},
     onDetailDistance:value=>{detailDistance=value;}});
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';

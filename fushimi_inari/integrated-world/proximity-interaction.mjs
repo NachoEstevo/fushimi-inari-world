@@ -8,21 +8,23 @@ export function interactionInputBlocked({active,paused,flying,body,document,targ
 export function createProximityInteractions({targets,camera,now=()=>performance.now()}){
  const point=new Vector3(),nearest=new Vector3(),bounds=new WeakMap(),lastRun=new WeakMap();
  function find(){
-  let best=null,distance=Infinity;
+  let best=null,distance=Infinity,facingReady=false;
   for(const object of targets){
    const data=object.userData.interactable;
    if(!data||!(data.directAction||data.actions?.length||data.onTrigger))continue;
    let visible=true;for(let parent=object;parent;parent=parent.parent)if(!parent.visible){visible=false;break;}
    if(!visible)continue;
-   object.getWorldPosition(point);
-   if(data.proximity){point.y+=1.1;}else{
+   if(data.proximity){object.getWorldPosition(point);point.y+=1.1;}else{
+    // Geometry interactions already cache their static bounds. Their origin
+    // is only needed for empty groups; moving people use proximity above.
     let box=bounds.get(object);if(!box){box=new Box3().setFromObject(object);bounds.set(object,box);}
-    if(!box.isEmpty())box.clampPoint(camera.position,point);
+    if(box.isEmpty())object.getWorldPosition(point);else box.clampPoint(camera.position,point);
    }
    const d=point.distanceTo(camera.position);
    if(d>=(data.reach??2.8)||d>=distance)continue;
    // Nearby things behind the player should not steal a visible prompt.
-   camera.getWorldDirection(nearest);point.sub(camera.position).normalize();
+   if(!facingReady){camera.getWorldDirection(nearest);facingReady=true;}
+   point.sub(camera.position).normalize();
    if(point.dot(nearest)<-.2)continue;
    best=object;distance=d;
   }
