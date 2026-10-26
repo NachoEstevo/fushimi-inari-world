@@ -11,3 +11,18 @@ export function panoramaVisible(position,wasVisible,enabled=true){
   if(!enabled||position.y<115||position.y>340)return false;
   return outlooks.some(([x,,z])=>Math.hypot(position.x-x,position.z-z)<(wasVisible?180:135));
 }
+
+
+// The fixed 1800-building budget should cover the mapped outlook foreground
+// before far city parcels. Source file ordering carries no visibility meaning.
+export function panoramaBuildingCandidates(buildings){
+ return buildings.flatMap((building,index)=>{
+  const ring=building.points?.slice(0,-1);
+  if(!ring||ring.length<3||!ring.every(p=>p.length>=3&&p.every(Number.isFinite)))return [];
+  const x=ring.reduce((sum,p)=>sum+p[0],0)/ring.length;
+  if(x>450)return [];
+  const z=ring.reduce((sum,p)=>sum+p[2],0)/ring.length;
+  const distance=Math.min(...outlooks.map(([ox,,oz])=>(x-ox)**2+(z-oz)**2));
+  return [{building,distance,index}];
+ }).sort((a,b)=>a.distance-b.distance||a.index-b.index).map(entry=>entry.building);
+}

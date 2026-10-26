@@ -468,7 +468,8 @@ try {
     assembly.keihanStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
   };$('light').onchange();
-  const quality=createRenderQuality({renderer,scene,camera,sun});
+  const cityHorizon=await panorama.createHorizonPass({renderer,camera});
+  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>appearance.updateBaseLighting(applyTimeOfDay);
@@ -552,6 +553,7 @@ try {
 
   renderer.info.autoReset=false;
   const recordRender=renderStats(renderer);
+  let horizonAuditAt=0;
   document.addEventListener('visibilitychange',recordRender.reset);
   lastTime=performance.now();
   let mapTimer=0;
@@ -603,6 +605,7 @@ try {
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
     const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

@@ -12,12 +12,13 @@ export function qualityPixelRatio(mode,dpr,width,height){
 }
 
 // One scene pass feeds bloom and the output transform. There is no duplicate scene render.
-export function createRenderQuality({renderer,scene,camera,sun}){
+export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   let mode='balanced',look='natural',disposed=false,transitioning=false;
   let pending=0,queue=Promise.resolve(),resolution;
   const originalTextures=new Map();
   const post=new THREE.PostProcessing(renderer);
-  const scenePass=pass(scene,camera),color=scenePass.getTextureNode('output');
+  const scenePass=pass(scene,camera),foreground=scenePass.getTextureNode('output');
+  const color=cityHorizon?cityHorizon.compose(foreground,scenePass.getTextureNode('depth')):foreground;
   const glow=bloom(color,.12,.35,1.2);
   post.outputNode=color.add(glow);
   const looks={natural:{strength:.12,radius:.35,threshold:1.2},sakura:{strength:.30,radius:.5,threshold:1.05},dreamcore:{strength:.65,radius:.7,threshold:.85}};
@@ -74,8 +75,8 @@ export function createRenderQuality({renderer,scene,camera,sun}){
     applySize(innerWidth,innerHeight);setLook(look);
   }
   function setMode(next){return enqueue(()=>applyMode(next));}
-  function render(){if(!disposed&&!transitioning)post.render();}
+  function render(){if(!disposed&&!transitioning){cityHorizon?.render();post.render();}}
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
+  return {setMode,setLook,resize,render,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
 }
