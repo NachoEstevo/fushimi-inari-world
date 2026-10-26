@@ -1,4 +1,5 @@
 import {partitionWalkingTopsR96} from './path-top-ownership-r96.mjs';
+import {partitionStationStreetTops} from './station-street-path-ownership.mjs';
 import * as THREE from 'three';
 import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
@@ -190,6 +191,7 @@ export function buildPathMeshes(network,legacy,ground){
   // Their metric UVs/colors are generated below after this bounded partition.
   buckets.edge=partitionOkushaPathTrianglesR95(buckets.edge);
   buckets.earth=partitionOkushaPathTrianglesR95(buckets.earth);
+  group.userData.stationStreetTopOwnership=partitionStationStreetTops(buckets,uvBuckets);
   group.userData.walkingTopOwnershipR96=partitionWalkingTopsR96(buckets,uvBuckets);
   const riserTint=new THREE.Color('#b9b8af').toArray();
   for(const [key,bucket] of Object.entries(buckets)){

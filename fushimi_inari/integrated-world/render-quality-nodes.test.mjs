@@ -7,7 +7,7 @@ import ShadowNode from 'three/src/nodes/lighting/ShadowNode.js';
 test('WebGPU presets bound pixel cost on ultrawide and high-DPI screens in increasing order',()=>{
   for(const [width,height] of [[3431,1264],[3840,2160],[8000,4000]]){
     let previous=0;
-    for(const [mode,budget] of [['balanced',2000000],['high',3000000],['ultra',4000000]]){
+    for(const [mode,budget] of [['balanced',2000000],['high',4000000]]){
       const pixels=width*height*qualityPixelRatio(mode,3,width,height)**2;
       assert.ok(pixels<=budget+.001,`${mode} exceeds its pixel budget`);
       assert.ok(pixels>previous,`${mode} must improve resolution`);
@@ -15,7 +15,8 @@ test('WebGPU presets bound pixel cost on ultrawide and high-DPI screens in incre
     }
   }
   assert.equal(qualityPixelRatio('balanced',1,1280,720),1);
-  assert.equal(qualityPixelRatio('high',3,1000,700),1.7);
+  assert.equal(qualityPixelRatio('high',3,1000,700),2);
+  assert.equal(qualityPixelRatio('high',1,1280,720),1.5);
   assert.equal(qualityPixelRatio('ultra',1,1280,720),1.5);
 });
 
@@ -49,8 +50,9 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(report().look,'dreamcore');assert.equal(report().bloom,.65*.65);
     await quality.setMode('high');
     assert.equal(report().shadowSize,2048);assert.equal(report().bloom,.65);
-    assert.equal(texture.anisotropy,4);
+    assert.equal(texture.anisotropy,16);assert.equal(quality.detailScale,1.25);
     await quality.setMode('ultra');
+    assert.equal(quality.mode,'high','legacy Ultra selects High quality');
     assert.equal(report().shadowSize,2048);assert.equal(texture.anisotropy,16);
     assert.equal(sun.shadow.map,target);
     assert.equal(disposed,0,'quality transitions never resize the live shadow atlas');

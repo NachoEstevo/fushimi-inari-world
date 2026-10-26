@@ -1,3 +1,4 @@
+import {createPlanarOccupancy} from './planar-occupancy.mjs';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
@@ -20,7 +21,7 @@ export function buildUpperAccessR95(root,features,network,materials,colliders,op
  const roofs=features.buildings.map(b=>({x0:Math.min(...b.points.map(p=>p[0]))-1.1,x1:Math.max(...b.points.map(p=>p[0]))+1.1,z0:Math.min(...b.points.map(p=>p[2]))-1.1,z1:Math.max(...b.points.map(p=>p[2]))+1.1}));
  const routeClear=(x,z,r)=>!routes.some(s=>{const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],t=Math.max(0,Math.min(1,((x-s.a[0])*dx+(z-s.a[2])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-s.a[0]-t*dx,z-s.a[2]-t*dz)<s.width/2+r;});
  const roofClear=(x,z,r)=>!roofs.some(b=>x>b.x0-r&&x<b.x1+r&&z>b.z0-r&&z<b.z1+r);
- const occupied=(x,z,r)=>colliders.some(c=>{const a=c.args;if(c.type==='cylinder')return Math.hypot(x-a[0],z-a[1])<a[2]+r+.08;if(c.type!=='box')return false;const dx=x-a[0],dz=z-a[1],yaw=a[4]??0;return Math.abs(dx*Math.cos(yaw)-dz*Math.sin(yaw))<a[2]+r+.08&&Math.abs(dx*Math.sin(yaw)+dz*Math.cos(yaw))<a[3]+r+.08;});
+ const occupied=createPlanarOccupancy(colliders,{clearance:.08});
  const leaf=typeof document!=='undefined'?leafClusterMaterial().clone():new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,side:THREE.DoubleSide,roughness:1});leaf.vertexColors=true;
  const batches=new Map(),pending=[],edges=[],posts=[],rails=[],trees=[],growth=[],skipped=[];
  const add=(g,m)=>{if(g.index){const old=g;g=g.toNonIndexed();old.dispose();}if(!batches.has(m))batches.set(m,[]);batches.get(m).push(g);};

@@ -65,3 +65,12 @@ export function createTrainArrivalExperience({sequenceOptions,station,camera,con
     }
   };
 }
+
+// The welcome gesture releases camera ownership even if optional sound cannot
+// initialize (for example, an unavailable AudioContext on a visiting browser).
+export async function startTrainArrivalAfterWelcome({welcome,experience,reducedMotion=()=>false,onGesture=()=>{},onError=error=>console.warn('Arrival sound unavailable',error)}){
+ const {gesture}=await welcome.ready();
+ const state=experience.start({reducedMotion:reducedMotion()});
+ if(gesture){try{await onGesture();}catch(error){onError(error);}}
+ return state;
+}

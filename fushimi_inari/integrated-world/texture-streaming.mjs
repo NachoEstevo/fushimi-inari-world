@@ -2,16 +2,16 @@ import * as THREE from 'three';
 
 export function textureTierURL(url,mode){
  const marker='/assets/textures/',at=url.indexOf(marker);
- return mode==='ultra'||at<0?url:url.slice(0,at)+marker+'balanced/'+url.slice(at+marker.length).replace(/\.png$/i,'.webp');
+ return (mode==='high'||mode==='ultra')||at<0?url:url.slice(0,at)+marker+'balanced/'+url.slice(at+marker.length).replace(/\.png$/i,'.webp');
 }
 
 // Image ownership is separate from geometry/collision ownership. Shared maps
-// download once; only maps used near the camera are requested. Ultra retains
+// download once; only maps used near the camera are requested. High retains
 // byte-identical original PNGs and swaps them in without replacing materials.
 export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false}={}){
  const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0;
  const cells=new Map(),largeUsers=[],ready=[],indexedObjects=new Set();let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
- const tier=()=>mode==='ultra'?'ultra':'balanced';
+ const tier=()=>mode;
  const pending=()=>queue.length+active+ready.length;
  // Reporting can serialize many texture clones in audit mode. Keep it off the
  // upload cadence; a transition to idle still publishes the final state.
@@ -92,6 +92,6 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   }
   drain();
  }
- return {load,index,update,setMode(next){mode=next;elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending()};}};
+ return {load,index,update,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending()};}};
 }
 export const textureStreaming=createTextureStreaming({audit:typeof location!=='undefined'&&(new URLSearchParams(location.search).has('audit')||new URLSearchParams(location.search).has('textureAudit')),report:value=>{if(typeof document!=='undefined')document.body.dataset.textureStreaming=JSON.stringify(value);}});

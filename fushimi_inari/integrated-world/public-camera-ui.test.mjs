@@ -37,7 +37,8 @@ for(const debugCamera of [false,true])for(const fastTravel of [false,true])test(
  for(const id of ['walk','stop','speed'])assert.equal(f.el(id).hidden,!fastTravel);
  assert.equal(document.querySelector('label[for="speed"]').hidden,!fastTravel);
  assert.equal(f.elements.has('mode-fly'),debugCamera);
- assert.ok(f.el('pane-2').innerHTML.includes('Ultra · enhanced resolution and textures'));
+ assert.ok(f.el('pane-2').innerHTML.includes('<option value="high">High quality</option>'));
+ assert.equal(f.el('pane-2').innerHTML.includes('value="ultra"'),false);
  }finally{f.restore();}
 });
 test('menu disables fast travel by default while retaining route planning',()=>{

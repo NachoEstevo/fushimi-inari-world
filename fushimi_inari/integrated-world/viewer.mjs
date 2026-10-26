@@ -4,10 +4,10 @@ import {compileAddedGroup} from './scoped-compilation.mjs';
 import {createViewingDistance} from './viewing-distance.mjs';
 import {installRendererTextureBindings} from './renderer-texture-bindings.mjs';
 import {createForestWildlife} from './forest-wildlife.mjs';
-import {installWorldAppearance} from './world-appearance.mjs?v=quality-stable-8';
+import {installWorldAppearance} from './world-appearance.mjs?v=usability-9';
 import {buildKeihanStationDetailPolish} from './keihan-station-detail-polish.mjs';
 import {createPublicWalkDomain} from './public-walk-domain.mjs?v=repair-20261025b';
-import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
+import {textureStreaming} from './texture-streaming.mjs?v=usability-9';
 import {createRenderQuality} from './render-quality.mjs?v=ultra-2';
 import {LIGHT_PRESETS,installRouteLighting} from './route-lighting.mjs';
 import {installKeihanFareGates} from './keihan-fare-gates.mjs?v=suica-2';
@@ -16,9 +16,9 @@ import {buildKeihanStreetObservedDetails} from './keihan-street-observed-details
 import {createWaterAppearance} from './water-appearance.mjs?v=immersion-20261025c';
 import {installShinikeReflections} from './shinike-reflections.mjs?v=repair-20261025b';
 import {installCityPanorama} from './city-panorama.mjs';
-import {installExplorationMenu} from './exploration-menu.mjs?v=quality-stable-8';
+import {installExplorationMenu} from './exploration-menu.mjs?v=usability-9';
 import {installWelcomeScreen} from './welcome-screen.mjs?v=welcome-hud-1';
-import {createTrainArrivalExperience} from './train-arrival-experience.mjs?v=recorded-immersion-9';
+import {createTrainArrivalExperience,startTrainArrivalAfterWelcome} from './train-arrival-experience.mjs?v=usability-9';
 import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approach-routes.mjs?v=complete-route-1';
 import {buildStationApproachSurfaceFixes} from './station-approach-surface-fixes.mjs?v=recorded-immersion-5';
 import {advanceGuidedRoute} from './guided-route-motion.mjs';
@@ -32,7 +32,8 @@ import {installSky} from './sky.mjs?v=ambience-4';
 import {installFlashlight} from './flashlight.mjs?v=welcome-hud-1';
 import {installVisitors} from './visitors.mjs?v=immersion-20261025c';
 import {spatialMeshes} from './spatial-mesh.mjs';
-import {renderStats} from './render-stats.mjs?v=quality-stable-8';
+import {createSunShadowSchedule} from './sun-shadow-schedule.mjs';
+import {renderStats} from './render-stats.mjs?v=usability-9';
 import {installCandleFlameInstances} from './candle-flame-instances.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground-nodes.mjs';
@@ -40,7 +41,7 @@ import {blendEntranceGround} from './entrance-ground-nodes.mjs';
 import {blendKeihanStreetGround} from './keihan-street-ground-nodes.mjs';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=welcome-hud-1';
-import {buildPathMeshes} from './path-meshes.mjs?v=recorded-immersion-7';
+import {buildPathMeshes} from './path-meshes.mjs?v=usability-9';
 import {installExplorationHUD} from './exploration-hud.mjs?v=welcome-hud-1';
 import {integrate} from './integration.mjs?v=station-polish-20261025b';
 import {installWalking} from './walking.mjs?v=immersion-20261025c';
@@ -103,6 +104,7 @@ try {
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
+  const sunShadows=createSunShadowSchedule({sun});
   const terrainGeo=new THREE.BufferGeometry();
   const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
   const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
@@ -460,7 +462,7 @@ try {
     const preset=LIGHT_PRESETS[mode]??LIGHT_PRESETS.day;
     sun.intensity=preset.sun;sun.color.set(preset.color);sunOffset.fromArray(preset.offset);
     hemi.intensity=preset.fill;hemi.color.set(preset.sky);hemi.groundColor.set(preset.ground);
-    renderer.toneMappingExposure=preset.exposure;sky.setMode(mode);routeLighting.setMode(mode);viewingDistance.setTimeOfDay(mode);
+    sunShadows.invalidate();renderer.toneMappingExposure=preset.exposure;sky.setMode(mode);routeLighting.setMode(mode);viewingDistance.setTimeOfDay(mode);
     assembly.inariStation?.setMode(mode);
     assembly.keihanStation?.setMode(mode);
     for(const water of waterControllers)water.setMode(mode);
@@ -469,7 +471,7 @@ try {
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>appearance.updateBaseLighting(applyTimeOfDay);
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:quality.render,overlays:()=>[routeLine,marker,landmarkGroup]});
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -483,7 +485,7 @@ try {
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(value);textureStreaming.setMode(value);appearance.prepare();},
+    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(quality.mode);textureStreaming.setMode(quality.mode);appearance.prepare();},
     onDetailDistance:value=>{detailDistance=value;}});
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
@@ -500,14 +502,13 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){appearance.dispose();pondReflections.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
   const prepareNearby=()=>{
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
-    sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
-    sun.position.copy(sun.target.position).add(sunOffset);sky.update();
+    sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);sky.update();
     canopy.update(camera);panorama.update(camera,$('buildings').checked);
   };
   loadingStage('Preparing train and platform…');
@@ -540,7 +541,7 @@ try {
     arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active,
       labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · click the scene, then move the mouse to look · Esc releases the cursor'}:{}});
     // The train waits behind the welcome sheet so its sound and motion start together.
-    welcome.ready().then(({gesture})=>{if(gesture){audio.setEnabled(true);menu.syncSound();}arrival.start({reducedMotion:arrivalUI.reducedMotion});});
+    startTrainArrivalAfterWelcome({welcome,experience:arrival,reducedMotion:()=>arrivalUI.reducedMotion,onGesture:()=>{audio.setEnabled(true);menu.syncSound();}});
     document.body.dataset.startLocation=isKeihan?'Keihan Fushimi-Inari train arrival · Platform 2':'JR Inari fallback · Platform 2';
   }else{
     document.body.dataset.startLocation=startAtOmotesando()?'Omotesando fallback: station unavailable':'Romon fallback: crossing unavailable';
@@ -578,8 +579,7 @@ try {
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
     }
-    sun.target.position.copy(camera.position);sun.target.position.y-=1.7;
-    sun.position.copy(sun.target.position).add(sunOffset);
+    sunShadows.update(time,camera.position,sunOffset);
     routeLighting.update(camera,dt);
     candleFlames.update(time);
 
@@ -592,12 +592,8 @@ try {
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
     const elevated=camera.position.y-assembly.ground(camera.position.x,camera.position.z)>22;
     detailChunks.update(camera,time/1000,allowDebugCamera&&detailDistance==='full'?60:allowDebugCamera&&elevated?6:quality.detailScale);
-    // The neighbourhood massing is an aerial backdrop, never a replacement for
-    // detailed architecture at walking distance. Chunk bounds make this cheap.
-    for(const chunks of buildingGroup.children)for(const mesh of chunks.children){
-      const b=mesh.geometry.boundingSphere;
-      mesh.visible=camera.position.distanceTo(b.center)>b.radius+100;
-    }
+    // Detailed replacement IDs were excluded while building the fallback meshes.
+    // Keep the remaining mapped buildings visible near the walker too.
     // Capture only settled images; a probe made from placeholders must refresh.
     const textureState=textureStreaming.stats;
     if(!arrival?.active&&textureState.pending===0)pondReflections.update(camera.position,[$('light').value,appearance.stats.look,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked,textureState.revision].join(':'));
@@ -606,6 +602,7 @@ try {
     appearance.update(time/1000);
     const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
+    if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});

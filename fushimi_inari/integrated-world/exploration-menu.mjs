@@ -32,7 +32,7 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
     <label class="check"><input id="ambient-wind" type="checkbox" checked> Breeze and leaves</label>
     <label class="check"><input id="ambient-chimes" type="checkbox" checked> Chimes near tea houses</label></div>
     <h3 class="menu-section">Scene</h3><div id="scene-settings"></div>
-    <label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High resolution</option><option value="ultra">Ultra · enhanced resolution and textures</option></select>
+    <label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High quality</option></select>
     ${allowDebugCamera?'<label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby - 220 m</option><option value="full">Entire world</option></select>':''}
     <div id="menu-arrival"></div>`;
   const light=document.querySelector('label[for="light"]');light.textContent='Time of day';$('scene-settings').append(light,$('light'));

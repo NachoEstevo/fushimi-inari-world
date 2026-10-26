@@ -1,3 +1,4 @@
+import {createPlanarOccupancy} from './planar-occupancy.mjs';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
@@ -27,7 +28,7 @@ export function buildUpperAccessR94(root,features,surfaces,materials,colliders,o
   // Deliberately conservative roof envelope, not just the mapped wall polygon.
   return x>b.x0-r&&x<b.x1+r&&z>b.z0-r&&z<b.z1+r;
  });
- const occupied=(x,z,r)=>colliders.some(c=>{const a=c.args;if(c.type==='cylinder')return Math.hypot(x-a[0],z-a[1])<a[2]+r+.18;if(c.type!=='box')return false;const dx=x-a[0],dz=z-a[1],yaw=a[4]??0;return Math.abs(dx*Math.cos(yaw)-dz*Math.sin(yaw))<a[2]+r+.18&&Math.abs(dx*Math.sin(yaw)+dz*Math.cos(yaw))<a[3]+r+.18;});
+ const occupied=createPlanarOccupancy(colliders,{clearance:.18});
  const leaf=typeof document!=='undefined'?leafClusterMaterial().clone():new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,side:THREE.DoubleSide,roughness:1});leaf.vertexColors=true;
  const batches=new Map(),trees=[],growth=[],skipped=[],pending=[];
  const add=(g,m)=>{if(g.index){const old=g;g=g.toNonIndexed();old.dispose();}if(!batches.has(m))batches.set(m,[]);batches.get(m).push(g);};

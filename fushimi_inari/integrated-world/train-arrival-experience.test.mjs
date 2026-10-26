@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createTrainArrivalExperience} from './train-arrival-experience.mjs';
+import {createTrainArrivalExperience,startTrainArrivalAfterWelcome} from './train-arrival-experience.mjs';
 
 const sequenceOptions={interiorPose:{position:[4,3,10],target:[8,3,10]},
   platformPose:{position:[9,3,10],target:[15,3,10]},travelDirection:[0,0,1],travelDistance:24};
@@ -136,4 +136,27 @@ test('debug camera can resume orbit after an unavailable handoff or cancellation
   const {experience,controls}=setup({teleport:false,allowDebugCamera:true});
   experience.start();experience.skip();assert.equal(controls.enabled,true);
   experience.start();experience.cancel();assert.equal(controls.enabled,true);
+});
+
+
+test('welcome owns start; optional audio failure cannot suppress train movement or automatic exit',async()=>{
+ const {experience,calls,camera,station}=setup();let enter;const errors=[];
+ const welcome={ready:()=>new Promise(resolve=>{enter=resolve;})};
+ const ready=startTrainArrivalAfterWelcome({welcome,experience,onGesture:()=>{throw new Error('AudioContext unavailable');},onError:error=>errors.push(error.message)});
+ // Neither construction, loading work nor pre-entry frames spend arrival time.
+ experience.update(300);assert.equal(experience.active,false);assert.equal(calls.poses,0);
+ enter({gesture:true});await ready;
+ assert.equal(experience.snapshot.phase,'moving');assert.deepEqual(errors,['AudioContext unavailable']);
+ const initial=[...station.offset];experience.update(.1);assert.notDeepEqual(station.offset,initial);
+ assert.deepEqual(camera.position.value,sequenceOptions.interiorPose.position.map((v,i)=>v+station.offset[i]));
+ const elapsed=experience.snapshot.elapsed;experience.update(600,{paused:true});assert.equal(experience.snapshot.elapsed,elapsed);
+ const state=finish(experience);assert.equal(state.phase,'complete');assert.equal(state.handoff,'walking');
+ assert.deepEqual(calls.states.filter(state=>!state.paused).map(state=>state.phase).filter((phase,i,all)=>i===0||phase!==all[i-1]),['moving','decelerating','stopped','opening','disembarking','closing','complete']);
+ assert.equal(calls.teleports.length,1);assert.equal(station.door,0);
+});
+
+test('intro bypass still starts the arrival without attempting gesture-only audio',async()=>{
+ const {experience}=setup();let gestures=0;
+ await startTrainArrivalAfterWelcome({welcome:{ready:async()=>({gesture:false})},experience,onGesture:()=>gestures++});
+ assert.equal(gestures,0);assert.equal(experience.snapshot.phase,'moving');
 });

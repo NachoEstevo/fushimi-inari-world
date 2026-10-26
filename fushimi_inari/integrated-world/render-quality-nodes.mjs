@@ -2,10 +2,11 @@ import * as THREE from 'three/webgpu';
 import {pass} from 'three/tsl';
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 
-const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:3000000,maxRatio:1.7,shadowSize:2048},ultra:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
+const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
 export function qualityPixelRatio(mode,dpr,width,height){
-  const preset=presets[mode]??presets.balanced;
-  const ratio=mode==='ultra'?Math.max(dpr,1.5):dpr;
+  const quality=mode==='ultra'?'high':mode;
+  const preset=presets[quality]??presets.balanced;
+  const ratio=quality==='high'?Math.max(dpr,1.5):dpr;
   // Bound every preset by physical pixels, including ultrawide and high-DPI screens.
   return Math.min(ratio,preset.maxRatio,Math.sqrt(preset.maxPixels/Math.max(1,width*height)));
 }
@@ -21,7 +22,7 @@ export function createRenderQuality({renderer,scene,camera,sun}){
   post.outputNode=color.add(glow);
   const looks={natural:{strength:.12,radius:.35,threshold:1.2},sakura:{strength:.30,radius:.5,threshold:1.05},dreamcore:{strength:.65,radius:.7,threshold:.85}};
   function report(status=transitioning?'resizing':'ready'){
-    document.body.dataset.renderQuality=JSON.stringify({mode,look,status,pixelRatio:renderer.getPixelRatio(),shadowSize:sun.shadow.mapSize.x,ao:false,bloom:glow.strength.value,detailScale:mode==='ultra'?1.25:1,maxPixels:presets[mode].maxPixels});
+    document.body.dataset.renderQuality=JSON.stringify({mode,look,status,pixelRatio:renderer.getPixelRatio(),shadowSize:sun.shadow.mapSize.x,ao:false,bloom:glow.strength.value,detailScale:mode==='high'?1.25:1,maxPixels:presets[mode].maxPixels});
   }
   function setLook(next){
     look=Object.hasOwn(looks,next)?next:'natural';
@@ -61,12 +62,12 @@ export function createRenderQuality({renderer,scene,camera,sun}){
     root.traverse(o=>{for(const material of [o.material].flat().filter(Boolean))for(const texture of Object.values(material)){
       if(!texture?.isTexture||!texture.image||texture.isRenderTargetTexture)continue;
       if(!originalTextures.has(texture))originalTextures.set(texture,texture.anisotropy);
-      const next=mode==='ultra'?maxAnisotropy:originalTextures.get(texture);
+      const next=mode==='high'?maxAnisotropy:originalTextures.get(texture);
       if(texture.anisotropy!==next){texture.anisotropy=next;texture.needsUpdate=true;}
     }});
   }
   function applyMode(next){
-    mode=['balanced','high','ultra'].includes(next)?next:'balanced';textures();
+    mode=next==='high'||next==='ultra'?'high':'balanced';textures();
     const shadowSize=presets[mode].shadowSize;
     // r180 caches shadow views in bind groups; use one atlas size for its lifetime.
     sun.shadow.mapSize.set(shadowSize,shadowSize);
@@ -76,5 +77,5 @@ export function createRenderQuality({renderer,scene,camera,sun}){
   function render(){if(!disposed&&!transitioning)post.render();}
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,refreshTextures:textures,get detailScale(){return mode==='ultra'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
+  return {setMode,setLook,resize,render,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
 }
