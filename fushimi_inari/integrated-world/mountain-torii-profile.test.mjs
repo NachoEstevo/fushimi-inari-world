@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mountainToriiProfile,inscriptionVariant,inscriptionDate,dedicationTexts} from './mountain-torii-profile.mjs';
+import {mountainToriiProfile,inscriptionVariant,toriiInscriptionProfile,toriiInscriptionVariantCount} from './mountain-torii-profile.mjs';
 import {toriiVariation} from './torii-variation.mjs';
 test('mountain sections mix three stable size cohorts with safe clear widths',()=>{
   for(let section=0;section<9;section++){
@@ -16,14 +16,18 @@ test('mountain sections mix three stable size cohorts with safe clear widths',()
     });
   }
 });
-test('adjacent dedications differ and always address valid atlas tiles',()=>{
-  assert.equal(dedicationTexts.length,8);
-  assert.equal(new Set(Array.from({length:16},(_,i)=>`${inscriptionVariant(0,i)}:${inscriptionDate(0,i)}`)).size,16);
-  for(let seed=0;seed<9;seed++)for(let i=0;i<100;i++){
-    const variant=inscriptionVariant(seed,i);
-    assert.ok(variant>=0&&variant<4);
-    assert.notEqual(variant,inscriptionVariant(seed,i+1));
-    assert.ok(dedicationTexts[variant]&&dedicationTexts[variant+4]);
-    assert.ok(inscriptionDate(seed,i)>=4&&inscriptionDate(seed,i)<8);
+test('adjacent inscriptions select whole sourced records and distribute every record before cycling',async()=>{
+  const {toriiInscriptionRecords}=await import('./torii-inscription-records.mjs');
+  assert.equal(toriiInscriptionVariantCount,24);
+  for(let seed=-2;seed<20;seed++){
+    assert.equal(new Set(Array.from({length:24},(_,i)=>inscriptionVariant(seed,i))).size,24);
+    for(let i=0;i<100;i++){
+      const profile=toriiInscriptionProfile(seed,i),record=toriiInscriptionRecords[profile.recordIndex];
+      assert.ok(record);assert.ok(record.source.startsWith('https://'));
+      assert.notEqual(profile.recordIndex,toriiInscriptionProfile(seed,i+1).recordIndex);
+      assert.deepEqual(profile,toriiInscriptionProfile(seed,i));
+      assert.ok(profile.inkStyle>=0&&profile.inkStyle<8);
+      if(record.donorLines.length&&record.date)assert.equal(record.pairing,'same-gate-visible');
+    }
   }
 });

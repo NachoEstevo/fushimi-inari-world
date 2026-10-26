@@ -1,5 +1,5 @@
 import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-1';
-import {inscriptionVariant,inscriptionDate} from './mountain-torii-profile.mjs?v=29c';
+import {toriiInscriptionProfile} from './mountain-torii-profile.mjs?v=29c';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {routeSpec} from './route-spec.mjs';
@@ -75,6 +75,6 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
     list.forEach(({m,variation},i)=>{mesh.setMatrixAt(i,m);if(variation)mesh.setColorAt(i,new THREE.Color().setRGB(variation.tint,variation.tint*.96,variation.tint*.92));});
     mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();root.add(mesh);
   }
-  buildToriiInscriptions(root,mats.map((m,i)=>({m,inscription:inscriptionVariant(13,i),dateInscription:inscriptionDate(13,i)})),{halfSpan:s.pillarCenters/2,bottomRadius:s.pillarDiameter*.5,topRadius:s.pillarDiameter*.48,bottomY:0,topY:s.height-.16,small:true});
+  buildToriiInscriptions(root,mats.map((m,i)=>({m,...toriiInscriptionProfile(13,i)})),{halfSpan:s.pillarCenters/2,bottomRadius:s.pillarDiameter*.5,topRadius:s.pillarDiameter*.48,bottomY:0,topY:s.height-.16,small:true});
   return {gates:mats.length,fresh:fresh.length,weathered:weathered.length,spacing:s.spacing,pillarDiameter:s.pillarDiameter,clearWidth:s.pillarCenters-s.pillarDiameter,height:s.height,countSource:s.countSource,dimensionsStatus:s.otherDimensions};
 }

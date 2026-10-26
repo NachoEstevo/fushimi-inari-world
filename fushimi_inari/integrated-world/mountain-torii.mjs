@@ -1,4 +1,4 @@
-import {mountainToriiProfile,inscriptionVariant,inscriptionDate} from './mountain-torii-profile.mjs?v=29c';
+import {mountainToriiProfile,toriiInscriptionProfile,toriiInscriptionVariantCount} from './mountain-torii-profile.mjs?v=29c';
 import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-1';
 import * as THREE from 'three';
 import {pathSampler} from './spatial.mjs';
@@ -114,7 +114,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
           from:section.from,to:section.to,point:[x,y,z],reason});
         continue;
       }
-      matrices.push({m,variation,posts,thickness:profile.thickness,inscription:inscriptionVariant(sectionIndex,index),dateInscription:inscriptionDate(sectionIndex,index)});
+      matrices.push({m,variation,posts,thickness:profile.thickness,...toriiInscriptionProfile(sectionIndex,index)});
     }
   }
   const supportTerrain=terrainPositions?.length?mountainToriiSupportTriangles(terrainPositions,matrices.flatMap(e=>e.posts)):[];
@@ -150,7 +150,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
   }
   }
   buildToriiInscriptions(root,matrices,{halfSpan:1.24,bottomRadius:.135,topRadius:.122,bottomY:.65,topY:3.27});
-  return {sizeCohorts:3,inscriptionVariants:16,count:matrices.length,supportCount,supportTerrainTriangles:supportTerrain.length/9,maxSupportDepth:Math.max(0,...matrices.flatMap(e=>e.feet.map(f=>f.top-f.bottom))),omittedForAccess,
+  return {sizeCohorts:3,inscriptionVariants:toriiInscriptionVariantCount,count:matrices.length,supportCount,supportTerrainTriangles:supportTerrain.length/9,maxSupportDepth:Math.max(0,...matrices.flatMap(e=>e.feet.map(f=>f.top-f.bottom))),omittedForAccess,
     omittedForLandmarks:landmarkExclusions.length,landmarkExclusions,
-    weathered:matrices.filter(e=>e.variation.weathered).length,sections:sections.length,provenance:'Original geometry, unlettered timber maps, three inferred size cohorts and interpretive dedications; individual gates not surveyed.'};
+    weathered:matrices.filter(e=>e.variation.weathered).length,sections:sections.length,provenance:'Original geometry, unlettered timber maps, three inferred size cohorts; photographed inscription excerpts, reused in inferred positions; individual gates not surveyed.'};
 }
