@@ -6,7 +6,7 @@ import {SpatialCollisionWorld} from './collision.mjs';
 import {walkingSpeed,movementSteps,paceSpeed,WALKING_EYE_HEIGHT,smoothWalkingEye,createFootstepCadence} from './walking-motion.mjs?v=mountain-walk-2';
 import {auditSectorConnections} from './sector-audit.mjs';
 
-export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart,canMove=()=>true,resolveMove,allowDebugCamera=false}){
+export function installWalking({camera,renderer,controls,ground,assembly,audio,onStart,onInteraction=()=>{},canMove=()=>true,resolveMove,allowDebugCamera=false}){
   const obstacles=new SpatialCollisionWorld(4);
   for(const c of assembly.colliders)obstacles[c.type==='box'?'addBox':'addCylinder'](...c.args);
   const audit={samples:0,blocked:0,maxCorrection:0,examples:[]};
@@ -111,6 +111,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     }});
   function interact(){
     const result=proximity.run();if(!result)return;
+    onInteraction(result.object);
     panel.hidden=true;feedback.textContent=result.message;feedbackUntil=performance.now()+2600;feedback.hidden=false;
     updateInteraction();
   }

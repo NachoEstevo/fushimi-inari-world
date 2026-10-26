@@ -23,8 +23,10 @@ export function installSeasons(assembly,canopy){
   const apply=()=>{
     const season=validSeason(select.value);canopy.setSeason(season);
     meshes.forEach((mesh,j)=>{
+      const sourceGroup=mesh.userData.seasonSourceGroup??j;
       for(let i=0;i<mesh.count;i++){
-        const n=(Math.sin(i*12.9898+j*31.1)*43758.5453)%1,t=Math.abs(n);
+        const sourceIndex=mesh.userData.seasonSourceIndices?.[i]??i;
+        const n=(Math.sin(sourceIndex*12.9898+sourceGroup*31.1)*43758.5453)%1,t=Math.abs(n);
         tint.setHSL(season==='spring'?.23+t*.07:.025+t*.105,season==='spring'?.48:.78,.43+t*.15);
         mesh.setColorAt(i,tint);
       }

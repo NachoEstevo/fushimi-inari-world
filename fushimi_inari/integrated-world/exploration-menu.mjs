@@ -74,7 +74,7 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   menu.addEventListener('close',()=>{walker.pause(cameraOwned());controls.enabled=allowDebugCamera&&!cameraOwned()&&!walker.active&&$('stop').disabled;trigger.focus();});
   menu.addEventListener('cancel',e=>{e.preventDefault();close();});
   menu.addEventListener('click',e=>{if(e.target===menu){const r=menu.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
-  addEventListener('keydown',e=>{if(e.code!=='Escape')return;if(document.pointerLockElement||walker.pointerLooking){walker.releasePointerLock?.();document.exitPointerLock?.();e.preventDefault();e.stopImmediatePropagation();return;}e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
+  addEventListener('keydown',e=>{if(e.code!=='Escape'||document.querySelector('dialog[open]:not(#exploration-menu)'))return;if(document.pointerLockElement||walker.pointerLooking){walker.releasePointerLock?.();document.exitPointerLock?.();e.preventDefault();e.stopImmediatePropagation();return;}e.preventDefault();e.stopImmediatePropagation();if(menu.open)close();else open();},true);
   addEventListener('keydown',e=>{
     if(e.code!=='KeyM'||e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.target.closest?.('input,select,textarea'))return;
     if(document.body.classList.contains('welcome-open'))return;

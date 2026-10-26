@@ -3,6 +3,7 @@ import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-do
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
 import {buildMappedRoofCanopies} from './mapped-roof-canopies.mjs';
 import {buildMitsurugiCafeFrontage} from './mitsurugi-cafe-frontage.mjs';
+import {buildYakurikiTrailContext} from './yakuriki-trail-context.mjs';
 import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
 import {createDeferredShrineBuildings,yieldShrineWork} from './deferred-shrine-buildings.mjs';
 import {refineShrineBuildingAsync} from './shrine-building-refinements.mjs';
@@ -131,7 +132,7 @@ import {buildMountainTorii} from './mountain-torii.mjs?v=mountain-walk-2';
 import {supportTerraces} from './terrace-foundations.mjs';
 import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=repair-20261025b';
 import {yotsuGrade} from './site-grading.mjs';
-import {partitionInstances} from './spatial-mesh.mjs';
+import {partitionInstances,subdivideShadowInstanceLeaves,freezeStaticInstanceTransforms} from './spatial-mesh.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
 import {entryHeight} from './entry-profile.mjs';
@@ -505,6 +506,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.mitsurugiRegistration=JSON.stringify(registerMitsurugi(root,features,surfaces,colliders));
   const mitsurugiCafe=buildMitsurugiCafeFrontage(root,features,surfaces,colliders,legacy.materials);
   document.body.dataset.mitsurugiCafe=JSON.stringify(mitsurugiCafe);
+  const yakurikiTrail=buildYakurikiTrailContext(root,features,surfaces,legacy.materials);
+  document.body.dataset.yakurikiTrail=JSON.stringify(yakurikiTrail);
   const mappedRoofCanopies=buildMappedRoofCanopies(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.mappedRoofCanopies=JSON.stringify(mappedRoofCanopies);
   colliders.push(...twinColliders);
@@ -621,7 +624,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const takeyaFrontage=buildKumatakaTakeyaFrontage(root,features,surfaces,legacy.materials,colliders);
   document.body.dataset.takeyaFrontage=JSON.stringify(takeyaFrontage);
   document.body.dataset.yotsutsujiRetaining=JSON.stringify(yotsutsuji.retainingEdge??null);
+  // Experimental only: the fixed-route A/B did not justify extra draw calls.
+  const forestSubcellSize=callbacks.forestSubcellSize??0;
+  const mountainDrawStart=root.children.length;
   const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{terrainPositions:renderedTerrainPositions,excludeGate:gate=>ainomine?.excludeGate?.(gate)||mitsutsujiFrontages.excludeGate?.(gate)});
+  const mountainDrawRoots=root.children.slice(mountainDrawStart).filter(object=>object.isInstancedMesh);
   const reception=buildReception(root,features,ground,legacy.materials,colliders);
   buildAzumamaroHouses(root,features,(x,z)=>surfaces.height(x,z),legacy.materials,colliders);
   const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
@@ -649,7 +656,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.kumatakaRoofR97=JSON.stringify(kumatakaRoofR97?(({group,...report})=>report)(kumatakaRoofR97):null);
   const shinikeVegetation=repairShinikeVegetationR97(root,legacy,shinikeWater,colliders);
   document.body.dataset.shinikeVegetationR97=JSON.stringify(shinikeVegetation);
+  const extendedForestStart=root.children.length;
   const forest=extendForest(root,legacy,features,anchors,ground,pathDistance,colliders);
+  const extendedForestRoots=root.children.slice(extendedForestStart);
   document.body.dataset.shinikeBankLandscapeR97=JSON.stringify(buildShinikeBankLandscapeR97(root,features,surfaces,legacy,colliders,{terrainPositions:renderedTerrainPositions,water:shinikeWater}));
   document.body.dataset.omotesandoContextR95=JSON.stringify(buildOmotesandoContextR95(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
   document.body.dataset.senbonRestLandscapeR94=JSON.stringify(buildSenbonRestLandscape(root,features,ground,pathDistance,legacy.materials,colliders));
@@ -673,6 +682,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.okushaArchitecture=JSON.stringify(okushaCourt??null);
   const terraces=supportTerraces(root,legacy,ground);
   const precinctLife=installPrecinctLife(root,legacy,callbacks);
+  const forestSubcells={mode:'selective-shadow-only',minTriangles:50000,size:forestSubcellSize,mountainDrawCellSize:80,mountainShadowCellSize:forestSubcellSize?32:80,originalMeshCount:0,chunks:0,instances:0},legacyPartitionRoots=[];
+  const staticInstanceRoots=[...mountainDrawRoots,...extendedForestRoots];
   for(const mesh of [...legacy.foliage,...legacy.toriiMeshes]){
     if(!mesh.parent)continue;
     const parent=mesh.parent;mesh.updateMatrix();
@@ -681,7 +692,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(bambooKind)bambooLOD(chunks,bambooKind);
     else if([legacy.foliage[1],legacy.foliage[2]].includes(mesh))preservedForestLOD(chunks,mesh===legacy.foliage[2]);
     else if(legacy.foliage.includes(mesh))for(const child of chunks.children)child.userData.nearForest=true;
-    parent.add(chunks);mesh.removeFromParent();
+    legacyPartitionRoots.push(chunks);
+    staticInstanceRoots.push(chunks);parent.add(chunks);mesh.removeFromParent();
   }
   document.body.dataset.shinsenjoNorthCourtR99=JSON.stringify(buildShinsenjoNorthCourtR99(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   const apronTransitionsR100=prepareMikoshikoApronTransitionsR100(root);
@@ -773,6 +785,21 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     anchor.checkpoint=[x,walkHeight(x,z),z];
     anchor.lookAt=[anchor.target[0],anchor.target[1]+2,anchor.target[2]];
   }
+  // Preserve the pre-subdivision palette identity, including both LOD levels.
+  // Season tints must not change just because the draw cells became smaller.
+  let seasonSourceGroup=0;
+  root.traverse(object=>{
+    if(object.isInstancedMesh&&(object.material===legacy.foliage[2].material||object.userData.seasonalMaple))object.userData.seasonSourceGroup=seasonSourceGroup++;
+  });
+  // Logical LOD/residency and colour batches stay intact; only shadow leaves split.
+  if(forestSubcellSize)for(const chunks of [...legacyPartitionRoots,...extendedForestRoots]){
+    const split=subdivideShadowInstanceLeaves(chunks,forestSubcellSize,{minTriangles:50000});
+    for(const key of ['originalMeshCount','chunks','instances'])forestSubcells[key]+=split[key];
+  }
+  if(forestSubcellSize)for(const mesh of mountainDrawRoots){
+    const split=subdivideShadowInstanceLeaves(mesh,32,{minTriangles:50000});
+    for(const key of ['originalMeshCount','chunks','instances'])forestSubcells[key]+=split[key];
+  }
   const retained=new Set([...legacy.interactables,...legacy.flickeringCandleMeshes,...gehaidenLanternCleanupR96.retainedObjects,...shrineFloors.children]);
   for(const object of legacy.interactables)object.traverse(child=>retained.add(child));
   // A moving carriage and its sliding doors must retain their local transforms.
@@ -786,6 +813,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const object of legacy.interactables)object.traverse(child=>residencyRetained.add(child));
   const staticBatches=batchStaticScene(root,retained,128,residencyRetained);
   const forestChunks=[];root.updateMatrixWorld(true);
+  // Only completed, immutable foliage/torii owners qualify. Animated visitors,
+  // flames and railway objects retain automatic transforms.
+  const staticInstances=(callbacks.freezeStaticInstances??forestSubcellSize>0)?freezeStaticInstanceTransforms(staticInstanceRoots):null;
+  forestSubcells.frozenTransforms=staticInstances?.count??0;
+  document.body.dataset.forestSubcells=JSON.stringify(forestSubcells);
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
@@ -806,6 +838,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(foodCounter){const a=foodCounter.points[foodCounter.edge],u=foodCounter.width/2,x=a[0]+foodCounter.t[0]*u,z=a[2]+foodCounter.t[1]*u,px=x+foodCounter.n[0]*2.6,pz=z+foodCounter.n[1]*2.6;registerCheckpoint('keihan_food','Inari-shinmichi · Food counter',[px,walkHeight(px,pz),pz],[x,foodCounter.floor+1.3,z]);}
   if(omotesandoArrival.built){const {position:[x,z],lookAt:[tx,tz]}=omotesandoArrival.spawn;registerCheckpoint('omotesando_entry','Omotesando · First torii',[x,walkHeight(x,z),z],[tx,walkHeight(x,z)+1.7,tz]);}
   inventory.anchors=spatial.anchors.length;
-  return {root,deferredBuildings,staticBatches,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,isPublicWalkSupport,
-    excludesBuilding:b=>mitsurugiCafe.builtIds.includes(b.id)||mappedRoofCanopies.builtIds.includes(b.id)||(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+  return {root,deferredBuildings,staticBatches,shadowPartitions:forestSubcells,staticInstanceTransforms:staticInstances,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,isPublicWalkSupport,
+    excludesBuilding:b=>yakurikiTrail.builtIds.includes(b.id)||mitsurugiCafe.builtIds.includes(b.id)||mappedRoofCanopies.builtIds.includes(b.id)||(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

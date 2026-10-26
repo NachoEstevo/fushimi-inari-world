@@ -23,6 +23,7 @@ import {createWaterAppearance} from './water-appearance.mjs?v=immersion-20261025
 import {installShinikeReflections} from './shinike-reflections.mjs?v=repair-20261025b';
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=usability-9';
+import {installJourneyJournal} from './journey-journal-ui.mjs';
 import {installWelcomeScreen} from './welcome-screen.mjs?v=welcome-hud-1';
 import {createTrainArrivalExperience,startTrainArrivalAfterWelcome} from './train-arrival-experience.mjs?v=usability-9';
 import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approach-routes.mjs?v=complete-route-1';
@@ -74,7 +75,7 @@ try {
   }));
   const width=(terrain.cols-1)*terrain.step, depth=(terrain.rows-1)*terrain.step;
   const cx=terrain.xmin+width/2,cz=terrain.zmin+depth/2;
-  let assembly=null,leafLight=null,walkingPrewarm=null,renderPreparation=null;
+  let assembly=null,leafLight=null,walkingPrewarm=null,renderPreparation=null,showcase=null,shadowRouteAudit=null,shadowCasterCapture=null,shadowCasterPending=false;
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
@@ -97,13 +98,13 @@ try {
   const sun=new THREE.DirectionalLight(0xffebcd,2.3);sun.position.set(-800,1400,-600);scene.add(sun);
   const audio=createAudio();
   loadingStage('Building nearby streets and walking surfaces…');
-  assembly=await integrate(scene,renderer,terrain,features,{progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+  assembly=await integrate(scene,renderer,terrain,features,{freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
     appearance.applyTo(group);
     group.traverse(object=>{for(const material of [object.material].flat())if(material?.userData?.precinctLeafReceiver)leafLight?.attach(material);});
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
+    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{reuseRenderScene:true,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
     await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
     detailChunks.add(group);preparationResidency.add(group);
     walkingPrewarm?.append([{object:group,bounds:new THREE.Box3().setFromObject(group)}]);
@@ -111,6 +112,9 @@ try {
     sun.shadow.needsUpdate=true;
   }});
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  // r180 preserves an explicitly extended shadow mask. The visitor and
+  // reflection cameras stay on layer 0; layer 1 contains shadow-only instances.
+  if(assembly.shadowPartitions.size>0)sun.shadow.camera.layers.enable(1);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   const sunShadows=createSunShadowSchedule({sun,quality:'balanced'});
@@ -408,12 +412,13 @@ try {
   const fareGates=installKeihanFareGates(assembly.keihanStation);
   const publicWalkDomain=createPublicWalkDomain(assembly);
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
-  let sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
-  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
+  let journal=null,sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
+  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:object=>journal?.recordInteraction(object),onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     for(const [id,label,x,z,tx,tz] of [
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
+      ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1145,-184],
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
       ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45]
     ]){
@@ -518,17 +523,18 @@ try {
       await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);
       leafLight.setEnabled(quality.mode!=='balanced'&&query.get('leafLight')!=='0');document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);
       await appearance.prepare();
-      if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4});
+      if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4,reuseRenderScene:true});
       document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);walkingPrewarm?.invalidate();
       });}finally{
         qualityPending--;
         if(!qualityPending){
-          const blocked=photo.active||menu.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
+          const blocked=photo.active||menu.active||journal.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
           walker.pause(blocked);controls.enabled=allowDebugCamera&&!blocked&&!walker.active&&$('stop').disabled;
         }
       }
     },
     onDetailDistance:value=>{detailDistance=value;}});
+  journal=installJourneyJournal({camera,assembly,walker,controls,isBlocked:()=>photo.active||menu.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
   const preparationResidency=new Set([
     ...assembly.staticBatches.residencyEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),
     ...(videoMerchandise.detailGroups??[]),...(stationDetails.detailGroups??[]),...(observedStreet.detailGroups??[]),
@@ -562,7 +568,7 @@ try {
         walker.pause(true);controls.enabled=false;$('photo-open').disabled=true;
       }else if(!value&&sectorPause){
         const previous=sectorPause;sectorPause=null;
-        const blocked=photo.active||menu.active||qualityPending>0||!!arrival?.active||document.body.classList.contains('welcome-open');
+        const blocked=photo.active||menu.active||journal.active||qualityPending>0||!!arrival?.active||document.body.classList.contains('welcome-open');
         walker.pause(blocked);
         if(!previous.committed){controls.enabled=previous.controls&&!blocked;controls.target.copy(previous.target);}else if(blocked)controls.enabled=false;
         $('photo-open').disabled=previous.photoDisabled;
@@ -596,7 +602,7 @@ try {
       if(!isCurrent())return;
       await stage('nearby shaders',async()=>{
         const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
-        await compileSelectedVisuals(quality,scene,visuals,targetCamera,{batchSize:4,yieldWork:yieldPreparation,report});
+        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true});
       });
       if(!isCurrent())return;
       if($('buildings').checked&&panoramaVisible(position,false)){
@@ -626,7 +632,7 @@ try {
         await yieldPreparation();
         if(!isCurrent())throw new Error('Walking preparation paused');
       };
-      await compileSelectedVisuals(quality,scene,[object],camera.clone(),{batchSize:1,yieldWork:yieldIdle});
+      await compileSelectedVisuals(quality,scene,[object],camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true});
       return isCurrent();
     },onError:error=>{document.body.dataset.walkingPrewarmError=String(error);}});
 
@@ -641,7 +647,7 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){walkingPrewarm?.dispose();leafLight?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){journal.dispose();walkingPrewarm?.dispose();leafLight?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
@@ -677,7 +683,7 @@ try {
       station:arrivalStation,camera,controls,walker,allowDebugCamera,
       onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
-    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active||(sectorPreparation.busy||qualityPending>0),
+    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active||journal.active||(sectorPreparation.busy||qualityPending>0),
       labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · click the scene, then move the mouse to look · Esc releases the cursor'}:{}});
     // The train waits behind the welcome sheet so its sound and motion start together.
     startTrainArrivalAfterWelcome({welcome,experience:arrival,reducedMotion:()=>arrivalUI.reducedMotion,onGesture:()=>{audio.setEnabled(true);menu.syncSound();}});
@@ -688,6 +694,61 @@ try {
   }
 
 
+  // The optional capture panel records this renderer; ordinary visitors never load it.
+  if(query.get('showcase')==='1'){
+    const {installShowcaseCapture}=await import('./showcase-capture.mjs?v=edit-2');
+    let captureSize=null;
+    showcase=installShowcaseCapture({canvas:renderer.domElement,camera,controls,station:arrivalStation,assembly,
+      overlays:[routeLine,marker,landmarkGroup],
+      onBegin(){
+        arrival?.cancel();walking=false;walker.pause(true);walkingPrewarm.setBlocked(true);
+        captureSize={size:renderer.getSize(new THREE.Vector2()),ratio:renderer.getPixelRatio(),aspect:camera.aspect,fov:camera.fov};
+        renderer.setDrawingBufferSize(1920,1080,1);camera.aspect=16/9;camera.fov=58;camera.updateProjectionMatrix();
+      },
+      onEnd(){
+        if(captureSize){renderer.setDrawingBufferSize(captureSize.size.x,captureSize.size.y,captureSize.ratio);camera.aspect=captureSize.aspect;camera.fov=captureSize.fov;camera.updateProjectionMatrix();captureSize=null;}
+        walker.pause(false);walkingPrewarm.setBlocked(false);
+      },
+      onState:state=>document.body.dataset.showcaseCapture=JSON.stringify({...state,result:undefined}),
+      async prepare(views){
+        await assembly.deferredBuildings.ensure();
+        await walkingPrewarm.awaitIdle();
+        await renderPreparation.run(async()=>{
+          for(const frame of views){
+            arrivalStation.setTrainOffset(frame.trainOffset);arrivalStation.setDoorOpen(frame.doorProgress);
+            camera.position.set(...frame.pose.position);camera.lookAt(...frame.pose.target);
+            await textureStreaming.prepareAt(camera.position);prepareNearby();
+            await quality.compileAsync(scene,camera);quality.render();await renderer.waitForGPU();
+          }
+        });
+      }
+    });
+    addEventListener('pagehide',()=>showcase.dispose(),{once:true});
+  }
+
+  if(query.get('shadowAudit')==='1'){
+    const {installShadowRouteAudit}=await import('./shadow-route-audit.mjs');
+    shadowRouteAudit=installShadowRouteAudit({camera,assembly,
+      onBegin(){arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(true);},
+      onEnd(){walker.pause(true);walkingPrewarm.setBlocked(true);},
+      getStats:()=>({calls:renderer.info.render.drawCalls??renderer.info.render.calls,triangles:renderer.info.render.triangles,shadowUpdates:sunShadows.stats.updates}),
+      async prepare(views){
+        await walkingPrewarm.awaitIdle();
+        await renderPreparation.run(async()=>{
+          for(const frame of views){
+            camera.position.set(...frame.pose.position);camera.lookAt(...frame.pose.target);
+            await textureStreaming.prepareAt(camera.position);prepareNearby();
+            await quality.compileAsync(scene,camera);quality.render();await renderer.waitForGPU();
+          }
+        });
+      }
+    });
+    const panel=$('shadow-route-audit');
+    Object.assign(panel.style,{position:'fixed',left:'10px',bottom:'45px',zIndex:10000,maxWidth:'600px',maxHeight:'110px',overflow:'auto',background:'#fffffff0',color:'#222',padding:'8px',fontSize:'11px'});
+    ({captureShadowCasters:shadowCasterCapture}=await import('./shadow-caster-audit.mjs'));
+    const casters=document.createElement('button');casters.textContent='Inspect shadow casters';casters.onclick=()=>{if(!shadowRouteAudit.active)shadowCasterPending=true;};panel.append(casters);
+    addEventListener('pagehide',()=>shadowRouteAudit.dispose(),{once:true});
+  }
   renderer.info.autoReset=false;
   const recordRender=renderStats(renderer);
   let horizonAuditAt=0;
@@ -696,11 +757,19 @@ try {
   let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
-    if((sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
-    if(arrival?.active){
+    const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);
+    // Audit preparation owns this renderer while awaiting new pipelines. Its
+    // callback draws each settled pose; interleaved regular draws can consume
+    // an r180 pipeline before asynchronous compilation has completed.
+    if(shadowRouteAudit?.active&&renderPreparation.busy)return;
+    if(showcase?.preparing)return;
+    if(!captureOwnsCamera&&(sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
+    if(captureOwnsCamera){
+      // Capture is the sole camera owner, including during route preparation.
+    }else if(arrival?.active){
       const holdDoors=arrival.snapshot.phase==='stopped'&&arrival.snapshot.phaseProgress>.94&&audio.arrivalSpeechActive();
-      arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active||(sectorPreparation.busy||qualityPending>0)});
-    }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active&&!(sectorPreparation.busy||qualityPending>0)){
+      arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active&&!journal.active&&!(sectorPreparation.busy||qualityPending>0)){
       const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
       routeProgress=motion.index;travelled=motion.travelled;
       const arrived=motion.arrived;
@@ -715,7 +784,7 @@ try {
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=allowDebugCamera;if(!allowDebugCamera)walker.start();}
       $('position').textContent=motion.blocked?'Train crossing · Please wait':arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!photo.active&&!menu.active&&!(sectorPreparation.busy||qualityPending>0)&&!walker.update(dt)&&allowDebugCamera){
+    }else if(!photo.active&&!menu.active&&!journal.active&&!(sectorPreparation.busy||qualityPending>0)&&!walker.update(dt)&&allowDebugCamera){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
@@ -726,15 +795,15 @@ try {
     candleFlames.update(time);
 
     for(const water of waterControllers)water.update(time/1000);
-    fareGates?.update(camera.position.toArray(),time/1000,document.hidden||menu.active||photo.active);
+    fareGates?.update(camera.position.toArray(),time/1000,document.hidden||menu.active||photo.active||journal.active);
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
     sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
-    if(!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
+    if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
-    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||!!arrival?.active||menu.active||photo.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||!!shadowRouteAudit||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
     if(aheadCheckpoint!==document.body.dataset.checkpoint){aheadCheckpoint=document.body.dataset.checkpoint;aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;}
-    if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
+    if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&!journal.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
       const ahead=camera.position.clone().sub(aheadPrefetchPosition);ahead.y=0;
       if(ahead.lengthSq()>0)textureStreaming.prefetch(ahead.normalize().multiplyScalar(40).add(camera.position));
       aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;
@@ -749,13 +818,21 @@ try {
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
-    const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
+    const submitStart=performance.now();renderer.info.reset();
+    if(shadowCasterPending&&!shadowRouteAudit.active){
+      shadowCasterPending=false;sunShadows.invalidate();sunShadows.update(time,camera.position,sunOffset);
+      document.body.dataset.shadowCasterAudit=JSON.stringify(shadowCasterCapture({scene,shadowCamera:sun.shadow.camera,render:()=>quality.render(),label:object=>{
+        const index=assembly.legacy.foliage.findIndex(source=>source.geometry===object.geometry);
+        return index>=0?['forest trunks','sugi crowns','maple crowns','understory','bamboo culms','bamboo leaves'][index]:object.name||object.parent?.name||`geometry ${object.geometry.id}`;
+      }}));
+    }else quality.render();
+    showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
     if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active||(sectorPreparation.busy||qualityPending>0)});
+    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
 
   }
   requestAnimationFrame(animate);

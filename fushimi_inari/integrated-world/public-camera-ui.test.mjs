@@ -14,7 +14,7 @@ function fixture(){
   click(){this.onclick?.();} showModal(){this.open=true;} close(){this.open=false;this.events.close?.();}
  }
  const el=id=>{if(!elements.has(id))elements.set(id,new Element(id));return elements.get(id);};
- globalThis.document={body:new Element('body'),getElementById:el,createElement:()=>new Element(),querySelector:el,pointerLockElement:null,exitPointerLock(){this.pointerLockElement=null;}};
+ globalThis.document={body:new Element('body'),getElementById:el,createElement:()=>new Element(),querySelector:selector=>selector==='dialog[open]:not(#exploration-menu)'?[...elements.values()].find(e=>e.open&&e.id!=='exploration-menu')??null:el(selector),pointerLockElement:null,exitPointerLock(){this.pointerLockElement=null;}};
  globalThis.addEventListener=(name,fn)=>{if(name==='keydown')keys.push(fn);};
  const controls={enabled:true},camera=new THREE.PerspectiveCamera(),walker={mode:'orbit',active:false,pace:'slow',setPace(v){this.pace=v;},pause(){},start(){this.mode='walk';this.active=true;},stop(){this.mode='orbit';this.active=false;},fly(){this.mode='fly';}};
  return {el,elements,keys,controls,camera,walker,restore(){Object.assign(globalThis,original);}};
@@ -26,6 +26,17 @@ for(const debug of [false,true])test(`menu exposes camera and full detail contro
  f.el('menu-open').click();f.el('menu-close').click();assert.equal(f.controls.enabled,debug);
  document.pointerLockElement={};const event={code:'Escape',preventDefault(){},stopImmediatePropagation(){}};f.keys[0](event);
  assert.equal(document.pointerLockElement,null);assert.equal(f.el('exploration-menu').open,false);
+ }finally{f.restore();}
+});
+test('Escape belongs to the journal dialog instead of opening the exploration menu underneath',()=>{
+ const f=fixture();try{
+  installExplorationMenu({walker:f.walker,controls:f.controls,camera:f.camera,assembly:{spatial:{anchors:[]}},places:f.el('places'),sound:{enabled:false,set(){}}});
+  f.el('journey-journal').showModal();let prevented=false;
+  f.keys[0]({code:'Escape',preventDefault(){prevented=true;},stopImmediatePropagation(){}});
+  assert.equal(f.el('exploration-menu').open,false);assert.equal(prevented,false);
+  f.el('journey-journal').close();
+  f.keys[0]({code:'Escape',preventDefault(){prevented=true;},stopImmediatePropagation(){}});
+  assert.equal(f.el('exploration-menu').open,true);
  }finally{f.restore();}
 });
 for(const debugCamera of [false,true])for(const fastTravel of [false,true])test(`menu fast travel=${fastTravel} is independent from debug camera=${debugCamera}`,()=>{

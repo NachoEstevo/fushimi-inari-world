@@ -5,6 +5,31 @@ import {qualityPixelRatio,createRenderQuality} from './render-quality-nodes.mjs'
 import ShadowNode from 'three/src/nodes/lighting/ShadowNode.js';
 import {pass} from 'three/tsl';
 
+test('main and nested shadow passes share current animated world matrices, restoring ownership on failure',()=>{
+ const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1280,innerHeight:720,devicePixelRatio:1});
+ const scene=new THREE.Scene(),parent=new THREE.Group(),child=new THREE.Object3D();scene.add(parent);parent.add(child);
+ const renderPost=THREE.PostProcessing.prototype.render;
+ let updates=0,fail=false;const update=scene.updateMatrixWorld.bind(scene);scene.updateMatrixWorld=(...args)=>{updates++;return update(...args);};
+ const renderer={getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){}};
+ const quality=createRenderQuality({renderer,scene,camera:new THREE.PerspectiveCamera(),sun:new THREE.DirectionalLight()});
+ THREE.PostProcessing.prototype.render=function(){
+  // Match r180's main and nested shadow scene-update condition.
+  for(let i=0;i<2;i++)if(scene.matrixWorldAutoUpdate)scene.updateMatrixWorld();
+  assert.equal(child.matrixWorld.elements[12],parent.position.x+child.position.x);
+  if(fail)throw Error('render failed');
+ };
+ try{
+  parent.position.x=10;child.position.x=2;quality.render();assert.equal(updates,1);assert.equal(scene.matrixWorldAutoUpdate,true);
+  parent.position.x=20;quality.render();assert.equal(updates,2);
+  fail=true;assert.throws(()=>quality.render(),/render failed/);assert.equal(scene.matrixWorldAutoUpdate,true);
+  fail=false;scene.matrixWorldAutoUpdate=false;const before=updates;quality.render();assert.equal(updates,before);assert.equal(scene.matrixWorldAutoUpdate,false);
+ }finally{
+  quality.dispose();THREE.PostProcessing.prototype.render=renderPost;
+  for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}
+ }
+});
+
 test('prewarm uses the real scene pass type and MSAA before first render and restores target state before waiting',async()=>{
  const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
  Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1200,innerHeight:800,devicePixelRatio:1});

@@ -46,8 +46,57 @@ export function partitionInstances(mesh,size=128){
       mesh.getMatrixAt(index,matrix);part.setMatrixAt(i,matrix);
       if(mesh.instanceColor){const color=new THREE.Color();mesh.getColorAt(index,color);part.setColorAt(i,color);}
     });
+    part.userData.partitionSourceIndices=indices;
     part.castShadow=mesh.castShadow;part.receiveShadow=mesh.receiveShadow;
     part.computeBoundingSphere();group.add(part);
   }
   return group;
+}
+
+// The visible coarse mesh remains the LOD owner. Smaller children cast only
+// on a dedicated layer, so main-view batching and placement stay unchanged.
+export function subdivideShadowInstanceLeaves(root,size,{layer=1,minTriangles=0}={}){
+  if(!Number.isFinite(size)||size<=0)throw new RangeError('Instance cell size must be finite and positive');
+  if(!Number.isInteger(layer)||layer<1||layer>31)throw new RangeError('Shadow layer must be an integer from 1 to 31');
+  if(!Number.isFinite(minTriangles)||minTriangles<0)throw new RangeError('Minimum triangles must be finite and non-negative');
+  const leaves=[];
+  root.traverse(object=>{
+    if(!object.isInstancedMesh||!object.castShadow||object.userData.shadowOnly)return;
+    const vertices=object.geometry.index?.count??object.geometry.attributes.position?.count??0;
+    if(vertices/3*object.count>=minTriangles)leaves.push(object);
+  });
+  let chunks=0,instances=0,originalMeshCount=0;
+  for(const mesh of leaves){
+    const group=partitionInstances(mesh,size);
+    if(group.children.length<=1)continue;
+    group.position.set(0,0,0);group.quaternion.identity();group.scale.set(1,1,1);group.updateMatrix();
+    group.layers.set(layer);group.userData={shadowOnly:true};
+    for(const part of group.children){
+      const indices=part.userData.partitionSourceIndices;
+      part.layers.set(layer);part.castShadow=true;part.receiveShadow=false;
+      part.frustumCulled=mesh.frustumCulled;part.renderOrder=mesh.renderOrder;
+      part.customDepthMaterial=mesh.customDepthMaterial;part.customDistanceMaterial=mesh.customDistanceMaterial;
+      part.userData={...mesh.userData,shadowOnly:true,partitionSourceIndices:indices,
+        seasonSourceIndices:indices.map(index=>mesh.userData.seasonSourceIndices?.[index]??index)};
+      delete part.userData.nearForest;
+      chunks++;instances+=part.count;
+    }
+    mesh.add(group);mesh.castShadow=false;originalMeshCount++;
+  }
+  return {originalMeshCount,chunks,instances};
+}
+
+// Only pass owned, static subtrees. Their ancestors must remain stationary;
+// after an intentional relocation call refreshTransforms before rendering.
+export function freezeStaticInstanceTransforms(roots){
+  const frozen=new Set();
+  for(const root of roots){root.updateWorldMatrix(true,true);root.traverse(object=>frozen.add(object));}
+  const freezeWorld=Number(THREE.REVISION)>=180;
+  for(const object of frozen){object.matrixAutoUpdate=false;if(freezeWorld)object.matrixWorldAutoUpdate=false;}
+  return {count:frozen.size,refreshTransforms(){
+    const worldFlags=new Map();
+    for(const object of frozen){worldFlags.set(object,object.matrixWorldAutoUpdate);object.matrixWorldAutoUpdate=true;object.updateMatrix();}
+    for(const root of roots)root.updateWorldMatrix(true,true);
+    for(const object of frozen)object.matrixWorldAutoUpdate=worldFlags.get(object);
+  }};
 }

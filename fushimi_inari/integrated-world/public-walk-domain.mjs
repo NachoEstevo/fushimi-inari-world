@@ -10,8 +10,13 @@ export function createPublicGravelSupport(romon,features){
   const entrance=makeEntranceGroundMask(romon,features);
   const blocked=makeOmotesandoShoulderExclusion({...features,paths:[]},[romon.target[0]-150,romon.target[0]+150,romon.target[2]-150,romon.target[2]+150]);
   return (x,z)=>{
-    if(!Number.isFinite(x)||!Number.isFinite(z)||blocked(x,z))return false;
+    if(!Number.isFinite(x)||!Number.isFinite(z))return false;
     const [lx,lz]=rotateXZ(x-romon.target[0],z-romon.target[2],-romon.yaw);
+    // Both painted aprons have zero weight beyond this local envelope.
+    // Boundary sliding probes support repeatedly: mountain probes must not
+    // rescan the entrance's mapped solids before discovering they are remote.
+    if(Math.abs(lx)>68||lz< -64||lz>38)return false;
+    if(blocked(x,z))return false;
     const ax=lx+romon.source[0],az=lz+romon.source[2];
     if(entryWallRuns.some(([a,b])=>ax>a-.4&&ax<b+.4)&&entryGardenTiers.some(t=>az>t.back-.35&&az<t.front+.35))return false;
     // Midpoint of the shader's narrow edge feather is the public boundary.

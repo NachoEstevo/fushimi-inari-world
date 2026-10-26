@@ -125,3 +125,20 @@ test('terrain-painted gravel admits only existing court/approach envelopes and e
   for(const p of [[10,-20],[-10,-20],[10,4],[0,-57],[70,0],[0,40]])assert.equal(has(...p),false,p.join(','));
   assert.equal(gravel(NaN,0),false);
 });
+
+test('remote walking and boundary sliding do not inspect entrance solids',()=>{
+  const romon={target:[100,3,200],source:[0,0,0],yaw:.4};
+  let probes=0;
+  const points=[[90,0,190],[110,0,190],[110,0,210],[90,0,210],[90,0,190]];
+  const ring=new Proxy(points,{get(target,key){if(key===Symbol.iterator||key==='length')probes++;return Reflect.get(target,key);}});
+  const gravel=createPublicGravelSupport(romon,{paths:[],buildings:[{points:ring}],water:[]});
+  probes=0;
+  const domain=createPublicWalkDomain({isWalkable:(x,z)=>x>=1100&&Math.abs(z+180)<=1,isPublicWalkSupport:gravel});
+  const move=domain.resolveMove([1140,165,-180],[1141,165,-178]);
+  assert.ok(move[0]>1140.99);assert.ok(move[2]<=-179);
+  for(const [lx,lz]of [[69,0],[-69,0],[0,-65],[0,39]]){
+    const [x,z]=rotateXZ(lx,lz,romon.yaw);
+    assert.equal(gravel(100+x,200+z),false);
+  }
+  assert.equal(probes,0,'remote probes must not visit entrance ring vertices');
+});

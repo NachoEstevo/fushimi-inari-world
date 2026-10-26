@@ -91,7 +91,17 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
       renderer.setRenderTarget(previous.target,previous.face,previous.mip);renderer.setMRT(previous.mrt);
     }
   }
-  function render(){if(!disposed&&!transitioning){cityHorizon?.render();post.render();}}
+  function render(){
+    if(disposed||transitioning)return;
+    cityHorizon?.render();
+    // Animation commits transforms before this call. The main pass and nested
+    // shadow renders use the same world matrices; do not traverse/recompose
+    // the whole world again for each shadow pass. Cameras retain their updates.
+    const autoUpdate=scene.matrixWorldAutoUpdate;
+    if(autoUpdate)scene.updateMatrixWorld();
+    scene.matrixWorldAutoUpdate=false;
+    try{post.render();}finally{scene.matrixWorldAutoUpdate=autoUpdate;}
+  }
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
   return {setMode,setLook,resize,render,compileAsync,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
