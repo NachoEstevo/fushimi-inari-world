@@ -32,6 +32,7 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
       // Continuous legacy noise is replaced by intermittent breeze.
       whiteNoise.disconnect();filter.disconnect();gain.disconnect();
       footsteps=createFootstepAudio(audioCtx,{onStats:stats=>document.body.dataset.footstepAudio=JSON.stringify(stats)});
+      footsteps.setVolume(Number(document.getElementById('ambient-volume')?.value??55)/100);
       footsteps.load();
       ambience=createAmbience(audioCtx);
       recorded=createRecordedAudio(audioCtx,{onStats:stats=>document.body.dataset.recordedAudio=JSON.stringify(stats)});
@@ -80,5 +81,5 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
 
 
 return {arrivalSpeechActive:()=>recorded?.announcementActive??false,bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>recorded?.setVolume(value),get enabled(){return audioEnabled;},setEnabled(value){initAmbientAudio();audioEnabled=!!value;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else {footsteps?.stop();audioCtx.suspend();}return audioEnabled;},toggle(){return this.setEnabled(!audioEnabled);}};
+step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>{recorded?.setVolume(value);footsteps?.setVolume(value);},get enabled(){return audioEnabled;},setEnabled(value){initAmbientAudio();audioEnabled=!!value;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else {footsteps?.stop();audioCtx.suspend();}return audioEnabled;},toggle(){return this.setEnabled(!audioEnabled);}};
 }

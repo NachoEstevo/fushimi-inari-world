@@ -1,4 +1,5 @@
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
+import {omitUnverifiedPrecinctProxy} from './precinct-proxy-policy.mjs';
 import {attachCloudShade} from './cloud-shade.mjs';
 import {compileAddedGroup} from './scoped-compilation.mjs';
 import {createViewingDistance} from './viewing-distance.mjs';
@@ -183,7 +184,7 @@ try {
   const buildings={ordinary:[],sacred:[]};
   let inferredHeightCount=0;
   for(const b of features.buildings){
-    if(assembly.excludesBuilding(b))continue;
+    if(assembly.excludesBuilding(b)||omitUnverifiedPrecinctProxy(b))continue;
     const ring=b.points.slice(0,-1), contour=ring.map(p=>new THREE.Vector2(p[0],p[2]));
     const sacred=b.tags.building==='shrine'||b.tags.religion==='shinto'||b.tags.amenity==='place_of_worship';
     const heightValue=Number.parseFloat(b.tags.height),levels=Number.parseFloat(b.tags['building:levels']);

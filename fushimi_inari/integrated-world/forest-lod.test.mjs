@@ -3,6 +3,15 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {preservedForestLOD} from './forest-lod.mjs';
 
+test('shared crown bounds are scanned once while all chunks retain their LODs',()=>{
+ const chunks=new THREE.Group(),geometry=new THREE.BoxGeometry(12,16,12),material=new THREE.MeshBasicMaterial();
+ let scans=0;const compute=geometry.computeBoundingBox.bind(geometry);
+ geometry.computeBoundingBox=()=>{scans++;compute();};
+ for(let i=0;i<100;i++){const mesh=new THREE.InstancedMesh(geometry,material,1);mesh.setMatrixAt(0,new THREE.Matrix4().makeTranslation(i*128,0,0));mesh.computeBoundingSphere();chunks.add(mesh);}
+ preservedForestLOD(chunks);
+ assert.equal(scans,1);assert.equal(chunks.children.length,100);assert.ok(chunks.children.every(lod=>lod.isLOD&&lod.levels.length===2));
+});
+
 function fixture(){
   const chunks=new THREE.Group(),near=new THREE.InstancedMesh(new THREE.BoxGeometry(12,16,12),new THREE.MeshBasicMaterial(),2);
   near.setMatrixAt(0,new THREE.Matrix4().makeTranslation(-60,0,0));

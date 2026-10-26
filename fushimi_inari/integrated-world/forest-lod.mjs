@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export function preservedForestLOD(chunks,maple=false){
   const geo=new THREE.IcosahedronGeometry(1,0),mat=new THREE.MeshLambertMaterial({color:maple?'#ffffff':'#35492a'});
   for(const near of [...chunks.children]){
-    near.geometry.computeBoundingBox();const box=near.geometry.boundingBox,center=box.getCenter(new THREE.Vector3()),scale=box.getSize(new THREE.Vector3()).multiplyScalar(.5);
+    if(!near.geometry.boundingBox)near.geometry.computeBoundingBox();const box=near.geometry.boundingBox,center=box.getCenter(new THREE.Vector3()),scale=box.getSize(new THREE.Vector3()).multiplyScalar(.5);
     const offset=new THREE.Matrix4().makeTranslation(...center.toArray()).multiply(new THREE.Matrix4().makeScale(...scale.toArray()));
     const far=new THREE.InstancedMesh(geo,mat,near.count),matrix=new THREE.Matrix4();
     for(let i=0;i<near.count;i++){near.getMatrixAt(i,matrix);far.setMatrixAt(i,matrix.multiply(offset));}

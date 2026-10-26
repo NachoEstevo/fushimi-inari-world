@@ -26,6 +26,36 @@ function vertices(root,mat){
 }
 const keys=points=>points.map(p=>p.map(v=>v.toFixed(3)).join(',')).sort();
 
+test('shared source geometry calculates its bounds once across repeated placements',()=>{
+ const root=new THREE.Group(),geometry=new THREE.BoxGeometry(2,2,2),mat=material();
+ let scans=0;const compute=geometry.computeBoundingSphere.bind(geometry);
+ geometry.computeBoundingSphere=()=>{scans++;compute();};
+ for(let i=0;i<100;i++){const mesh=new THREE.Mesh(geometry,mat);mesh.position.x=i*130;root.add(mesh);}
+ const result=batchStaticScene(root);
+ assert.equal(scans,1);assert.equal(result.sourceMeshes,100);assert.equal(result.meshes.length,100);
+ assert.deepEqual(result.meshes.map(mesh=>mesh.position.x),Array.from({length:100},(_,i)=>i*130));
+});
+
+test('static render leaves stop composing matrices while retained animation stays automatic',()=>{
+ const root=new THREE.Group(),mat=material(),animated=box(root,mat,[2,0,0]);
+ box(root,mat,[3,0,0]);box(root,mat,[4,0,0]);
+ const batch=batchStaticScene(root,new Set([animated]));
+ let compositions=0,multiplications=0;
+ for(const mesh of batch.meshes){
+  const compose=mesh.updateMatrix.bind(mesh),multiply=mesh.matrixWorld.multiplyMatrices.bind(mesh.matrixWorld);
+  mesh.updateMatrix=()=>{compositions++;compose();};mesh.matrixWorld.multiplyMatrices=(a,b)=>{multiplications++;return multiply(a,b);};
+ }
+ const before=batch.meshes.map(mesh=>mesh.matrixWorld.toArray());
+ for(let frame=0;frame<600;frame++){animated.position.y=frame;root.updateMatrixWorld(true);}
+ assert.equal(compositions,0);
+ if(Number(THREE.REVISION)>=180)assert.equal(multiplications,0);
+ assert.deepEqual(batch.meshes.map(mesh=>mesh.matrixWorld.toArray()),before);
+ assert.equal(animated.matrixAutoUpdate,true);assert.equal(animated.matrixWorld.elements[13],599);
+ assert.equal(batch.frozenTransforms,batch.meshes.length);
+ root.position.set(10,2,3);batch.refreshTransforms();
+ for(let i=0;i<batch.meshes.length;i++)assert.deepEqual(batch.meshes[i].matrixWorld.toArray().slice(12,15),[before[i][12]+10,before[i][13]+2,before[i][14]+3]);
+});
+
 test('late mapped Okusha shelter stays in its mapped footprint through the production batcher',()=>{
  const root=new THREE.Group(),stone=material(),plaster=material(),colliders=[];
  box(root,stone,[1,0,1]);root.updateMatrixWorld(true);

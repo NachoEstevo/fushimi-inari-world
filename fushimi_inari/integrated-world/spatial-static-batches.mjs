@@ -8,7 +8,9 @@ export function batchStaticScene(root,retained=new Set(),cellSize=128){
  const buckets=new Map(),meshes=[];
  root.traverse(object=>{
   if(!object.isMesh||object.isInstancedMesh||retained.has(object)||Array.isArray(object.material))return;
-  object.geometry.computeBoundingSphere();
+  // Repeated props share geometry; scanning every vertex again for every
+  // placement makes preparation scale with instances instead of unique assets.
+  if(!object.geometry.boundingSphere)object.geometry.computeBoundingSphere();
   const center=object.geometry.boundingSphere.center.clone().applyMatrix4(object.matrixWorld);
   const cell=[Math.floor(center.x/cellSize),Math.floor(center.z/cellSize)];
   const key=cell.join(',')+':'+object.material.uuid+Object.keys(object.geometry.attributes).sort().join(',')+Boolean(object.geometry.index)+`:${object.castShadow}:${object.receiveShadow}`;
@@ -28,5 +30,12 @@ export function batchStaticScene(root,retained=new Set(),cellSize=128){
   root.add(mesh);objects.forEach(o=>o.removeFromParent());meshes.push(mesh);mergedBatches++;
  }
  root.updateMatrixWorld(true);
- return {meshes,mergedBatches,sourceMeshes};
+ // These render leaves have finished their placement. Retained animation and
+ // hierarchy owners remain automatic. r180 honors matrixWorldAutoUpdate even
+ // when the Scene forces an update; older Three versions only skip composition.
+ const frozen=meshes.filter(mesh=>mesh.children.length===0),freezeWorld=Number(THREE.REVISION)>=180;
+ for(const mesh of frozen){mesh.matrixAutoUpdate=false;if(freezeWorld)mesh.matrixWorldAutoUpdate=false;}
+ return {meshes,mergedBatches,sourceMeshes,frozenTransforms:frozen.length,
+  // Explicit relocation remains possible without turning per-frame work back on.
+  refreshTransforms(){for(const mesh of frozen){mesh.matrixWorldAutoUpdate=true;mesh.updateMatrix();mesh.updateWorldMatrix(true,false);if(freezeWorld)mesh.matrixWorldAutoUpdate=false;}}};
 }

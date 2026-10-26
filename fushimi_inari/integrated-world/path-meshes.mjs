@@ -40,12 +40,12 @@ export function clipOmotesandoRoadRibbon(quad,segments){
 
 export function buildPathMeshes(network,legacy,ground){
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRiser:[],mountainRetaining:[]};
-  const uvBuckets={senbon:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRetaining:[]};
+  const uvBuckets={stone:[],precinct:[],senbon:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRetaining:[]};
   const uvByVertices=new Map(Object.entries(uvBuckets).map(([key,uv])=>[buckets[key],uv]));
   const detail={segments:0,treads:0,groundedShoulders:0,retainingFaces:0,scope:'Mountain stone paths east of x=255 m; entrance and Senbon unchanged'};
   const quad=(out,...corners)=>{
     for(const polygon of outsideArrival(corners))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
-      out.push(...p.slice(0,3));const uv=uvByVertices.get(out);if(uv)uv.push(p[3],p[4]);
+      out.push(...p.slice(0,3));const uv=uvByVertices.get(out);if(uv)uv.push(p[3]??p[0]/2,p[4]??p[2]/2);
     }
   };
   for(const [index,s] of network.segments.entries()){
@@ -63,6 +63,7 @@ export function buildPathMeshes(network,legacy,ground){
       // batches instead of layering a second decal or an extra draw object.
       const bucket=s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind;
       buckets[bucket].push(...s.accessJunctionTriangles);
+      if(uvBuckets[bucket])for(let i=0;i<s.accessJunctionTriangles.length;i+=3)uvBuckets[bucket].push(s.accessJunctionTriangles[i]/2,s.accessJunctionTriangles[i+2]/2);
     }else if(senbon){
       const w=.66;
       const va=s.distance/.65,vb=(s.distance+len)/.65;
@@ -74,6 +75,12 @@ export function buildPathMeshes(network,legacy,ground){
       // uses long slabs; the shoulder owner fills2.4..4m with fine cobbles.
       const ribbon=[[...point(s.a,s.ya,-visualWidth/2),0,va],[...point(s.b,s.yb,-visualWidth/2),0,vb],[...point(s.b,s.yb,visualWidth/2),u,vb],[...point(s.a,s.ya,visualWidth/2),u,va]];
       for(const triangle of clipOmotesandoRoadRibbon(ribbon,network.segments))quad(buckets.omotesando,...triangle);
+    }else if(['way/297888106','way/105449676'].includes(s.id)&&!s.stair){
+      // One paving pattern follows the mapped corridor, including its bends.
+      // Retain the existing material, full width, grade and mitered corners.
+      const bucket=s.kind==='stone'&&s.ya<55&&s.a[0]>-140&&s.a[0]<120&&Math.abs(s.a[2])<85?'precinct':s.kind;
+      const va=s.distance/2,vb=(s.distance+len)/2,u=s.width/2;
+      quad(buckets[bucket],[...point(s.a,s.ya,-s.width/2),0,va],[...point(s.b,s.yb,-s.width/2),0,vb],[...point(s.b,s.yb,s.width/2),u,vb],[...point(s.a,s.ya,s.width/2),u,va]);
     }else if(mountain){
       const uv=s.stair?mountainTreadUV(s):mountainPathUV(s,len);
       const corners=[point(s.a,s.ya,-s.width/2),point(s.b,s.yb,-s.width/2),point(s.b,s.yb,s.width/2),point(s.a,s.ya,s.width/2)];

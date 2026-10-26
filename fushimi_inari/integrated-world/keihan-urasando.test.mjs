@@ -60,3 +60,21 @@ test('missing source fails closed and repeated calls do not duplicate shells or 
  const {root,result:r,colliders}=make();assert.equal(buildKeihanUrasando(root,features,surfaces,{},colliders).group,r.group);assert.equal(root.children.length,1);assert.equal(colliders.length,r.collidersAdded);const empty=new THREE.Group(),bad=buildKeihanUrasando(empty,{...features,buildings:features.buildings.filter(b=>b.id!=='way/295577541')},surfaces);assert.equal(bad.built,false);assert.deepEqual(bad.builtIds,[]);assert.equal(empty.children.length,0);assert.equal(keihanUrasandoLayout(features,{height:()=>2}),null);
  const moved={...features,buildings:features.buildings.map(b=>b.id==='way/295577541'?{...b,points:b.points.map(p=>[p[0]+5,p[1],p[2]])}:b)};assert.equal(keihanUrasandoLayout(moved,surfaces),null,'changed photographic frontage registration must be reviewed');
 });
+
+test('both mapped Urasando routes leave paving joints to the textured path owner',()=>{
+ const {root}=make(),dark=root.getObjectByName('Urasando dark').geometry.attributes.position;
+ for(const id of ['way/297888106','way/105449676']){
+  const segments=surfaces.segments.filter(s=>s.id===id);assert.ok(segments.length);
+  let overlayTriangles=0;
+  for(let i=0;i<dark.count;i+=3){
+   const vertices=[0,1,2].map(j=>[dark.getX(i+j),dark.getY(i+j),dark.getZ(i+j)]);
+   if(segments.some(s=>{
+    const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],length=Math.hypot(dx,dz);
+    return vertices.every(([x,y,z])=>{const t=((x-s.a[0])*dx+(z-s.a[2])*dz)/(length*length),v=((z-s.a[2])*dx-(x-s.a[0])*dz)/length;
+     return t>=-1e-5&&t<=1+1e-5&&Math.abs(v)<s.width/2&&Math.abs(y-(s.ya+(s.yb-s.ya)*t+.003))<1e-4;
+    });
+   }))overlayTriangles++;
+  }
+  assert.equal(overlayTriangles,0,id+' must not have a second geometric joint grid above its paving');
+ }
+});
