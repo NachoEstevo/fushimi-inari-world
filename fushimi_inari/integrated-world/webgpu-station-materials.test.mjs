@@ -32,7 +32,7 @@ test('station study shares upgrades, preserves mapped signs, and restores owners
   assert.equal(first.material.roughnessMap.image.width, 256);
   assert.equal(first.material.roughnessMap.image.height, 256);
   assert.equal(pane.material.userData.stationReflectionReceiver, true);
-  assert.ok(pane.material.opacity > 0 && pane.material.opacity < .3);
+  assert.ok(pane.material.opacity >= .32 && pane.material.opacity <= .36);
   assert.equal(pane.material.depthWrite, false);
   assert.equal(placard.material, sign);
   assert.equal(multi.material[1], sign);
@@ -54,4 +54,18 @@ test('station study shares upgrades, preserves mapped signs, and restores owners
   assert.equal(disposedStudy.length, 2, 'disposal is idempotent');
   assert.equal(first.material, green, 'disposed study cannot reattach resources');
   geometry.dispose(); originals.forEach(m => m.dispose()); signMap.dispose();
+});
+
+test('metal receives the local probe while the mineral floor stays matte', () => {
+  const group = new THREE.Group(), geometry = new THREE.BoxGeometry();
+  const metal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color:'#9aa3a5'}));
+  const floor = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color:'#777b79'}));
+  group.add(metal, floor);
+  const study = createStationMaterialStudy(group); study.setEnabled(true);
+  assert.equal(metal.material.userData.stationReflectionReceiver, true);
+  assert.ok(metal.material.metalness > .7);
+  assert.equal(floor.material.userData.stationReflectionReceiver, undefined);
+  assert.ok(floor.material.roughness >= .9);
+  assert.ok(floor.material.bumpMap);
+  study.dispose(); geometry.dispose(); metal.material.dispose(); floor.material.dispose();
 });

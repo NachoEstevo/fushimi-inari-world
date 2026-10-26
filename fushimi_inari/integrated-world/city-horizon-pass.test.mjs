@@ -84,3 +84,32 @@ test('fully fogged terrain admits the horizon before clear depth while nearby si
   const noFog=cityHorizonDepthGate(camera,null);assert.ok(Math.abs(noFog.threshold-1)<1e-12);
  }
 });
+test('hidden horizon prewarm compiles actual Basic materials and target without activating a viewport',{skip:THREE.REVISION!=='180'},async()=>{
+ const {createCityHorizonPass}=await import('./city-horizon-pass.mjs');
+ const worldScene=new THREE.Scene(),root=new THREE.Group(),camera=new THREE.PerspectiveCamera(70,1,.1,100);
+ const geometry=new THREE.BoxGeometry(),source=new THREE.MeshLambertMaterial();
+ root.add(new THREE.Mesh(geometry,source),new THREE.Mesh(geometry,source));root.visible=false;worldScene.add(root);
+ const originalTarget={},override=camera.clone();override.position.set(700,150,-200);override.far=150;override.updateProjectionMatrix();
+ let currentTarget=originalTarget,release,fail=false,compiles=0,renders=0;
+ const renderer={getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
+  setRenderTarget(value){currentTarget=value;},render(){renders++;},compileAsync(scope,view,targetScene){
+   compiles++;assert.equal(currentTarget.texture.type,THREE.HalfFloatType);
+   assert.equal(targetScene.name,'Isolated mapped city horizon');assert.equal(scope.fog.far,6000);
+   assert.equal(root.visible,false);assert.equal(root.parent,targetScene);assert.equal(view.near,150);assert.equal(view.far,6000);
+   assert.notEqual(view,camera);assert.notEqual(view,override);assert.equal(camera.far,100);assert.equal(override.far,150);
+   assert.equal(scope.children.length,2);for(const mesh of scope.children){assert.ok(mesh.material.isMeshBasicMaterial);assert.equal(mesh.frustumCulled,false);}
+   if(fail)return Promise.reject(Error('pipeline failed'));
+   return new Promise(resolve=>{release=resolve;});
+  }};
+ const pass=createCityHorizonPass({renderer,worldScene,root,camera});
+ try{
+  const pending=pass.prepare(override);assert.equal(pending,pass.prepare(override),'concurrent prewarm callers share submission');
+  while(!release)await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(currentTarget,originalTarget,'renderer target restores before asynchronous pipeline completion');
+  assert.equal(root.visible,false);assert.equal(renders,0);release();await pending;
+  assert.equal(pass.stats.prepareStatus,'ready');assert.equal(compiles,1);
+  for(const mesh of root.children)assert.equal(mesh.frustumCulled,true);
+  fail=true;await assert.rejects(pass.prepare(override),/pipeline failed/);
+  assert.equal(pass.stats.prepareStatus,'failed');assert.equal(currentTarget,originalTarget);assert.equal(root.visible,false);assert.equal(renders,0);
+ }finally{pass.dispose();geometry.dispose();source.dispose();}
+});

@@ -66,7 +66,8 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
    if(r.current!==requestedTier&&!r.pending){
     if(r.images.has(requestedTier)){r.ready=true;ready.push({r,image:r.images.get(requestedTier),tier:requestedTier});}
     else {active++;r.pending=requestedTier;
-     loadImage(textureTierURL(r.url,requestedTier)).then(image=>{r.images.set(requestedTier,image);r.error=null;
+     let transfer;try{transfer=loadImage(textureTierURL(r.url,requestedTier));}catch(error){transfer=Promise.reject(error);}
+     Promise.resolve(transfer).then(image=>{r.images.set(requestedTier,image);r.error=null;
       if(tier()===requestedTier){r.ready=true;ready.push({r,image,tier:requestedTier});}
      }).catch(error=>{r.error=String(error);console.warn('Texture unavailable',r.url,error);}).finally(()=>{active--;r.pending=null;if(tier()!==requestedTier)request(r);schedule();emit();});
     }
@@ -106,17 +107,34 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   if((maxX-minX+1)*(maxZ-minZ+1)>64)largeUsers.push(user);
   else for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++){const key=x+','+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(user);}
  });}
+ function nearbyRecords(position){
+  const nearby=new Set(largeUsers),result=new Set();
+  for(let x=Math.floor((position.x-264)/260);x<=Math.floor((position.x+264)/260);x++)
+   for(let z=Math.floor((position.z-264)/260);z<=Math.floor((position.z+264)/260);z++)for(const u of cells.get(x+','+z)??[])nearby.add(u);
+  for(const {sphere,used}of nearby)if(sphere.distanceToPoint(position)<264)for(const r of used)result.add(r);
+  return result;
+ }
+ function prefetch(position){const nearby=nearbyRecords(position);for(const r of nearby)request(r);schedule();return nearby;}
+ async function prepareAt(position,{timeoutMs=20000}={}){
+  const selected=prefetch(position),start=performance.now();
+  while([...selected].some(r=>r.current!==tier()&&!r.error)){
+   // A completed record may belong to the previous tier when quality changes
+   // during preparation. It has no pending transfer to enqueue the new tier.
+   // Re-request this destination only; never reindex or wait for global idle.
+   for(const r of selected)request(r);schedule();
+   if(performance.now()-start>timeoutMs)throw new Error('Destination textures are still preparing; retry the checkpoint.');
+   await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  emit(true);return {textures:selected.size,failed:[...selected].filter(r=>r.error).length};
+ }
  function update(position,dt=1){elapsed+=dt;if(elapsed<.5)return;elapsed=0;
   // Static worlds need another residency query only after camera movement,
   // reindexing, or a tier change. Query nearby cells, not every world mesh.
   if(!lastPosition||lastPosition.distanceToSquared(position)>=16){
-   lastPosition=position.clone();const nearby=new Set(largeUsers);
-   for(let x=Math.floor((position.x-264)/260);x<=Math.floor((position.x+264)/260);x++)
-    for(let z=Math.floor((position.z-264)/260);z<=Math.floor((position.z+264)/260);z++)for(const u of cells.get(x+','+z)??[])nearby.add(u);
-   for(const {sphere,used}of nearby)if(sphere.distanceToPoint(position)<264)for(const r of used)request(r);
+   lastPosition=position.clone();prefetch(position);
   }
   drain();
  }
- return {load,index,update,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending(),maxUploadGroupTextures,maxUploadGroupPixels};}};
+ return {load,index,update,prefetch,prepareAt,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending(),maxUploadGroupTextures,maxUploadGroupPixels};}};
 }
 export const textureStreaming=createTextureStreaming({audit:typeof location!=='undefined'&&(new URLSearchParams(location.search).has('audit')||new URLSearchParams(location.search).has('textureAudit')),report:value=>{if(typeof document!=='undefined')document.body.dataset.textureStreaming=JSON.stringify(value);}});

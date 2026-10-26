@@ -766,3 +766,14 @@ button:active {
 #render-stats[data-health="stall"] {color:#ffc596}
 #render-stats[data-health="slow"] {color:#ffe6a0}
 .welcome-open #render-stats {visibility:hidden}
+
+
+#checkpoint-status {
+  position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  z-index:45;max-width:min(440px,calc(100vw - 32px));box-sizing:border-box;
+  padding:11px 16px;border:1px solid #ffffff24;border-radius:12px;
+  background:rgba(25,35,30,.94);color:#f1f4ec;box-shadow:0 6px 24px #0003;
+  font:500 13px/1.45 system-ui,sans-serif;text-align:center;pointer-events:none;
+}
+#checkpoint-status[hidden] {display:none}
+#checkpoint-status.is-error {background:rgba(67,35,27,.96);color:#ffede5}

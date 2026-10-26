@@ -142,3 +142,30 @@ test('live quality, look and station transitions retain one environment without 
     first.geometry.dispose();metal.dispose();
   } finally {appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=original;}
 });
+
+
+test('High prepares only the bounded station surrogate once and keeps the global environment', {skip:THREE.REVISION!=='180'},async()=>{
+ const GPU=await import('three/webgpu'),{installWorldAppearance}=await import('./world-appearance.mjs');
+ const fromScene=GPU.PMREMGenerator.prototype.fromScene,captures=[];
+ GPU.PMREMGenerator.prototype.fromScene=function(scene,sigma,near,far,options){
+  if(options?.renderTarget){captures.push(scene);return options.renderTarget;}
+  return new GPU.RenderTarget(16,16);
+ };
+ let target=null,appearance;
+ const renderer={xr:{enabled:false},autoClear:true,getRenderTarget:()=>target,getActiveCubeFace:()=>0,
+  getActiveMipmapLevel:()=>0,getClearColor:c=>c,getClearAlpha:()=>1,setClearColor(){},setRenderTarget:t=>{target=t;},compileAsync:async()=>{}};
+ const scene=new GPU.Scene(),group=new GPU.Group(),source=new GPU.MeshStandardMaterial({color:'#245b4b'}),geometry=new GPU.BoxGeometry(),mesh=new GPU.Mesh(geometry,source);
+ group.add(mesh);scene.add(group);
+ const quality={mode:'balanced',setLook(){}},sun=new GPU.DirectionalLight(0xffffff,2);
+ try{
+  appearance=await installWorldAppearance({scene,renderer,assembly:{keihanStation:{group}},camera:new GPU.PerspectiveCamera(),hemi:new GPU.HemisphereLight(),sun,quality});
+  const environment=scene.environment,finish=mesh.material;
+  await appearance.prepare();assert.equal(captures.length,0);
+  quality.mode='high';await appearance.prepare();assert.equal(captures.length,1);
+  assert.notEqual(captures[0],scene);assert.equal(captures[0].name,'Station reflection surrogate');
+  assert.ok(finish.envMap);assert.notEqual(finish.envMap,environment);assert.equal(scene.environment,environment);
+  await appearance.prepare();appearance.update(1);assert.equal(captures.length,1);
+  quality.mode='balanced';await appearance.prepare();assert.equal(finish.envMap,null);assert.equal(scene.environment,environment);
+  quality.mode='high';await appearance.prepare();assert.equal(captures.length,1);assert.equal(appearance.stats.localReflections,true);
+ }finally{appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=fromScene;geometry.dispose();source.dispose();}
+});

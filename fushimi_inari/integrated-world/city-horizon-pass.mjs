@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {compileAddedGroup} from './scoped-compilation.mjs';
 import {texture,uniform,vec4,mix} from 'three/tsl';
 
 export const CITY_HORIZON_FAR=6000;
@@ -30,8 +31,9 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
  const frustum=new THREE.Frustum(),projectionView=new THREE.Matrix4(),drawingSize=new THREE.Vector2();
  const lastWorld=new THREE.Matrix4(),lastProjection=new THREE.Matrix4(),lastFog=new THREE.Color();
  const active=uniform(0),depthCutoff=uniform(1),depthDirection=uniform(1),sample=texture(target.texture),replacements=new Map(),bindings=[],boundMeshes=new WeakSet();
- let disposed=false,initialized=false,cached=false,structure=null,lastStructure=null,lastFar=null,lastFogPresent=false;
+ let disposed=false,initialized=false,cached=false,structure=null,lastStructure=null,lastFar=null,lastFogPresent=false,preparing=null;
  const stats={active:false,width:1,height:1,maxPixels:CITY_HORIZON_MAX_PIXELS,far:CITY_HORIZON_FAR,renders:0,cachedFrames:0,bindings:0};
+ const structureKey=()=>root.children.map(child=>`${child.id}:${child.children.length}:${child.geometry?.id??''}`).join('|')+':'+(root.userData.panoramaGeometryVersion??0);
  function bindMaterials(){
   stats.bindings++;
   root.traverse(object=>{
@@ -49,7 +51,7 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
   if(disposed||(!root.visible&&initialized))return;
   // This builder adds one spatial-chunk group once. Observe that shallow
   // structure, not every facade mesh; explicit versions support future rebuilds.
-  const nextStructure=root.children.map(child=>`${child.id}:${child.children.length}:${child.geometry?.id??''}`).join('|')+':'+(root.userData.panoramaGeometryVersion??0);
+  const nextStructure=structureKey();
   const structureChanged=nextStructure!==structure;
   if(structureChanged){bindMaterials();structure=nextStructure;}
   const gate=cityHorizonDepthGate(camera,worldScene.fog);
@@ -99,7 +101,30 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
    renderer.setViewport(previous.viewport);renderer.setScissor(previous.scissor);renderer.setScissorTest(previous.scissorTest);
   }
  }
- return {render,stats,texture:target.texture,compose(color,depth){
+ function prepare(cameraOverride=camera){
+  if(disposed)return Promise.resolve();
+  if(preparing)return preparing;
+  stats.prepareStatus='preparing';stats.prepareError=null;
+  preparing=(async()=>{
+    const nextStructure=structureKey();if(nextStructure!==structure){bindMaterials();structure=nextStructure;cached=false;}
+    const view=new THREE.PerspectiveCamera();cameraOverride.updateWorldMatrix(true,false);
+    view.copy(cameraOverride,false);view.matrixAutoUpdate=false;view.matrix.copy(cameraOverride.matrixWorld);
+    view.near=Math.max(.1,cameraOverride.far>=CITY_HORIZON_FAR?cameraOverride.near:cameraOverride.far);view.far=CITY_HORIZON_FAR;
+    view.updateProjectionMatrix();view.updateMatrixWorld(true);
+    if(worldScene.fog?.color)horizonScene.fog.color.copy(worldScene.fog.color);
+    // Bind the real target only for synchronous pipeline submission. Never
+    // retain global renderer state while yielding or awaiting GPU compilation.
+    const compiler={compileAsync(scope,compileCamera,targetScene){
+      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel()};
+      try{renderer.setRenderTarget(target);return renderer.compileAsync(scope,compileCamera,targetScene);}
+      finally{renderer.setRenderTarget(previous.target,previous.face,previous.mip);}
+    }};
+    await compileAddedGroup(compiler,horizonScene,root,view,{includeHiddenRoot:true,batchSize:4,report(value){stats.preparation=value;}});
+    stats.prepareStatus='ready';
+  })().catch(error=>{stats.prepareStatus='failed';stats.prepareError=String(error.message??error);throw error;}).finally(()=>{preparing=null;});
+  return preparing;
+ }
+ return {render,prepare,stats,texture:target.texture,compose(color,depth){
   // Keep all still-visible foreground silhouettes. Fully fogged geometry has
   // finite depth, so testing only clear depth would leave an opaque white wall.
   const weight=depth.sub(depthCutoff).mul(depthDirection).greaterThanEqual(0).select(sample.a.mul(active),0);

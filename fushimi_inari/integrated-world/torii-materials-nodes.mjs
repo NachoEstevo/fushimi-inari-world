@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {mix,vec3,vec4,texture,materialReference} from 'three/tsl';
+import {float,mix,vec3,vec4,texture,materialReference} from 'three/tsl';
 
 // Preserve source maps and PBR state while replacing the unsupported GLSL hook.
 function nodeCopy(source){
@@ -32,7 +32,13 @@ export function toriiMaterials(legacy,{separateInk=false}={}){
     fresh.color.set(0xd94816);weathered.color.set(0xffffff);
     fresh.normalScale.set(.22,.22);weathered.normalScale.set(.38,.38);
   }
-  weathered.colorNode=vec4(materialReference('color','color').mul(mix(vec3(.60,.075,.018),texture(weathered.map).rgb,.30)),texture(weathered.map).a);
-  beam.colorNode=vec4(materialReference('color','color').mul(mix(vec3(.68,.075,.012),texture(beam.map).rgb,.10)),texture(beam.map).a);
+  const paint=(material,pigment,wear)=>{
+    const texel=material.map?texture(material.map):null;
+    material.colorNode=vec4(materialReference('color','color').mul(mix(vec3(...pigment),texel?.rgb??vec3(1),wear)),texel?.a??float(1));
+  };
+  paint(weathered,[.60,.075,.018],.30);paint(beam,[.68,.075,.012],.10);
+  // Three's node material applies vertex/instance colour after colorNode. Keep
+  // the paint graph multiplicative and let that owner apply instance tint once.
+  for(const material of [fresh,weathered,beam])material.userData={...material.userData,precinctLeafReceiver:true};
   return {fresh,weathered,beam};
 }

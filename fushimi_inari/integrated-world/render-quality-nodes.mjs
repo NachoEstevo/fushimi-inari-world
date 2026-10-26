@@ -75,8 +75,24 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
     applySize(innerWidth,innerHeight);setLook(look);
   }
   function setMode(next){return enqueue(()=>applyMode(next));}
+  function compileAsync(scope,view,targetScene){
+    if(disposed)return Promise.reject(new Error('Render quality is disposed'));
+    if(renderer.hasInitialized?.()===false)return Promise.reject(new Error('Initialize the renderer before compiling scene visuals'));
+    // PassNode configures type and MSAA lazily during graph setup. Mirror its
+    // actual setup before a pre-arrival compile, even before the first render.
+    scenePass.setup({renderer});
+    const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
+    try{
+      renderer.setRenderTarget(scenePass.renderTarget);renderer.setMRT(scenePass.getMRT());
+      return renderer.compileAsync(scope,view,targetScene);
+    }finally{
+      // An initialized r180 renderer submits pipelines synchronously, then
+      // awaits backend work. Restore state before returning that promise.
+      renderer.setRenderTarget(previous.target,previous.face,previous.mip);renderer.setMRT(previous.mrt);
+    }
+  }
   function render(){if(!disposed&&!transitioning){cityHorizon?.render();post.render();}}
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
+  return {setMode,setLook,resize,render,compileAsync,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
 }

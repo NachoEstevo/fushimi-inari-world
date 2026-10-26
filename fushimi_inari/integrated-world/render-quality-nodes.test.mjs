@@ -3,6 +3,45 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three/webgpu';
 import {qualityPixelRatio,createRenderQuality} from './render-quality-nodes.mjs';
 import ShadowNode from 'three/src/nodes/lighting/ShadowNode.js';
+import {pass} from 'three/tsl';
+
+test('prewarm uses the real scene pass type and MSAA before first render and restores target state before waiting',async()=>{
+ const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1200,innerHeight:800,devicePixelRatio:1});
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),sun=new THREE.DirectionalLight(),scope=new THREE.Scene(),view=new THREE.PerspectiveCamera();
+ const priorTarget=new THREE.RenderTarget(16,16),priorMRT={label:'existing attachments'};
+ let target=priorTarget,face=2,mip=3,mrt=priorMRT,ratio=1,initialized=true,compiledPass,compiledTarget,release,compiles=0,renders=0;
+ const samplePass=pass(scene,camera),passPrototype=Object.getPrototypeOf(samplePass),setup=passPrototype.setup;
+ passPrototype.setup=function(builder){compiledPass=this;return setup.call(this,builder);};
+ const renderer={samples:4,hasInitialized:()=>initialized,getColorBufferType:()=>THREE.HalfFloatType,getMaxAnisotropy:()=>16,getPixelRatio:()=>ratio,setDrawingBufferSize:(w,h,value)=>ratio=value,
+  getRenderTarget:()=>target,getActiveCubeFace:()=>face,getActiveMipmapLevel:()=>mip,getMRT:()=>mrt,setMRT:value=>mrt=value,
+  setRenderTarget(value,nextFace=0,nextMip=0){target=value;face=nextFace;mip=nextMip;},getOutputRenderTarget:()=>null,getSize:value=>value.set(1200,800),
+  render(renderScene,renderCamera){renders++;assert.equal(renderScene,scene);assert.equal(renderCamera,camera);assert.equal(target,compiledTarget);assert.equal(target.samples,4);assert.equal(target.texture.type,THREE.HalfFloatType);},
+  compileAsync(renderScene,renderCamera,targetScene){compiles++;assert.equal(renderScene,scope);assert.equal(renderCamera,view);assert.equal(targetScene,scene);compiledTarget=target;
+   assert.equal(target,compiledPass.renderTarget);assert.equal(target.texture.type,THREE.HalfFloatType);assert.equal(target.samples,4);assert.equal(mrt,compiledPass.getMRT());assert.notEqual(target,priorTarget);
+   return new Promise(resolve=>release=resolve);
+  }};
+ const quality=createRenderQuality({renderer,scene,camera,sun});
+ const restored=()=>{assert.equal(target,priorTarget);assert.equal(face,2);assert.equal(mip,3);assert.equal(mrt,priorMRT);};
+ try{
+  assert.equal(renders,0);const work=quality.compileAsync(scope,view,scene);restored();assert.equal(compiles,1);release();await work;restored();
+  // Exercise the actual r180 pass with a mock draw: its first visible render
+  // binds the exact same target, format and sample count used for prewarming.
+  compiledPass.updateBefore({renderer});assert.equal(renders,1);
+  renderer.setRenderTarget(priorTarget,2,3);renderer.setMRT(priorMRT);
+  for(const asynchronous of [false,true]){
+   renderer.compileAsync=()=>{assert.equal(target,compiledTarget);if(asynchronous)return Promise.reject(Error('pipeline failed'));throw Error('pipeline failed');};
+   if(asynchronous)await assert.rejects(quality.compileAsync(scope,view,scene),/pipeline failed/);
+   else assert.throws(()=>quality.compileAsync(scope,view,scene),/pipeline failed/);
+   restored();
+  }
+  initialized=false;await assert.rejects(quality.compileAsync(scope,view,scene),/Initialize the renderer/);restored();
+  quality.dispose();await assert.rejects(quality.compileAsync(scope,view,scene),/disposed/);restored();
+ }finally{
+  quality.dispose();priorTarget.dispose();samplePass.dispose();passPrototype.setup=setup;
+  for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}
+ }
+});
 
 test('WebGPU presets bound pixel cost on ultrawide and high-DPI screens in increasing order',()=>{
   for(const [width,height] of [[3431,1264],[3840,2160],[8000,4000]]){

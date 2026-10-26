@@ -13,9 +13,21 @@ test('torii paint suppresses inherited lacquer highlights without changing sourc
       assert.equal(material.map,map);assert.equal(material.normalMap,normalMap);
       assert.equal(material.metalness,0);assert.ok(material.roughness>=.65);
       assert.ok(material.clearcoat<=.06);assert.ok(material.envMapIntensity<=.3);
+      assert.equal(material.userData.precinctLeafReceiver,true);
       material.dispose();
     }
   }
   assert.equal(source.clearcoat,.58);assert.equal(source.metalness,.2);assert.equal(source.roughness,.32);
   source.dispose();map.dispose();normalMap.dispose();
+});
+
+test('untextured torii retain red paint and alpha without creating invalid texture nodes',()=>{
+  const source=new THREE.MeshStandardMaterial({color:0xd94816});
+  const materials=toriiMaterials({torii:{fresh:source,weathered:source},materials:{vermilionMat:source}});
+  for(const name of ['weathered','beam']){
+    let textures=0;materials[name].colorNode.traverse(node=>{if(node.isTextureNode)textures++;});
+    assert.equal(textures,0);assert.equal(materials[name].map,null);
+  }
+  assert.equal(materials.fresh.color.getHex(),0xd94816);assert.equal(source.userData.precinctLeafReceiver,undefined);
+  Object.values(materials).forEach(m=>m.dispose());source.dispose();
 });

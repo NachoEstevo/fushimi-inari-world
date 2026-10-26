@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Lab-only palette adapter. keihan-station currently leaves palette materials
+// Station palette adapter. keihan-station currently leaves palette materials
 // unnamed; exact sRGB matches deliberately fail closed when its palette changes.
 // staticParts supplies dominant-axis metric UVs (one tile per 1.5 metres).
 // Existing mapped materials include signs, posters and the ramp: retain those.
@@ -66,22 +66,22 @@ export function createStationMaterialStudy(station) {
     material.defines = { STANDARD: '', PHYSICAL: '' };
     material.name = `Station study: ${kind}`;
     material.userData = { ...original.userData, stationMaterialStudy: kind };
-    if (kind === 'green' || kind === 'paint' || kind === 'glass') material.userData.stationReflectionReceiver = true;
-    material.envMapIntensity = kind === 'glass' ? 1.2 : .75;
+    if (kind === 'green' || kind === 'paint' || kind === 'glass' || kind === 'metal') material.userData.stationReflectionReceiver = true;
+    material.envMapIntensity = kind === 'glass' ? 1.05 : kind === 'metal' ? .8 : .6;
     if (kind === 'glass') {
       material.roughness = .08; material.metalness = 0;
-      material.opacity = .18; material.transparent = true; material.depthWrite = false;
+      material.opacity = .34; material.transparent = true; material.depthWrite = false;
       material.ior = 1.5; material.specularIntensity = 1;
     } else if (kind === 'metal') {
-      material.metalness = .82; material.roughness = .43;
+      material.metalness = .78; material.roughness = .52;
       material.roughnessMap = textures.metal;
       material.bumpMap = textures.metal; material.bumpScale = .00035;
     } else if (kind === 'green' || kind === 'paint') {
-      material.metalness = kind === 'green' ? .18 : .08;
-      material.roughness = kind === 'green' ? .46 : .62;
+      material.metalness = kind === 'green' ? .12 : .04;
+      material.roughness = kind === 'green' ? .55 : .78;
       material.roughnessMap = textures.paint;
-      material.clearcoat = kind === 'green' ? .65 : .2;
-      material.clearcoatRoughness = .22;
+      material.clearcoat = kind === 'green' ? .38 : .12;
+      material.clearcoatRoughness = .32;
       // Paint varies in finish, not panel shape. Even submillimetre bump on
       // metric-UV batches can read as repeated dents under grazing reflections.
     } else {

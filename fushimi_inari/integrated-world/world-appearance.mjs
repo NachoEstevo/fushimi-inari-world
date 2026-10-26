@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
+import {createStationReflectionReadiness} from './station-reflection-readiness.mjs';
 
 // The caller owns renderer initialization, the render loop and time-of-day.
 export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
@@ -86,14 +87,17 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   applyTo(scene);
   const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false};
   const lighting=createWorldLookLighting({scene,hemi,sun});
-  const updateBaseLighting=callback=>{if(!disposed)lighting.updateBaseLighting(callback);};
-  // Keep one environment texture for the lifetime of the world. Capturing the
-  // complete city synchronously stalls menu events, and swapping scene-wide IBL
-  // at the station boundary invalidates material pipelines throughout the city.
-  // The isolated reflection study remains available outside the live viewer.
-  function prepare() {
+  const stationProbe=createStationReflectionReadiness({renderer,scene,station,quality,sun});
+  const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;}};
+  // Retain the global environment. High prepares a station-only surrogate once
+  // and binds it only to the station's selected finishes, never on proximity.
+  async function prepare() {
     if(disposed)return;
     stats.prepared=true;
+    await stationProbe.prepare();
+    stats.localReflections=stationProbe.stats.enabled;
+    stats.reflectionError=stationProbe.stats.error;
+    stats.stationProbe=stationProbe.stats;
   }
   function setLook(name) {
     if(disposed)return;
@@ -101,6 +105,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     quality?.setLook(next);
     look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;
     lighting.setLook(next);
+    stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;
   }
   function update(time=0) {
     if(disposed)return;
@@ -112,6 +117,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   }
   function dispose() {
     if(disposed)return;disposed=true;
+    stationProbe.dispose();
     materials?.dispose();
     for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
     for(const material of replacements.values())material.dispose();

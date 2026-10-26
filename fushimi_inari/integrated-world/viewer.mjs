@@ -1,7 +1,12 @@
+import {createWalkingPrewarm} from './walking-prewarm.mjs';
+import {installPrecinctLeafLight,collectPrecinctLeafBounds,collectPrecinctRoofBounds} from './precinct-leaf-light.mjs';
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
 import {omitUnverifiedPrecinctProxy} from './precinct-proxy-policy.mjs';
 import {attachCloudShade} from './cloud-shade.mjs';
-import {compileAddedGroup} from './scoped-compilation.mjs';
+import {compileAddedGroup,compileSelectedVisuals} from './scoped-compilation.mjs';
+import {createSectorPreparation,createRenderPreparationQueue} from './sector-preparation.mjs';
+import {collectCheckpointVisuals} from './checkpoint-visuals.mjs';
+import {panoramaVisible} from './panorama-policy.mjs';
 import {createViewingDistance} from './viewing-distance.mjs';
 import {installRendererTextureBindings} from './renderer-texture-bindings.mjs';
 import {createForestWildlife} from './forest-wildlife.mjs';
@@ -69,7 +74,7 @@ try {
   }));
   const width=(terrain.cols-1)*terrain.step, depth=(terrain.rows-1)*terrain.step;
   const cx=terrain.xmin+width/2,cz=terrain.zmin+depth/2;
-  let assembly=null;
+  let assembly=null,leafLight=null,walkingPrewarm=null,renderPreparation=null;
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
@@ -94,11 +99,14 @@ try {
   loadingStage('Building nearby streets and walking surfaces…');
   assembly=await integrate(scene,renderer,terrain,features,{progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
     appearance.applyTo(group);
+    group.traverse(object=>{for(const material of [object.material].flat())if(material?.userData?.precinctLeafReceiver)leafLight?.attach(material);});
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    await compileAddedGroup(renderer,scene,group,camera,{report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});
-    detailChunks.add(group);
+    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
+    await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
+    detailChunks.add(group);preparationResidency.add(group);
+    walkingPrewarm?.append([{object:group,bounds:new THREE.Box3().setFromObject(group)}]);
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
   }});
@@ -339,7 +347,7 @@ try {
   }
   $('route').onclick=trace;
   $('itinerary').onchange=trace;$('branch').onchange=trace;
-  $('overview').onclick=()=>{if(!allowDebugCamera)return;interruptArrival();walker.stop();overview();};
+  $('overview').onclick=()=>{if(!allowDebugCamera||sectorPreparation?.busy)return;interruptArrival();walker.stop();overview();};
   $('walk').onclick=()=>{
     if(!activeRoute.length)return;
     if(routeProgress>=activeRoute.length-1){routeProgress=0;travelled=0;}
@@ -388,7 +396,7 @@ try {
   map.onclick=e=>{
     const rect=map.getBoundingClientRect(),x=(e.clientX-rect.left)*map.width/rect.width,z=(e.clientY-rect.top)*map.height/rect.height;
     let best=null,d=18;for(const p of landmarks){const gap=Math.hypot(mx(p.point[0])-x,mz(p.point[2])-z);if(gap<d){d=gap;best=p;}}
-    if(best){interruptArrival();if(allowDebugCamera)walker.stop();$('itinerary').value='custom';$('destination').value=best.id;trace();if(allowDebugCamera){controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}}
+    if(best&&!sectorPreparation?.busy){interruptArrival();if(allowDebugCamera)walker.stop();$('itinerary').value='custom';$('destination').value=best.id;trace();if(allowDebugCamera){controls.target.set(best.point[0],best.point[1],best.point[2]);camera.position.set(best.point[0]-120,best.point[1]+160,best.point[2]+160);}}
   };
   const raycaster=new THREE.Raycaster();
   renderer.domElement.addEventListener('dblclick',e=>{
@@ -400,6 +408,7 @@ try {
   const fareGates=installKeihanFareGates(assembly.keihanStation);
   const publicWalkDomain=createPublicWalkDomain(assembly);
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
+  let sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
   const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
@@ -415,10 +424,11 @@ try {
   }
   for(const a of assembly.spatial.anchors){const option=document.createElement('option');option.value=a.id;option.textContent=a.label;$('place').append(option);}
   function visit(){
+    if(sectorPreparation?.busy&&allowDebugCamera)return;
     interruptArrival();
     walker.stop();walking=false;controls.enabled=allowDebugCamera;
     const a=assembly.spatial.byId[$('place').value],near=a.checkpoint??nearestNode(graph,a.target,80)?.node.point??a.target;
-    if(!allowDebugCamera){walker.teleport(near,a.lookAt??a.target);return;}
+    if(!allowDebugCamera){if(sectorPreparation){requestCheckpoint({id:a.id,label:a.label,point:near,target:a.lookAt??a.target});return;}walker.teleport(near,a.lookAt??a.target);return;}
     controls.target.set(a.target[0],a.target[1]+3,a.target[2]);
     if(a.id==='romon'){
       camera.position.set(near[0]-35,ground(near[0]-35,near[2]+14)+8,near[2]+14);
@@ -444,14 +454,11 @@ try {
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=anchor.checkpoint??(id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point);
     const target=anchor.lookAt??(['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)]);
-    interruptArrival();
-    if(walker.teleport(point,target)){
-      $('place').value=id;$('position').textContent=`${anchor.label} · Ready to walk`;
-      document.body.dataset.checkpoint=id;
-    }else $('position').textContent='No clear access found at this checkpoint.';
+    requestCheckpoint({id,label:anchor.label,point,target});
   }});
-  const startGuided=$('walk').onclick;$('walk').onclick=()=>{if(!allowFastTravel)return;interruptArrival();walker.stop();startGuided();};
+  const startGuided=$('walk').onclick;$('walk').onclick=()=>{if(!allowFastTravel||sectorPreparation?.busy)return;interruptArrival();walker.stop();startGuided();};
   const toggleWalking=$('freewalk').onclick;$('freewalk').onclick=()=>{
+    if(sectorPreparation?.busy)return;
     if(arrival?.active){interruptArrival();walker.start();}else toggleWalking();
   };
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
@@ -471,8 +478,24 @@ try {
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
   const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
+  // Snapshot only known crown instances; the atlas never scans the scene per frame.
+  const leafRegion=new THREE.Box3(new THREE.Vector3(romon.target[0]-180,-100,romon.target[2]-260),new THREE.Vector3(romon.target[0]+360,400,romon.target[2]+180));
+  const leafMaterials=new Set(),roofObjects=[],crownObjects=[];
+  const crownGeometry=new Set(assembly.legacy.foliage.slice(1,3).map(mesh=>mesh.geometry));
+  scene.traverse(object=>{
+    if(object.isInstancedMesh&&crownGeometry.has(object.geometry))crownObjects.push(object);
+    for(const material of [object.material].flat()){
+      if(material?.userData?.precinctLeafReceiver)leafMaterials.add(material);
+      if(object.isMesh&&material?.map&&material.map===assembly.legacy.materials.roofMat?.map)roofObjects.push(object);
+    }
+  });
+  const leafCrowns=collectPrecinctLeafBounds(crownObjects,{region:leafRegion,maxInstances:8192});
+  const leafRoofs=collectPrecinctRoofBounds([...new Set(roofObjects)],{region:leafRegion,maxInstances:2048,maxHorizontalSpan:30});
+  leafLight=installPrecinctLeafLight({canopies:leafCrowns.bounds,roofs:leafRoofs.bounds,materials:[...leafMaterials]},
+    {strength:.28,enabled:quality.mode!=='balanced'&&query.get('leafLight')!=='0',mode:$('light').value});
+  document.body.dataset.precinctLeafLight=JSON.stringify({...leafLight.stats,skippedAggregateRoofs:leafRoofs.skippedAggregate,skippedOversizedRoofs:leafRoofs.skippedOversized});
   const applyTimeOfDay=$('light').onchange;
-  $('light').onchange=()=>appearance.updateBaseLighting(applyTimeOfDay);
+  $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);leafLight.setMode($('light').value);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
@@ -485,14 +508,128 @@ try {
   for(const group of observedStreet.detailGroups??[])detailChunks.add(group,{radius:100,margin:20});
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
+  renderPreparation=createRenderPreparationQueue({onBusy:busy=>{if(busy)walkingPrewarm?.setBlocked(true);}});
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
-    sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>arrival?.active??false,
-    onRenderQuality:async value=>{await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);appearance.prepare();},
+    sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0),
+    onRenderQuality:async value=>{
+      qualityPending++;
+      try{await renderPreparation.run(async()=>{
+      walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();
+      await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);
+      leafLight.setEnabled(quality.mode!=='balanced'&&query.get('leafLight')!=='0');document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);
+      await appearance.prepare();
+      if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4});
+      document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);walkingPrewarm?.invalidate();
+      });}finally{
+        qualityPending--;
+        if(!qualityPending){
+          const blocked=photo.active||menu.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
+          walker.pause(blocked);controls.enabled=allowDebugCamera&&!blocked&&!walker.active&&$('stop').disabled;
+        }
+      }
+    },
     onDetailDistance:value=>{detailDistance=value;}});
+  const preparationResidency=new Set([
+    ...assembly.staticBatches.residencyEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),
+    ...(videoMerchandise.detailGroups??[]),...(stationDetails.detailGroups??[]),...(observedStreet.detailGroups??[]),
+    ...(streetCommerce.detailGroups??[]),...(assembly.keihanRail?.detailGroups??[])
+  ]);
+  const preparationBounds=new Map([...assembly.staticBatches.residencyEntries,...assembly.forestChunks].map(entry=>[entry.object,entry.bounds]));
+  const yieldPreparation=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0));
+  const checkpointStatus=document.createElement('output');checkpointStatus.id='checkpoint-status';checkpointStatus.hidden=true;
+  checkpointStatus.setAttribute('role','status');checkpointStatus.setAttribute('aria-live','polite');checkpointStatus.setAttribute('aria-atomic','true');document.body.append(checkpointStatus);
+  let checkpointStatusTimer=null;
+  function showCheckpointStatus(message,failed=false){
+    clearTimeout(checkpointStatusTimer);checkpointStatus.textContent=message;checkpointStatus.hidden=false;checkpointStatus.classList.toggle('is-error',failed);
+    if(failed)checkpointStatusTimer=setTimeout(()=>{checkpointStatus.hidden=true;},8000);
+  }
+  function requestCheckpoint(destination){
+    if(!sectorPreparation||photo.active)return;
+    const token=++checkpointRequest;showCheckpointStatus(`Preparing ${destination.label}...`);
+    sectorPreparation.request(destination).catch(error=>{
+      if(token!==checkpointRequest)return;
+      $('position').textContent=`Could not prepare ${destination.label}: ${error.message}. Retry this checkpoint.`;
+      showCheckpointStatus(`Could not prepare ${destination.label}. Retry this checkpoint. ${error.message}`.slice(0,260),true);
+      console.warn('Checkpoint preparation failed',error);
+    });
+  }
+  sectorPreparation=createSectorPreparation({
+    run:renderPreparation.run,
+    onBusy(value){
+      if(value)walkingPrewarm?.setBlocked(true);
+      if(value&&!sectorPause){
+        sectorPause={controls:controls.enabled,target:controls.target.clone(),position:camera.position.clone(),rotation:camera.quaternion.clone(),photoDisabled:$('photo-open').disabled,committed:false};
+        walker.pause(true);controls.enabled=false;$('photo-open').disabled=true;
+      }else if(!value&&sectorPause){
+        const previous=sectorPause;sectorPause=null;
+        const blocked=photo.active||menu.active||qualityPending>0||!!arrival?.active||document.body.classList.contains('welcome-open');
+        walker.pause(blocked);
+        if(!previous.committed){controls.enabled=previous.controls&&!blocked;controls.target.copy(previous.target);}else if(blocked)controls.enabled=false;
+        $('photo-open').disabled=previous.photoDisabled;
+      }
+    },
+    report(value){
+      document.body.dataset.checkpointPreparation=JSON.stringify(value);
+      const latest=value.history.at(-1);
+      if(value.busy&&latest?.stage){
+        const message=`Preparing ${assembly.spatial.byId[latest.id]?.label??latest.id} · ${latest.stage}`;
+        $('position').textContent=message;showCheckpointStatus(message);
+      }else if(!value.busy&&latest?.status==='ready'){clearTimeout(checkpointStatusTimer);checkpointStatus.hidden=true;}
+      else if(!value.busy&&latest?.status==='blocked')showCheckpointStatus('No clear access found. Try another checkpoint.',true);
+    },
+    async prepareSources(destination,stage){
+      const romon=assembly.spatial.byId.romon.target;
+      if(Math.hypot(destination.point[0]-romon[0],destination.point[2]-romon[2])<210)await stage('shrine buildings',()=>assembly.deferredBuildings.ensure());
+    },
+    async prepare(destination,stage,isCurrent){
+      await walkingPrewarm?.awaitIdle();
+      const position=new THREE.Vector3(destination.point[0],destination.point[1]+1.7,destination.point[2]);
+      const targetCamera=camera.clone();targetCamera.position.copy(position);targetCamera.lookAt(destination.target[0],position.y,destination.target[2]);targetCamera.updateMatrixWorld(true);
+      if(!isCurrent())return;
+      const textures=await stage('nearby textures',()=>textureStreaming.prepareAt(position));
+      destination.textureFailures=textures.failed;document.body.dataset.checkpointTextures=JSON.stringify(textures);
+      if(!isCurrent())return;
+      const visuals=await stage('nearby visual selection',async()=>{
+        const result=await collectCheckpointVisuals({scene,position,residencyRoots:preparationResidency,residencyBounds:preparationBounds,radius:Math.min(180,camera.far+24),yieldWork:yieldPreparation});
+        const {objects,...stats}=result;document.body.dataset.checkpointVisuals=JSON.stringify({objects:objects.length,...stats});return objects;
+      });
+      if(!isCurrent())return;
+      await stage('nearby shaders',async()=>{
+        const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
+        await compileSelectedVisuals(quality,scene,visuals,targetCamera,{batchSize:4,yieldWork:yieldPreparation,report});
+      });
+      if(!isCurrent())return;
+      if($('buildings').checked&&panoramaVisible(position,false)){
+        await stage('mapped city geometry',()=>panorama.prepare());
+        if(!isCurrent())return;
+        await stage('mapped city shaders',()=>cityHorizon.prepare(targetCamera));
+      }
+    },
+    commit(destination){
+      interruptArrival();
+      if(!walker.teleport(destination.point,destination.target)){$('position').textContent='No clear access found at this checkpoint.';return false;}
+      if(sectorPause)sectorPause.committed=true;
+      walking=false;marker.visible=false;$('stop').disabled=true;$('place').value=destination.id;
+      $('position').textContent=`${destination.label} · Ready to walk${destination.textureFailures?' · Some textures unavailable':''}`;
+      document.body.dataset.checkpoint=destination.id;return true;
+    }
+  });
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
   $('scene-settings').append(lookLabel,lookSelect);
   lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
+  walkingPrewarm=createWalkingPrewarm({entries:[...preparationBounds].map(([object,bounds])=>({object,bounds})),
+    compile:async(object,{isCurrent})=>{
+      if(!isCurrent())return false;
+      const yieldIdle=async()=>{
+        if(!isCurrent())throw new Error('Walking preparation paused');
+        await yieldPreparation();
+        if(!isCurrent())throw new Error('Walking preparation paused');
+      };
+      await compileSelectedVisuals(quality,scene,[object],camera.clone(),{batchSize:1,yieldWork:yieldIdle});
+      return isCurrent();
+    },onError:error=>{document.body.dataset.walkingPrewarmError=String(error);}});
+
   document.getElementById('ambient-volume').addEventListener('input',event=>audio.setRecordedVolume(Number(event.target.value)/100));
   document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
@@ -504,7 +641,7 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){walkingPrewarm?.dispose();leafLight?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
@@ -516,9 +653,9 @@ try {
   loadingStage('Preparing train and platform…');
   const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
     prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
-    compile:()=>{appearance.update(0);return renderer.compileAsync(scene,camera);},
+    compile:()=>{appearance.update(0);return quality.compileAsync(scene,camera);},
     render:()=>quality.render(),settle:()=>renderer.waitForGPU()});
-  if(!arrivalPrepared){await assembly.deferredBuildings.ensure();prepareNearby();await renderer.compileAsync(scene,camera);}
+  if(!arrivalPrepared){await assembly.deferredBuildings.ensure();prepareNearby();await quality.compileAsync(scene,camera);}
   if(arrivalPrepared){
     const preview=(assembly.keihanStation??assembly.inariStation).spec.arrival.interiorPose;
     camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
@@ -540,7 +677,7 @@ try {
       station:arrivalStation,camera,controls,walker,allowDebugCamera,
       onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
-    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active,
+    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active||(sectorPreparation.busy||qualityPending>0),
       labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · click the scene, then move the mouse to look · Esc releases the cursor'}:{}});
     // The train waits behind the welcome sheet so its sound and motion start together.
     startTrainArrivalAfterWelcome({welcome,experience:arrival,reducedMotion:()=>arrivalUI.reducedMotion,onGesture:()=>{audio.setEnabled(true);menu.syncSound();}});
@@ -556,13 +693,14 @@ try {
   let horizonAuditAt=0;
   document.addEventListener('visibilitychange',recordRender.reset);
   lastTime=performance.now();
-  let mapTimer=0;
+  let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
+    if((sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
     if(arrival?.active){
       const holdDoors=arrival.snapshot.phase==='stopped'&&arrival.snapshot.phaseProgress>.94&&audio.arrivalSpeechActive();
-      arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active});
-    }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active){
+      arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active||(sectorPreparation.busy||qualityPending>0)});
+    }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active&&!(sectorPreparation.busy||qualityPending>0)){
       const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
       routeProgress=motion.index;travelled=motion.travelled;
       const arrived=motion.arrived;
@@ -577,7 +715,7 @@ try {
       if(arrived){controls.target.set(look[0],look[1]+1.7,look[2]);controls.enabled=allowDebugCamera;if(!allowDebugCamera)walker.start();}
       $('position').textContent=motion.blocked?'Train crossing · Please wait':arrived?`Arrived · ${y.toFixed(1)} m ASL`:`${y.toFixed(1)} m ASL · ${$('speed').value} m/s · eye height 1.70 m`;
       if(time-mapTimer>250){drawMap();mapTimer=time;}
-    }else if(!photo.active&&!menu.active&&!walker.update(dt)&&allowDebugCamera){
+    }else if(!photo.active&&!menu.active&&!(sectorPreparation.busy||qualityPending>0)&&!walker.update(dt)&&allowDebugCamera){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
@@ -592,8 +730,15 @@ try {
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
     sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
-    if(!arrival?.active&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
+    if(!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
+    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||!!arrival?.active||menu.active||photo.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+    if(aheadCheckpoint!==document.body.dataset.checkpoint){aheadCheckpoint=document.body.dataset.checkpoint;aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;}
+    if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
+      const ahead=camera.position.clone().sub(aheadPrefetchPosition);ahead.y=0;
+      if(ahead.lengthSq()>0)textureStreaming.prefetch(ahead.normalize().multiplyScalar(40).add(camera.position));
+      aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;
+    }
     const elevated=camera.position.y-assembly.ground(camera.position.x,camera.position.z)>22;
     detailChunks.update(camera,time/1000,allowDebugCamera&&detailDistance==='full'?60:allowDebugCamera&&elevated?6:quality.detailScale);
     // Detailed replacement IDs were excluded while building the fallback meshes.
@@ -605,12 +750,12 @@ try {
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
     const submitStart=performance.now();renderer.info.reset();quality.render();recordRender(time,performance.now()-submitStart);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active});
+    menu.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active||(sectorPreparation.busy||qualityPending>0)});
 
   }
   requestAnimationFrame(animate);

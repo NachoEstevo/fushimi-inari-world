@@ -4,6 +4,35 @@ import * as THREE from 'three';
 import {createTextureStreaming,textureTierURL} from './texture-streaming.mjs';
 const until=async predicate=>{const end=performance.now()+10000;while(!predicate()){assert.ok(performance.now()<end,'stream work timed out');await new Promise(resolve=>setTimeout(resolve,5));}};
 const settled=stream=>until(()=>stream.stats.pending===0);
+
+test('destination preparation uses the existing index and finishes while unrelated downloads remain pending',async()=>{
+ let finishFar;const requests=[],stream=createTextureStreaming({loadImage:url=>{requests.push(url);return url.includes('far')?new Promise(resolve=>finishFar=resolve):Promise.resolve({width:64,height:64});}}),scene=new THREE.Scene();
+ const near=stream.load('../assets/textures/checkpoint-near.png'),far=stream.load('../assets/textures/checkpoint-far.png');
+ scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:near})));
+ const distant=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:far}));distant.position.x=1000;scene.add(distant);stream.index(scene);
+ stream.prefetch(new THREE.Vector3(1000,0,0));await until(()=>!!finishFar);
+ scene.updateWorldMatrix=()=>{throw Error('checkpoint must not reindex world');};
+ const result=await stream.prepareAt(new THREE.Vector3(),{timeoutMs:1500});
+ assert.deepEqual(result,{textures:1,failed:0});assert.equal(near.image.width,64);assert.equal(far.image.width,1);assert.ok(stream.stats.pending>0);assert.equal(requests.length,2);
+ finishFar({width:64,height:64});await settled(stream);
+});
+
+test('destination preparation requests a newly selected tier for records already finished in the prior tier',async()=>{
+ let finishSlow;const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:url=>{requests.push(url);return url.includes('slow')&&url.includes('balanced')?new Promise(resolve=>finishSlow=resolve):Promise.resolve({width:url.includes('balanced')?64:256,height:64});}});
+ const fast=stream.load('../assets/textures/checkpoint-fast.png'),slow=stream.load('../assets/textures/checkpoint-slow.png');for(const map of [fast,slow])scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));stream.index(scene);
+ const prepared=stream.prepareAt(new THREE.Vector3(),{timeoutMs:2000});await until(()=>fast.image.width===64&&!!finishSlow);
+ stream.setMode('high');finishSlow({width:64,height:64});await prepared;
+ assert.equal(fast.image.width,256);assert.equal(slow.image.width,256);assert.equal(requests.filter(url=>!url.includes('balanced')).length,2);await settled(stream);
+});
+
+test('destination preparation reports failed images and times out only its unfinished selection',async()=>{
+ const scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:()=>{throw Error('synchronous offline');}}),map=stream.load('../assets/textures/checkpoint-error.png');scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));stream.index(scene);
+ assert.deepEqual(await stream.prepareAt(new THREE.Vector3(),{timeoutMs:1000}),{textures:1,failed:1});assert.equal(stream.stats.pending,0);
+ let finish;const waiting=createTextureStreaming({loadImage:()=>new Promise(resolve=>finish=resolve)}),world=new THREE.Scene();world.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:waiting.load('../assets/textures/checkpoint-timeout.png')})));waiting.index(world);
+ await assert.rejects(waiting.prepareAt(new THREE.Vector3(),{timeoutMs:90}),/still preparing/);
+ finish({width:64,height:64});await settled(waiting);
+ assert.deepEqual(await waiting.prepareAt(new THREE.Vector3()),{textures:1,failed:0});
+});
 test('only nearby texture users download; High requests originals and cached tiers are reused',async()=>{
  const requested=[],stream=createTextureStreaming({loadImage:async url=>{requested.push(url);return {width:512,height:512,url};}}),scene=new THREE.Scene();
  const a=stream.load('../assets/textures/nanobanana/wood_vermilion_shuiro_color.png'),b=stream.load('../assets/textures/nanobanana/prop_kitsune_ema_rack.png');
