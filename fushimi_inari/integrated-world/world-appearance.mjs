@@ -108,17 +108,17 @@ export function createSakuraPetalField() {
   geometry.setIndex([0,1,2,0,2,3,0,3,4,0,4,5]);geometry.computeVertexNormals();
   const material=new THREE.MeshStandardMaterial({color:'#f2d5df',roughness:.9,side:THREE.DoubleSide,
     transparent:true,opacity:.65,depthWrite:false});
-  const mesh=new THREE.InstancedMesh(geometry,material,64),dummy=new THREE.Object3D();
+  const mesh=new THREE.InstancedMesh(geometry,material,96),dummy=new THREE.Object3D();
   function update(position,time=0) {
     const t=Number.isFinite(time)?time:0;
     for(let i=0;i<mesh.count;i++) {
-      const phase=i*2.3999632297,radius=8+(i*37%64)/64*25;
+      const phase=i*2.3999632297,radius=8+(i*37%96)/96*25;
       const angle=phase+Math.sin(t*.12+phase)*.025;
       dummy.position.set(position.x+Math.cos(angle)*radius,
-        position.y-3+(((i*31%64)/64*16-t*.32)%16+16)%16,
+        position.y-3+(((i*31%96)/96*16-t*.32)%16+16)%16,
         position.z+Math.sin(angle)*radius);
       dummy.rotation.set(phase+t*.3,phase*.5,t*.2+phase);
-      dummy.scale.setScalar(.75+(i*17%64)/64*.5);
+      dummy.scale.setScalar(.75+(i*17%96)/96*.5);
       dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate=true;

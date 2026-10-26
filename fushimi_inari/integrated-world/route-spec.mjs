@@ -3,8 +3,8 @@
 export const routeSpec = {
   revision: 7,
   senbon: {
-    pillarDiameter: .15, pillarCenters: 1.82, height: 2.55,
-    crossbarUnderside: 1.98, beamWidth: 2.95, blackBaseHeight: .46,
+    pillarDiameter: .15, pillarCenters: 1.82, height: 2.75,
+    crossbarUnderside: 2.18, beamWidth: 2.95, blackBaseHeight: .46,
     spacing:{spacing:.57,minimum:.43,margin:.65},
     paths: [
       {id:'way/260121328', smallCount:382, largeCount:0},

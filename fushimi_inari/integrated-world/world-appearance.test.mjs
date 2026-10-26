@@ -7,7 +7,7 @@ test('sakura field stays sparse and outside the immediate camera view',{skip:THR
   const {createSakuraPetalField}=await import('./world-appearance.mjs');
   const field=createSakuraPetalField(),camera=new THREE.Vector3(100,20,-30),matrix=new THREE.Matrix4();
   try {
-    assert.equal(field.mesh.count,64);
+    assert.equal(field.mesh.count,96);
     assert.equal(field.mesh.geometry.attributes.position.count,6);
     assert.equal(field.mesh.material.depthWrite,false);
     for(const time of [0,50,10000,NaN]) {

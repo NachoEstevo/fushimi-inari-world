@@ -17,6 +17,7 @@ import {buildInariStationFrontage} from './inari-station-frontage.mjs';
 import {buildKeihanStation} from './keihan-station.mjs?v=station-polish-20261025b';
 import {buildKeihanApproach} from './keihan-approach.mjs?v=keihan-street-3';
 import {buildKeihanFrontages} from './keihan-frontages.mjs?v=immersion-20261025c';
+import {buildKeihanEastParking} from './keihan-east-parking.mjs';
 import {buildKeihanStreetContext} from './keihan-street-context.mjs?v=keihan-street-3';
 import {buildKeihanUrasando} from './keihan-urasando.mjs?v=video-shops-3';
 import {buildKumatakaRestFurnitureR102} from './kumataka-rest-furniture-r102.mjs?v=102-release';
@@ -729,6 +730,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   const keihanFrontages=buildKeihanFrontages(root,features,surfaces,legacy.materials,colliders);
   const keihanStreetContext=buildKeihanStreetContext(root,features,surfaces,legacy.materials,colliders);
+  const keihanEastParking=buildKeihanEastParking(root,features,surfaces,legacy.materials,colliders);
+  document.body.dataset.keihanEastParking=JSON.stringify({built:keihanEastParking.built,triangles:keihanEastParking.triangles,reason:keihanEastParking.reason});
   document.body.dataset.keihanStation=JSON.stringify(keihanStation?{built:true,stats:keihanStation.stats,revision:keihanStation.spec.revision}:{built:false,reason:keihanError});
   document.body.dataset.keihanApproach=JSON.stringify(keihanApproach?{built:true,triangles:keihanApproach.triangles,drawBatches:keihanApproach.drawBatches}:{built:false});
   document.body.dataset.keihanFrontages=JSON.stringify({built:keihanFrontages.built,builtIds:keihanFrontages.builtIds,triangles:keihanFrontages.triangles});

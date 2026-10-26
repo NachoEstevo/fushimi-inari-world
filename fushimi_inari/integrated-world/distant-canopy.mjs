@@ -51,6 +51,11 @@ export function distantCanopy(features,ground,pathDistance,terrain){
     mesh.userData.trees=trees;mesh.computeBoundingSphere();group.add(mesh);
   }
   group.userData.count=count;
+  // These cells and their bounds are static after construction. Cache only the
+  // distance decision; visibility remains owned by update even if an external
+  // caller changes a child while the camera stands still.
+  const cells=group.children.map(mesh=>({mesh,cutoffSquared:(mesh.boundingSphere.radius+200)**2,visible:mesh.visible}));
+  let lastX,lastY,lastZ;
   return {group,setSeason(season){
     for(const mesh of group.children){
       mesh.userData.trees.forEach(([x,y,z,a,b,c],i)=>{
@@ -58,10 +63,15 @@ export function distantCanopy(features,ground,pathDistance,terrain){
       });mesh.instanceColor.needsUpdate=true;
     }
   },update(camera){
-    for(const mesh of group.children){
-      const b=mesh.boundingSphere;
+    const {x,y,z}=camera.position,moved=x!==lastX||y!==lastY||z!==lastZ;
+    for(const cell of cells){
       // Keep coarse crowns out of the walking foreground; no shadows or colliders.
-      mesh.visible=camera.position.distanceTo(b.center)>b.radius+200;
+      if(moved){
+        const center=cell.mesh.boundingSphere.center,dx=x-center.x,dy=y-center.y,dz=z-center.z;
+        cell.visible=dx*dx+dy*dy+dz*dz>cell.cutoffSquared;
+      }
+      if(cell.mesh.visible!==cell.visible)cell.mesh.visible=cell.visible;
     }
+    lastX=x;lastY=y;lastZ=z;
   }};
 }

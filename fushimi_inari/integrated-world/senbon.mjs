@@ -57,10 +57,10 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
           const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
           mesh.position.set(px,py,0);mesh.castShadow=true;fixture.add(mesh);
         };
-        add(.36,.045,.06,side*(s.pillarCenters/2+.15),2.36,legacy.materials.blackNemakiMat);
-        add(.025,.14,.025,x,2.28,legacy.materials.blackNemakiMat);
-        add(.36,.10,.36,x,2.18,legacy.materials.blackNemakiMat);
-        add(.24,.24,.24,x,2.01,legacy.materials.lanternGlowMat);
+        add(.36,.045,.06,side*(s.pillarCenters/2+.15),s.crossbarUnderside+.38,legacy.materials.blackNemakiMat);
+        add(.025,.14,.025,x,s.crossbarUnderside+.30,legacy.materials.blackNemakiMat);
+        add(.36,.10,.36,x,s.crossbarUnderside+.20,legacy.materials.blackNemakiMat);
+        add(.24,.24,.24,x,s.crossbarUnderside+.03,legacy.materials.lanternGlowMat);
         fixture.applyMatrix4(m);root.add(fixture);
       }
       (variation.weathered?weathered:fresh).push({m,variation});

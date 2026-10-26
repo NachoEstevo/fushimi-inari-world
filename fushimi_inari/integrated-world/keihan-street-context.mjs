@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createKeihanContextMaterials,applyMetricUVs} from './keihan-context-materials.mjs';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {entranceNeighborhoodLayout} from './entrance-neighborhood-layout.mjs';
 import {KEIHAN_BUILDING_IDS,KEIHAN_PLATFORM1,KEIHAN_PLATFORM2,insideKeihanPolygon} from './keihan-station-spec.mjs';
@@ -9,6 +10,17 @@ const streets=['way/946510942','way/79699849','way/79699850'];
 // These bounds match the walked portions of the existing ground treatment;
 // they do not promote the full northbound traces into authored context.
 const pedestrianBounds={'way/777222941':[-122,-86],'way/118027062':[-161,-121],'way/790920573':[-160,-68]};
+export const PARKING_REAR_FINISH_IDS=['way/768795455','way/1544363240'];
+function parkingRearFace(id,points,ground){
+ if(!PARKING_REAR_FINISH_IDS.includes(id))return null;
+ const facing=[-303,-100];let best=null;
+ for(let edge=0;edge<points.length;edge++){
+  const a=points[edge],b=points[(edge+1)%points.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz),x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,t=Math.max(0,Math.min(1,((facing[0]-a[0])*dx+(facing[1]-a[2])*dz)/(length*length))),distance=Math.hypot(a[0]+dx*t-facing[0],a[2]+dz*t-facing[1]);
+  if(length<3||Math.abs(dx/length)<.95||z<facing[1]||distance>18)continue;
+  if(!best||distance<best.distance)best={edge,distance,kind:'parking-rear-finish',road:{id:null,x:facing[0],z:facing[1],y:ground(x,z),direction:[dx/length,dz/length]}};
+ }
+ return best;
+}
 // These shells remain owned by the entrance-neighborhood builder. Only their
 // previously plain Hommachi-facing finish is added here, never new walls.
 export const HOMMACHI_FINISH_IDS=['way/305214379','way/305214381','way/305214941','way/305214944','way/305214945','way/795552054','way/795552055'];
@@ -27,7 +39,8 @@ function streetFaces(points,segments){
   for(let edge=0;edge<points.length;edge++){
    const a=points[edge],b=points[(edge+1)%points.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);if(length<2)continue;
    const road=nearest(roadSegments,(a[0]+b[0])/2,(a[2]+b[2])/2);
-   if(road&&road.d<15&&Math.abs((dx*road.direction[0]+dz*road.direction[1])/length)>.60&&(!best||road.d<best.distance))best={edge,distance:road.d,road};
+   const reach=pedestrianBounds[id]?6:15;
+   if(road&&road.d<reach&&Math.abs((dx*road.direction[0]+dz*road.direction[1])/length)>.60&&(!best||road.d<best.distance))best={edge,distance:road.d,road};
   }
   if(best&&!candidates.some(c=>c.edge===best.edge))candidates.push(best);
  }
@@ -54,14 +67,17 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
   if(points.some(p=>insideKeihanPolygon(p[0],p[2],KEIHAN_PLATFORM1)||insideKeihanPolygon(p[0],p[2],KEIHAN_PLATFORM2)))continue;
   const explicit=Number.parseFloat(b.tags?.height),levels=Number.parseFloat(b.tags?.['building:levels']);
   const height=Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(levels)&&levels>0?levels*3:6;
-  const support=road.d>45&&!stationSide&&pedestrian?pedestrian:road;
+  const frontages=streetFaces(points,[...segments,...pedestrianSegments]);
+  const parkingFace=parkingRearFace(b.id,points,surfaces.terrainHeight);
+  if(parkingFace&&!frontages.some(f=>f.edge===parkingFace.edge))frontages.push(parkingFace);
+  const pedestrianFace=frontages.find(f=>pedestrianBounds[f.road.id]);
+  const support=pedestrianFace&&pedestrianFace.distance<road.d?{d:pedestrianFace.distance,y:pedestrianFace.road.y}:road.d>45&&!stationSide&&pedestrian?pedestrian:road;
   const floor=support.d<20?support.y:surfaces.terrainHeight(cx,cz);
   if(!Number.isFinite(floor)||!Number.isFinite(height))continue;
-  const frontages=streetFaces(points,segments);
   records.push({id:b.id,points,center:[cx,cz],floor,height,heightSource:Number.isFinite(explicit)&&explicit>0?'OSM height':Number.isFinite(levels)&&levels>0?'OSM storeys at estimated 3m':'inferred two-storey 6m envelope',frontage:frontages[0]??null,frontages});
  }
  if(!records.length)return {built:false,builtIds:[],reason:'No eligible mapped street footprints'};
- const palette={plaster:new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.96}),roof:new THREE.MeshStandardMaterial({color:'#555d5b',roughness:.94}),timber:new THREE.MeshStandardMaterial({color:'#564a3c',roughness:.88}),glass:new THREE.MeshStandardMaterial({color:'#526b6b',roughness:.43,metalness:.14}),shutter:new THREE.MeshStandardMaterial({color:'#b1b0a4',roughness:.85}),cloth:new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.97})};
+ const {palette}=createKeihanContextMaterials();
  const batches=new Map(),pending=[],group=new THREE.Group();group.name=name;
  const existingEntrance=root.getObjectByName('Mapped entrance neighborhood context'),finishRecords=[];
  for(const spec of entranceLayout.records){
@@ -73,6 +89,7 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
  }
  function part(g,mat,tint='#ffffff'){
   const geo=g.index?g.toNonIndexed():g;if(geo!==g)g.dispose();
+  if(mat===palette.plaster||mat===palette.shutter)applyMetricUVs(geo);
   if(mat.vertexColors){const c=new THREE.Color(tint),colors=new Float32Array(geo.attributes.position.count*3);for(let i=0;i<colors.length;i+=3){colors[i]=c.r;colors[i+1]=c.g;colors[i+2]=c.b;}geo.setAttribute('color',new THREE.BufferAttribute(colors,3));}
   if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);
  }
@@ -96,6 +113,21 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
   let n=[t[1],-t[0]];if((frontage.road.x-mid[0])*n[0]+(frontage.road.z-mid[1])*n[1]<0)n=n.map(v=>-v);
   const fb=(w,h,d,u,y,v,mat,color)=>box(w,h,d,a[0]+t[0]*u+n[0]*v,floor+y,a[2]+t[1]*u+n[1]*v,mat,yaw,color);
   const panel=(w,h,u,y,v,mat)=>part(new THREE.PlaneGeometry(w,h).rotateY(Math.atan2(n[0],n[1])).translate(a[0]+t[0]*u+n[0]*v,floor+y,a[2]+t[1]*u+n[1]*v),mat);
+  if(pedestrianBounds[frontage.road.id]||frontage.kind==='parking-rear-finish'){
+   // The mapped edge establishes location and facing, not a shop identity.
+   // Restrained wall-bound windows interpret anonymous neighborhood context;
+   // no shopfront, awning or equipment projects into the narrow public route.
+   const parking=frontage.kind==='parking-rear-finish',count=Math.max(1,Math.min(parking?2:3,Math.floor(length/3))),spacing=length/count;
+   for(let i=0;i<count;i++){
+    const u=(i+.5)*spacing,w=Math.min(parking?3:1.25,spacing-.5),windowHeight=parking?.55:.95;
+    for(const y of parking?[2.1]:[1.7,...(height>4?[Math.min(4.2,height-.85)]:[])]){
+     panel(w,windowHeight,u,y,.072,palette.glass);
+     for(const offset of [-w/2,0,w/2])panel(.045,windowHeight+.07,u+offset,y,.10,palette.timber);
+     for(const offset of [-1,1])panel(w+.08,.055,u,y+offset*(windowHeight/2+.025),.10,palette.timber);
+    }
+   }
+   continue;
+  }
   const bays=Math.max(1,Math.min(4,Math.floor(length/2.25))),bay=length/bays;
   // These are anonymous facade classes seen in 2020/2024 street references,
   // not per-parcel claims about business identity, openings or current stock.
@@ -131,6 +163,7 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
   }
  }
  for(const [material,parts]of batches){const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
- const report={built:true,builtIds:records.map(s=>s.id),records,finishRecords,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),collidersAdded:pending.length,provenance:'Exact OSM footprints in Keihan neighborhood and Hommachi approach; source street datums from existing paved segments. Anonymous facade vocabulary from user Street View October 2024 and November 2020. Existing station, named storefront and entrance neighborhood owners excluded from new shells. Selected existing Hommachi entrance shells receive finish-only panels.',inferred:'Default 6m heights, facade colors/window rhythm/shutters and shallow awnings are interpretive context, not surveyed or identified businesses. Closed footprint shells; no walkable interior advertised. Finish-only panels add no walls, roofs, floors or colliders and preserve their entrance-neighborhood owner.'};
+ const report={built:true,builtIds:records.map(s=>s.id),records,finishRecords,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),collidersAdded:pending.length,provenance:'Exact OSM footprints in Keihan neighborhood and Hommachi approach; source street datums from existing paved segments, including bounded east-gate alley and canal-bank segments. Anonymous facade vocabulary from user Street View October 2024 and November 2020. Existing station, named storefront and entrance neighborhood owners excluded from new shells. Selected existing Hommachi entrance shells receive finish-only panels.',inferred:'Default 6m heights, facade colors/window rhythm/shutters and shallow awnings are interpretive context, not surveyed or identified businesses. Pedestrian-facing window panels are anonymous inferred residential-scale finish, not photograph-verified openings or retail fronts. Closed footprint shells; no walkable interior advertised. Finish-only panels add no walls, roofs, floors or colliders and preserve their entrance-neighborhood owner.'};
+ report.parkingRearFinish={ids:records.filter(r=>r.frontages.some(f=>f.kind==='parking-rear-finish')).map(r=>r.id),source:'July 2019 visitor panorama CIHM0ogKEICAgICU_I3zQQ, camera 34.96828,135.76932',inferred:'Anonymous low dark window-band vocabulary interpreted from the photographed parking rear. Parcel attribution, band dimensions and subdivisions approximate; existing mapped walls, heights and roof forms retained. Finish panels only, no retail front, source road ID or additional collider.'};
  group.userData=report;root.add(group);colliders.push(...pending);return {group,...report};
 }

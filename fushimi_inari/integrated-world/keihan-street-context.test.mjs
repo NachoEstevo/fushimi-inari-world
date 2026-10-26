@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {heightAt} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {SpatialCollisionWorld} from './collision.mjs';
-import {buildKeihanStreetContext,HOMMACHI_FINISH_IDS} from './keihan-street-context.mjs';
+import {buildKeihanStreetContext,HOMMACHI_FINISH_IDS,PARKING_REAR_FINISH_IDS} from './keihan-street-context.mjs';
 import {buildEntranceNeighborhood} from './entrance-neighborhood.mjs';
 import {KEIHAN_BUILDING_IDS,createKeihanStationSpec} from './keihan-station-spec.mjs';
 import {keihanFrontageIds} from './keihan-frontages.mjs';
@@ -52,7 +52,7 @@ test('wall collider centres hit actual mapped wall faces at body height',()=>{
 
 test('street-facing datums use paved streets and solid shells reach underlying terrain',()=>{
  const {built}=fixture(),shifted=buildKeihanStreetContext(new THREE.Group(),features,{...surfaces,terrainHeight:(x,z)=>surfaces.terrainHeight(x,z)-.5});
- for(const r of built.records.filter(r=>r.frontage?.distance<15)){const other=shifted.records.find(s=>s.id===r.id);assert.equal(other.floor,r.floor);}
+ for(const r of built.records.filter(r=>r.frontage?.road.id&&r.frontage.distance<15)){const other=shifted.records.find(s=>s.id===r.id);assert.equal(other.floor,r.floor);}
  assert.match(built.inferred,/interpretive/);assert.match(built.provenance,/October 2024/);assert.equal(built.surfaceHeight,undefined);
 });
 
@@ -67,7 +67,8 @@ test('mapped canal-bank parcels remain present where the road-only radius stops'
   assert.ok(!roadOnly.builtIds.includes(id),'regression parcel must lie beyond old road context');
   const record=built.records.find(r=>r.id===id);assert.ok(record,id);
   assert.deepEqual(record.points,features.buildings.find(b=>b.id===id).points.slice(0,-1));
-  assert.equal(record.frontages.length,0,'canal context does not invent observed shop facades');
+  assert.ok(record.frontages.some(f=>f.road.id==='way/790920573'),'mapped canal-bank wall receives anonymous window finish');
+  assert.equal(record.floor,record.frontages[0].road.y,'canal-facing finish meets the existing mapped route datum');
  }
  const world=new SpatialCollisionWorld();for(const c of colliders.filter(c=>!roadOnly.builtIds.some(id=>c.args.at(-1)==='keihan_context_'+id.split('/')[1])))world.addBox(...c.args);
  const bounds={'way/777222941':[-122,-86],'way/118027062':[-161,-121],'way/790920573':[-160,-68]};
@@ -77,6 +78,19 @@ test('mapped canal-bank parcels remain present where the road-only radius stops'
   for(const side of [-.35,0,.35]){const x=(segment.a[0]+segment.b[0])/2-dz/length*side,zz=z+dx/length*side,y=(segment.ya+segment.yb)/2,result=world.resolvePlayer(x,y+1.7,zz);assert.ok(Math.hypot(result.x-x,result.z-zz)<1e-7,`${segment.id} lane blocked at ${x},${zz}`);samples++;}
  }
  assert.ok(samples>300);
+});
+
+test('east-gate alley faces receive bounded wall finish without claiming a shop or moving footprints',()=>{
+ const {built,colliders}=fixture();
+ for(const id of ['way/305213544','way/831207339']){
+  const record=built.records.find(r=>r.id===id);assert.ok(record,id);
+  const face=record.frontages.find(f=>f.road.id==='way/118027062');assert.ok(face,id);
+  assert.ok(face.distance<6);assert.deepEqual(record.points,features.buildings.find(b=>b.id===id).points.slice(0,-1));
+  assert.equal(record.floor,face.road.y);
+ }
+ const original=buildKeihanStreetContext(new THREE.Group(),features,{...surfaces,segments:surfaces.segments.filter(s=>!['way/777222941','way/118027062','way/790920573'].includes(s.id))},{},[]);
+ assert.equal(built.collidersAdded,original.collidersAdded+colliders.filter(c=>!original.builtIds.includes('way/'+c.args.at(-1).split('_').at(-1))).length);
+ assert.equal(built.drawBatches,6);assert.ok(built.triangles<32000);
 });
 
 test('Hommachi faces point toward its north-south road and preserve corner frontages',()=>{
@@ -93,4 +107,19 @@ test('existing east-side Hommachi owners receive finish only, with no duplicate 
  assert.equal(built.drawBatches,6);assert.ok(built.triangles<32000);
  for(const s of built.finishRecords){assert.ok(HOMMACHI_FINISH_IDS.includes(s.id));assert.ok(entrance.builtIds.includes(s.id));assert.ok(!built.builtIds.includes(s.id));assert.equal(s.finishOnly,true);assert.ok(Math.abs(s.floor+s.height-s.ownerTop)<1e-7);}
  assert.ok(!built.finishRecords.some(s=>['way/305214938','way/305214377','way/305214369'].includes(s.id)),'R96 and Urasando owners remain untouched');
+});
+
+test('existing rear-lot owners receive only anonymous low window bands on their actual south edges',()=>{
+ const {built,colliders}=fixture();assert.deepEqual(built.parkingRearFinish.ids,PARKING_REAR_FINISH_IDS);
+ assert.match(built.parkingRearFinish.inferred,/existing mapped walls, heights and roof forms retained/);
+ for(const id of PARKING_REAR_FINISH_IDS){
+  const record=built.records.find(r=>r.id===id),face=record.frontages.find(f=>f.kind==='parking-rear-finish');assert.ok(face,id);
+  assert.deepEqual(record.points,features.buildings.find(b=>b.id===id).points.slice(0,-1));
+  assert.equal(face.road.id,null,'photo-facing reference must not invent an OSM road');assert.ok(face.distance<18);
+  const a=record.points[face.edge],b=record.points[(face.edge+1)%record.points.length];assert.ok(Math.abs(a[2]-b[2])<.1);assert.ok((a[2]+b[2])/2>-88&&((a[2]+b[2])/2)<-85);
+  assert.equal(colliders.filter(c=>c.args.at(-1)==='keihan_context_'+id.split('/')[1]).length,record.points.length,'finish adds no collider');
+ }
+ const owned=new THREE.Group(),owner=new THREE.Group();owner.userData.sourceIds=[...PARKING_REAR_FINISH_IDS];owned.add(owner);
+ const other=buildKeihanStreetContext(owned,features,surfaces);assert.deepEqual(other.parkingRearFinish.ids,[],'another owner is not duplicated or modified');
+ assert.equal(built.drawBatches,6);assert.ok(built.triangles<32000);
 });
