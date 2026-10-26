@@ -56,3 +56,8 @@ test('visibility event aborts without an animation update and listener is remove
  assert.equal(audit.active,false);assert.equal(ends,1);assert.equal(JSON.parse(document.body.dataset.shadowRouteAudit).phase,'error');
  document.hidden=false;document.dispatch('visibilitychange');assert.equal(ends,1);audit.dispose();document.hidden=true;document.dispatch('visibilitychange');assert.equal(ends,1);delete globalThis.document;
 });
+test('live-flow run measures first exposure without a settling traversal and retains slow-frame offsets',async()=>{
+ globalThis.document=documentStub();const c=camera(),audit=installShadowRouteAudit({camera:c,assembly,settleDurationMs:0,getStats:()=>({calls:2,triangles:50,shadowUpdates:1})});
+ await audit.run();audit.update(0);assert.deepEqual(c.position.value,[5,2.2,0]);audit.update(10);audit.afterRender(10,1);audit.update(130);audit.afterRender(130,40);audit.update(16010);audit.afterRender(16010,2);
+ const r=JSON.parse(document.body.dataset.shadowRouteAudit).result;assert.equal(r.settleDurationMs,0);assert.equal(r.slowFrames[1].elapsedMs,120);assert.equal(r.slowFrames[1].gap,120);audit.dispose();delete globalThis.document;
+});

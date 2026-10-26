@@ -34,7 +34,8 @@ export function createShadowRoute(assembly,duration=16){
  }
  return {duration,sample,preparationViews:[0,1,2,3,4,5,6].map(step=>sample(duration*step/6))};
 }
-export function installShadowRouteAudit({camera,assembly,prepare=async()=>{},onBegin=()=>{},onEnd=()=>{},getStats=()=>({}),duration=16}){
+export function installShadowRouteAudit({camera,assembly,prepare=async()=>{},onBegin=()=>{},onEnd=()=>{},getStats=()=>({}),duration=16,settleDurationMs=2000}){
+ if(!Number.isFinite(settleDurationMs)||settleDurationMs<0)throw new RangeError('Settling duration must be finite and non-negative');
  const route=createShadowRoute(assembly,duration),doc=globalThis.document;
  const section=doc.createElement('section');section.id='shadow-route-audit';
  const output=doc.createElement('output');
@@ -60,7 +61,7 @@ export function installShadowRouteAudit({camera,assembly,prepare=async()=>{},onB
   try{
    if(doc.hidden&&(phase==='settling'||phase==='running'))throw new Error('Shadow route requires a visible document');
    if(phase==='settling'){
-    startTime??=time;const t=clamp((time-startTime)/2000,0,1);apply(route.sample(t*duration));
+    startTime??=time;const t=settleDurationMs?clamp((time-startTime)/settleDurationMs,0,1):1;apply(route.sample(settleDurationMs?t*duration:0));
     if(t>=1){phase='running';startTime=null;lastTime=null;previousShadow=null;emit();}
    }else if(phase==='running'){
     startTime??=time;apply(route.sample((time-startTime)/1000));
@@ -75,9 +76,9 @@ export function installShadowRouteAudit({camera,assembly,prepare=async()=>{},onB
    const stats=getStats()??{},updates=stats.shadowUpdates,shadowUpdated=Number.isFinite(updates)&&previousShadow!==null&&updates>previousShadow;
    if(!Number.isFinite(stats.calls)||stats.calls<=0||!Number.isFinite(stats.triangles)||stats.triangles<=0)throw new Error('Shadow route received invalid draw statistics');
    if(Number.isFinite(updates))previousShadow=updates;
-   if(lastTime!==null&&frames.length<10000)frames.push({gap:time-lastTime,submitMs,calls:stats.calls,triangles:stats.triangles,shadowUpdated});
+   if(lastTime!==null&&frames.length<10000)frames.push({elapsedMs:time-startTime,gap:time-lastTime,submitMs,calls:stats.calls,triangles:stats.triangles,shadowUpdated});
    lastTime=time;
-   if(time-startTime>=duration*1000){result={...summarizeShadowFrames(frames),duration,preparationViews:route.preparationViews};finish('complete');}
+   if(time-startTime>=duration*1000){result={...summarizeShadowFrames(frames),duration,settleDurationMs,slowFrames:[...frames].sort((a,b)=>b.gap-a.gap).slice(0,20),preparationViews:route.preparationViews};finish('complete');}
   }catch(e){finish('error',e);}
  }
  function button(label,fn){const b=doc.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);section.append(b);}

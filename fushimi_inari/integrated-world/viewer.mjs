@@ -60,6 +60,8 @@ import {heightAt,buildGraph,nearestNode,shortestRoute,routeMetrics,resample,path
 const $=id=>document.getElementById(id);
 // Inspection tools remain explicit, separate from the visitor experience.
 const query=new URLSearchParams(location.search);
+// Live-flow diagnostics retain streaming/prewarm and skip destination warmup.
+const liveFlowAudit=query.get('shadowAudit')==='1'&&query.get('shadowFlow')==='live';
 const allowDebugCamera=query.get('debugCamera')==='1';
 const allowFastTravel=allowDebugCamera||query.get('audit')==='1'||query.get('textureAudit')==='1';
 const welcome=installWelcomeScreen();
@@ -80,6 +82,12 @@ try {
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
   await renderer.init();
+  let renderBuildAudit=null;
+  if(query.get('pipelineAudit')==='1'){
+    const {installRenderBuildAudit}=await import('./render-build-audit.mjs');
+    renderBuildAudit=installRenderBuildAudit(renderer.backend);
+    addEventListener('pagehide',()=>renderBuildAudit.dispose(),{once:true});
+  }
   renderer.backend.device?.addEventListener('uncapturederror',event=>{document.body.dataset.gpuError=event.error.message;});
   const textureBindings=installRendererTextureBindings(renderer);
   document.body.dataset.rendererBackend=renderer.backend.isWebGPUBackend?'webgpu':'webgl2';
@@ -728,11 +736,12 @@ try {
 
   if(query.get('shadowAudit')==='1'){
     const {installShadowRouteAudit}=await import('./shadow-route-audit.mjs');
-    shadowRouteAudit=installShadowRouteAudit({camera,assembly,
-      onBegin(){arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(true);},
-      onEnd(){walker.pause(true);walkingPrewarm.setBlocked(true);},
+    shadowRouteAudit=installShadowRouteAudit({camera,assembly,settleDurationMs:liveFlowAudit?0:2000,
+      onBegin(){renderBuildAudit?.reset();arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(!liveFlowAudit);},
+      onEnd(){walker.pause(true);walkingPrewarm.setBlocked(!liveFlowAudit);},
       getStats:()=>({calls:renderer.info.render.drawCalls??renderer.info.render.calls,triangles:renderer.info.render.triangles,shadowUpdates:sunShadows.stats.updates}),
       async prepare(views){
+        if(liveFlowAudit&&query.get('shadowWarmup')!=='1')return;
         await walkingPrewarm.awaitIdle();
         await renderPreparation.run(async()=>{
           for(const frame of views){
@@ -741,6 +750,7 @@ try {
             await quality.compileAsync(scene,camera);quality.render();await renderer.waitForGPU();
           }
         });
+        if(renderBuildAudit)document.body.dataset.renderBuildAuditPrepared=JSON.stringify(renderBuildAudit.stats);
       }
     });
     const panel=$('shadow-route-audit');
@@ -801,7 +811,7 @@ try {
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
-    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||!!shadowRouteAudit||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||(!!shadowRouteAudit&&!liveFlowAudit)||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
     if(aheadCheckpoint!==document.body.dataset.checkpoint){aheadCheckpoint=document.body.dataset.checkpoint;aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;}
     if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&!journal.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
       const ahead=camera.position.clone().sub(aheadPrefetchPosition);ahead.y=0;
@@ -827,7 +837,7 @@ try {
       }}));
     }else quality.render();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);if(renderBuildAudit)document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
