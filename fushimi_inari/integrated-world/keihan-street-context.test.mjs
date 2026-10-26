@@ -61,6 +61,24 @@ test('missing street datum does not remove aerial buildings or mutate the scene'
  assert.equal(built.built,false);assert.deepEqual(built.builtIds,[]);assert.equal(root.children.length,0);assert.equal(colliders.length,0);
 });
 
+test('mapped canal-bank parcels remain present where the road-only radius stops',()=>{
+ const {built,colliders}=fixture(),roadOnly=buildKeihanStreetContext(new THREE.Group(),features,{...surfaces,segments:surfaces.segments.filter(s=>!['way/777222941','way/118027062','way/790920573'].includes(s.id))});
+ for(const id of ['way/952687122','way/952687123','way/952687124']){
+  assert.ok(!roadOnly.builtIds.includes(id),'regression parcel must lie beyond old road context');
+  const record=built.records.find(r=>r.id===id);assert.ok(record,id);
+  assert.deepEqual(record.points,features.buildings.find(b=>b.id===id).points.slice(0,-1));
+  assert.equal(record.frontages.length,0,'canal context does not invent observed shop facades');
+ }
+ const world=new SpatialCollisionWorld();for(const c of colliders.filter(c=>!roadOnly.builtIds.some(id=>c.args.at(-1)==='keihan_context_'+id.split('/')[1])))world.addBox(...c.args);
+ const bounds={'way/777222941':[-122,-86],'way/118027062':[-161,-121],'way/790920573':[-160,-68]};
+ let samples=0;
+ for(const segment of surfaces.segments){const range=bounds[segment.id],z=(segment.a[2]+segment.b[2])/2;if(!range||z<range[0]||z>range[1])continue;
+  const dx=segment.b[0]-segment.a[0],dz=segment.b[2]-segment.a[2],length=Math.hypot(dx,dz);
+  for(const side of [-.35,0,.35]){const x=(segment.a[0]+segment.b[0])/2-dz/length*side,zz=z+dx/length*side,y=(segment.ya+segment.yb)/2,result=world.resolvePlayer(x,y+1.7,zz);assert.ok(Math.hypot(result.x-x,result.z-zz)<1e-7,`${segment.id} lane blocked at ${x},${zz}`);samples++;}
+ }
+ assert.ok(samples>300);
+});
+
 test('Hommachi faces point toward its north-south road and preserve corner frontages',()=>{
  const {built}=fixture(),hommachi=built.records.flatMap(s=>s.frontages.filter(f=>f.road.id==='way/79699850').map(f=>({s,f})));
  assert.ok(hommachi.length>=12);assert.ok(built.records.some(s=>s.frontages.length===2),'corner buildings retain both street faces');

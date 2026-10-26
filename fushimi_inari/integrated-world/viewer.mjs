@@ -473,7 +473,7 @@ try {
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>appearance.updateBaseLighting(applyTimeOfDay);
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
-  const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes);
+  const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
   const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});

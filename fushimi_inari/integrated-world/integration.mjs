@@ -1,3 +1,4 @@
+import {findVotiveWaxToRetain} from './candle-flame-instances.mjs';
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
 import {textureStreaming} from './texture-streaming.mjs?v=repair-20261025b';
@@ -771,6 +772,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   keihanStation?.trainGroup.traverse(child=>retained.add(child));
   keihanStation?.thresholdGroup.traverse(child=>retained.add(child));
   keihanRail?.group.traverse(child=>retained.add(child));
+  for(const wax of findVotiveWaxToRetain(legacy.flickeringCandleMeshes))retained.add(wax);
   const residencyRetained=new Set();
   for(const object of legacy.interactables)object.traverse(child=>residencyRetained.add(child));
   const staticBatches=batchStaticScene(root,retained,128,residencyRetained);

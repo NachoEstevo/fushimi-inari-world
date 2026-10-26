@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {installCandleFlameInstances} from './candle-flame-instances.mjs';
+import {findVotiveWaxToRetain,installCandleFlameInstances} from './candle-flame-instances.mjs';
 
 function house(count=14){
   const parent=new THREE.Group(),geometry=new THREE.ConeGeometry(.028,.09,6),material=new THREE.MeshBasicMaterial({color:0xff9d2e}),flames=[];
@@ -152,4 +152,52 @@ test('wax never merges different candle houses even when their assets are shared
   for(const wax of b.wax){wax.geometry=a.wax[0].geometry;wax.material=a.wax[0].material;}
   const controller=installCandleFlameInstances([...a.flames,...b.flames]),batches=controller.meshes.filter(mesh=>mesh.name==='Instanced votive candle wax');
   assert.equal(controller.stats.instancedWax,28);assert.equal(batches.length,2);assert.equal(batches[0].parent,a.parent);assert.equal(batches[1].parent,b.parent);
+});
+
+test('polished verified votives use rounded gradient flames, matte wax and one wick draw without lights',()=>{
+  const f=addWax(house()),controller=installCandleFlameInstances(f.flames,{polish:true});
+  const flame=controller.meshes.find(m=>m.name==='Instanced votive candle flames');
+  const wax=controller.meshes.find(m=>m.name==='Instanced votive candle wax');
+  const wick=controller.meshes.find(m=>m.name==='Instanced votive candle wicks');
+  assert.equal(flame.geometry.type,'LatheGeometry');assert.ok(flame.geometry.index.count/3<=60);
+  assert.equal(flame.material.vertexColors,true);assert.equal(flame.material.toneMapped,false);
+  assert.equal(wax.material.isMeshStandardMaterial,true);assert.equal(wax.material.roughness,.86);
+  assert.equal(wick.count,14);assert.equal(controller.stats.removedDrawCalls,25);
+  assert.equal(f.parent.children.some(o=>o.isLight),false);
+  const matrix=new THREE.Matrix4(),point=new THREE.Vector3(),positions=flame.geometry.attributes.position;
+  for(let time=0;time<5000;time+=37){
+    controller.update(time);
+    for(let i=0;i<14;i++){
+      flame.getMatrixAt(i,matrix);const height=new THREE.Vector3().setFromMatrixScale(matrix).y;
+      assert.ok(height>=.879&&height<=1.001);
+      for(let vertex=0;vertex<positions.count;vertex++){point.fromBufferAttribute(positions,vertex).applyMatrix4(matrix);assert.ok(flame.boundingBox.containsPoint(point));}
+    }
+  }
+  let disposed=0;flame.geometry.addEventListener('dispose',()=>disposed++);
+  controller.dispose();controller.dispose();assert.equal(disposed,1);
+  assert.ok(f.flames.every(part=>part.parent===f.parent));assert.ok(f.wax.every(part=>part.parent===f.parent));assert.equal(wick.parent,null);
+});
+
+test('polish leaves custom or incomplete candle construction untouched',()=>{
+  const f=addWax(house());f.wax[0].removeFromParent();
+  const controller=installCandleFlameInstances(f.flames,{polish:true});
+  assert.equal(controller.meshes[0].geometry,f.geometry);assert.equal(controller.stats.wickBatches,0);
+  controller.dispose();
+});
+
+
+test('pre-batch retention selects only exact wax from complete eligible flame houses',()=>{
+  const complete=addWax(house()),incomplete=addWax(house()),custom=addWax(house());
+  incomplete.wax[0].removeFromParent();custom.flames[0].userData.interactable={title:'Custom'};
+  const neighbour=new THREE.Mesh(complete.wax[0].geometry,complete.wax[0].material);
+  neighbour.position.set(10,10,10);complete.parent.add(neighbour);
+  const all=[...complete.flames,...incomplete.flames,...custom.flames];
+  const retained=findVotiveWaxToRetain([...all,...complete.flames]);
+  assert.deepEqual(retained,complete.wax);assert.equal(retained.includes(neighbour),false);
+  assert.ok(complete.wax.every(part=>part.parent===complete.parent));
+  // Simulate static batching dropping every unretained ordinary mesh.
+  for(const part of [...complete.parent.children])if(part.isMesh&&!all.includes(part)&&!retained.includes(part))part.removeFromParent();
+  const controller=installCandleFlameInstances(all,{polish:true});
+  assert.equal(controller.stats.wickBatches,1);assert.equal(controller.stats.instancedWax,14);
+  controller.dispose();
 });

@@ -5,6 +5,10 @@ import {KEIHAN_BUILDING_IDS,KEIHAN_PLATFORM1,KEIHAN_PLATFORM2,insideKeihanPolygo
 import {keihanFrontageIds} from './keihan-frontages.mjs';
 
 const streets=['way/946510942','way/79699849','way/79699850'];
+// Mapped east-gate alley and the canal-bank approach around the bridge.
+// These bounds match the walked portions of the existing ground treatment;
+// they do not promote the full northbound traces into authored context.
+const pedestrianBounds={'way/777222941':[-122,-86],'way/118027062':[-161,-121],'way/790920573':[-160,-68]};
 // These shells remain owned by the entrance-neighborhood builder. Only their
 // previously plain Hommachi-facing finish is added here, never new walls.
 export const HOMMACHI_FINISH_IDS=['way/305214379','way/305214381','way/305214941','way/305214944','way/305214945','way/795552054','way/795552055'];
@@ -36,6 +40,7 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
  const name='Mapped Keihan street neighborhood',old=root.getObjectByName(name);if(old)return {group:old,...old.userData};
  const segments=surfaces?.segments?.filter(s=>streets.includes(s.id))??[];
  if(!segments.length||typeof surfaces.terrainHeight!=='function')return {built:false,builtIds:[],reason:'Mapped street datum unavailable'};
+ const pedestrianSegments=surfaces.segments.filter(s=>{const bounds=pedestrianBounds[s.id],z=(s.a[2]+s.b[2])/2;return bounds&&z>=bounds[0]&&z<=bounds[1];});
  const entranceLayout=entranceNeighborhoodLayout(features),excluded=new Set([...KEIHAN_BUILDING_IDS,...keihanFrontageIds,'way/795552041','way/952687107',...entranceLayout.records.map(b=>b.id)]);
  for(const owner of root.children){for(const id of [...(owner.userData.builtIds??[]),...(owner.userData.sourceIds??[])])excluded.add(id);if(owner.userData.sourceFeature)excluded.add(owner.userData.sourceFeature);}
  const records=[];
@@ -44,12 +49,13 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
   const points=b.points.slice(0,-1);if(points.length<3||!points.flat().every(Number.isFinite))continue;
   const cx=points.reduce((n,p)=>n+p[0],0)/points.length,cz=points.reduce((n,p)=>n+p[2],0)/points.length;
   if(cx<-360||cx>=-160||cz<-320||cz>35)continue;
-  const road=nearest(segments,cx,cz),stationSide=cx>=-350&&cx<=-280&&cz>=-310&&cz<=-125;
-  if(!road||road.d>45&&!stationSide)continue;
+  const road=nearest(segments,cx,cz),pedestrian=nearest(pedestrianSegments,cx,cz),stationSide=cx>=-350&&cx<=-280&&cz>=-310&&cz<=-125;
+  if(!road||road.d>45&&!stationSide&&(!pedestrian||pedestrian.d>20))continue;
   if(points.some(p=>insideKeihanPolygon(p[0],p[2],KEIHAN_PLATFORM1)||insideKeihanPolygon(p[0],p[2],KEIHAN_PLATFORM2)))continue;
   const explicit=Number.parseFloat(b.tags?.height),levels=Number.parseFloat(b.tags?.['building:levels']);
   const height=Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(levels)&&levels>0?levels*3:6;
-  const floor=road.d<20?road.y:surfaces.terrainHeight(cx,cz);
+  const support=road.d>45&&!stationSide&&pedestrian?pedestrian:road;
+  const floor=support.d<20?support.y:surfaces.terrainHeight(cx,cz);
   if(!Number.isFinite(floor)||!Number.isFinite(height))continue;
   const frontages=streetFaces(points,segments);
   records.push({id:b.id,points,center:[cx,cz],floor,height,heightSource:Number.isFinite(explicit)&&explicit>0?'OSM height':Number.isFinite(levels)&&levels>0?'OSM storeys at estimated 3m':'inferred two-storey 6m envelope',frontage:frontages[0]??null,frontages});
