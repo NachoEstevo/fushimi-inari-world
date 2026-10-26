@@ -2,16 +2,17 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Mitsurugi panorama, Luke Hall, April 2018: miniature torii have open
-// centers. Keep authored placements and dimensions; these are not surveyed.
+// centers. All four legacy peak compounds reuse the same solid offering proxy.
+// Keep authored placements and dimensions; these are not surveyed.
 export function refineShrineOfferings(object){
-  if(object.userData.zone!=='mitsurugi')return;
+  if(!['mitsurugi','sannomine','ninomine','summit'].includes(object.userData.zone))return;
   const targets=[];
   object.traverse(mesh=>{
     const p=mesh.geometry?.parameters;
     if(mesh.geometry?.type==='BoxGeometry'&&p.width===.36&&p.height===.42&&p.depth===.06)targets.push(mesh);
     // Rounded stone heads visible in the same panorama. Preserve inscription
     // UVs, base, placement and bounding dimensions of the authored steles.
-    if(mesh.geometry?.type==='BoxGeometry'&&p.depth===.26&&p.width>=.44&&p.width<=.65&&p.height>=.9&&p.height<=1.93){
+    if(object.userData.zone==='mitsurugi'&&mesh.geometry?.type==='BoxGeometry'&&p.depth===.26&&p.width>=.44&&p.width<=.65&&p.height>=.9&&p.height<=1.93){
       const geometry=new THREE.BoxGeometry(p.width,p.height,p.depth,8,8,1),v=geometry.attributes.position;
       const crown=Math.min(p.width*.48,p.height*.24);
       for(let i=0;i<v.count;i++){

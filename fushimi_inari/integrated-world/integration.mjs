@@ -771,7 +771,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   keihanStation?.trainGroup.traverse(child=>retained.add(child));
   keihanStation?.thresholdGroup.traverse(child=>retained.add(child));
   keihanRail?.group.traverse(child=>retained.add(child));
-  const staticBatches=batchStaticScene(root,retained);
+  const residencyRetained=new Set();
+  for(const object of legacy.interactables)object.traverse(child=>residencyRetained.add(child));
+  const staticBatches=batchStaticScene(root,retained,128,residencyRetained);
   const forestChunks=[];root.updateMatrixWorld(true);
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,

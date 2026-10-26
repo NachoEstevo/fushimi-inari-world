@@ -477,7 +477,7 @@ try {
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
   const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
-  for(const mesh of assembly.staticBatches.meshes)detailChunks.add(mesh);
+  for(const {object,bounds} of assembly.staticBatches.residencyEntries)detailChunks.add(object,{bounds});
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
   for(const group of videoMerchandise.detailGroups??[])detailChunks.add(group,{radius:28,margin:8});
   for(const group of stationDetails.detailGroups??[])detailChunks.add(group,{radius:70,margin:15});

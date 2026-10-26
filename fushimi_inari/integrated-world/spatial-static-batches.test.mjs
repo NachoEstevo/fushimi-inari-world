@@ -106,3 +106,24 @@ test('interactive and animated retained meshes keep identity and are not absorbe
  assert.ok(references.every(mesh=>!result.meshes.includes(mesh)));
  assert.equal(result.mergedBatches,1);
 });
+
+
+test('sector residency keeps roofs and retained interactive bodies together and preserves hidden details',async()=>{
+ const {createWorldDetailChunks}=await import('./world-detail-chunks.mjs');
+ const root=new THREE.Group(),body=box(root,material(),[10,1,10]),roof=box(root,material(),[10,3,10]);
+ const hidden=box(root,material(),[10,2,10]);hidden.visible=false;
+ const hiddenStatic=box(root,material(),[10,5,10]);hiddenStatic.visible=false;
+ const hiddenOwner=new THREE.Group();hiddenOwner.visible=false;root.add(hiddenOwner);
+ const hiddenChild=box(hiddenOwner,material(),[10,4,10]);
+ const animated=box(root,material(),[10,1,10]);
+ const batch=batchStaticScene(root,new Set([body,hidden,hiddenChild,animated]),128,new Set([body,hidden,hiddenChild]));
+ assert.equal(batch.residencyEntries.length,2);
+ assert.equal(batch.residencyEntries[0].bounds,batch.residencyEntries[1].bounds);
+ const manager=createWorldDetailChunks();for(const entry of batch.residencyEntries)manager.add(entry.object,{bounds:entry.bounds});
+ manager.update({position:new THREE.Vector3(400,0,10)},0,1,true);
+ assert.equal(body.visible,false);assert.equal(roof.visible,false);assert.equal(animated.visible,true);
+ manager.restore();assert.equal(body.visible,true);assert.equal(roof.visible,true);
+ assert.equal(hidden.visible,false);assert.equal(hiddenStatic.visible,false);assert.equal(hiddenOwner.visible,false);assert.equal(hiddenChild.visible,true);
+ manager.update({position:new THREE.Vector3(10,0,10)},1,1,true);
+ assert.equal(body.visible,true);assert.equal(roof.visible,true);assert.equal(body.parent,root);
+});
