@@ -132,7 +132,7 @@ test('live quality, look and station transitions retain one environment without 
     assert.equal(appearance.stats.prepared,true);assert.equal(scene.environment,globalEnvironment);
     appearance.setLook('sakura');assert.equal(captures,0,'Balanced look changes do not capture');
     quality.mode='high';appearance.prepare();appearance.prepare();assert.equal(captures,0,'High does not synchronously capture the city');
-    assert.ok(ceilingLights.every(o=>o.intensity===32));
+    assert.ok(ceilingLights.every(o=>o.intensity===64));
     for(let i=0;i<5;i++)appearance.update(i);
     camera.position.x=0;appearance.update(10);assert.equal(practicals.visible,true,'leaving the station retains the light pipeline');
     camera.position.x=-302.4;appearance.update(11);

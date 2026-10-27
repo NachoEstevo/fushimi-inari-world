@@ -137,7 +137,14 @@ test('actual station keeps every source buffer and draw owner while its six shar
   for(const mode of ['high','balanced','ultra']){
     study.setQuality(mode);let meshes=0;station.group.traverse(o=>{if(o.isMesh)meshes++;});assert.equal(meshes,source.length+1);
     assert.equal(tactile.visible,mode!=='balanced');assert.equal(study.stats.tactileDetail.draws,Number(mode!=='balanced'));
-    for(const record of source){assert.equal(record.mesh.geometry,record.geometry);assert.equal(digest(record.geometry),record.digest);}
+    for(const record of source){
+      const deck=record.material.userData?.stationSurfaceRole==='platform-deck';
+      if(deck&&mode!=='balanced'){
+        assert.notEqual(record.mesh.geometry,record.geometry);assert.ok(record.mesh.geometry.attributes.uv1);
+        for(const name of ['position','normal','uv'])assert.deepEqual(record.mesh.geometry.attributes[name].array,record.geometry.attributes[name].array);
+      }else assert.equal(record.mesh.geometry,record.geometry);
+      assert.equal(digest(record.geometry),record.digest);
+    }
   }
   let materialsDisposed=0,texturesDisposed=0;
   for(const m of ownedMaterials)m.addEventListener('dispose',()=>materialsDisposed++);

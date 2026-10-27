@@ -40,11 +40,14 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
  const group=new THREE.Group();group.name=NAME;
  const p={floor:new THREE.MeshStandardMaterial({color:'#777b79',roughness:.98}),stone:new THREE.MeshStandardMaterial({color:'#b7b6ac',roughness:.94}),dark:new THREE.MeshStandardMaterial({color:'#27323a',roughness:.78}),red:new THREE.MeshStandardMaterial({color:'#c03220',roughness:.55}),cream:new THREE.MeshStandardMaterial({color:'#e6e3d6',roughness:.91}),metal:new THREE.MeshStandardMaterial({color:'#9aa3a5',metalness:.5,roughness:.4}),yellow:new THREE.MeshStandardMaterial({color:'#d7ae35',roughness:.85}),green:new THREE.MeshStandardMaterial({color:'#245b4b',roughness:.63}),seat:new THREE.MeshStandardMaterial({color:'#42677a',roughness:.93}),wood:new THREE.MeshStandardMaterial({color:'#706049',roughness:.9}),glass:new THREE.MeshStandardMaterial({color:'#aec1be',transparent:true,opacity:.12,depthWrite:false,roughness:.12,side:THREE.DoubleSide}),light:new THREE.MeshStandardMaterial({color:'#eee9da',emissive:'#f6e3b8',emissiveIntensity:.35})};
  p.wallBand=new THREE.MeshStandardMaterial({color:'#66707c',roughness:.9,emissive:'#66707c',emissiveIntensity:.035});
+ // Separate surface ownership before batching: train shells, seats, roof beams
+ // and rail ballast retain their original shared palette and metric UVs.
+ for(const [name,source,role]of [['deck','floor','platform-deck'],['wallStone','stone','platform-wall'],['wallPanel','wallBand','platform-wall'],['wallCream','cream','platform-wall']]){p[name]=p[source].clone();p[name].userData.stationSurfaceRole=role;}
  const parts=staticParts(group),colliders=[],topTriangles=[],labels=[];
  const collider=(x,z,w,d,yaw,lo,hi,tag)=>colliders.push({type:'box',args:[x,z,w/2,d/2,yaw,lo,hi,tag]});
  const box=(w,h,d,x,y,z,material)=>parts.box(w,h,d,x,y,z,material);
  const wall=(a,b,bottom,height,thickness,material,tag)=>{const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),yaw=-Math.atan2(dz,dx),g=new THREE.BoxGeometry(length,height,thickness);g.rotateY(yaw);g.translate((a[0]+b[0])/2,bottom+height/2,(a[1]+b[1])/2);parts.put(g,material);if(tag)collider((a[0]+b[0])/2,(a[1]+b[1])/2,length,thickness,yaw,bottom,bottom+height,tag);};
- function slab(ring,height,bottom,material=p.floor,topUV){
+ function slab(ring,height,bottom,material=p.deck,topUV){
   const y=typeof height==='function'?height:()=>height;
   for(const face of THREE.ShapeUtils.triangulateShape(ring.map(q=>new THREE.Vector2(...q)),[])){
    const vertices=face.map(i=>[ring[i][0],y(...ring[i]),ring[i][1]]),[a,b,c]=vertices;
@@ -59,7 +62,7 @@ export function buildKeihanStation(root,materials,features,surfaces,options={}){
  // The east outer wall is the real obstacle seen directly after disembarking.
  // It never opens toward the shrine: the public exit is SOUTH, on the right.
  const eastEdge=[[-299.854,-152.040],[-298.340,-201.255],[-303.129,-201.611],[-305.136,-203.503],[-301.979,-303.891]];
- for(let i=1;i<eastEdge.length;i++){wall(eastEdge[i-1],eastEdge[i],spec.platformFloor,1.08,.16,p.stone,'keihan-p2-outer-wall');wall(eastEdge[i-1],eastEdge[i],spec.platformFloor+1.08,1.36,.16,p.wallBand);wall(eastEdge[i-1],eastEdge[i],spec.platformFloor+2.44,.66,.14,p.cream);}
+ for(let i=1;i<eastEdge.length;i++){wall(eastEdge[i-1],eastEdge[i],spec.platformFloor,1.08,.16,p.wallStone,'keihan-p2-outer-wall');wall(eastEdge[i-1],eastEdge[i],spec.platformFloor+1.08,1.36,.16,p.wallPanel);wall(eastEdge[i-1],eastEdge[i],spec.platformFloor+2.44,.66,.14,p.wallCream);}
  for(let z=-200;z<=-154;z+=3.2){const x=-299.854+(z+152.04)/(-49.215)*1.514;box(.055,3.1,.075,x-.095,spec.platformFloor+1.55,z,p.dark);box(6.6,.11,.10,-302.4,spec.platformFloor+3.11,z,p.wallBand);box(.34,.07,1.34,-302.4,spec.platformFloor+3.035,z,p.metal);for(const offset of [-.10,.10])box(.065,.025,1.22,-302.4+offset,spec.platformFloor+2.99,z,p.light);}
  // Rail safety boundaries are navigation constraints, not invented fences.
  for(const platform of [spec.platform2,spec.platform1]){const p2=platform===spec.platform2,a=platform.points[p2?0:1],b=platform.points[p2?1:2],side=p2?1:-1;

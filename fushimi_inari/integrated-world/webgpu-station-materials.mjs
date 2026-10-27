@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {createStationTactileDetail} from './station-tactile-detail.mjs';
+import {createStationSurfaceFinishes} from './station-surface-finishes.mjs';
 
 // Station palette adapter. keihan-station currently leaves palette materials
 // unnamed; exact sRGB matches deliberately fail closed when its palette changes.
@@ -144,14 +145,16 @@ export function createStationMaterialStudy(station) {
   });
   stats.meshes = bindings.length; stats.materials = replacements.size + trainReplacements.size; stats.skippedMaterials = skipped.size;
   const tactile = createStationTactileDetail(station); stats.tactileDetail = tactile?.stats ?? null;
+  const surfaces=createStationSurfaceFinishes(station,bindings); stats.surfaces=surfaces.stats;
   let disposed = false, highQuality = false;
-  // Both profiles keep their existing shader features and texture bindings.
-  // Material toggles change scalar uniforms. The caller prepares the fixed
-  // High-only geometry before resuming the station render.
+  // Palette finishes retain their scalar-only toggles. Architectural High
+  // variants are allocated once and reused; the caller compiles the selected
+  // materials and fixed High geometry before resuming the station render.
   function setQuality(mode) {
     if (disposed) return;
     const high = mode === 'high' || mode === 'ultra'; highQuality = high;
     tactile?.setEnabled(stats.enabled && high);
+    surfaces.setEnabled(stats.enabled && high);
     for (const material of [...replacements.values(), ...trainReplacements.values()]) {
       const kind = material.userData.stationMaterialStudy;
       if (kind === 'tactile') material.bumpScale = high ? .004 : 0;
@@ -168,14 +171,17 @@ export function createStationMaterialStudy(station) {
     if (disposed) return;
     stats.enabled = Boolean(value);
     tactile?.setEnabled(stats.enabled && highQuality);
+    surfaces.setEnabled(false);
     for (const { mesh, original, upgraded } of bindings) mesh.material = stats.enabled ? upgraded : original;
+    if(stats.enabled&&highQuality)surfaces.setEnabled(true);
   }
   function dispose() {
     if (disposed) return;
     setEnabled(false); disposed = true;
-    tactile?.dispose();
+    tactile?.dispose(); surfaces.dispose();
     for (const material of [...replacements.values(), ...trainReplacements.values()]) material.dispose();
     for (const texture of Object.values(textures)) texture.dispose();
+    for (const {mesh,original} of bindings)mesh.material=original;
   }
   return { setEnabled, setQuality, dispose, stats };
 }

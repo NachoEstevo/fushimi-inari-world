@@ -53,7 +53,7 @@ test('handoff faces the east wall with the south gate to the right rather than c
 test('source objects remain immutable, duplicate builds reuse ownership, and geometry stays bounded',()=>{
  const root=new THREE.Group(),before=JSON.stringify(features),api=buildKeihanStation(root,{},features,surfaces);assert.equal(api.built,true);assert.equal(buildKeihanStation(root,{},features,surfaces),api);assert.equal(JSON.stringify(features),before);
  let triangles=0,meshes=0;api.group.traverse(o=>{if(o.isMesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;meshes++;assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite));}});
- assert.ok(triangles<30000,`${triangles} triangles`);assert.ok(meshes<45,`${meshes} meshes`);assert.ok(api.colliders.length<45);assert.equal(api.group.children.filter(o=>o.isLight).length,0);
+ assert.ok(triangles<30000,`${triangles} triangles`);assert.ok(meshes<=46,`${meshes} meshes`);assert.ok(api.colliders.length<45);assert.equal(api.group.children.filter(o=>o.isLight).length,0);
 });
 test('selected door leaves and train offset are deterministic and preserve closed state on replay',()=>{
  const api=fixture(),doors=[];api.trainGroup.traverse(o=>{if(o.isGroup&&o.name.startsWith('Keihan car'))doors.push(o);});assert.equal(doors.length,2);const before=doors.map(d=>d.position.z);
@@ -97,4 +97,12 @@ test('passenger posters have three distinct purposes and retain one bounded mate
  const api=fixture(),posters=[];api.group.traverse(o=>{if(o.isMesh&&o.material.name==='Keihan passenger information atlas')posters.push(o);});
  assert.equal(posters.length,1);assert.deepEqual(posters[0].material.userData.panels,['Keihan line guide','Platform 2 information','Shrine access']);
  const uv=posters[0].geometry.attributes.uv;assert.ok(uv.count>=18);for(const value of uv.array)assert.ok(value>=0&&value<=1);
+});
+
+test('architectural surface roles isolate the platform deck and walls from the train, roof beams and molded seats',()=>{
+ const api=fixture(),surfaces=[];api.group.traverse(o=>{if(o.isMesh&&o.material.userData.stationSurfaceRole)surfaces.push(o);});
+ assert.equal(surfaces.filter(o=>o.material.userData.stationSurfaceRole==='platform-deck').length,1);
+ const walls=surfaces.filter(o=>o.material.userData.stationSurfaceRole==='platform-wall');assert.equal(walls.length,3);
+ for(const mesh of walls){const p=mesh.geometry.attributes.position;for(let i=0;i<p.count;i++)assert.ok(p.getY(i)<=api.spec.platformFloor+3.101,'canopy beams excluded');}
+ api.trainGroup.traverse(o=>{if(o.isMesh)assert.equal(o.material.userData.stationSurfaceRole,undefined);});
 });

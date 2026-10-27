@@ -95,10 +95,16 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
   function applyStationQuality(){
     materials?.setQuality(quality?.mode);
-    // High brings out the floor and painted panels beneath the existing
-    // ceiling fixtures. Their positions, range and shadow budget stay fixed.
-    stats.practicalIntensity=quality?.mode==='high'||quality?.mode==='ultra'?32:18;
-    for(const light of practicals.children)if(light.isSpotLight)light.intensity=stats.practicalIntensity;
+    station?.fareGateDetail?.setQuality(quality?.mode);
+    // The same three registered fixtures softly wash wall and platform in High.
+    // Static shelter/contact occlusion attenuates indirect fill, preserving sun.
+    const high=quality?.mode==='high'||quality?.mode==='ultra';
+    stats.practicalIntensity=high?64:18;
+    for(const light of practicals.children)if(light.isSpotLight){
+      light.intensity=stats.practicalIntensity;light.color.set(high?'#fff0d8':'#fff1dc');
+      light.position.x=high?-301.25:-302.4;light.target.position.x=high?-299.7:-302.4;
+      light.target.position.y=high?31.6:30.93;light.penumbra=high?1:.8;
+    }
   }
   applyStationQuality();
   const lighting=createWorldLookLighting({scene,hemi,sun});
