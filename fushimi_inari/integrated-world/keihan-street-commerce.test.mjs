@@ -24,9 +24,45 @@ test('four supported machines and three counter groups are batched without light
  const a=fixture(),before=a.colliders.length,r=installKeihanStreetCommerce(a);
  assert.equal(r.built,true);assert.equal(r.machines.length,4);assert.equal(r.detailGroups.length,7);
  assert.equal(r.stats.collidersAdded,2);assert.equal(a.colliders.length,before+2);assert.equal(a.legacy.interactables.length,4);
- assert.ok(r.stats.triangles<22000,JSON.stringify(r.stats));assert.ok(r.stats.drawBatches<=43,JSON.stringify(r.stats));
+ assert.ok(r.stats.triangles<22000,JSON.stringify(r.stats));assert.ok(r.stats.drawBatches<=47,JSON.stringify(r.stats));
  let lights=0;r.group.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite));});assert.equal(lights,0);
  assert.equal(installKeihanStreetCommerce(a),r);assert.equal(a.legacy.interactables.length,4);assert.equal(a.colliders.length,before+2);
+});
+
+test('machine paint, single-pane glass and beveled shells share finishes without changing counter materials',()=>{
+ const a=fixture(),r=installKeihanStreetCommerce(a),paint=new Set(),glass=new Set();
+ for(const machine of r.machines){
+  const color=machine.group.children.find(o=>o.name===machine.spec.id+' · color');
+  const pane=machine.group.children.find(o=>o.name===machine.spec.id+' · glass');
+  assert.ok(color.material.isMeshPhysicalMaterial);assert.ok(pane);paint.add(color.material);glass.add(pane.material);
+  assert.equal(pane.geometry.attributes.position.count,6,'one glazing quad per cabinet');assert.equal(pane.castShadow,false);
+  assert.equal(pane.material.transparent,true);assert.equal(pane.material.depthWrite,false);assert.equal(pane.material.transmission,0);assert.ok(pane.material.opacity<=.10);
+  const n=color.geometry.attributes.normal;
+  assert.ok(Array.from({length:n.count},(_,i)=>i).some(i=>Math.abs(n.getX(i))>.05&&Math.abs(n.getY(i))>.05&&Math.abs(n.getZ(i))>.05),'three-axis corner normals prove a rounded cabinet, rather than another flat box');
+  const p=machine.group.children.find(o=>o.name===machine.spec.id+' · dark').geometry.attributes.position;let slotFront=-Infinity;
+  for(let i=0;i<p.count;i++)if(p.getX(i)>.405&&p.getX(i)<.462&&Math.abs(p.getY(i)-1.122)<.005)slotFront=Math.max(slotFront,p.getZ(i));
+  assert.ok(slotFront>.419,'the coin aperture must remain in front of its moved metal escutcheon');
+ }
+ assert.equal(paint.size,1);assert.equal(glass.size,1);
+ for(const owner of r.detailGroups.filter(g=>g.name.startsWith('Counter details'))){
+  const color=owner.children.find(o=>o.name===owner.name+' · color');assert.equal(Boolean(color.material.isMeshPhysicalMaterial),false);assert.equal(color.material.roughness,.64);
+ }
+ const platform=r.machines.filter(m=>m.spec.existingCollider);assert.equal(platform.length,2);
+ for(const m of platform){const color=new THREE.Color(m.spec.color);assert.ok(color.b>color.r,'photographed platform navy replaces the former red/white placeholder palette');}
+});
+
+test('the display atlas labels four physical drink types instead of painting duplicate product rows',()=>{
+ const previous=Object.getOwnPropertyDescriptor(globalThis,'document'),printed=[];
+ const context=new Proxy({},{get:(_,key)=>key==='fillText'?(value)=>printed.push(value):()=>{},set:()=>true});
+ const canvas={width:0,height:0,getContext:()=>context};globalThis.document={createElement:()=>canvas};
+ try{
+  const assembly={root:new THREE.Group(),colliders:[],legacy:{interactables:[]},keihanStation:{spec:{platformFloor:31}}};
+  const r=installKeihanStreetCommerce(assembly),names=['TEA','H2O','COFFEE','SODA'];
+  assert.deepEqual(printed.filter(v=>names.includes(v)),names,'one original label per drink, reused on the physical containers');
+  assert.equal(r.stats.textureAtlases,1);const maps=new Set();
+  for(const m of r.machines){const print=m.group.children.find(o=>o.name===m.spec.id+' · print');maps.add(print.material.map);assert.ok(print.material.alphaTest>0);}
+  assert.equal(maps.size,1);assert.equal([...maps][0].image.width,1024);assert.equal([...maps][0].image.height,1024);
+ }finally{if(previous)Object.defineProperty(globalThis,'document',previous);else delete globalThis.document;}
 });
 
 test('direct machine interaction dispenses and collects with a live proximity prompt',()=>{
@@ -64,4 +100,18 @@ test('vendor reservations stay behind counters and machine placement requires a 
  const a=fixture(),p=planKeihanCommerce(a);assert.equal(p.vendorStations.length,3);for(const v of p.vendorStations){const s=a.keihanFrontages.storefronts.find(s=>s.id===v.id),base=s.points[s.edge],depth=(v.position[0]-base[0])*s.n[0]+(v.position[2]-base[2])*s.n[1];assert.ok(Math.abs(depth+1.12)<1e-6);assert.equal(v.position[1],s.floor);}
  for(const s of a.keihanFrontages.storefronts)delete s.machineRecess;assert.equal(planKeihanCommerce(a).machines.length,2);
  assert.equal(installKeihanStreetCommerce({root:new THREE.Group()}).built,false);
+});
+
+test('commerce disposal releases its own shared resources once and removes only its interaction and collider owners',()=>{
+ const a=fixture(),existingColliders=[...a.colliders],other=new THREE.Group();a.legacy.interactables.push(other);
+ const r=installKeihanStreetCommerce(a),geometries=new Set(),materials=new Set(),maps=new Set();
+ r.group.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);materials.add(o.material);if(o.material.map)maps.add(o.material.map);}});
+ let releasedGeometry=0,releasedMaterials=0,releasedTextures=0;
+ for(const g of geometries)g.addEventListener('dispose',()=>releasedGeometry++);
+ for(const m of materials)m.addEventListener('dispose',()=>releasedMaterials++);
+ for(const t of maps)t.addEventListener('dispose',()=>releasedTextures++);
+ assert.equal(typeof r.dispose,'function');r.dispose();r.dispose();r.update(new THREE.PerspectiveCamera(),3);
+ assert.equal(r.group.parent,null);assert.equal(a.root.getObjectByName('Keihan commerce r104'),undefined);
+ assert.deepEqual(a.legacy.interactables,[other]);assert.equal(a.colliders.length,existingColliders.length);assert.ok(a.colliders.every((c,i)=>c===existingColliders[i]));
+ assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterials,materials.size);assert.equal(releasedTextures,1);
 });

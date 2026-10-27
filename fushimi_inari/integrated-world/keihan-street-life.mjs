@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=counter-reach-3';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
+import {createVisitorClothTexture,prepareVisitorTemplate} from './visitor-appearance.mjs';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {createVisitorState,stepVisitor} from './visitor-navigation.mjs';
 import {bindVisitorRig,resetVisitorRig,captureVisitorPose,poseVisitorGait} from './visitor-rig.mjs';
@@ -147,15 +148,25 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
  }
  const stats={pedestrians:plan.routes.length,attendants:plan.vendors.length,omitted:plan.omitted,active:0,animated:0,loadedModels:0,assetRequests:0,loadErrors:0,loading:false};
  const loader=new GLTFLoader(),files=['Casual_Male','Casual_Female','Kimono_Female'];
- let loading=null,lastTime=null,lastReport=-Infinity,disposed=false;
+ let loading=null,lastTime=null,lastReport=-Infinity,disposed=false,clothTexture=null;
+ const preparedOwners=new Set(),sources=new Set(),variantsByAsset=new Map();
+ const releaseSource=asset=>{const geometries=new Set(),materials=new Set();asset.scene.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);for(const m of [o.material].flat())materials.add(m);}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();};
  function beginLoading(){
   if(loading||disposed)return loading;
   stats.loading=true;stats.assetRequests=files.length;
-  const templates=files.map(file=>Promise.resolve().then(()=>loadAsset?loadAsset(file):loader.loadAsync(`../assets/models/visitors/${file}.glb`)).catch(error=>({error})));
+  clothTexture=createVisitorClothTexture();
+  const templates=files.map(file=>Promise.resolve().then(()=>loadAsset?loadAsset(file):loader.loadAsync(`../assets/models/visitors/${file}.glb`)).then(asset=>{
+   if(disposed){if(!loadAsset)releaseSource(asset);return null;}
+   if(!loadAsset)sources.add(asset);return asset;
+  }).catch(error=>({error})));
   loading=Promise.all(people.map(async p=>{
    try{
-    const asset=await templates[p.index%files.length];if(disposed)return;if(asset.error)throw asset.error;
-    const model=clone(asset.scene),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=(p.vendor?1.65:p.index%2?1.64:1.76)/size.y;
+    const source=await templates[p.index%files.length];if(disposed||!source)return;if(source.error)throw source.error;
+    let variants=variantsByAsset.get(source);if(!variants){variants=new Map();variantsByAsset.set(source,variants);}
+    // Fixed attendants retain their counter reach; only walkers shorten arms.
+    const armFactor=p.vendor?1:.85;
+    if(!variants.has(armFactor)){const prepared=prepareVisitorTemplate(source,{clothTexture,armFactor});variants.set(armFactor,prepared);preparedOwners.add(prepared);}
+    const asset=variants.get(armFactor),model=clone(asset.scene),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=(p.vendor?1.65:p.index%2?1.64:1.76)/size.y;
     if(!Number.isFinite(scale)||scale<=0)throw Error('Invalid street visitor dimensions');
     model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;p.root.add(model);
     model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
@@ -195,6 +206,11 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
     posePersonGreeting(p.bones,greeting);
    }
    if(time-lastReport>1){lastReport=time;onStats?.({...stats});}
-  },dispose(){disposed=true;owner.removeFromParent();for(const p of people){const targets=assembly.legacy?.interactables,index=targets?.indexOf(p.root);if(index>=0)targets.splice(index,1);p.mixer?.stopAllAction();if(p.model)p.mixer?.uncacheRoot(p.model);} }
+  },dispose(){
+   if(disposed)return;disposed=true;owner.removeFromParent();
+   for(const p of people){const targets=assembly.legacy?.interactables,index=targets?.indexOf(p.root);if(index>=0)targets.splice(index,1);p.mixer?.stopAllAction();if(p.model)p.mixer?.uncacheRoot(p.model);
+    const skeletons=new Set();p.root.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();}
+   for(const prepared of preparedOwners)prepared.dispose();for(const asset of sources)releaseSource(asset);clothTexture?.dispose();
+  }
  };
 }

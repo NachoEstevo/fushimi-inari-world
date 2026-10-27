@@ -2,6 +2,7 @@ import {bindVisitorRig,resetVisitorRig,captureVisitorPose,poseVisitorGait} from 
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
+import {createVisitorClothTexture,prepareVisitorTemplate} from './visitor-appearance.mjs';
 import {planVisitorRoutes,createVisitorState,stepVisitor} from './visitor-navigation.mjs';
 import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=counter-reach-3';
 
@@ -13,8 +14,14 @@ export function installVisitors(assembly){
  });
  document.body.dataset.visitors=JSON.stringify({count:people.length,zones:routes.map(r=>r.zone),mode:'validated paths; pause, stroll and yield',radius:.48});
  const loader=new GLTFLoader(),files=['Casual_Male','Kimono_Female','Casual_Female'];
- const templates=files.map(file=>loader.loadAsync(`../assets/models/visitors/${file}.glb`));
+ const clothTexture=createVisitorClothTexture(),preparedOwners=new Set(),sources=new Set();let disposed=false;
+ const releaseSource=asset=>{const geometries=new Set(),materials=new Set();asset.scene.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);for(const m of [o.material].flat())materials.add(m);}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();};
+ const templates=files.map(file=>loader.loadAsync(`../assets/models/visitors/${file}.glb`).then(asset=>{
+  if(disposed){releaseSource(asset);return null;}
+  sources.add(asset);const prepared=prepareVisitorTemplate(asset,{clothTexture});preparedOwners.add(prepared);return prepared;
+ }));
  const ready=Promise.all(people.map((p,i)=>templates[i%3].then(asset=>{
+  if(disposed||!asset)return;
   const model=clone(asset.scene),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=(i%2?1.64:1.76)/size.y;
   model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;p.root.add(model);
   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
@@ -26,6 +33,7 @@ export function installVisitors(assembly){
  }).catch(error=>console.warn('Visitor asset unavailable',error))));
  let lastTime=null;
  return {update(camera,time){
+  if(disposed)return;
   const dt=lastTime===null?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;
   for(const p of people){
    const s=p.state;p.root.visible=Math.hypot(s.x-camera.position.x,s.z-camera.position.z)<65;if(!p.root.visible||!p.mixer)continue;
@@ -42,5 +50,11 @@ export function installVisitors(assembly){
    if(s.state!=='walk')p.bones.Head?.bone.rotateY(Math.sin(time*.45+people.indexOf(p))*.14);
    posePersonGreeting(p.bones,greeting);
   }
- },count:people.length,people,routes,ready};
+ },count:people.length,people,routes,ready,dispose(){
+  if(disposed)return;disposed=true;
+  for(const p of people){p.mixer?.stopAllAction();if(p.mixer)p.mixer.uncacheRoot(p.mixer.getRoot());const skeletons=new Set();p.root.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();p.root.removeFromParent();}
+  const roots=new Set(people.map(p=>p.root)),interactables=assembly.legacy?.interactables;
+  if(interactables)for(let i=interactables.length-1;i>=0;i--)if(roots.has(interactables[i]))interactables.splice(i,1);
+  for(const prepared of preparedOwners)prepared.dispose();for(const asset of sources)releaseSource(asset);clothTexture.dispose();
+ }};
 }

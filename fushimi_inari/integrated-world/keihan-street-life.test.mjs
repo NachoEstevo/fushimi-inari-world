@@ -1,3 +1,4 @@
+import {prepareVisitorTemplate} from './visitor-appearance.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -68,33 +69,40 @@ test('distance hysteresis avoids flicker and excludes high aerial cameras',()=>{
 });
 
 test('existing skinned assets load only near the street, pause when distant, and yield to the camera',async()=>{
- const a=makeAssembly(),calls=[],plan=planKeihanStreetLife(a,patrol);
+ const a=makeAssembly(),calls=[],sourceMaterials=new Set(),sourceAssets=new Map(),plan=planKeihanStreetLife(a,patrol);
  plan.vendors.push({id:'staff',x:-280,y:2,z:-104,yaw:0});
  const life=installKeihanStreetLife(a,{plan,loadAsset:async name=>{
   calls.push(name);const b=fs.readFileSync(new URL(`../assets/models/visitors/${name}.glb`,import.meta.url));
-  return new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
+  const asset=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
+  asset.scene.traverse(o=>{if(o.isMesh)sourceMaterials.add(o.material);});sourceAssets.set(name,asset);return asset;
  }});
  const camera={position:new THREE.Vector3(300,3.7,300)};
  life.update(camera,0);await life.ready;assert.equal(calls.length,0);assert.equal(life.stats.active,0);
  camera.position.set(-280,3.7,-100);life.update(camera,.1);await life.ready;assert.equal(calls.length,3);assert.equal(life.stats.loadedModels,2);
+ const clothing=[];for(const p of life.people)p.model.traverse(o=>{if(o.isMesh&&o.material.name==='Shirt')clothing.push(o.material);});
+ assert.equal(clothing.length,2);assert.ok(clothing.every(m=>m.userData.visitorCloth));assert.equal(clothing[0].map,clothing[1].map);
  const person=life.people[0];person.state.pause=0;
  camera.position.set(person.state.x,person.state.y+1.7,person.state.z);const old=[person.state.x,person.state.z];
  life.update(camera,.15);assert.equal(person.state.state,'yield');assert.deepEqual([person.state.x,person.state.z],old);
  camera.position.set(-280,3.7,-110);for(let i=0;i<10;i++)life.update(camera,.2+i*.05);
  assert.equal(life.stats.active,2);assert.notDeepEqual([person.state.x,person.state.z],old);
- const vendor=life.people[1];assert.equal(vendor.root.position.y,2.015);assert.equal(vendor.state.z,-104);
+ const vendor=life.people[1];
+ assert.ok(Math.abs(person.model.getObjectByName('LowerArmL').position.length()-sourceAssets.get('Casual_Male').scene.getObjectByName('LowerArmL').position.length()*.85)<1e-6);
+ assert.ok(Math.abs(vendor.model.getObjectByName('LowerArmL').position.length()-sourceAssets.get('Casual_Female').scene.getObjectByName('LowerArmL').position.length())<1e-6,'fixed attendant keeps original counter reach');
+ assert.equal(vendor.root.position.y,2.015);assert.equal(vendor.state.z,-104);
  const time=person.mixer.time;camera.position.set(300,300,300);life.update(camera,5);life.update(camera,8);
  assert.equal(life.stats.active,0);assert.equal(life.stats.animated,0);assert.equal(person.mixer.time,time);assert.equal(calls.length,3);
- life.dispose();assert.equal(life.group.parent,null);life.update(camera,9);assert.equal(person.mixer.time,time);
+ let sourceDisposals=0;for(const m of sourceMaterials)m.addEventListener('dispose',()=>sourceDisposals++);
+ life.dispose();life.dispose();assert.equal(sourceDisposals,0,'loadAsset test seam retains source ownership');assert.equal(life.group.parent,null);life.update(camera,9);assert.equal(person.mixer.time,time);
 });
 
 for(const name of ['Casual_Male','Casual_Female','Kimono_Female'])test(`${name}: vendor hands reach forward above the counter in a rotated shop frame`,async()=>{
  const b=fs.readFileSync(new URL(`../assets/models/visitors/${name}.glb`,import.meta.url));
  const asset=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
- const root=new THREE.Group(),model=asset.scene;root.position.set(-254,31.5,-93);root.rotation.y=2.76;
+ const prepared=prepareVisitorTemplate(asset,{armFactor:1}),root=new THREE.Group(),model=prepared.scene;root.position.set(-254,31.5,-93);root.rotation.y=2.76;
  const bounds=new THREE.Box3().setFromObject(model),scale=1.65/(bounds.max.y-bounds.min.y);
  model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;root.add(model);
- const mixer=new THREE.AnimationMixer(model);mixer.clipAction(asset.animations[0]).play();mixer.update(0);
+ const mixer=new THREE.AnimationMixer(model);mixer.clipAction(prepared.animations[0]).play();mixer.update(0);
  const rig=bindStreetPersonRig(model);let checked=0,minFoot=Infinity;
  for(let time=0;time<9;time+=.25){
   resetVisitorRig(rig);mixer.update(.25);captureVisitorPose(rig);poseStreetVendor(rig,root,time);root.updateMatrixWorld(true);
@@ -114,5 +122,5 @@ for(const name of ['Casual_Male','Casual_Female','Kimono_Female'])test(`${name}:
   });
  }
  assert.ok(checked>100,'Actual skinned forearm/hand vertices must be visibly forward');
- assert.ok(minFoot>-.002&&minFoot<.02,'Serving must preserve the grounded foot pose');
+ assert.ok(minFoot>-.002&&minFoot<.02,'Serving must preserve the grounded foot pose');prepared.dispose();
 });
