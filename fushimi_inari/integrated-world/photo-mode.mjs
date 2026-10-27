@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,allowDebugCamera=false,render=()=>renderer.render(scene,camera)}){
+export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,allowDebugCamera=false,onCaptured,render=()=>renderer.render(scene,camera)}){
   const button=document.createElement('button');button.id='photo-open';button.setAttribute('aria-label','Photo mode');button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Photo mode</span>';document.body.append(button);
   const panel=document.createElement('section');panel.id='photo-panel';panel.hidden=true;panel.setAttribute('aria-label','Photo settings');
   panel.innerHTML=`<div class="menu-heading"><h2>Photo mode</h2><button id="photo-close" aria-label="Close photo mode">×</button></div>
@@ -49,6 +49,7 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
     // 3840 fits the minimum texture limit of both supported graphics backends.
     const max=Math.min(Number($('photo-size').value),3840);
     const width=Math.round(aspect>=1?max:max*aspect),height=Math.round(aspect>=1?max/aspect:max);
+    const captureDetails={position:camera.position.toArray(),direction:camera.getWorldDirection(new THREE.Vector3()).toArray(),width,height};
     try{
       let image;
       try{
@@ -71,6 +72,10 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
       $('photo-result').href=url;$('photo-result').hidden=false;
       link.href=url;link.download=`fushimi-inari-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;link.click();
       $('photo-status').textContent=`Saved ${width} × ${height} PNG`;
+      // Notify only after a real PNG exists; snapshot pose before asynchronous
+      // encoding so later camera changes cannot earn a different photograph.
+      try{const note=onCaptured?.(captureDetails);if(typeof note==='string'&&note)$('photo-status').textContent+=' · '+note;}
+      catch(error){console.warn('Photo capture observer failed',error);}
     }catch(error){$('photo-status').textContent=`Could not save photo: ${error.message}. Try 1920 px.`;}
     finally{busy=false;$('photo-save').disabled=false;}
   }

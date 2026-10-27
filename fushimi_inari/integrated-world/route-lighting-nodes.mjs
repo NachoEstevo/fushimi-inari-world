@@ -22,6 +22,19 @@ export function routeLightPositions(route,ground,spacing=28){
  return result;
 }
 
+// Preserve source ordering on ties, using the caller's fixed three-light slots.
+export function selectNearestRouteEmitters(emitters,position,nearest,distances){
+ nearest.fill(-1);distances.fill(Infinity);
+ for(let i=0;i<emitters.length;i++){
+  const p=emitters[i],d=(p[0]-position.x)**2+(p[1]-position.y)**2+(p[2]-position.z)**2;
+  for(let j=0;j<3;j++)if(nearest[j]<0||d<distances[j]){
+   for(let k=2;k>j;k--){nearest[k]=nearest[k-1];distances[k]=distances[k-1];}
+   nearest[j]=i;distances[j]=d;break;
+  }
+ }
+ return nearest;
+}
+
 export function installRouteLighting(scene,route,ground,{extraRoutes=[],existingLights=[],extraEmitters=[]}={}){
  const positions=routeLightPositions(route,ground);
  for(const extra of extraRoutes)for(const p of routeLightPositions(extra,ground,20))if(positions.every(q=>Math.hypot(p[0]-q[0],p[2]-q[2])>12))positions.push(p);
@@ -45,10 +58,11 @@ export function installRouteLighting(scene,route,ground,{extraRoutes=[],existing
  const halos=new THREE.Sprite(haloMaterial);halos.count=positions.length;
  halos.frustumCulled=false;group.add(halos);
  const lights=Array.from({length:3},()=>{const light=new THREE.PointLight(0xffbc72,0,11,2);scene.add(light);return light;});
+ const nearest=new Int32Array(3),distances=new Float64Array(3);
  let preset=LIGHT_PRESETS.day,elapsed=1;
  return {positions,stats:{markers:positions.length,draws:3,dynamicLights:3,shadows:0},setMode(mode){preset=LIGHT_PRESETS[mode]??LIGHT_PRESETS.day;glowMaterial.color.set(preset.glow?0xffca80:0xb9b6a1);strength.value=preset.glow;halos.visible=preset.glow>0;for(const light of lights)light.intensity=0;elapsed=1;},update(camera,dt){
   if(!preset.power)return;elapsed+=dt;if(elapsed<.25)return;elapsed=0;
-  const nearest=emitters.map(p=>({p,d:(p[0]-camera.position.x)**2+(p[1]-camera.position.y)**2+(p[2]-camera.position.z)**2})).sort((a,b)=>a.d-b.d);
-  lights.forEach((light,i)=>{const entry=nearest[i];light.intensity=entry?preset.power*Math.max(0,Math.min(1,(625-entry.d)/225)):0;if(entry)light.position.fromArray(entry.p);});
+  selectNearestRouteEmitters(emitters,camera.position,nearest,distances);
+  for(let i=0;i<3;i++){const light=lights[i],index=nearest[i];light.intensity=index>=0?preset.power*Math.max(0,Math.min(1,(625-distances[i])/225)):0;if(index>=0)light.position.fromArray(emitters[index]);}
  }};
 }

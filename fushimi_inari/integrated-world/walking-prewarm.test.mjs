@@ -80,6 +80,39 @@ test('a registered root already rendered is skipped in the queue and becomes eli
  f.service.invalidate();f.service.update(new Vector3(),2000);await f.drain();assert.deepEqual(f.calls,[1,2,0,1,2]);assert.equal(f.service.stats.rendered,1);f.service.dispose();
 });
 
+test('markPrepared admits exact registered identities without warming parents, children or unregistered lookalikes',async()=>{
+ for(const preparedId of [10,11]){
+  const parent={id:10},child={id:11,parent},sibling={id:12,parent};parent.children=[child,sibling];
+  const entries=[parent,child,sibling].map(object=>({object,bounds:new Sphere(new Vector3(),1)})),f=fixture({entries});
+  assert.equal(typeof f.service.markPrepared,'function');
+  f.service.update(new Vector3(),0);
+  f.service.markPrepared({id:preparedId});f.service.markPrepared({id:99,parent});
+  f.service.markPrepared(entries.find(entry=>entry.object.id===preparedId).object);
+  await f.drain();assert.deepEqual(f.calls,[10,11,12].filter(id=>id!==preparedId));
+  assert.equal(f.service.stats.prepared,1);assert.equal(f.service.stats.rendered,0);assert.equal(f.service.stats.compiled,2);f.service.dispose();
+ }
+});
+
+test('prepared and rendered marks share generation idempotence while retaining separate counts',async()=>{
+ const entries=Array.from({length:3},(_,id)=>({object:{id},bounds:new Sphere(new Vector3(),1)})),f=fixture({entries});
+ assert.equal(typeof f.service.markPrepared,'function');
+ f.service.markPrepared(entries[0].object);f.service.markPrepared(entries[0].object);f.service.markRendered(entries[0].object);
+ f.service.markRendered(entries[1].object);f.service.markRendered(entries[1].object);f.service.markPrepared(entries[1].object);
+ f.service.update(new Vector3(),0);await f.drain();assert.deepEqual(f.calls,[2]);
+ f.service.markPrepared(entries[2].object);f.service.markRendered(entries[2].object);
+ assert.equal(f.service.stats.prepared,1);assert.equal(f.service.stats.rendered,1);assert.equal(f.service.stats.compiled,1);
+ f.service.invalidate();f.service.update(new Vector3(),1);await f.drain();assert.deepEqual(f.calls,[2,0,1,2]);
+ assert.equal(f.service.stats.prepared,1);assert.equal(f.service.stats.rendered,1);assert.equal(f.service.stats.compiled,4);
+ f.service.dispose();f.service.markPrepared(entries[0].object);assert.equal(f.service.stats.prepared,1);
+});
+
+test('an externally prepared exact object never enters the background compilation queue',async()=>{
+ const object={id:1},f=fixture({entries:[{object,bounds:new Sphere(new Vector3(),1)}]});
+ assert.equal(typeof f.service.markPrepared,'function');f.service.markPrepared(object);f.service.update(new Vector3(),0);
+ assert.equal(f.service.stats.queued,0);assert.equal(f.service.stats.scheduled,false);assert.equal(f.tasks.length,0);
+ await f.drain();assert.deepEqual(f.calls,[]);assert.equal(f.service.stats.compiled,0);assert.equal(f.service.stats.prepared,1);f.service.dispose();
+});
+
 test('blocked tasks stay dormant, in-flight batches cancel before checkpoint and resume without overlap',async()=>{
  let release,context,active=0,maxActive=0;
  const f=fixture({compile:async(object,value)=>{active++;maxActive=Math.max(maxActive,active);context=value;await new Promise(resolve=>release=resolve);active--;}});

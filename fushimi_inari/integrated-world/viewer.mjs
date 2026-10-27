@@ -1,3 +1,5 @@
+import {createWalkingPreparationYield} from './walking-preparation-yield.mjs';
+import {createMappedBuildingFinishes} from './mapped-building-finishes.mjs';
 import {installRendererHealth} from './renderer-health.mjs';
 import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
 import {createWalkingPrewarm} from './walking-prewarm.mjs';
@@ -221,9 +223,18 @@ try {
   let inferredHeightCount=0,omittedShrineProxies=0;
   const includeMappedProxies=query.get('mappedProxies')==='1';
   const omitContext=building=>omitUnverifiedPrecinctProxy(building)||(!includeMappedProxies&&omitUnmodeledShrineProxy(building));
+  const contextRoutes=[assembly.spatial.main,assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.keihanStation?.routePoints,assembly.keihanApproach?.routePoints,assembly.inariStationRoute?.routePoints].filter(route=>route?.length>1);
+  const contextSegments=contextRoutes.flatMap(route=>route.slice(1).map((b,i)=>({a:route[i],b})));
+  const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext});
+  buildingGroup.add(contextFinishes.group);
+  inferredHeightCount=contextFinishes.stats.records.filter(record=>record.heightSource!=='height').length;
+  document.body.dataset.mappedBuildingFinishes=JSON.stringify(contextFinishes.stats);
+  addEventListener('pagehide',event=>{if(!event.persisted)contextFinishes.dispose();});
+
   for(const b of features.buildings){
     if(assembly.excludesBuilding(b)||omitUnverifiedPrecinctProxy(b))continue;
     if(!includeMappedProxies&&omitUnmodeledShrineProxy(b)){omittedShrineProxies++;continue;}
+    if(contextFinishes.detailedIds.has(b.id))continue;
     const ring=b.points.slice(0,-1), contour=ring.map(p=>new THREE.Vector2(p[0],p[2]));
     const sacred=b.tags.building==='shrine'||b.tags.religion==='shinto'||b.tags.amenity==='place_of_worship';
     const heightValue=Number.parseFloat(b.tags.height),levels=Number.parseFloat(b.tags['building:levels']);
@@ -542,7 +553,7 @@ try {
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,onCaptured:details=>journal?.recordPhoto(details)?'Panorama added to your journal.':'',render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -646,7 +657,7 @@ try {
       if(!isCurrent())return;
       await stage('nearby shaders',async()=>{
         const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
-        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights});
+        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:objects=>{renderBuildAudit?.noteCompiled(objects);for(const object of objects)walkingPrewarm?.markPrepared(object);}});
       });
       if(!isCurrent())return;
       if($('buildings').checked&&panoramaVisible(position,false)){
@@ -678,20 +689,28 @@ try {
   }
   const walkingViewDirection=new THREE.Vector3();
   renderBuildAudit?.noteRegistered([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})));
+  const walkingCompileHistory=renderBuildAudit?[]:null;
+  const walkingPreparationYield=createWalkingPreparationYield(),framePacedWalkingPreparation=query.get('prewarmFrameYield')!=='0';
   walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
     compile:async(object,{isCurrent})=>{
       if(!isCurrent())return false;
       const yieldIdle=async()=>{
         if(!isCurrent())throw new Error('Walking preparation paused');
-        await yieldPreparation();
+        // Yield through a completed render opportunity; async shader batches
+        // otherwise have no quota on continuations between visible frames.
+        await (framePacedWalkingPreparation?walkingPreparationYield.yield():yieldPreparation());
         if(!isCurrent())throw new Error('Walking preparation paused');
       };
       // Both near and far variants must be ready before the LOD switches.
       // Explicit roots let scoped compilation borrow dormant levels safely.
       const visuals=object.isLOD?object.levels.map(level=>level.object):[object];
-      await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:renderBuildAudit?objects=>renderBuildAudit.noteCompiled(objects):undefined});
+      const started=renderBuildAudit?performance.now():0;let compilation;
+      await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:renderBuildAudit?objects=>renderBuildAudit.noteCompiled(objects):undefined,report:renderBuildAudit?stats=>{compilation=stats;}:undefined});
+      if(walkingCompileHistory){walkingCompileHistory.push({name:object.name||object.parent?.name||object.type,startTimeMs:started,elapsedMs:performance.now()-started,...compilation});if(walkingCompileHistory.length>40)walkingCompileHistory.shift();document.body.dataset.walkingCompilation=JSON.stringify(walkingCompileHistory);}
       return isCurrent();
     },onError:error=>{document.body.dataset.walkingPrewarmError=String(error);}});
+  const pauseWalkingPreparation=()=>{if(document.hidden){walkingPrewarm.setBlocked(true);walkingPreparationYield.cancel();}};
+  document.addEventListener('visibilitychange',pauseWalkingPreparation);pauseWalkingPreparation();
   let renderingPrewarmFrame=false;
   const prewarmRenderObserver=observePrewarmRenders([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
     {camera,service:walkingPrewarm,isRendering:()=>renderingPrewarmFrame});
@@ -718,7 +737,7 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));

@@ -11,7 +11,7 @@ export function createWalkingPrewarm({entries=[],compile,schedule=scheduleBackgr
  const cells=new Map(),large=new Set(),registered=new Map();let warmed=new WeakMap(),failed=new WeakSet();
  let queue=[],active=null,activeWork=null,scheduled=false,blocked=false,disposed=false,generation=0,token=0,lastPosition=null,lastDirection=null,lastTime=-Infinity,lastSpatialTime=-Infinity,hasMore=false;
  const forward=new Vector3();
- const counts={queries:0,checked:0,compiled:0,rendered:0,cancelled:0,failed:0,skippedBounds:0};
+ const counts={queries:0,checked:0,compiled:0,rendered:0,prepared:0,cancelled:0,failed:0,skippedBounds:0};
  const limit=Math.max(1,Math.floor(maxPending)||8),cell=Math.max(1,cellSize);
  function append(next){
   if(disposed)return;
@@ -87,6 +87,10 @@ export function createWalkingPrewarm({entries=[],compile,schedule=scheduleBackgr
   }
   selected.sort((a,b)=>a.distance-b.distance||a.centerDistance-b.centerDistance);hasMore=selected.length>limit;queue=selected.slice(0,limit).map(item=>item.entry);pump();
  }
+ function markWarmed(object,reason){
+  if(disposed||!registered.has(object)||warmed.get(object)===generation)return;
+  warmed.set(object,generation);counts[reason]++;
+ }
  append(entries);
- return {append,update,setBlocked,markRendered(object){if(disposed||!registered.has(object)||warmed.get(object)===generation)return;warmed.set(object,generation);counts.rendered++;},setRadius(next){if(!Number.isFinite(next)||next<=0)throw new RangeError('Walking prewarm radius must be finite and positive');if(disposed||next===radius)return;radius=next;lastPosition=null;},invalidate(){if(disposed)return;generation++;token++;lastPosition=null;warmed=new WeakMap();failed=new WeakSet();},async awaitIdle(){while(activeWork)await activeWork;},get stats(){return {...counts,registered:registered.size,cells:cells.size,queued:queue.length,active:!!active,scheduled,blocked,generation};},dispose(){disposed=true;token++;queue=[];cells.clear();large.clear();registered.clear();warmed=new WeakMap();failed=new WeakSet();}};
+ return {append,update,setBlocked,markRendered(object){markWarmed(object,'rendered');},markPrepared(object){markWarmed(object,'prepared');},setRadius(next){if(!Number.isFinite(next)||next<=0)throw new RangeError('Walking prewarm radius must be finite and positive');if(disposed||next===radius)return;radius=next;lastPosition=null;},invalidate(){if(disposed)return;generation++;token++;lastPosition=null;warmed=new WeakMap();failed=new WeakSet();},async awaitIdle(){while(activeWork)await activeWork;},get stats(){return {...counts,registered:registered.size,cells:cells.size,queued:queue.length,active:!!active,scheduled,blocked,generation};},dispose(){disposed=true;token++;queue=[];cells.clear();large.clear();registered.clear();warmed=new WeakMap();failed=new WeakSet();}};
 }

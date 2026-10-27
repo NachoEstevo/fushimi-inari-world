@@ -9,7 +9,8 @@ export const JOURNEY_STAMPS=Object.freeze([
 export const JOURNEY_DISCOVERIES=Object.freeze([
   {id:'bell',title:'A gentle ring',hint:'Ring a shrine bell.',note:'A small sound, a moment of stillness.',page:3},
   {id:'water',title:'A moment by the water',hint:'Lift and return a water ladle.',note:'Pause, pour gently, and continue.',page:1},
-  {id:'shrine',title:'A quiet encounter',hint:'Interact with a shrine along the mountain path.',note:'You stopped to notice a place along the way.',page:4}
+  {id:'shrine',title:'A quiet encounter',hint:'Interact with a shrine along the mountain path.',note:'You stopped to notice a place along the way.',page:4},
+  {id:'panorama',title:'A view to remember',hint:'Save a photo looking toward Kyoto from a mountain viewpoint.',note:'A view over Kyoto, saved from your journey.',page:3}
 ]);
 const stampIds=JOURNEY_STAMPS.map(s=>s.id),discoveryIds=JOURNEY_DISCOVERIES.map(d=>d.id);
 const empty=()=>({version:1,stamps:{},discoveries:{}});
@@ -35,6 +36,26 @@ export function availableJournalStamps(state,{position,locations={},blocked=fals
     return (locations[stamp.id]??[]).some(point=>point?.length===3&&point.every(Number.isFinite)&&
       Math.abs(position[1]-point[1]-1.7)<=8&&Math.hypot(position[0]-point[0],position[2]-point[2])<=stamp.radius);
   }).map(s=>s.id);
+}
+
+const finitePoint=value=>Array.isArray(value)&&value.length===3&&value.every(Number.isFinite);
+export function journalStampDistance(id,{position,locations={}}={}){
+  if(!finitePoint(position))return null;
+  let nearest=Infinity;for(const point of locations[id]??[])if(finitePoint(point))nearest=Math.min(nearest,Math.hypot(position[0]-point[0],position[2]-point[2]));
+  return Number.isFinite(nearest)?nearest:null;
+}
+
+// Photo metadata comes only from a successfully created PNG. These are local
+// experience coordinates, not geographic GPS or a claim about the real view.
+export function isJournalPanorama({position,direction,width,height,viewpoints=[]}={}){
+  if(!finitePoint(position)||!finitePoint(direction)||!Number.isSafeInteger(width)||width<=0||!Number.isSafeInteger(height)||height<=0||!Array.isArray(viewpoints))return false;
+  const length=Math.hypot(direction[0],direction[2]);if(length<1e-8)return false;
+  return viewpoints.some(viewpoint=>{
+    const point=viewpoint?.point,target=viewpoint?.target;
+    if(!finitePoint(point)||!finitePoint(target)||Math.abs(position[1]-point[1]-1.7)>8||Math.hypot(position[0]-point[0],position[2]-point[2])>30)return false;
+    const dx=target[0]-point[0],dz=target[2]-point[2],distance=Math.hypot(dx,dz);
+    return distance>1e-8&&(direction[0]*dx+direction[2]*dz)/(length*distance)>.5;
+  });
 }
 
 // Progress and persistence belong here; the viewer only supplies actual position

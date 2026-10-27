@@ -65,3 +65,38 @@ test('distance admission retains a near shaft endpoint until its soft fade is fu
  camera.position.copy(end).addScaledVector(end.clone().sub(top).normalize(),38);effect.update(camera);
  assert.equal(effect.stats.active,1,'near endpoint still contributes despite a centre beyond 48 metres');effect.dispose();
 });
+
+test('stationary shafts upload once across 120 updates and preserve exact moving-camera matrices',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const sites=Array.from({length:24},(_,i)=>({point:[i,0,0],topY:18,width:2}));
+ const effect=createLocalSunShafts({scene,sites});effect.setQuality('high');
+ const initialVersion=effect.mesh.instanceMatrix.version;
+ for(let i=0;i<120;i++){camera.rotation.y+=.01;effect.update(camera);}
+ assert.equal(effect.mesh.instanceMatrix.version-initialVersion,1);
+ assert.equal(effect.stats.active,8);
+ for(const position of [[.000001,2,5],[9,2,-3],[1000,2,1000],[0,2,5]]){
+  camera.position.fromArray(position);effect.update(camera);
+  const reference=createLocalSunShafts({scene,sites});reference.setQuality('high');reference.update(camera);
+  assert.equal(effect.mesh.count,reference.mesh.count);
+  assert.equal(effect.mesh.visible,reference.mesh.visible);
+  assert.deepEqual(effect.mesh.instanceMatrix.array.slice(0,effect.mesh.count*16),reference.mesh.instanceMatrix.array.slice(0,reference.mesh.count*16));
+  reference.dispose();
+ }
+ effect.dispose();
+});
+
+test('mode, quality and invalid-camera transitions invalidate the stationary shaft cache',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const effect=createLocalSunShafts({scene,sites:[{point:[0,0,0],topY:18,width:2}]});effect.setQuality('high');effect.update(camera);
+ const day=Array.from(effect.mesh.instanceMatrix.array),version=effect.mesh.instanceMatrix.version;
+ effect.setMode('gold');effect.update(camera);
+ assert.equal(effect.mesh.instanceMatrix.version,version+1);assert.notDeepEqual(Array.from(effect.mesh.instanceMatrix.array),day);
+ effect.setQuality('balanced');effect.update(camera);assert.equal(effect.mesh.visible,false);assert.equal(effect.mesh.count,0);
+ effect.setQuality('ultra');effect.update(camera);assert.equal(effect.mesh.visible,true);assert.equal(effect.mesh.instanceMatrix.version,version+2);
+ effect.setMode('night');effect.update(camera);assert.equal(effect.mesh.visible,false);
+ effect.setMode('day');effect.update(camera);assert.deepEqual(Array.from(effect.mesh.instanceMatrix.array),day);
+ camera.position.x=NaN;effect.update(camera);assert.equal(effect.mesh.visible,false);
+ camera.position.x=0;effect.update(camera);assert.equal(effect.mesh.visible,true);
+ const restoredVersion=effect.mesh.instanceMatrix.version;effect.update(camera);assert.equal(effect.mesh.instanceMatrix.version,restoredVersion);
+ effect.dispose();
+});

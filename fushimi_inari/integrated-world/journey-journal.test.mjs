@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {JOURNAL_KEY,JOURNEY_STAMPS,createJourneyJournal,journalDiscoveryForInteraction} from './journey-journal.mjs';
+import * as journal from './journey-journal.mjs';
+const {JOURNAL_KEY,JOURNEY_STAMPS,createJourneyJournal,journalDiscoveryForInteraction}=journal;
 
 function fixture(initial=null){
   let raw=initial,writes=0,time=1000;
@@ -80,4 +81,23 @@ test('awards merge other-tab progress before saving and ignore malformed storage
   const combined=JSON.parse(f.raw);assert.ok(combined.stamps.romon&&combined.stamps.okusha);
   f.journal.sync('{');f.journal.sync(JSON.stringify({version:1,stamps:{yotsu:100},discoveries:{water:200}}));
   assert.ok(f.journal.snapshot().stamps.yotsu);assert.equal(f.journal.snapshot().discoveries.water,200);
+});
+
+test('distance guidance uses closest real anchor, stays horizontal and rejects unavailable values',()=>{
+ assert.equal(typeof journal.journalStampDistance,'function');
+ assert.equal(journal.journalStampDistance('departure',{position:[3,100,4],locations:{departure:[[0,0,0],[3,0,5]]}}),1);
+ assert.equal(journal.journalStampDistance('departure',{position:[NaN,1,0],locations:{departure:[[0,0,0]]}}),null);
+ assert.equal(journal.journalStampDistance('other',{position:[0,0,0],locations:{other:[[0,NaN,0]]}}),null);
+});
+
+test('panorama notes require a saved image near a viewpoint looking toward its city target',()=>{
+ assert.equal(typeof journal.isJournalPanorama,'function');
+ const viewpoints=[{point:[100,20,40],target:[-900,60,690]}];
+ const photo={position:[100,21.7,40],direction:[-1000,0,650],width:1920,height:1080,viewpoints};
+ assert.equal(journal.isJournalPanorama(photo),true);
+ for(const change of [{direction:[1000,0,-650]},{direction:[0,1,0]},{position:[131,21.7,40]},{position:[100,31,40]},{position:[NaN,21.7,40]},{width:0},{height:1.5},{viewpoints:[]},{viewpoints:[null]}])assert.equal(journal.isJournalPanorama({...photo,...change}),false);
+ const f=fixture();assert.equal(f.journal.discover('panorama'),false);f.journal.collect('departure',f.at('departure'));assert.equal(f.journal.discover('panorama'),true);
+ const restored=createJourneyJournal({storage:f.storage});assert.ok(restored.snapshot().discoveries.panorama);assert.equal(JSON.parse(f.raw).version,1);
+ const old=fixture(JSON.stringify({version:1,stamps:{departure:1},discoveries:{bell:2,water:3,shrine:4}}));
+ assert.equal(old.journal.discover('panorama'),true);assert.deepEqual(old.journal.snapshot().discoveries,{bell:2,water:3,shrine:4,panorama:1000});
 });
