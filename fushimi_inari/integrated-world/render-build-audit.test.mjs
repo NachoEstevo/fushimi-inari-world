@@ -10,3 +10,7 @@ test('failed node builds remain observable and keep their original error',()=>{
  const failure=Error('shader failed'),backend={createNodeBuilder(){return {build(){throw failure;}};}},original=backend.createNodeBuilder,audit=installRenderBuildAudit(backend,{now:()=>0});
  assert.throws(()=>backend.createNodeBuilder({}).build(),e=>e===failure);assert.equal(audit.stats.count,1);audit.dispose();assert.equal(backend.createNodeBuilder,original);audit.dispose();
 });
+test('completed precompile identity survives a measurement reset and exposes a later rebuild',()=>{
+ const mesh={uuid:'mesh-a',material:{id:7,version:2}},backend={createNodeBuilder(object){return {object,material:object.material,build(){}};}},audit=installRenderBuildAudit(backend,{now:()=>0});
+ audit.noteCompiled([mesh]);audit.reset();backend.createNodeBuilder(mesh).build();assert.equal(audit.stats.buildsAfterPrepared,1);assert.equal(audit.stats.slow[0].objectId,'mesh-a');assert.equal(audit.stats.slow[0].preparedVersion,2);audit.dispose();
+});

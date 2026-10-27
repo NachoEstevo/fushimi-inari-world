@@ -7,7 +7,7 @@ export function compileAddedGroup(renderer,scene,group,camera,{includeHiddenRoot
 
 // Explicitly selected dormant visuals share one collection, scope and batch
 // sequence. A hidden root is eligible; unrelated hidden descendants stay off.
-export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batchSize=12,yieldWork=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)),report=()=>{},includeHiddenRoots=true,collectBatchSize=128,now=()=>performance.now(),reuseRenderScene=false}={}){
+export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batchSize=12,yieldWork=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)),report=()=>{},includeHiddenRoots=true,collectBatchSize=128,now=()=>performance.now(),reuseRenderScene=false,onCompiled}={}){
   // Borrowing is safe only when submission happens before compileAsync yields.
   // The viewer's quality adapter enforces this too; protect direct renderers.
   if(reuseRenderScene&&renderer.hasInitialized?.()===false)throw new Error('Initialize the renderer before borrowing the render scene');
@@ -71,7 +71,7 @@ export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batc
         scope.children=originalChildren;
       }
       maxSubmitMs=Math.max(maxSubmitMs,now()-start);
-      await pending;batches++;report({phase:'compile',objects:leaves.length,batches,maxSubmitMs,maxCollectMs});
+      await pending;onCompiled?.(batch);batches++;report({phase:'compile',objects:leaves.length,batches,maxSubmitMs,maxCollectMs});
     }
   }
   finally{if(!reuseRenderScene)scope.children=[];}

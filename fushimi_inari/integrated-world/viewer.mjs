@@ -24,6 +24,11 @@ import {installShinikeReflections} from './shinike-reflections.mjs?v=repair-2026
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=usability-9';
 import {installJourneyJournal} from './journey-journal-ui.mjs';
+import {observePrewarmRenders} from './prewarm-render-observer.mjs';
+import {createPrewarmFrameBudget} from './prewarm-frame-budget.mjs';
+import {prewarmViewRadius} from './prewarm-view-radius.mjs';
+import {installStaticColorCull} from './static-color-cull.mjs';
+import {collectInstancePrewarmEntries} from './instance-prewarm-entries.mjs';
 import {installWelcomeScreen} from './welcome-screen.mjs?v=welcome-hud-1';
 import {createTrainArrivalExperience,startTrainArrivalAfterWelcome} from './train-arrival-experience.mjs?v=usability-9';
 import {buildStationApproachRoutes,joinKeihanSummitLoop} from './station-approach-routes.mjs?v=complete-route-1';
@@ -86,7 +91,7 @@ try {
   if(query.get('pipelineAudit')==='1'){
     const {installRenderBuildAudit}=await import('./render-build-audit.mjs');
     renderBuildAudit=installRenderBuildAudit(renderer.backend);
-    addEventListener('pagehide',()=>renderBuildAudit.dispose(),{once:true});
+    addEventListener('pagehide',event=>{if(!event.persisted)renderBuildAudit.dispose();});
   }
   renderer.backend.device?.addEventListener('uncapturederror',event=>{document.body.dataset.gpuError=event.error.message;});
   const textureBindings=installRendererTextureBindings(renderer);
@@ -490,6 +495,13 @@ try {
   };$('light').onchange();
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
   const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
+  if(renderBuildAudit){
+    const compile=quality.compileAsync;
+    quality.compileAsync=(...args)=>{
+      renderBuildAudit.setPhase('precompile');
+      try{return compile(...args);}finally{renderBuildAudit.setPhase('render');}
+    };
+  }
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
   // Snapshot only known crown instances; the atlas never scans the scene per frame.
   const leafRegion=new THREE.Box3(new THREE.Vector3(romon.target[0]-180,-100,romon.target[2]-260),new THREE.Vector3(romon.target[0]+360,400,romon.target[2]+180));
@@ -529,6 +541,7 @@ try {
       try{await renderPreparation.run(async()=>{
       walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();
       await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);
+      walkingPrewarm?.setRadius(Math.min(prewarmViewRadius(camera)+24,300));
       leafLight.setEnabled(quality.mode!=='balanced'&&query.get('leafLight')!=='0');document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);
       await appearance.prepare();
       if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4,reuseRenderScene:true});
@@ -632,7 +645,17 @@ try {
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
   $('scene-settings').append(lookLabel,lookSelect);
   lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
-  walkingPrewarm=createWalkingPrewarm({entries:[...preparationBounds].map(([object,bounds])=>({object,bounds})),
+  const walkingPreparationBounds=new Map([...preparationBounds,...assembly.instancePrewarmEntries.map(({object,bounds})=>[object,bounds])]);
+  // Late candle/detail instancing also creates per-object shader variants.
+  // Snapshot admission once; these extra owners are never used for static culling.
+  assembly.root.updateWorldMatrix(true,true);
+  for(const {object,bounds}of collectInstancePrewarmEntries([assembly.root])){
+    let covered=false;for(let parent=object;parent;parent=parent.parent)if(walkingPreparationBounds.has(parent)){covered=true;break;}
+    if(!covered)walkingPreparationBounds.set(object,bounds);
+  }
+  const walkingViewDirection=new THREE.Vector3();
+  renderBuildAudit?.noteRegistered([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})));
+  walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
     compile:async(object,{isCurrent})=>{
       if(!isCurrent())return false;
       const yieldIdle=async()=>{
@@ -640,9 +663,24 @@ try {
         await yieldPreparation();
         if(!isCurrent())throw new Error('Walking preparation paused');
       };
-      await compileSelectedVisuals(quality,scene,[object],camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true});
+      // Both near and far variants must be ready before the LOD switches.
+      // Explicit roots let scoped compilation borrow dormant levels safely.
+      const visuals=object.isLOD?object.levels.map(level=>level.object):[object];
+      await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true,onCompiled:renderBuildAudit?objects=>renderBuildAudit.noteCompiled(objects):undefined});
       return isCurrent();
     },onError:error=>{document.body.dataset.walkingPrewarmError=String(error);}});
+  let renderingPrewarmFrame=false;
+  const prewarmRenderObserver=observePrewarmRenders([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
+    {camera,service:walkingPrewarm,isRendering:()=>renderingPrewarmFrame});
+  addEventListener('pagehide',event=>{if(!event.persisted)prewarmRenderObserver.dispose();});
+  function renderWalkingFrame(){renderingPrewarmFrame=true;try{quality.render();}finally{renderingPrewarmFrame=false;}}
+  if(query.get('prewarmCull')==='1'){
+    const staticCullEntries=[...assembly.staticBatches.meshes.filter(object=>object.children.length===0).map(object=>({object})),...assembly.instancePrewarmEntries,...assembly.forestChunks];
+    const colorCull=installStaticColorCull(renderer,camera,staticCullEntries);
+    const render=quality.render;
+    quality.render=()=>{colorCull.update();render();if(allowFastTravel)document.body.dataset.prewarmColorCull=JSON.stringify(colorCull.stats);};
+    addEventListener('pagehide',event=>{if(!event.persisted)colorCull.dispose();});
+  }
 
   document.getElementById('ambient-volume').addEventListener('input',event=>audio.setRecordedVolume(Number(event.target.value)/100));
   document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
@@ -738,7 +776,7 @@ try {
     const {installShadowRouteAudit}=await import('./shadow-route-audit.mjs');
     shadowRouteAudit=installShadowRouteAudit({camera,assembly,settleDurationMs:liveFlowAudit?0:2000,
       onBegin(){renderBuildAudit?.reset();arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(!liveFlowAudit);},
-      onEnd(){walker.pause(true);walkingPrewarm.setBlocked(!liveFlowAudit);},
+      onEnd(){walker.pause(true);walkingPrewarm.setBlocked(!liveFlowAudit);document.body.dataset.walkingPrewarmAtEnd=JSON.stringify(walkingPrewarm.stats);if(renderBuildAudit)document.body.dataset.renderBuildAuditAtEnd=JSON.stringify(renderBuildAudit.stats);},
       getStats:()=>({calls:renderer.info.render.drawCalls??renderer.info.render.calls,triangles:renderer.info.render.triangles,shadowUpdates:sunShadows.stats.updates}),
       async prepare(views){
         if(liveFlowAudit&&query.get('shadowWarmup')!=='1')return;
@@ -765,6 +803,7 @@ try {
   document.addEventListener('visibilitychange',recordRender.reset);
   lastTime=performance.now();
   let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
+  const prewarmFrameBudget=query.get('prewarmHeadroom')==='1'?createPrewarmFrameBudget():null;
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);
@@ -811,7 +850,8 @@ try {
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
-    walkingPrewarm.update(camera.position,time,{blocked:document.hidden||(!!shadowRouteAudit&&!liveFlowAudit)||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+    camera.getWorldDirection(walkingViewDirection);
+    walkingPrewarm.update(camera.position,time,{direction:walkingViewDirection,blocked:document.hidden||(!!shadowRouteAudit&&!liveFlowAudit)||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
     if(aheadCheckpoint!==document.body.dataset.checkpoint){aheadCheckpoint=document.body.dataset.checkpoint;aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;}
     if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&!journal.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
       const ahead=camera.position.clone().sub(aheadPrefetchPosition);ahead.y=0;
@@ -828,14 +868,18 @@ try {
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
+    if(prewarmFrameBudget){
+      const warmState=walkingPrewarm.stats;
+      if(!prewarmFrameBudget.shouldRender(time,camera,!warmState.blocked&&(warmState.active||warmState.scheduled||warmState.queued>0)))return;
+    }
     const submitStart=performance.now();renderer.info.reset();
     if(shadowCasterPending&&!shadowRouteAudit.active){
       shadowCasterPending=false;sunShadows.invalidate();sunShadows.update(time,camera.position,sunOffset);
-      document.body.dataset.shadowCasterAudit=JSON.stringify(shadowCasterCapture({scene,shadowCamera:sun.shadow.camera,render:()=>quality.render(),label:object=>{
+      document.body.dataset.shadowCasterAudit=JSON.stringify(shadowCasterCapture({scene,shadowCamera:sun.shadow.camera,render:renderWalkingFrame,label:object=>{
         const index=assembly.legacy.foliage.findIndex(source=>source.geometry===object.geometry);
         return index>=0?['forest trunks','sugi crowns','maple crowns','understory','bamboo culms','bamboo leaves'][index]:object.name||object.parent?.name||`geometry ${object.geometry.id}`;
       }}));
-    }else quality.render();
+    }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
     if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);if(renderBuildAudit)document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
@@ -846,7 +890,7 @@ try {
 
   }
   requestAnimationFrame(animate);
-  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();quality.resize();});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();walkingPrewarm.setRadius(Math.min(prewarmViewRadius(camera)+24,300));quality.resize();});
 }catch(error){
   console.error(error);$('loading').textContent=`Could not load geographic data: ${error.message}. Open this page from the local server.`;
 }

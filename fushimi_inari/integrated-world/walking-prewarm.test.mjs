@@ -13,9 +13,71 @@ test('walking queries predicted bounds after movement and cadence; queue is near
  const f=fixture();f.service.update(new Vector3(),0,{direction:new Vector3(1,0,0)});
  assert.equal(f.service.stats.queued,8);assert.equal(f.tasks.length,1);assert.equal(f.service.stats.queries,1);
  await f.drain();assert.deepEqual(f.calls,[0,1,2,3,4,5,6,7]);
- f.service.update(new Vector3(5,0,0),2000);f.service.update(new Vector3(7,0,0),1000);assert.equal(f.service.stats.queries,1);
- f.service.update(new Vector3(7,0,0),2000);await f.drain();assert.equal(f.service.stats.queries,2);assert.equal(new Set(f.calls).size,16);
+ f.service.update(new Vector3(5,0,0),2000);await f.drain();assert.equal(f.service.stats.queries,2);assert.equal(new Set(f.calls).size,16);
+ f.service.update(new Vector3(12,0,0),1000);assert.equal(f.service.stats.queries,2);
+ f.service.update(new Vector3(12,0,0),4000);await f.drain();assert.equal(f.service.stats.queries,3);assert.equal(new Set(f.calls).size,20);
  f.service.dispose();
+});
+
+test('refills exhausted batches at bounded cadence while stationary, then stops querying',async()=>{
+ const f=fixture();const position=new Vector3();f.service.update(position,0,{direction:new Vector3(1,0,0)});await f.drain();
+ f.service.update(position,1499,{direction:new Vector3(1,0,0)});assert.equal(f.service.stats.queries,1);
+ f.service.update(position,1500,{direction:new Vector3(1,0,0)});await f.drain();assert.equal(f.calls.length,16);
+ f.service.update(position,3000,{direction:new Vector3(1,0,0)});await f.drain();assert.equal(f.calls.length,20);
+ f.service.update(position,10000,{direction:new Vector3(1,0,0)});assert.equal(f.service.stats.queries,3);f.service.dispose();
+});
+
+test('configured backlog cadence refills quickly without accelerating movement queries',async()=>{
+ const f=fixture({refillIntervalMs:100});const p=new Vector3(),direction=new Vector3(1,0,0);
+ f.service.update(p,0,{direction});await f.drain();
+ f.service.update(p,99,{direction});assert.equal(f.service.stats.queries,1);
+ f.service.update(p,100,{direction});await f.drain();assert.equal(f.calls.length,16);
+ f.service.update(p,200,{direction});await f.drain();assert.equal(f.calls.length,20);
+ f.service.update(p,300,{direction});assert.equal(f.service.stats.queries,3);
+ f.service.update(new Vector3(7,0,0),500,{direction});assert.equal(f.service.stats.queries,3);
+ f.service.update(new Vector3(7,0,0),1500,{direction});assert.equal(f.service.stats.queries,4);f.service.dispose();
+});
+
+test('a meaningful turn queries new ahead candidates without walking',async()=>{
+ const entries=[{object:{id:1},bounds:new Sphere(new Vector3(40,0,0),1)},{object:{id:2},bounds:new Sphere(new Vector3(-40,0,0),1)}];
+ const f=fixture({entries,radius:10});const p=new Vector3();f.service.update(p,0,{direction:new Vector3(1,0,0)});await f.drain();assert.deepEqual(f.calls,[1]);
+ f.service.update(p,1499,{direction:new Vector3(-1,0,0)});assert.equal(f.service.stats.queries,1);
+ f.service.update(p,1500,{direction:new Vector3(-1,0,0)});await f.drain();assert.deepEqual(f.calls,[1,2]);f.service.dispose();
+});
+
+test('nearby objects behind the camera warm without scanning distant cells',async()=>{
+ const entries=[{object:{id:1},bounds:new Sphere(new Vector3(-60,0,0),1)},{object:{id:2},bounds:new Sphere(new Vector3(40,0,0),1)},{object:{id:3},bounds:new Sphere(new Vector3(-300,0,0),1)}];
+ const f=fixture({entries,maxPending:1});const p=new Vector3();f.service.update(p,0,{direction:new Vector3(1,0,0)});await f.drain();
+ f.service.update(p,1500,{direction:new Vector3(1,0,0)});await f.drain();
+ assert.deepEqual(new Set(f.calls),new Set([1,2]));assert.equal(f.service.stats.checked,3);f.service.dispose();
+});
+
+test('radius updates discover newly covered entries without warming existing ones again',async()=>{
+ const entries=[{object:{id:1},bounds:new Sphere(new Vector3(),1)},{object:{id:2},bounds:new Sphere(new Vector3(-140,0,0),1)}];
+ const f=fixture({entries,lookAhead:0});const p=new Vector3();f.service.update(p,0);await f.drain();assert.deepEqual(f.calls,[1]);
+ f.service.setRadius(174);f.service.update(p,1);await f.drain();assert.deepEqual(f.calls,[1,2]);const queries=f.service.stats.queries;
+ f.service.setRadius(174);f.service.update(p,10000);assert.equal(f.service.stats.queries,queries);
+ for(const value of [0,-1,Infinity,NaN])assert.throws(()=>f.service.setRadius(value),RangeError);f.service.dispose();
+});
+
+test('equal surface distance favors closer bounds centers',async()=>{
+ const entries=[{object:{id:1},bounds:new Sphere(new Vector3(70,0,0),100)},{object:{id:2},bounds:new Sphere(new Vector3(3,0,0),5)}];
+ const f=fixture({entries,lookAhead:0,maxPending:1});f.service.update(new Vector3(),0);await f.drain();assert.deepEqual(f.calls,[2]);
+ f.service.update(new Vector3(),1500);await f.drain();assert.deepEqual(f.calls,[2,1]);f.service.dispose();
+});
+
+test('failed and declined entries do not loop on automatic refills',async()=>{
+ const entries=Array.from({length:10},(_,i)=>({object:{id:i},bounds:new Sphere(new Vector3(i,0,0),1)}));
+ const f=fixture({entries,maxPending:2,refillIntervalMs:100,compile:async o=>{if(o.id===0)throw Error('failed');if(o.id===1)return false;f.calls.push(o.id);}});
+ f.service.update(new Vector3(),0);await f.drain();for(let t=100;t<=1200;t+=100){f.service.update(new Vector3(),t);await f.drain();}
+ assert.equal(f.service.stats.failed,1);assert.equal(f.calls.length,8);assert.equal(f.service.stats.queries,5);f.service.dispose();
+});
+
+test('a registered root already rendered is skipped in the queue and becomes eligible after invalidation',async()=>{
+ const entries=Array.from({length:3},(_,i)=>({object:{id:i},bounds:new Sphere(new Vector3(i,0,0),1)}));
+ const f=fixture({entries});f.service.update(new Vector3(),0);f.service.markRendered(entries[0].object);f.service.markRendered(entries[0].object);f.service.markRendered({id:99});
+ await f.drain();assert.deepEqual(f.calls,[1,2]);assert.equal(f.service.stats.rendered,1);assert.equal(f.service.stats.compiled,2);
+ f.service.invalidate();f.service.update(new Vector3(),2000);await f.drain();assert.deepEqual(f.calls,[1,2,0,1,2]);assert.equal(f.service.stats.rendered,1);f.service.dispose();
 });
 
 test('blocked tasks stay dormant, in-flight batches cancel before checkpoint and resume without overlap',async()=>{

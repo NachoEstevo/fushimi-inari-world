@@ -1,0 +1,212 @@
+{
+  "date": "2026-10-26",
+  "platform": "Windows, Codex IAB, WebGPU",
+  "base_commit": "802d92ff6985d25f18cf3ce01fed4c3784faf9e3",
+  "scope": "Diagnostic comparison; not production fluency acceptance",
+  "settings": {
+    "css_viewport": [
+      1280,
+      720
+    ],
+    "pixel_ratio": 1.5,
+    "quality": "high",
+    "look": "sakura",
+    "sun_shadow_atlas": 2048,
+    "route_seconds": 16,
+    "route_outward_metres": 12,
+    "settling_ms": 0
+  },
+  "same_preparation_poses": true,
+  "preparation_poses": [
+    {
+      "pose": {
+        "position": [
+          1202.983,
+          185.6339279999999,
+          -171.9
+        ],
+        "target": [
+          1203.3335316821017,
+          185.6339279999999,
+          -174.7094627334266
+        ]
+      },
+      "time": 0
+    },
+    {
+      "pose": {
+        "position": [
+          1202.4648979181495,
+          185.6339279999999,
+          -175.20491745802076
+        ],
+        "target": [
+          1202.666676694401,
+          185.6339279999999,
+          -177.2418016089117
+        ]
+      },
+      "time": 2.6666666666666665
+    },
+    {
+      "pose": {
+        "position": [
+          1202.877855157655,
+          185.64998712928252,
+          -178.17279138601563
+        ],
+        "target": [
+          1202.9276818404312,
+          186.125229935995,
+          -181.1541169437167
+        ]
+      },
+      "time": 5.333333333333333
+    },
+    {
+      "pose": {
+        "position": [
+          1202.511349883466,
+          186.35292067764337,
+          -182.06332962599149
+        ],
+        "target": [
+          1202.921463310391,
+          185.6893336773169,
+          -179.1718400980487
+        ]
+      },
+      "time": 8
+    },
+    {
+      "pose": {
+        "position": [
+          1202.877855157655,
+          185.64998712928252,
+          -178.17279138601563
+        ],
+        "target": [
+          1201.649764719499,
+          185.6339279999999,
+          -175.78417234445357
+        ]
+      },
+      "time": 10.666666666666666
+    },
+    {
+      "pose": {
+        "position": [
+          1202.4648979181495,
+          185.6339279999999,
+          -175.20491745802076
+        ],
+        "target": [
+          1203.1922800871876,
+          185.6339279999999,
+          -172.87785573839227
+        ]
+      },
+      "time": 13.333333333333334
+    },
+    {
+      "pose": {
+        "position": [
+          1202.983,
+          185.6339279999999,
+          -171.9
+        ],
+        "target": [
+          1203.3335316821017,
+          185.6339279999999,
+          -174.7094627334266
+        ]
+      },
+      "time": 16
+    }
+  ],
+  "before": {
+    "anticipation_ms": 10321,
+    "fps": 61.16303478608559,
+    "p50_ms": 6.100000000005821,
+    "p95_ms": 30.210000000009305,
+    "p99_ms": 93.5619999999958,
+    "worst_ms": 2181.7999999999884,
+    "frames": 979,
+    "cpu_submit_mean_ms": 12.386823288883264,
+    "builds_observed": 268,
+    "builds_by_phase": {
+      "render": {
+        "count": 268,
+        "ms": 4331.100000031292
+      }
+    },
+    "prewarm": {
+      "active": false,
+      "blocked": false,
+      "cancelled": 0,
+      "cells": 114,
+      "checked": 1714,
+      "compiled": 40,
+      "failed": 0,
+      "generation": 1,
+      "queries": 5,
+      "queued": 0,
+      "registered": 2424,
+      "scheduled": false,
+      "skippedBounds": 0
+    }
+  },
+  "after": {
+    "anticipation_ms": 10340,
+    "flags": [
+      "shadowFlow=live",
+      "pipelineAudit=1",
+      "prewarmHeadroom=1",
+      "prewarmCull=1",
+      "shadowCells=legacy",
+      "shadowFreeze=0"
+    ],
+    "fps": 62.78738504598152,
+    "p50_ms": 12.10000000000582,
+    "p95_ms": 18.29999999998836,
+    "p99_ms": 121.3000000000163,
+    "worst_ms": 1442.5,
+    "frames": 1005,
+    "cpu_submit_mean_ms": 12.831840796034728,
+    "builds_observed": 175,
+    "builds_by_phase": {
+      "precompile": {
+        "count": 19,
+        "ms": 411.40000000596046
+      },
+      "render": {
+        "count": 156,
+        "ms": 3219.39999999851
+      }
+    },
+    "prewarm": {
+      "active": true,
+      "blocked": false,
+      "cancelled": 0,
+      "cells": 114,
+      "checked": 46674,
+      "compiled": 474,
+      "failed": 0,
+      "generation": 1,
+      "queries": 66,
+      "queued": 8,
+      "registered": 3035,
+      "rendered": 283,
+      "scheduled": false,
+      "skippedBounds": 0
+    }
+  },
+  "limits": [
+    "Automatic camera path, not normal WASD or continuous approach",
+    "Node-build observation adds overhead; not a GPU timestamp measurement",
+    "Repeated warm and uninstrumented acceptance not completed before user requested Mac handoff",
+    "p99 worsened in this paired run; no global fluency win claimed",
+    "headroom/cull remain opt-in; defaults were not measured as a combined production performance win",
+    "Raw exploratory files remain only in ignored Windows outputs; this portable summary is committed"
+  ]
+}

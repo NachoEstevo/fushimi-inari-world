@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {compileAddedGroup,compileSelectedVisuals} from './scoped-compilation.mjs';
 
+test('compilation observer receives only batches whose async preparation completed',async()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());scene.add(mesh);const completed=[];
+ await compileSelectedVisuals({compileAsync:async()=>{}},scene,[mesh],camera,{yieldWork:async()=>{},onCompiled:batch=>completed.push(...batch)});
+ assert.deepEqual(completed,[mesh]);
+ await assert.rejects(compileSelectedVisuals({compileAsync:async()=>{throw Error('failed');}},scene,[mesh],camera,{yieldWork:async()=>{},onCompiled:()=>assert.fail('failed batch was reported as prepared')}),/failed/);
+ mesh.geometry.dispose();mesh.material.dispose();
+});
+
 test('one selected scope batches visible and hidden roots together and deduplicates nested visuals',async()=>{
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial();
  const roots=Array.from({length:713},(_,i)=>{const mesh=new THREE.Mesh(geometry,material);mesh.visible=i%3===0;scene.add(mesh);return mesh;});
