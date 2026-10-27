@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {refineNaihaiden,isNaihaidenExposedRafterTriangle} from './naihaiden-refinements.mjs';
+import * as naihaiden from './naihaiden-refinements.mjs';
+const {refineNaihaiden,isNaihaidenExposedRafterTriangle}=naihaiden;
 
 export function loadNaihaidenSource(){
   const data=fs.readFileSync(new URL('./naihaiden.glb',import.meta.url)),length=data.readUInt32LE(12),json=JSON.parse(data.subarray(20,20+length)),bin=data.subarray(28+length);
@@ -14,6 +16,14 @@ export function loadNaihaidenSource(){
   for(const node of json.nodes){if(node.mesh===undefined)continue;assert.ok(!node.matrix&&!node.translation&&!node.rotation&&!node.scale);const p=json.meshes[node.mesh].primitives[0],geo=new THREE.BufferGeometry();for(const [name,i]of Object.entries(p.attributes))geo.setAttribute(({POSITION:'position',NORMAL:'normal',TEXCOORD_0:'uv'})[name]??name,attribute(i));if(p.indices!==undefined)geo.setIndex(attribute(p.indices));const mesh=new THREE.Mesh(geo,mats[p.material]);mesh.name=json.meshes[node.mesh].name;scene.add(mesh);}
   const materials={vermilionMat:mats.find(m=>m.name==='MAT_Vermilion_ShuIro'),goldMat:mats.find(m=>m.name==='MAT_Gold_Kanagu_Leaf')};return {scene,materials};
 }
+
+test('cooperative stages preserve the original GLB buffers and commit only after completing',()=>{
+ const {scene,materials}=loadNaihaidenSource(),original=[...scene.children],work=naihaiden.refineNaihaidenStages?.(scene,materials);assert.ok(work);
+ let step,count=0;do{step=work.next();if(!step.done){count++;assert.match(step.value,/^naihaiden:/);assert.deepEqual(scene.children,original);}}while(!step.done);
+ assert.ok(count>10);assert.equal(step.value.exposedRafterTrianglesRemoved,1728);
+ const h=createHash('sha256');scene.traverse(o=>{if(!o.isMesh)return;h.update(o.name);h.update(o.material.name);for(const [name,a]of Object.entries(o.geometry.attributes)){h.update(name);h.update(new Uint8Array(a.array.buffer,a.array.byteOffset,a.array.byteLength));}if(o.geometry.index){const a=o.geometry.index.array;h.update(new Uint8Array(a.buffer,a.byteOffset,a.byteLength));}});
+ assert.equal(h.digest('hex'),'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2');
+});
 
 test('actual GLB gets one sagging prayer facade while roof, stairs and lanterns retain exact geometry',()=>{
   const {scene,materials}=loadNaihaidenSource(),before=scene.children.filter(m=>!/MAT_Straw_Shimenawa|MAT_White_Shikku_Plaster|MAT_Gold_Kanagu_Leaf|MAT_Vermilion_ShuIro/.test(m.material.name)).map(m=>[m,m.geometry,Array.from(m.geometry.attributes.position.array)]);
@@ -31,4 +41,6 @@ test('actual GLB gets one sagging prayer facade while roof, stairs and lanterns 
 test('future asset without exact rope source signature is not modified',()=>{
   const {scene,materials}=loadNaihaidenSource();scene.children.find(m=>m.material.name==='MAT_Straw_Shimenawa').geometry=new THREE.BoxGeometry(1,1,1);const children=scene.children.length;
   assert.equal(refineNaihaiden(scene,materials),null);assert.equal(scene.children.length,children);
+  const originals=scene.children.map(mesh=>[mesh,mesh.geometry,mesh.parent]),work=naihaiden.refineNaihaidenStages(scene,materials);let step;do{step=work.next();}while(!step.done);
+  assert.equal(step.value,null);assert.equal(scene.children.length,children);for(const [mesh,geometry,parent]of originals){assert.equal(mesh.geometry,geometry);assert.equal(mesh.parent,parent);}
 });

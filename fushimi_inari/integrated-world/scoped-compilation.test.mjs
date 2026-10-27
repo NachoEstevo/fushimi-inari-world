@@ -1,7 +1,40 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {compileAddedGroup,compileSelectedVisuals} from './scoped-compilation.mjs';
+import {compileAddedGroup,compileSelectedVisuals,createCompilationLightIndex} from './scoped-compilation.mjs';
+
+test('cached light discovery is reused across compilations and follows current visibility, layers and membership',async()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),group=new THREE.Group();scene.add(group);
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial()),first=new THREE.PointLight(),second=new THREE.PointLight(),hidden=new THREE.Group();
+ group.add(mesh,first,hidden);hidden.visible=false;hidden.add(second);
+ let scans=0;for(let i=0;i<512;i++){const node=new THREE.Group(),children=node.children;Object.defineProperty(node,'children',{get(){scans++;return children;}});scene.add(node);}
+ const index=createCompilationLightIndex(scene),submitted=[];
+ const renderer={compileAsync(scope){submitted.push(scope.children.filter(object=>object.isLight));return Promise.resolve();}};
+ const run=()=>compileSelectedVisuals(renderer,scene,[mesh],camera,{reuseRenderScene:true,getLights:index.getLights,yieldWork:async()=>{},now:()=>0});
+ await run();const firstScans=scans;await run();assert.equal(scans,firstScans);assert.deepEqual(submitted,[[first],[first]]);
+ hidden.visible=true;first.layers.set(2);await run();assert.deepEqual(submitted.at(-1),[second]);
+ hidden.remove(second);await run();assert.deepEqual(submitted.at(-1),[]);
+ const added=new THREE.PointLight();group.add(added);index.invalidate();first.layers.set(0);await run();assert.deepEqual(submitted.at(-1),[first,added]);
+ assert.ok(scans>firstScans);mesh.geometry.dispose();mesh.material.dispose();
+});
+
+test('invalidating during light discovery discards the incomplete snapshot',async()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),first=new THREE.PointLight(),late=new THREE.PointLight();
+ scene.add(first);for(let i=0;i<5;i++)scene.add(new THREE.Group());
+ const index=createCompilationLightIndex(scene);let changed=false;
+ const found=await index.getLights(camera,{collectBatchSize:2,now:()=>0,yieldWork:async()=>{if(!changed){changed=true;scene.add(late);index.invalidate();}}});
+ assert.deepEqual(found,[first,late]);
+});
+
+test('indexed lights preserve shadow state and scene ownership while backend compilation waits',async()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial()),light=new THREE.DirectionalLight();
+ scene.add(mesh,light);light.shadow.needsUpdate=true;const children=scene.children,lightChildren=light.children;
+ const index=createCompilationLightIndex(scene);let release,entered;const started=new Promise(resolve=>{entered=resolve;});
+ const renderer={compileAsync(scope){assert.deepEqual(scope.children,[mesh,light]);assert.equal(light.shadow.needsUpdate,false);entered();return new Promise(resolve=>{release=resolve;});}};
+ const work=compileSelectedVisuals(renderer,scene,[mesh],camera,{reuseRenderScene:true,getLights:index.getLights,yieldWork:async()=>{}});
+ await started;assert.equal(scene.children,children);assert.equal(light.children,lightChildren);assert.equal(light.parent,scene);assert.equal(light.shadow.needsUpdate,true);
+ release();await work;mesh.geometry.dispose();mesh.material.dispose();
+});
 
 test('compilation observer receives only batches whose async preparation completed',async()=>{
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());scene.add(mesh);const completed=[];

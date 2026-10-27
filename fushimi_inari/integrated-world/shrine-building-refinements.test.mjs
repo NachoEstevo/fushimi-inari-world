@@ -31,10 +31,10 @@ test('task-staged refinements preserve every authored building geometry and diag
    const sync=(await parse()).scene,staged=(await parse()).scene,syncDiagnostics={},asyncDiagnostics={},stages=[];
    refineShrineBuilding(sync,id,materialSet(),{diagnostics:syncDiagnostics});
    let yields=0;
-   assert.equal(await refineShrineBuildingAsync(staged,id,materialSet(),{diagnostics:asyncDiagnostics,yieldWork:async()=>{yields++;},timing:(name,ms)=>{assert.ok(ms>=0);stages.push(name);}}),staged);
+   assert.equal(await refineShrineBuildingAsync(staged,id,materialSet(),{diagnostics:asyncDiagnostics,now:()=>0,yieldWork:async()=>{yields++;},timing:(name,ms)=>{assert.ok(ms>=0);stages.push(name);}}),staged);
    assert.equal(fingerprint(staged),fingerprint(sync),id);
-   assert.deepEqual(asyncDiagnostics,syncDiagnostics,id);assert.equal(yields,stages.length);assert.ok(yields>2);
-   if(id==='romon')assert.ok(stages.includes('romon-wings'));
+   assert.deepEqual(asyncDiagnostics,syncDiagnostics,id);assert.ok(stages.length>2);
+   if(id==='romon'){assert.ok(stages.includes('romon-wings'));assert.ok(yields>0);assert.ok(yields<200,'small geometry slices must share tasks instead of creating thousands of timers');}
   }
  }finally{if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;}
 });

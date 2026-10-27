@@ -16,17 +16,21 @@ export function isNaihaidenExposedRafterTriangle(vertices){
   return stations.some(x=>vertices.every(([px,y,z])=>Math.abs(px-x)<.038&&y>=7.589&&y<=8.191&&((z>=-23.953&&z<=-21.982)||(z>=-30.418&&z<=-28.447))));
 }
 
-function cutTriangles(mesh,accept){
-  const source=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry;
-  const p=source.attributes.position,keep=[];let removed=0;
-  for(let i=0;i<p.count;i+=3){const vertices=[0,1,2].map(j=>[p.getX(i+j),p.getY(i+j),p.getZ(i+j)]);if(accept(vertices))removed++;else keep.push(i,i+1,i+2);}
-  if(!removed){if(source!==mesh.geometry)source.dispose();return {removed:0};}
+function* cutTriangles(mesh,accept){
+  const source=mesh.geometry,p=source.attributes.position,index=source.index,keep=[];let removed=0;
+  const at=i=>index?index.getX(i):i,count=index?.count??p.count;
+  for(let i=0;i<count;i+=3){if(i&&i%1536===0)yield 'naihaiden:filter';const ids=[at(i),at(i+1),at(i+2)],vertices=ids.map(j=>[p.getX(j),p.getY(j),p.getZ(j)]);if(accept(vertices))removed++;else keep.push(...ids);}
+  if(!removed)return {removed:0};
   const geometry=new THREE.BufferGeometry();
-  for(const [name,a]of Object.entries(source.attributes)){const array=new a.array.constructor(keep.length*a.itemSize);for(let i=0;i<keep.length;i++)for(let k=0;k<a.itemSize;k++)array[i*a.itemSize+k]=a.array[keep[i]*a.itemSize+k];geometry.setAttribute(name,new THREE.BufferAttribute(array,a.itemSize,a.normalized));}
-  if(source!==mesh.geometry)source.dispose();geometry.computeBoundingSphere();return {removed,geometry};
+  for(const [name,a]of Object.entries(source.attributes)){const array=new a.array.constructor(keep.length*a.itemSize);for(let i=0;i<keep.length;i++){if(i&&i%512===0)yield 'naihaiden:copy';const offset=a.isInterleavedBufferAttribute?keep[i]*a.data.stride+a.offset:keep[i]*a.itemSize;for(let k=0;k<a.itemSize;k++)array[i*a.itemSize+k]=a.array[offset+k];}geometry.setAttribute(name,new THREE.BufferAttribute(array,a.itemSize,a.normalized));}
+  yield 'naihaiden:bounds';geometry.computeBoundingSphere();yield 'naihaiden:bounds';return {removed,geometry};
 }
 
 export function refineNaihaiden(scene,materials={}){
+  const stages=refineNaihaidenStages(scene,materials);let step;do{step=stages.next();}while(!step.done);return step.value;
+}
+
+export function* refineNaihaidenStages(scene,materials={}){
   if(scene.userData.naihaidenRefinement)return scene.userData.naihaidenRefinement;
   const meshes=[];scene.traverse(o=>{if(o.isMesh)meshes.push(o);});
   const rope=meshes.find(m=>m.material?.name==='MAT_Straw_Shimenawa'),white=meshes.find(m=>m.material?.name==='MAT_White_Shikku_Plaster');
@@ -34,12 +38,12 @@ export function refineNaihaiden(scene,materials={}){
   if(!rope||!white||!roof||rope.geometry.attributes.position.count!==68)return null;
   rope.geometry.computeBoundingBox();const rb=rope.geometry.boundingBox;
   if(Math.abs(rb.min.z+23.77)>.002||Math.abs(rb.max.x-3.8)>.002)return null;
-  const paper=cutTriangles(white,vertices=>vertices.every(([x,y,z])=>Math.abs(x)<=3.14&&y>=6.12&&y<=6.78&&z>=-23.52&&z<=-23.41));
+  const paper=yield* cutTriangles(white,vertices=>vertices.every(([x,y,z])=>Math.abs(x)<=3.14&&y>=6.12&&y<=6.78&&z>=-23.52&&z<=-23.41));
   if(!paper.removed)return null;
   const goldSource=meshes.find(m=>m.material?.name==='MAT_Gold_Kanagu_Leaf');
-  const plaque=goldSource?cutTriangles(goldSource,vertices=>vertices.every(([x,y,z])=>Math.abs(x)<=1.205&&y>=8.605&&y<=9.095&&z>=-22.215&&z<=-21.885)):{removed:0};
+  const plaque=goldSource?yield* cutTriangles(goldSource,vertices=>vertices.every(([x,y,z])=>Math.abs(x)<=1.205&&y>=8.605&&y<=9.095&&z>=-22.215&&z<=-21.885)):{removed:0};
   const redSource=meshes.find(m=>m.material?.name==='MAT_Vermilion_ShuIro');
-  const exposedRafters=redSource?cutTriangles(redSource,isNaihaidenExposedRafterTriangle):{removed:0};
+  const exposedRafters=redSource?yield* cutTriangles(redSource,isNaihaidenExposedRafterTriangle):{removed:0};
   // Sixteen bevelled boxes x108 triangles is the complete production signature.
   // A topology change must not partially strip some other structural member.
   if(exposedRafters.removed!==1728){exposedRafters.geometry?.dispose();exposedRafters.geometry=null;exposedRafters.removed=0;}
@@ -60,18 +64,21 @@ export function refineNaihaiden(scene,materials={}){
     const points=[];for(let i=0;i<=100;i++){const x=-6.55+i*13.1/100;points.push([x,frontY(x)-drop,-21.965]);}
     for(let i=1;i<points.length;i++){
       const a=points[i-1],b=points[i],dx=b[0]-a[0],dy=b[1]-a[1];part(new THREE.BoxGeometry(Math.hypot(dx,dy)+.007,height,.085).rotateZ(Math.atan2(dy,dx)).translate((a[0]+b[0])/2,(a[1]+b[1])/2,a[2]),mat);
+      if(i%16===0)yield 'naihaiden:eave';
     }
+    yield 'naihaiden:eave';
   }
   // Eight receding curved soffit bands provide actual depth below the canopy.
   for(let row=0;row<8;row++){
     const z=-22.12-row*.19,points=[];
     for(let i=0;i<=52;i++){const x=-2.85+i*5.7/52;points.push([x,frontY(x)-.72,z]);}
     tube(points,.045,row%2?pale:red,40);
+    yield 'naihaiden:soffit';
   }
   // Three-ply, shallow-catenary rope, rising into its end ties. No duplicate
   // straight inherited cylinder remains behind it.
   for(let ply=0;ply<3;ply++){
-    const points=[];for(let i=0;i<=140;i++){const x=-4.65+i*9.3/140,a=x*17+ply*Math.PI*2/3;points.push([x,ropeY(x)+Math.sin(a)*.047,-23.38+Math.cos(a)*.047]);}tube(points,.033,straw,220);
+    const points=[];for(let i=0;i<=140;i++){const x=-4.65+i*9.3/140,a=x*17+ply*Math.PI*2/3;points.push([x,ropeY(x)+Math.sin(a)*.047,-23.38+Math.cos(a)*.047]);}yield 'naihaiden:rope';tube(points,.033,straw,220);yield 'naihaiden:rope';
   }
   const paperPositions=[];
   for(let i=0;i<11;i++){
@@ -87,6 +94,7 @@ export function refineNaihaiden(scene,materials={}){
   for(const x of [-4.65,-3.15,-1.58,0,1.58,3.15,4.65]){
     const y=ropeY(x)-.11;
     for(let i=0;i<17;i++){const d=(i-8)*.012;tube([[x+d,y,-23.37],[x+d*1.6,y-.36,-23.35],[x+d*2.0,y-.59,-23.33]],.0035,straw,3);}
+    yield 'naihaiden:tassels';
   }
   // Five discrete rosettes, gold rafter tips and shallow scrolls reflect the
   // photographed vocabulary. Botanical carving is simplified, not exact art.
@@ -95,6 +103,7 @@ export function refineNaihaiden(scene,materials={}){
     part(new THREE.CylinderGeometry(.12,.12,.045,20).rotateX(Math.PI/2).translate(x,y,-21.9),gold);
     for(let petal=0;petal<12;petal++){const a=petal*Math.PI/6;part(new THREE.SphereGeometry(.042,6,4).scale(.75,1.8,.35).rotateZ(a).translate(x+Math.sin(a)*.15,y+Math.cos(a)*.15,-21.87),gold);}
     for(const side of [-1,1])tube([[x+side*.16,y-.13,-21.88],[x+side*.34,y-.18,-21.88],[x+side*.39,y-.03,-21.88],[x+side*.27,y+.02,-21.88]],.019,gold,18);
+    yield 'naihaiden:rosettes';
   }
   for(const x of [-4.8,-2.4,0,2.4,4.8]){
     box(.28,.09,.29,x,7.13,-23.65,gold);
@@ -108,7 +117,7 @@ export function refineNaihaiden(scene,materials={}){
     part(new THREE.SphereGeometry(.11,7,4).scale(1.3,.48,.28).rotateZ(side*(.4+i*.08)).translate(x,y,-23.58),green);
     part(new THREE.SphereGeometry(.055,7,4).scale(1,1,.4).translate(x+side*.08,y+.06,-23.54),pink);
   }
-  for(const [mat,parts]of batches){const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,mat);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}
+  for(const [mat,parts]of batches){yield 'naihaiden:merge';const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,mat);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);yield 'naihaiden:merge';}
   // Commit only after all replacement batches exist. Preserve the original
   // white mesh identity, with every non-paper triangle byte-for-byte retained.
   white.geometry=paper.geometry;rope.removeFromParent();scene.add(group);

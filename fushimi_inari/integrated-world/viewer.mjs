@@ -3,7 +3,7 @@ import {installPrecinctLeafLight,collectPrecinctLeafBounds,collectPrecinctRoofBo
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
 import {omitUnverifiedPrecinctProxy} from './precinct-proxy-policy.mjs';
 import {attachCloudShade} from './cloud-shade.mjs';
-import {compileAddedGroup,compileSelectedVisuals} from './scoped-compilation.mjs';
+import {compileAddedGroup,compileSelectedVisuals,createCompilationLightIndex} from './scoped-compilation.mjs';
 import {createSectorPreparation,createRenderPreparationQueue} from './sector-preparation.mjs';
 import {collectCheckpointVisuals} from './checkpoint-visuals.mjs';
 import {panoramaVisible} from './panorama-policy.mjs';
@@ -85,6 +85,7 @@ try {
   let assembly=null,leafLight=null,walkingPrewarm=null,renderPreparation=null,showcase=null,shadowRouteAudit=null,shadowCasterCapture=null,shadowCasterPending=false;
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
+  const compilationLights=createCompilationLightIndex(scene);
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
   await renderer.init();
   let renderBuildAudit=null;
@@ -112,18 +113,21 @@ try {
   const audio=createAudio();
   loadingStage('Building nearby streets and walking surfaces…');
   assembly=await integrate(scene,renderer,terrain,features,{freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+    compilationLights.invalidate();
     appearance.applyTo(group);
     group.traverse(object=>{for(const material of [object.material].flat())if(material?.userData?.precinctLeafReceiver)leafLight?.attach(material);});
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{reuseRenderScene:true,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
+    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{batchSize:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
     await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
     detailChunks.add(group);preparationResidency.add(group);
     walkingPrewarm?.append([{object:group,bounds:new THREE.Box3().setFromObject(group)}]);
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
   }});
+  // Deferred groups join the world after their detached shader preparation.
+  for(const type of ['childadded','childremoved'])assembly.root.addEventListener(type,compilationLights.invalidate);
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   // r180 preserves an explicitly extended shadow mask. The visitor and
   // reflection cameras stay on layer 0; layer 1 contains shadow-only instances.
@@ -623,7 +627,7 @@ try {
       if(!isCurrent())return;
       await stage('nearby shaders',async()=>{
         const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
-        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true});
+        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights});
       });
       if(!isCurrent())return;
       if($('buildings').checked&&panoramaVisible(position,false)){
@@ -666,7 +670,7 @@ try {
       // Both near and far variants must be ready before the LOD switches.
       // Explicit roots let scoped compilation borrow dormant levels safely.
       const visuals=object.isLOD?object.levels.map(level=>level.object):[object];
-      await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true,onCompiled:renderBuildAudit?objects=>renderBuildAudit.noteCompiled(objects):undefined});
+      await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:1,yieldWork:yieldIdle,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:renderBuildAudit?objects=>renderBuildAudit.noteCompiled(objects):undefined});
       return isCurrent();
     },onError:error=>{document.body.dataset.walkingPrewarmError=String(error);}});
   let renderingPrewarmFrame=false;
@@ -674,8 +678,10 @@ try {
     {camera,service:walkingPrewarm,isRendering:()=>renderingPrewarmFrame});
   addEventListener('pagehide',event=>{if(!event.persisted)prewarmRenderObserver.dispose();});
   function renderWalkingFrame(){renderingPrewarmFrame=true;try{quality.render();}finally{renderingPrewarmFrame=false;}}
-  if(query.get('prewarmCull')==='1'){
-    const staticCullEntries=[...assembly.staticBatches.meshes.filter(object=>object.children.length===0).map(object=>({object})),...assembly.instancePrewarmEntries,...assembly.forestChunks];
+  // Reject only proven static bounds outside a sphere enclosing the full view.
+  // Keep a diagnostic opt-out for visual and frame-time comparisons.
+  if(query.get('prewarmCull')!=='0'){
+    const staticCullEntries=[...assembly.staticBatches.meshes.filter(object=>object.children.length===0).map(object=>({object})),...assembly.instancePrewarmEntries,...assembly.forestChunks,...assembly.staticBoundaryRoots.map(object=>({object}))];
     const colorCull=installStaticColorCull(renderer,camera,staticCullEntries);
     const render=quality.render;
     quality.render=()=>{colorCull.update();render();if(allowFastTravel)document.body.dataset.prewarmColorCull=JSON.stringify(colorCull.stats);};
@@ -799,6 +805,12 @@ try {
   }
   renderer.info.autoReset=false;
   const recordRender=renderStats(renderer);
+  let movementFrameAudit=null;
+  if(query.get('frameAudit')==='1'){
+    const {installMovementFrameAudit}=await import('./movement-frame-audit.mjs');
+    movementFrameAudit=installMovementFrameAudit({camera,getContext:()=>({backend:document.body.dataset.rendererBackend,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,staticCull:query.get('prewarmCull')!=='0',...(renderBuildAudit?{builds:renderBuildAudit.stats}:{})})});
+    addEventListener('pagehide',event=>{if(!event.persisted)movementFrameAudit.dispose();});
+  }
   let horizonAuditAt=0;
   document.addEventListener('visibilitychange',recordRender.reset);
   lastTime=performance.now();
@@ -806,6 +818,7 @@ try {
   const prewarmFrameBudget=query.get('prewarmHeadroom')==='1'?createPrewarmFrameBudget():null;
   function animate(time){
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
+    const updateStart=movementFrameAudit?.active?performance.now():0;
     const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);
     // Audit preparation owns this renderer while awaiting new pipelines. Its
     // callback draws each settled pose; interleaved regular draws can consume
@@ -887,6 +900,7 @@ try {
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs));
 
   }
   requestAnimationFrame(animate);

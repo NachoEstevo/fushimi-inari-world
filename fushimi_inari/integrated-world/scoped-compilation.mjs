@@ -7,7 +7,7 @@ export function compileAddedGroup(renderer,scene,group,camera,{includeHiddenRoot
 
 // Explicitly selected dormant visuals share one collection, scope and batch
 // sequence. A hidden root is eligible; unrelated hidden descendants stay off.
-export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batchSize=12,yieldWork=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)),report=()=>{},includeHiddenRoots=true,collectBatchSize=128,now=()=>performance.now(),reuseRenderScene=false,onCompiled}={}){
+export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batchSize=12,yieldWork=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)),report=()=>{},includeHiddenRoots=true,collectBatchSize=128,now=()=>performance.now(),reuseRenderScene=false,onCompiled,getLights}={}){
   // Borrowing is safe only when submission happens before compileAsync yields.
   // The viewer's quality adapter enforces this too; protect direct renderers.
   if(reuseRenderScene&&renderer.hasInitialized?.()===false)throw new Error('Initialize the renderer before borrowing the render scene');
@@ -28,8 +28,10 @@ export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batc
   if(!leaves.length)return;
   // The renderer keys its light node and render context by scene and camera.
   // Opt in only with the actual render camera to warm the live render cache.
-  const lights=[];
-  if(reuseRenderScene){
+  let lights=[];
+  if(reuseRenderScene&&getLights){
+    lights=await getLights(camera,{yieldWork,collectBatchSize:collectionSize,now});
+  }else if(reuseRenderScene){
     const pending=[scene];let scanned=0,start=now();
     while(pending.length){
       if(++scanned%collectionSize===0||now()-start>=4){await yieldWork();start=now();}
@@ -75,4 +77,29 @@ export async function compileSelectedVisuals(renderer,scene,visuals,camera,{batc
     }
   }
   finally{if(!reuseRenderScene)scope.children=[];}
+}
+
+// Invalidate when lights are added, removed, or reparented. Visibility and
+// layer changes are checked on every use without walking unrelated geometry.
+export function createCompilationLightIndex(scene){
+  let candidates=null,version=0;
+  return {
+    invalidate(){version++;candidates=null;},
+    async getLights(camera,{yieldWork=async()=>{},collectBatchSize=128,now=()=>performance.now()}={}){
+      while(!candidates){
+        const epoch=version,found=[],pending=[scene];let scanned=0,start=now();
+        while(pending.length){
+          if(++scanned%collectBatchSize===0||now()-start>=4){await yieldWork();start=now();}
+          const object=pending.pop();if(object.isLight)found.push(object);
+          for(let i=object.children.length-1;i>=0;i--)pending.push(object.children[i]);
+        }
+        if(epoch===version)candidates=found;
+      }
+      return candidates.filter(light=>{
+        if(!light.layers.test(camera.layers))return false;
+        for(let object=light;object;object=object.parent){if(!object.visible)return false;if(object===scene)return true;}
+        return false;
+      });
+    }
+  };
 }

@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
-import {refineRomonWings} from './romon-wings.mjs';
+import * as wings from './romon-wings.mjs';
+const {refineRomonWings}=wings;
 import {buildRomonCourtSideDetails} from './romon-court-side-details.mjs';
 import {romonWingLayout,isInheritedRomonWingTriangle,isInheritedRomonBarrelTriangle,isInheritedRomonWingRoofFitting,isInheritedRomonWingRoofPoint,romonWingRoofTop} from './romon-wings-layout.mjs';
 
@@ -20,6 +21,23 @@ function sourceFixture(){
  }
  return {scene,materials};
 }
+
+test('cooperative wing stages reproduce all production geometry and statistics exactly',()=>{
+ const sync=sourceFixture(),staged=sourceFixture(),expected=refineRomonWings(sync.scene,sync.materials);
+ assert.equal(typeof wings.refineRomonWingStages,'function');
+ const work=wings.refineRomonWingStages(staged.scene,staged.materials),labels=[];let step;
+ do{step=work.next();if(!step.done)labels.push(step.value);}while(!step.done);
+ assert.deepEqual(step.value,expected);assert.ok(labels.length>10);assert.ok(labels.every(label=>label.startsWith('romon-wings:')));
+ const snapshot=scene=>{const result=[];scene.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;result.push({name:o.name,material:o.material.name,castShadow:o.castShadow,receiveShadow:o.receiveShadow,matrix:o.matrix.elements,attributes:Object.fromEntries(Object.entries(g.attributes).map(([name,a])=>[name,{itemSize:a.itemSize,normalized:a.normalized,array:Array.from(a.array)}])),index:g.index?Array.from(g.index.array):null});});return result;};
+ assert.deepEqual(snapshot(staged.scene),snapshot(sync.scene));
+});
+
+test('cooperative wing stages preserve failure signatures and leave invalid geometry untouched',()=>{
+ const make=()=>{const scene=new THREE.Group(),materials={plasterMat:new THREE.MeshStandardMaterial(),vermilionMat:new THREE.MeshStandardMaterial(),copperRoofMat:new THREE.MeshStandardMaterial()};scene.add(new THREE.Mesh(new THREE.BoxGeometry(),materials.plasterMat));return {scene,materials};};
+ const sync=make(),staged=make(),geometry=staged.scene.children[0].geometry,expected=refineRomonWings(sync.scene,sync.materials);
+ assert.equal(typeof wings.refineRomonWingStages,'function');const work=wings.refineRomonWingStages(staged.scene,staged.materials);let step;do{step=work.next();}while(!step.done);
+ assert.deepEqual(step.value,expected);assert.equal(staged.scene.children.length,1);assert.equal(staged.scene.children[0].geometry,geometry);
+});
 
 test('actual GLB wing filter is bounded and preserves roof, base and central gate triangles',()=>{
  const {scene,materials}=sourceFixture(),roof=scene.children.find(o=>o.material===materials.roofMat),roofBefore=Array.from(roof.geometry.attributes.position.array),normalBefore=Array.from(roof.geometry.attributes.normal.array),unrelated=scene.children.filter(o=>![materials.plasterMat,materials.vermilionMat,materials.copperRoofMat,materials.strawMat,materials.blueMat,materials.goldMat,materials.blackNemakiMat].includes(o.material)&&o.material!==materials.roofMat),snapshots=unrelated.map(o=>[o,o.geometry,Array.from(o.geometry.attributes.position.array)]);

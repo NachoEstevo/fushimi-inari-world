@@ -20,7 +20,7 @@ export function installRenderBuildAudit(backend,{now=()=>performance.now(),limit
      let owner=object;while(owner&&!registered.has(owner))owner=owner.parent;
      const bounds=owner&&registered.get(owner);
      if(wasPrepared)buildsAfterPrepared++;
-     slow.push({ms,phase,objectId:object?.uuid,registered:!!bounds,ownerId:owner?.uuid,boundsDistance:bounds&&this.camera?bounds.distanceToPoint(this.camera.position):null,boundsCenter:bounds?.center?.toArray(),boundsRadius:bounds?.radius,prepared:wasPrepared,preparedVersion:prior?.version,materialVersion:material?.version,shadow:material?.isShadowPassMaterial===true,name:object?.name||object?.parent?.name||object?.type||'node',
+     slow.push({ms,startTimeMs:start,phase,objectId:object?.uuid,registered:!!bounds,ownerId:owner?.uuid,boundsDistance:bounds&&this.camera?bounds.distanceToPoint(this.camera.position):null,boundsCenter:bounds?.center?.toArray(),boundsRadius:bounds?.radius,prepared:wasPrepared,preparedVersion:prior?.version,materialVersion:material?.version,shadow:material?.isShadowPassMaterial===true,name:object?.name||object?.parent?.name||object?.type||'node',
       material:material?.name||material?.type||'',materialId:material?.id,
       geometry:object?.geometry?.type,instances:object?.isInstancedMesh?object.count:1,
       camera:this.camera?.type??'',maps:['map','normalMap','roughnessMap','alphaMap'].filter(key=>material?.[key])});

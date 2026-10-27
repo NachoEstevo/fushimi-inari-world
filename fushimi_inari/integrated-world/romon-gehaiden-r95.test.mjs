@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import * as architectureStages from './romon-gehaiden-r95.mjs';
+import * as roofStages from './romon-gehaiden-roofs-r95.mjs';
 import * as THREE from 'three';
 import {refineRomonGehaidenR95 as refine} from './romon-gehaiden-r95.mjs';
 import {refineGehaiden} from './gehaiden-refinements.mjs';
@@ -81,4 +84,46 @@ test('production bark texture slots retain finite metric UVs across every replac
   }
   assert.ok(plans>2000&&fascias>100);
  }
+});
+
+// Pinned before staging: cover every attribute/index byte, material binding order,
+// hierarchy and report, not merely triangle counts.
+function completionDigest(scene,report){
+ const materials=new Map(),objects=[];
+ scene.traverse(object=>{
+  const material=object.material;
+  if(material&&!materials.has(material))materials.set(material,materials.size);
+  const attribute=a=>({itemSize:a.itemSize,normalized:a.normalized,array:createHash('sha256').update(Buffer.from(a.array.buffer,a.array.byteOffset,a.array.byteLength)).digest('hex')});
+  objects.push({name:object.name,children:object.children.length,castShadow:object.castShadow,receiveShadow:object.receiveShadow,
+   material:material?{binding:materials.get(material),name:material.name,color:material.color?.getHex(),roughness:material.roughness,metalness:material.metalness,side:material.side,map:!!material.map,normalMap:!!material.normalMap,roughnessMap:!!material.roughnessMap}:null,
+   geometry:object.geometry?{attributes:Object.fromEntries(Object.entries(object.geometry.attributes).map(([key,value])=>[key,attribute(value)])),index:object.geometry.index?attribute(object.geometry.index):null}:null});
+ });
+ return createHash('sha256').update(JSON.stringify({objects,report})).digest('hex');
+}
+// Independently reproduced from the four original HEAD 7c18302 modules under
+// each runtime. ConeGeometry emits 12 triangles in r164 and 8 in r180;
+// twelve lantern roofs account for the 48-triangle Gehaiden difference.
+const originalCompletionDigests={
+ '164':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'6d83b1e644c1531a23bbc2d4e8dfc5034e767c9b5fda15f2ca7dff06caf2fc77'},
+ '180':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'d0244071c0650d5b627a13d9a9846e9e6f0e66b4c1dd7f9d3d2497e69cd73a00'}
+};
+for(const zone of ['romon','gehaiden'])test(`${zone}: staged architecture preserves original production buffers and yields bounded work`,()=>{
+ assert.equal(typeof architectureStages.refineRomonGehaidenR95Stages,'function');
+ const expectedDigest=originalCompletionDigests[THREE.REVISION]?.[zone];assert.ok(expectedDigest,`Original production digest required for Three r${THREE.REVISION}`);
+ const scene=fixture(zone);if(zone==='gehaiden')refineGehaiden(scene);
+ const work=architectureStages.refineRomonGehaidenR95Stages(scene,zone),stages=[];let step;
+ do{step=work.next();if(!step.done)stages.push(step.value);}while(!step.done);
+ assert.equal(step.value.built,true);assert.ok(stages.length>20,'production geometry must yield repeatedly');
+ assert.equal(completionDigest(scene,step.value),expectedDigest);
+ const synchronous=fixture(zone);if(zone==='gehaiden')refineGehaiden(synchronous);
+ assert.equal(completionDigest(synchronous,refine(synchronous,zone)),expectedDigest);
+ assert.equal(architectureStages.refineRomonGehaidenR95Stages(scene,zone).next().value,step.value,'idempotent completion returns existing report');
+});
+
+test('staged central roof refuses changed signatures before mutating source geometries',()=>{
+ assert.equal(typeof roofStages.refineCentralIrimoyaR95Stages,'function');
+ const scene=fixture('gehaiden'),roof=scene.children.find(m=>m.material.name.includes('Hiwadabuki')),p=roof.geometry.attributes.position;p.setY(0,p.getY(0)+.02);
+ const snapshots=scene.children.map(mesh=>[mesh,mesh.geometry]),stages=roofStages.refineCentralIrimoyaR95Stages(scene,'gehaiden');let step;
+ do{step=stages.next();}while(!step.done);
+ assert.equal(step.value.built,false);for(const [mesh,geometry]of snapshots)assert.equal(mesh.geometry,geometry);
 });
