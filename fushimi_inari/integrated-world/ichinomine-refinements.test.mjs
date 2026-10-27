@@ -48,7 +48,7 @@ test('only the matched summit lantern pair and six treads receive reversible sto
  assert.notEqual(lamps[0].children[3].geometry,original[0][3].geometry);assert.equal(lamps[0].children[4].material,original[0][4].material);
  assert.equal(lamps[0].children[1].material,lamps[1].children[1].material);assert.equal(steps[0].material.map,f.materials.entryStoneMat.map);
  const g=steps[0].geometry,p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv;assert.notEqual(g,oldSteps[0].geometry);
- for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));const u=ny>=nx&&ny>=nz?p.getX(i):nx>=ny&&nx>=nz?p.getZ(i):p.getX(i);const v=ny>=nx&&ny>=nz?p.getZ(i):p.getY(i);assert.ok(Math.abs(uv.getX(i)-u)<1e-5&&Math.abs(uv.getY(i)-v)<1e-5);}
+ for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));const u=ny>=nx&&ny>=nz?p.getX(i):nx>=ny&&nx>=nz?p.getZ(i):p.getX(i);const v=ny>=nx&&ny>=nz?p.getZ(i):p.getY(i);assert.ok(Math.abs(uv.getX(i)-u*4)<1e-5&&Math.abs(uv.getY(i)-v*4)<1e-5);}
  let disposedSteps=0;for(const step of steps)step.geometry.addEventListener('dispose',()=>disposedSteps++);
  result.dispose();assert.equal(disposedSteps,6);for(let l=0;l<2;l++)for(let i=0;i<7;i++){assert.equal(lamps[l].children[i].geometry,original[l][i].geometry);assert.equal(lamps[l].children[i].material,original[l][i].material);}
  steps.forEach((s,i)=>{assert.equal(s.material,oldSteps[i].material);assert.equal(s.geometry,oldSteps[i].geometry);});assert.equal(sharedDisposed,0);

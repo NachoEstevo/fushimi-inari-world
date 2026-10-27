@@ -29,13 +29,14 @@ function batch(group,parts,material,name){
   geometry.computeBoundingSphere();const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
 }
 
+// A quarter-metre tile keeps the baked mineral clusters at granite grain scale.
 function metricStepGeometry(source){
   const geometry=source.clone(),p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;
   for(let i=0;i<p.count;i++){
     const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));
-    if(ny>=nx&&ny>=nz)uv.setXY(i,p.getX(i),p.getZ(i));
-    else if(nx>=ny&&nx>=nz)uv.setXY(i,p.getZ(i),p.getY(i));
-    else uv.setXY(i,p.getX(i),p.getY(i));
+    if(ny>=nx&&ny>=nz)uv.setXY(i,p.getX(i)*4,p.getZ(i)*4);
+    else if(nx>=ny&&nx>=nz)uv.setXY(i,p.getZ(i)*4,p.getY(i)*4);
+    else uv.setXY(i,p.getX(i)*4,p.getY(i)*4);
   }
   uv.needsUpdate=true;return geometry;
 }
