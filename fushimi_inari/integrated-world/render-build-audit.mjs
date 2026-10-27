@@ -22,6 +22,7 @@ export function installRenderBuildAudit(backend,{now=()=>performance.now(),limit
      if(wasPrepared)buildsAfterPrepared++;
      slow.push({ms,startTimeMs:start,phase,objectId:object?.uuid,registered:!!bounds,ownerId:owner?.uuid,boundsDistance:bounds&&this.camera?bounds.distanceToPoint(this.camera.position):null,boundsCenter:bounds?.center?.toArray(),boundsRadius:bounds?.radius,prepared:wasPrepared,preparedVersion:prior?.version,materialVersion:material?.version,shadow:material?.isShadowPassMaterial===true,name:object?.name||object?.parent?.name||object?.type||'node',
       material:material?.name||material?.type||'',materialId:material?.id,
+      materialColor:material?.color?.getHexString?.(),geometryDetail:object?.geometry?.parameters?.detail,view:this.camera?{position:this.camera.position?.toArray?.(),quaternion:this.camera.quaternion?.toArray?.(),near:this.camera.near,far:this.camera.far,fov:this.camera.fov,aspect:this.camera.aspect}:null,
       geometry:object?.geometry?.type,instances:object?.isInstancedMesh?object.count:1,
       camera:this.camera?.type??'',maps:['map','normalMap','roughnessMap','alphaMap'].filter(key=>material?.[key])});
      slow.sort((a,b)=>b.ms-a.ms);slow.length=Math.min(slow.length,limit);

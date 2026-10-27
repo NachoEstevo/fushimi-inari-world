@@ -13,6 +13,22 @@ function fixture(options={}){
  return {camera:c,audit,document,state:()=>JSON.parse(document.body.dataset.movementFrameAudit),cleanup(){audit.dispose();if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}};
 }
 
+test('measurement start resets diagnostic history once per real recording before capturing context',()=>{
+ let generation=0;const f=fixture({onStart:()=>generation++,getContext:()=>({generation})});try{
+  f.audit.run();assert.equal(generation,1);f.audit.run();assert.equal(generation,1);
+  f.audit.afterRender(0,0);f.audit.afterRender(16000,1);assert.equal(f.state().result.contextStart.generation,1);
+  f.audit.run();assert.equal(generation,2);f.audit.dispose();f.audit.run();assert.equal(generation,2);
+ }finally{f.cleanup();}
+});
+
+test('an explicit bounded long recording keeps monitoring beyond the default sixteen seconds',()=>{
+ const f=fixture({durationMs:60000});try{
+  assert.equal(f.document.body.children[0].children[0].textContent,'Record movement 60s');
+  f.audit.run();f.audit.afterRender(0,0);f.audit.afterRender(16000,1);assert.equal(f.audit.active,true);
+  f.audit.afterRender(60000,2);assert.equal(f.state().result.duration,60);assert.equal(f.state().phase,'complete');
+ }finally{f.cleanup();}
+});
+
 test('records normal movement for sixteen RAF seconds without changing the camera',()=>{
  let context=1;const f=fixture({getContext:()=>({context})});
  try{

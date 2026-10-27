@@ -1,12 +1,14 @@
 import {percentile} from './shadow-route-audit.mjs';
 
-const DURATION_MS=16000,MAX_SAMPLES=10000,MAX_SLOW_FRAMES=20;
+const DEFAULT_DURATION_MS=16000,MAX_SAMPLES=10000,MAX_SLOW_FRAMES=20;
 
 // Opt-in observation only: the caller retains camera, movement and renderer ownership.
-export function installMovementFrameAudit({camera,getContext=()=>({})}){
+export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()=>{},durationMs=DEFAULT_DURATION_MS}){
+ const duration=Number.isFinite(durationMs)?Math.min(120000,Math.max(1000,Math.round(durationMs))):DEFAULT_DURATION_MS;
+ const maxSamples=Math.max(MAX_SAMPLES,Math.ceil(duration/1000*240));
  const doc=globalThis.document,section=doc.createElement('section'),button=doc.createElement('button'),output=doc.createElement('output');
  section.id='movement-frame-audit';section.style&&(section.style.cssText='position:fixed;left:12px;bottom:12px;z-index:10000;display:flex;gap:8px;align-items:center;padding:8px;background:#18201fe8;color:white;font:12px system-ui;max-width:90vw');
- button.type='button';button.textContent='Record movement 16s';section.append(button);section.append(output);doc.body.append(section);
+ button.type='button';button.textContent=`Record movement ${duration/1000}s`;section.append(button);section.append(output);doc.body.append(section);
  let phase='idle',result=null,error=null,disposed=false,startTime=null,lastTime=null,firstPose=null,lastPose=null,contextStart=null;
  let gaps=[],slowFrames=[],slowCpuFrames=[],count=0,updateSum=0,updateMax=0,submitSum=0,submitMax=0,worst=0,distanceWalked=0,angularCumulativeRadians=0;
  function emit(){
@@ -20,7 +22,8 @@ export function installMovementFrameAudit({camera,getContext=()=>({})}){
   if(disposed||phase==='recording')return;
   phase='recording';result=null;error=null;startTime=null;lastTime=null;firstPose=null;lastPose=null;contextStart=null;
   gaps=[];slowFrames=[];slowCpuFrames=[];count=0;updateSum=0;updateMax=0;submitSum=0;submitMax=0;worst=0;distanceWalked=0;angularCumulativeRadians=0;
-  if(doc.hidden){finish('error','Movement recording requires a visible document');return;}emit();
+  if(doc.hidden){finish('error','Movement recording requires a visible document');return;}
+  try{onStart();}catch(reason){finish('error',String(reason.message??reason));return;}emit();
  }
  function afterRender(time,submitMs,updateMs=0){
   if(disposed||phase!=='recording')return;
@@ -36,11 +39,11 @@ export function installMovementFrameAudit({camera,getContext=()=>({})}){
    angularCumulativeRadians+=2*Math.acos(Math.min(1,dot));
    p[0]=x;p[1]=y;p[2]=z;r[0]=q.x;r[1]=q.y;r[2]=q.z;r[3]=q.w;
    lastTime=time;count++;updateSum+=updateMs;updateMax=Math.max(updateMax,updateMs);submitSum+=submitMs;submitMax=Math.max(submitMax,submitMs);worst=Math.max(worst,gap);
-   if(gaps.length<MAX_SAMPLES)gaps.push(gap);
+   if(gaps.length<maxSamples)gaps.push(gap);
    if(slowFrames.length<MAX_SLOW_FRAMES||gap>slowFrames.at(-1).gap){slowFrames.push({elapsedMs,gap,submitMs,updateMs});slowFrames.sort((a,b)=>b.gap-a.gap);if(slowFrames.length>MAX_SLOW_FRAMES)slowFrames.length=MAX_SLOW_FRAMES;}
    if(slowCpuFrames.length<MAX_SLOW_FRAMES||submitMs+updateMs>slowCpuFrames.at(-1).submitMs+slowCpuFrames.at(-1).updateMs){slowCpuFrames.push({elapsedMs,gap,submitMs,updateMs});slowCpuFrames.sort((a,b)=>(b.submitMs+b.updateMs)-(a.submitMs+a.updateMs));if(slowCpuFrames.length>MAX_SLOW_FRAMES)slowCpuFrames.length=MAX_SLOW_FRAMES;}
-   if(elapsedMs>=DURATION_MS){
-    result={duration:DURATION_MS/1000,startTimeMs:startTime,elapsedMs,frameCount:count,sampleCount:gaps.length,samplesTruncated:count>gaps.length,
+   if(elapsedMs>=duration){
+    result={duration:duration/1000,startTimeMs:startTime,elapsedMs,frameCount:count,sampleCount:gaps.length,samplesTruncated:count>gaps.length,
      fps:count*1000/elapsedMs,p50:percentile(gaps,.5),p95:percentile(gaps,.95),p99:percentile(gaps,.99),worst,
      updateSum,updateMean:updateSum/count,updateMax,submitSum,submitMean:submitSum/count,submitMax,
      distanceWalked,angularCumulativeRadians,firstPose,lastPose,slowFrames,slowCpuFrames,contextStart,contextEnd:context(),

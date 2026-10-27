@@ -72,14 +72,8 @@ function finishMaps(kind){
    variation-=plinth*14+streak*4+(seam?4:0)+(belt?3:0);
    relief+=(belt?.045:0)-(seam?.04:0);rough=Math.min(1,rough+plinth*.025);
   }
-  // Anonymous context detail only: no asserted door, shop, sign or religious
-  // architecture. Bay/window proportions are inferred, not surveyed facades.
-  if(kind!=='roof'&&u>.25&&u<.75&&v>.34&&v<.75){
-   const frame=u<.28||u>.72||v<.37||v>.72||Math.abs(u-.5)<.006;
-   const sky=THREE.MathUtils.clamp((v-.37)/.35,0,1);
-   rgb=frame?[153,152,143]:[78+sky*8,89+sky*10,94+sky*14];
-   relief=frame?.73:.43;rough=frame?.78:.34-sky*.04;variation*=.35;
-  }
+  // Unreferenced context is deliberately opaque: no inferred openings,
+  // storefronts or window/storey rhythm is asserted by this finish atlas.
   for(let c=0;c<3;c++)color[i+c]=Math.max(0,Math.min(255,Math.round(rgb[c]+variation)));color[i+3]=255;
   packed[i]=Math.round(relief*255);packed[i+1]=Math.round(rough*255);packed[i+2]=0;packed[i+3]=255;
  }
@@ -99,19 +93,17 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
   const tags=building.tags??{},heightValue=Number.parseFloat(tags.height),levels=Number.parseFloat(tags['building:levels']);
   const height=Number.isFinite(heightValue)?heightValue:Number.isFinite(levels)?levels*3:6;
   const terrain=ring.map(p=>ground(p[0],p[2]));if(!terrain.every(Number.isFinite))continue;
-  const base=Math.min(...terrain),roof=Math.max(...terrain)+height,storeys=Math.max(1,Math.round(height/3));
-  let area=0;for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];area+=a[0]*b[2]-b[0]*a[2];}area=Math.abs(area)/2;
+  const base=Math.min(...terrain),roof=Math.max(...terrain)+height;
   const kind=/wood|timber/i.test(tags['building:material']??'')?'timber':/stone|brick|concrete/i.test(tags['building:material']??'')?'mineral':'plaster';
-  let windowFaces=0;
+  const windowFaces=0;
   for(let i=0;i<ring.length;i++){
    const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
-   const windows=area>6&&length>=2,bays=Math.max(1,Math.round(length/3));if(windows)windowFaces++;
-   const u0=windows?0:.04,u1=windows?bays:.20;
-   const corners=[[a[0],base,a[2]],[b[0],base,b[2]],[b[0],roof,b[2]],[a[0],roof,a[2]]],uv=[[u0,0],[u1,0],[u1,storeys],[u0,storeys]];
+   const u0=0,u1=length/3,vertical=(roof-base)/3;
+   const corners=[[a[0],base,a[2]],[b[0],base,b[2]],[b[0],roof,b[2]],[a[0],roof,a[2]]],uv=[[u0,0],[u1,0],[u1,vertical],[u0,vertical]];
    for(const j of [0,1,2,0,2,3])append(kind,corners[j],uv[j]);
   }
   for(const tri of THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(p[0],p[2])),[]))for(const j of tri)append('roof',[ring[j][0],roof,ring[j][2]],[ring[j][0]/3,ring[j][2]/3]);
-  detailedIds.add(building.id);records.push({id:building.id,distance,height,heightSource:Number.isFinite(heightValue)?'height':Number.isFinite(levels)?'levels':'inferred',base,roof,bounds,material:kind,windowFaces,inferredFacade:true});
+  detailedIds.add(building.id);records.push({id:building.id,distance,height,heightSource:Number.isFinite(heightValue)?'height':Number.isFinite(levels)?'levels':'inferred',base,roof,bounds,material:kind,windowFaces,inferredFacade:false,opaqueOnly:true});
  }
  for(const [kind,{vertices,uv}]of buckets){
   const textures=finishMaps(kind);for(const t of Object.values(textures))maps.add(t);
@@ -119,6 +111,6 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
   const chunks=spatialMeshes(geometry,material,256);geometry.dispose();for(const mesh of chunks.children){mesh.receiveShadow=false;geometries.push(mesh.geometry);}group.add(chunks);
  }
- const stats={buildings:detailedIds.size,records,maxBuildings,maxPerCell,maxDistance,materials:materials.size,textures:maps.size,textureBytes:[...maps].reduce((n,t)=>n+t.image.data.byteLength,0),batches:geometries.length,triangles:geometries.reduce((n,g)=>n+g.attributes.position.count/3,0),extraLights:0,perFrameWork:false,buildMs:performance.now()-started,provenance:'OSM footprint and existing extrusion heights; anonymous inferred facade finishes only; no new architectural identity or collision'};
+ const stats={buildings:detailedIds.size,records,maxBuildings,maxPerCell,maxDistance,materials:materials.size,textures:maps.size,textureBytes:[...maps].reduce((n,t)=>n+t.image.data.byteLength,0),batches:geometries.length,triangles:geometries.reduce((n,g)=>n+g.attributes.position.count/3,0),extraLights:0,perFrameWork:false,buildMs:performance.now()-started,provenance:'OSM footprint and existing extrusion heights; opaque contextual surface finishes only; no inferred openings or new architectural identity or collision'};
  let disposed=false;return {group,detailedIds,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();for(const m of materials.values())m.dispose();for(const t of maps)t.dispose();}};
 }

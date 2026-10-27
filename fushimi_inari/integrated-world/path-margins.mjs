@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {partitionInstances} from './spatial-mesh.mjs';
 
 // Inferred understory and embedded rocks; never alter mapped path clearance.
-export function buildPathMargins(root,network,ground,features,anchors){
+export function buildPathMargins(root,network,ground,features,anchors,{onStaticRoot=()=>{}}={}){
   const blocked=features.buildings.concat(features.water).map(f=>({
     x0:Math.min(...f.points.map(p=>p[0]))-.4,x1:Math.max(...f.points.map(p=>p[0]))+.4,
     z0:Math.min(...f.points.map(p=>p[2]))-.4,z1:Math.max(...f.points.map(p=>p[2]))+.4,
@@ -37,9 +37,12 @@ export function buildPathMargins(root,network,ground,features,anchors){
   const foliage=new THREE.BufferGeometry();foliage.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));foliage.computeVertexNormals();
   const add=(geometry,material,matrices)=>{
     if(!matrices.length)return;const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);
-    matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.receiveShadow=true;root.add(partitionInstances(mesh,128));
+    matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.receiveShadow=true;
+    const chunks=partitionInstances(mesh,128);root.add(chunks);onStaticRoot(chunks);
   };
-  add(new THREE.IcosahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:'#737269',roughness:1}),stones);
-  add(foliage,new THREE.MeshStandardMaterial({color:'#526342',roughness:1,side:THREE.DoubleSide}),plants);
+  const rockMaterial=new THREE.MeshStandardMaterial({color:'#737269',roughness:1}),fernMaterial=new THREE.MeshStandardMaterial({color:'#526342',roughness:1,side:THREE.DoubleSide});
+  rockMaterial.name='Path margin embedded rocks';fernMaterial.name='Path margin fern clumps';
+  add(new THREE.IcosahedronGeometry(1,1),rockMaterial,stones);
+  add(foliage,fernMaterial,plants);
   return {rocks:stones.length,fernClumps:plants.length,placement:'inferred, outside mapped paths'};
 }

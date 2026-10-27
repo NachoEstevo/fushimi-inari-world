@@ -40,7 +40,7 @@ test('cell quotas spread detail across the real route and tiny envelopes never c
  assert.equal([...result.detailedIds].filter(id=>id.startsWith('station')).length,3);result.dispose();
  const tiny=building('tiny');tiny.points=[[0,0,0],[1.5,0,0],[1.5,0,2],[0,0,2],[0,0,0]];
  const small=createMappedBuildingFinishes(options([tiny]));assert.equal(small.stats.records[0].windowFaces,0);
- small.group.traverse(o=>{if(!o.isMesh||o.material.name.endsWith('roof'))return;const uv=o.geometry.attributes.uv;for(let i=0;i<uv.count;i++)assert.ok(uv.getX(i)<.25,'opaque atlas region stays outside window panel');});small.dispose();
+ small.group.traverse(o=>{if(!o.isMesh||o.material.name.endsWith('roof'))return;const uv=o.geometry.attributes.uv;for(let i=0;i<uv.count;i++)assert.ok(Number.isFinite(uv.getX(i)));});assert.equal(small.stats.records[0].opaqueOnly,true);small.dispose();
 });
 
 test('no nearby candidates allocate no geometry or GPU texture owners',()=>{
@@ -48,15 +48,16 @@ test('no nearby candidates allocate no geometry or GPU texture owners',()=>{
  assert.equal(result.detailedIds.size,0);assert.equal(result.stats.materials,0);assert.equal(result.stats.textures,0);assert.equal(result.stats.batches,0);result.dispose();
 });
 
-test('context texture shows restrained plaster panels, sky-tinted panes and subtle roof seams',()=>{
+test('unreferenced context stays opaque with restrained plaster panels and subtle roof seams',()=>{
  const result=createMappedBuildingFinishes(options([building('finish')]));
  const materials=new Map();result.group.traverse(o=>{if(o.isMesh)materials.set(o.material.name,o.material);});
  const wall=materials.get('Mapped context plaster'),roof=materials.get('Mapped context roof');
  const pixel=(m,u,v)=>{const i=(Math.floor(v*256)*256+Math.floor(u*256))*4;return Array.from(m.map.image.data.slice(i,i+3));};
  const mean=(m,x0,x1,y)=>{let sum=0;for(let x=x0;x<x1;x++)sum+=pixel(m,x/256,y/256)[0];return sum/(x1-x0);};
  assert.ok(mean(wall,12,55,60)-mean(wall,12,55,8)>4,'plinth wear stays visible across broad surfaces');
- const low=pixel(wall,.4,.40),high=pixel(wall,.4,.68);
- assert.ok(high[2]>low[2]+4,'upper pane carries a soft cool sky gradient');
+ assert.equal(result.stats.records[0].windowFaces,0);assert.equal(result.stats.records[0].opaqueOnly,true);
+ const packed=wall.roughnessMap.image.data;for(let i=0;i<packed.length;i+=4)assert.ok(packed[i+1]>200,'no low-roughness invented glass panes');
+ assert.ok(pixel(wall,.4,.5)[0]>160,'former window area remains opaque plaster');
  assert.ok(Math.abs(mean(roof,1,2,30)-mean(roof,8,16,30))>2,'roof seam differs subtly from broad sheet');
  assert.equal(result.stats.textures,4);assert.equal(result.stats.textureBytes,1048576);result.dispose();
 });

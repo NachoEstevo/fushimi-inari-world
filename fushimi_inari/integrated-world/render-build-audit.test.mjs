@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {installRenderBuildAudit} from './render-build-audit.mjs';
+test('build attribution snapshots the actual view and material rather than mutable camera references',()=>{
+ const camera={position:{toArray:()=>[1,2,3]},quaternion:{toArray:()=>[0,0,0,1]},far:200,near:.2,fov:45,aspect:2},object={geometry:{type:'IcosahedronGeometry',parameters:{detail:1}},material:{color:{getHexString:()=> '737269'}}};
+ const backend={createNodeBuilder(){return {object,camera,build(){}};}},audit=installRenderBuildAudit(backend,{now:()=>0});
+ backend.createNodeBuilder(object).build();camera.far=12000;const record=audit.stats.slow[0];assert.equal(record.view.far,200);assert.equal(record.view.aspect,2);assert.deepEqual(record.view.position,[1,2,3]);assert.equal(record.materialColor,'737269');assert.equal(record.geometryDetail,1);audit.dispose();
+});
 test('build audit preserves receiver, result and arguments while bounding records and restoring ownership',()=>{
  let time=0;const proto={createNodeBuilder(object){assert.equal(this,backend);return {object,build(n){assert.equal(this.object,object);time+=n;return n*2;}};}},backend=Object.create(proto),audit=installRenderBuildAudit(backend,{now:()=>time,limit:2});
  for(const n of [3,12,8])assert.equal(backend.createNodeBuilder({name:`mesh ${n}`,material:{type:'NodeMaterial'}}).build(n),n*2);

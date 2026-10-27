@@ -1,4 +1,7 @@
+import {installStaticInstanceBufferNames} from './static-instance-buffer-names.mjs';
+import {padStaticInstanceMatrices} from './static-instance-capacity.mjs';
 import {createWalkingPreparationYield} from './walking-preparation-yield.mjs';
+import {createSuehiroyaSummit} from './suehiroya-summit.mjs';
 import {createMappedBuildingFinishes} from './mapped-building-finishes.mjs';
 import {installRendererHealth} from './renderer-health.mjs';
 import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
@@ -81,6 +84,7 @@ function loadingStage(message){
   document.body.dataset.loadingStages=JSON.stringify(loadingStages);
 }
 try {
+  document.body.dataset.bootPhase='geography';
   const [terrain,features,manifest]=await Promise.all(['terrain','features','manifest'].map(async name=>{
     const response=await fetch(`../geography/${name}.json`);if(!response.ok)throw new Error(`${name}: HTTP ${response.status}`);return response.json();
   }));
@@ -91,8 +95,13 @@ try {
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   const compilationLights=createCompilationLightIndex(scene);
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
+  document.body.dataset.bootPhase='graphics device';
   await renderer.init();
-  let renderBuildAudit=null,rendererHealth=null;
+  document.body.dataset.bootPhase='scene';
+  const staticShaderOwners=new WeakSet();
+  const instanceCapacityEnabled=query.get('pipelineAudit')!=='1'||query.get('instanceCapacity')!=='0';
+  const instanceBufferNames=instanceCapacityEnabled?installStaticInstanceBufferNames(renderer.backend,{objects:staticShaderOwners}):null;
+  let renderBuildAudit=null,rendererHealth=null,frameStallAudit=null,backendWorkAudit=null,frameSchedulingAudit=null;
   rendererHealth=installRendererHealth({renderer,audit:query.get('gpuAudit')==='1',getContext:()=>({
     quality:document.body.dataset.renderQuality,timeOfDay:$('light').value,camera:document.body.dataset.camera?.split(',').map(Number),
     prewarm:walkingPrewarm?.stats,textures:textureStreaming.stats,shafts:document.body.dataset.sunShafts,pipelineReadiness:document.body.dataset.pipelineReadiness
@@ -101,8 +110,13 @@ try {
   if(query.get('pipelineAudit')==='1'){
     const {installRenderBuildAudit}=await import('./render-build-audit.mjs');
     renderBuildAudit=installRenderBuildAudit(renderer.backend);
+    const [{installFrameStallAudit},{installBackendWorkAudit}]=await Promise.all([import('./frame-stall-audit.mjs'),import('./backend-work-audit.mjs')]);
+    const {installFrameSchedulingAudit}=await import('./frame-scheduling-audit.mjs');
+    frameStallAudit=installFrameStallAudit();backendWorkAudit=installBackendWorkAudit(renderer.backend,{limit:1000});frameSchedulingAudit=installFrameSchedulingAudit();
+    addEventListener('pagehide',event=>{if(!event.persisted){frameStallAudit.dispose();backendWorkAudit.dispose();frameSchedulingAudit.dispose();}});
     addEventListener('pagehide',event=>{if(!event.persisted)renderBuildAudit.dispose();});
   }
+  addEventListener('pagehide',event=>{if(!event.persisted)instanceBufferNames?.dispose();});
   renderer.backend.device?.addEventListener('uncapturederror',event=>{document.body.dataset.gpuError=event.error.message;});
   const textureBindings=installRendererTextureBindings(renderer);
   document.body.dataset.rendererBackend=renderer.backend.isWebGPUBackend?'webgpu':'webgl2';
@@ -121,7 +135,7 @@ try {
   const sun=new THREE.DirectionalLight(0xffebcd,2.3);sun.position.set(-800,1400,-600);scene.add(sun);
   const audio=createAudio();
   loadingStage('Building nearby streets and walking surfaces…');
-  assembly=await integrate(scene,renderer,terrain,features,{freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+  assembly=await integrate(scene,renderer,terrain,features,{cullPathMargins:query.get('pipelineAudit')!=='1'||query.get('marginCull')!=='0',freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
     compilationLights.invalidate();
     appearance.applyTo(group);
     group.traverse(object=>{for(const material of [object.material].flat())if(material?.userData?.precinctLeafReceiver)leafLight?.attach(material);});
@@ -222,7 +236,11 @@ try {
   const buildings={ordinary:[],sacred:[]};
   let inferredHeightCount=0,omittedShrineProxies=0;
   const includeMappedProxies=query.get('mappedProxies')==='1';
-  const omitContext=building=>omitUnverifiedPrecinctProxy(building)||(!includeMappedProxies&&omitUnmodeledShrineProxy(building));
+  const summitShop=createSuehiroyaSummit({buildings:features.buildings,ground,walkHeight:assembly.walkHeight,materials:assembly.legacy.materials});
+  buildingGroup.add(summitShop.group);
+  document.body.dataset.suehiroyaSummit=JSON.stringify(summitShop.stats);
+  addEventListener('pagehide',event=>{if(!event.persisted)summitShop.dispose();});
+  const omitContext=building=>summitShop.builtIds.has(building.id)||omitUnverifiedPrecinctProxy(building)||(!includeMappedProxies&&omitUnmodeledShrineProxy(building));
   const contextRoutes=[assembly.spatial.main,assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.keihanStation?.routePoints,assembly.keihanApproach?.routePoints,assembly.inariStationRoute?.routePoints].filter(route=>route?.length>1);
   const contextSegments=contextRoutes.flatMap(route=>route.slice(1).map((b,i)=>({a:route[i],b})));
   const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext});
@@ -232,7 +250,7 @@ try {
   addEventListener('pagehide',event=>{if(!event.persisted)contextFinishes.dispose();});
 
   for(const b of features.buildings){
-    if(assembly.excludesBuilding(b)||omitUnverifiedPrecinctProxy(b))continue;
+    if(summitShop.builtIds.has(b.id)||assembly.excludesBuilding(b)||omitUnverifiedPrecinctProxy(b))continue;
     if(!includeMappedProxies&&omitUnmodeledShrineProxy(b)){omittedShrineProxies++;continue;}
     if(contextFinishes.detailedIds.has(b.id))continue;
     const ring=b.points.slice(0,-1), contour=ring.map(p=>new THREE.Vector2(p[0],p[2]));
@@ -526,8 +544,8 @@ try {
   if(renderBuildAudit){
     const compile=quality.compileAsync;
     quality.compileAsync=(...args)=>{
-      renderBuildAudit.setPhase('precompile');
-      try{return compile(...args);}finally{renderBuildAudit.setPhase('render');}
+      renderBuildAudit.setPhase('precompile');backendWorkAudit?.setPhase('precompile');
+      try{return compile(...args);}finally{renderBuildAudit.setPhase('render');backendWorkAudit?.setPhase('render');}
     };
   }
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
@@ -657,7 +675,7 @@ try {
       if(!isCurrent())return;
       await stage('nearby shaders',async()=>{
         const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
-        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:objects=>{renderBuildAudit?.noteCompiled(objects);for(const object of objects)walkingPrewarm?.markPrepared(object);}});
+        await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:objects=>{renderBuildAudit?.noteCompiled(objects);if(query.get('pipelineAudit')!=='1'||query.get('prewarmPrepared')!=='0')for(const object of objects)walkingPrewarm?.markPrepared(object);}});
       });
       if(!isCurrent())return;
       if($('buildings').checked&&panoramaVisible(position,false)){
@@ -679,6 +697,9 @@ try {
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="dreamcore">Dreamcore · soft highlights</option>';
   $('scene-settings').append(lookLabel,lookSelect);
   lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
+  // Stable matrix-buffer capacities share r180 shaders across static cells.
+  const instanceCapacity=instanceBufferNames?.enabled?padStaticInstanceMatrices([...assembly.staticBatches.meshes,...assembly.instancePrewarmEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),...assembly.staticBoundaryRoots],{onEligible:object=>staticShaderOwners.add(object)}):null;
+  document.body.dataset.instanceCapacity=JSON.stringify(instanceCapacity);
   const walkingPreparationBounds=new Map([...preparationBounds,...assembly.instancePrewarmEntries.map(({object,bounds})=>[object,bounds])]);
   // Late candle/detail instancing also creates per-object shader variants.
   // Snapshot admission once; these extra owners are never used for static culling.
@@ -730,6 +751,7 @@ try {
   document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
+  if(renderBuildAudit)visitors.ready.then(()=>document.body.dataset.visitorsReadyAt=String(performance.now()),()=>document.body.dataset.visitorsReadyAt='failed');
   const wildlife=createForestWildlife(assembly);
   document.body.dataset.forestWildlife=JSON.stringify({count:wildlife.count});
   const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
@@ -846,7 +868,7 @@ try {
   let movementFrameAudit=null;
   if(query.get('frameAudit')==='1'){
     const {installMovementFrameAudit}=await import('./movement-frame-audit.mjs');
-    movementFrameAudit=installMovementFrameAudit({camera,getContext:()=>({backend:document.body.dataset.rendererBackend,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,staticCull:query.get('prewarmCull')!=='0',...(renderBuildAudit?{builds:renderBuildAudit.stats}:{})})});
+    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats}:{})})});
     addEventListener('pagehide',event=>{if(!event.persisted)movementFrameAudit.dispose();});
   }
   let horizonAuditAt=0;
@@ -855,6 +877,7 @@ try {
   let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
   const prewarmFrameBudget=query.get('prewarmHeadroom')==='1'?createPrewarmFrameBudget():null;
   function animate(time){
+    frameSchedulingAudit?.noteFrame(time);
     if(rendererHealth.failed){walkingPrewarm?.setBlocked(true);return;}
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     const updateStart=movementFrameAudit?.active?performance.now():0;
@@ -934,7 +957,7 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShafts.stats);if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit)document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShafts.stats);if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

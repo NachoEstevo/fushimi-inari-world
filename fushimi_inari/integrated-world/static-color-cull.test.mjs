@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installStaticColorCull} from './static-color-cull.mjs';
 import {prewarmViewRadius} from './prewarm-view-radius.mjs';
+import {buildPathMargins} from './path-margins.mjs';
 test('only impossible main-camera corner batches are rejected; shadow camera and visible corners retain draws',()=>{
  const camera=new THREE.PerspectiveCamera(45,1.5,.2,150);camera.updateMatrixWorld(true);
  const geometry=new THREE.SphereGeometry(100,8,6),material=new THREE.MeshBasicMaterial(),mesh=new THREE.Mesh(geometry,material);mesh.position.set(180,140,-190);mesh.updateMatrixWorld(true);geometry.computeBoundingSphere();
@@ -64,4 +65,40 @@ test('tight static boxes reject far-plane sphere false positives without clippin
  fn(outside,{},new THREE.OrthographicCamera());assert.equal(calls.length,2,'shadow views retain ownership');
  camera.far=250;camera.updateProjectionMatrix();cull.update();fn(outside,{},camera);assert.equal(calls.length,3,'changed photo projection admits the newly visible box');
  cull.dispose();geometry.dispose();material.dispose();
+});
+
+test('explicit path-margin roots reject four observed distant envelopes while retaining visible and shadow submissions',()=>{
+ const source=new THREE.Group(),owners=[],network={segments:[{id:1,distance:0,kind:'stone',a:[700,89,150],b:[710,89,150],ya:89,yb:89,width:2}],sample:()=>null};
+ buildPathMargins(source,network,()=>89,{buildings:[],water:[]},[],{onStaticRoot:group=>owners.push(group)});
+ assert.equal(owners.length,2);const assets=owners.map(root=>root.children[0]),root=new THREE.Group(),objects=[],matrix=new THREE.Matrix4();
+ // Recorded envelopes and counts from summit-diag-1. Individual instance poses
+ // were not captured: replay conservative interior placements with real source
+ // geometries. The upstream renderer's observed admission is the test input.
+ const records=[
+  [0,43,[708.1247088374565,89.27362354804839,155.6939344884737],65.8351678430137],
+  [1,43,[708.2501619601414,89.54935747196957,155.55707231918285],65.83609842717524],
+  [0,26,[574.4558224696866,91.65081772971357,98.10985289040632],61.887608598909694],
+  [1,26,[574.6574330816222,91.94197923399533,97.9945964219192],61.86247345474216]
+ ];
+ for(const [kind,count,center,radius]of records){
+  const mesh=new THREE.InstancedMesh(assets[kind].geometry,assets[kind].material,count);
+  for(let i=0;i<count;i++)mesh.setMatrixAt(i,matrix.makeTranslation(center[0]+Math.sin(i)*radius*.4,center[1],center[2]+Math.cos(i)*radius*.4));
+  mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(...center),radius);root.add(mesh);objects.push(mesh);
+ }
+ const camera=new THREE.PerspectiveCamera(45,1761/875,.2,200);camera.position.set(797.8488692094638,165.70731380822392,-212.80713576256755);camera.updateMatrixWorld(true);
+ const visible=new THREE.Mesh(new THREE.BoxGeometry(),assets[0].material);visible.position.copy(camera.position).add(new THREE.Vector3(0,0,-10));root.add(visible);root.updateMatrixWorld(true);
+ for(const mesh of objects)assert.ok(mesh.boundingSphere.distanceToPoint(camera.position)>prewarmViewRadius(camera));
+ let fn=null;const calls=[],renderer={getRenderObjectFunction:()=>fn,setRenderObjectFunction:value=>{fn=value;},renderObject:object=>calls.push(object)};
+ const before=installStaticColorCull(renderer,camera,[]);before.update();
+ for(const object of [...objects,visible])fn(object,{},camera);
+ assert.equal(calls.filter(object=>objects.includes(object)).length,4);assert.equal(calls.includes(visible),true);before.dispose();calls.length=0;
+ const after=installStaticColorCull(renderer,camera,[{object:root}]);after.update();
+ for(const object of [...objects,visible])fn(object,{},camera);
+ assert.equal(calls.filter(object=>objects.includes(object)).length,0);assert.deepEqual(calls,[visible]);
+ const unowned=objects[0].clone();unowned.updateMatrixWorld(true);fn(unowned,{},camera);
+ assert.deepEqual(calls,[visible,unowned],'shared geometry does not grant ownership of unrelated instances');
+ const shadow=new THREE.OrthographicCamera();for(const object of objects)fn(object,{},shadow);
+ assert.deepEqual(calls,[visible,unowned,...objects]);after.dispose();unowned.dispose();
+ const geometries=new Set();source.traverse(mesh=>{if(mesh.geometry)geometries.add(mesh.geometry);});for(const geometry of geometries)geometry.dispose();
+ for(const asset of assets)asset.material.dispose();for(const object of objects)object.dispose();visible.geometry.dispose();
 });
