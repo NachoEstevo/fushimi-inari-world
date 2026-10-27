@@ -2,12 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installSky,SKY_SUN_DIRECTIONS,skyDistanceScale} from './sky-nodes.mjs';
+import {LIGHT_PRESETS} from './route-lighting-nodes.mjs';
+import {HORIZON_COLORS} from './viewing-distance.mjs';
+import {GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 
 test('sun follows sunset horizon, clouds drift without repainting and night preserves stars',()=>{
   const previous=globalThis.document;
   const canvases=[];
   globalThis.document={createElement(){
-    const context={paints:0,createLinearGradient(){return {addColorStop(){}};},fillRect(){this.paints++;},clearRect(){},save(){},restore(){},beginPath(){},moveTo(){},ellipse(){},fill(){}};
+    const context={paints:0,gradients:[],createLinearGradient(){const stops=[];this.gradients.push(stops);return {addColorStop(at,color){stops.push([at,color]);}};},fillRect(){this.paints++;},clearRect(){},save(){},restore(){},beginPath(){},moveTo(){},ellipse(){},fill(){}};
     const canvas={getContext:()=>context,context};canvases.push(canvas);return canvas;
   }};
   try{
@@ -17,7 +20,12 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     sky.setMode('gold');camera.position.set(40,20,-80);sky.update();
     const direction=sun.position.clone().sub(camera.position).normalize();
     assert.ok(direction.distanceTo(new THREE.Vector3(...SKY_SUN_DIRECTIONS.gold).normalize())<1e-10);
-    assert.ok(direction.y>.05&&direction.y<.15,'sunset disc stays just above horizon');
+    const elevation=THREE.MathUtils.radToDeg(Math.asin(direction.y));assert.ok(elevation>=3&&elevation<=4,'sunset disc stays three to four degrees above the true horizon');
+    assert.ok(direction.distanceTo(new THREE.Vector3(...LIGHT_PRESETS.gold.offset).normalize())<1e-10,'visible disc and directional shadows share one solar direction');
+    for(const look of ['natural','sakura','dreamcore']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HORIZON_COLORS.gold,'golden sky meets the same haze as the scene fog');}
+    const tints=[];sun.material.colorNode.traverse(node=>{if(node.isUniformNode&&node.value?.isColor)tints.push(node.value.getHexString());});
+    assert.ok(tints.includes(GOLDEN_ATMOSPHERE.disc.slice(1)),'the rendered solar disc uses the shared red-orange tint');
+    assert.equal(sun.material.toneMapped,false);
     assert.ok(sun.visible);
     assert.deepEqual(clouds.position.toArray(),camera.position.toArray());
     const rotation=clouds.rotation.y,version=clouds.material.map.version;

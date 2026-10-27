@@ -69,3 +69,40 @@ test('metal receives the local probe while the mineral floor stays matte', () =>
   assert.ok(floor.material.bumpMap);
   study.dispose(); geometry.dispose(); metal.material.dispose(); floor.material.dispose();
 });
+
+test('quality changes only finish uniforms and balanced restores the exact original study', () => {
+  const group = new THREE.Group(), geometry = new THREE.BoxGeometry();
+  const colors = ['#245b4b', '#9aa3a5', '#c03220'];
+  const meshes = colors.map(color => new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color})));
+  const signMap = new THREE.Texture();
+  const sign = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color:'#e6e3d6',map:signMap}));
+  group.add(...meshes, sign);
+  const originals = meshes.map(mesh => mesh.material), originalSign = sign.material;
+  const study = createStationMaterialStudy(group);study.setEnabled(true);
+  const upgraded = meshes.map(mesh => mesh.material);
+  const snapshots = upgraded.map(material => ({roughness:material.roughness, clearcoat:material.clearcoat,
+    clearcoatRoughness:material.clearcoatRoughness, version:material.version,
+    roughnessMap:material.roughnessMap, bumpMap:material.bumpMap}));
+  const textureVersions = upgraded.map(material => material.roughnessMap.version);
+  for (let cycle=0;cycle<2;cycle++) {
+    study.setQuality('high');
+    assert.equal(upgraded[0].roughness,.72);assert.equal(upgraded[0].clearcoat,.18);
+    assert.equal(upgraded[0].clearcoatRoughness,.42);assert.equal(upgraded[1].roughness,.72);
+    assert.equal(upgraded[2].roughness,snapshots[2].roughness);
+    assert.equal(upgraded[2].clearcoat,snapshots[2].clearcoat);
+    assert.equal(upgraded[2].clearcoatRoughness,snapshots[2].clearcoatRoughness);
+    assert.equal(sign.material,originalSign);
+    study.setQuality('balanced');
+    upgraded.forEach((material,index) => {
+      assert.equal(meshes[index].material,material);
+      for (const [key,value] of Object.entries(snapshots[index])) assert.equal(material[key],value,key);
+      assert.equal(material.roughnessMap.version,textureVersions[index]);
+    });
+  }
+  study.setEnabled(false);study.setQuality('high');study.setEnabled(true);
+  assert.equal(meshes[0].material,upgraded[0]);assert.equal(upgraded[0].roughness,.72);
+  study.dispose();study.setQuality('balanced');
+  meshes.forEach((mesh,index) => assert.equal(mesh.material,originals[index]));
+  assert.equal(upgraded[0].roughness,.72,'disposed study ignores later quality updates');
+  geometry.dispose();originals.forEach(material => material.dispose());originalSign.dispose();signMap.dispose();
+});

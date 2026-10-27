@@ -1,3 +1,4 @@
+import {LIGHT_PRESETS} from './route-lighting-nodes.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three/webgpu';
@@ -116,4 +117,15 @@ test('no canopy leaves materials unchanged in appearance, with zero effective st
   effect.setMode('gold');effect.setEnabled(true);assert.equal(effect.stats.strength,0);effect.dispose();
   for(const size of [16,129,NaN])assert.throws(()=>installPrecinctLeafLight({}, {size}),RangeError);
   assert.throws(()=>installPrecinctLeafLight({}, {strength:.51}),RangeError);
+});
+
+
+test('golden canopy projection follows the same solar direction as the visible disc and light',()=>{
+ const canopy=crown(),effect=installPrecinctLeafLight({canopies:[canopy]},{mode:'gold'});
+ try{
+  const [x,y,z]=LIGHT_PRESETS.gold.offset,sx=x/y,sz=z/y;
+  assert.ok(Math.abs(effect.stats.bounds.xmin-(canopy.min.x-Math.max(sx*canopy.min.y,sx*canopy.max.y)-1))<1e-10);
+  assert.ok(Math.abs(effect.stats.bounds.zmax-(canopy.max.z-Math.min(sz*canopy.min.y,sz*canopy.max.y)+1))<1e-10);
+  assert.equal(effect.stats.extraLights,0);assert.equal(effect.stats.extraDraws,0);assert.equal(effect.stats.sourceBytes,65536);
+ }finally{effect.dispose();}
 });

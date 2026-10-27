@@ -1,10 +1,11 @@
 import * as THREE from 'three';
+import {SUN_DIRECTIONS,GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 import {float,vec3,uv,exp,smoothstep,uniform,instancedBufferAttribute,positionView,screenDPR} from 'three/tsl';
 
 export const LIGHT_PRESETS={
- day:{sun:2.15,color:0xfff0db,sky:0xddeeff,ground:0x73755d,fill:1.55,exposure:1.02,offset:[-45,65,35],glow:0,power:0},
- gold:{sun:2.5,color:0xffa45c,sky:0xe1c4af,ground:0x68544b,fill:1.12,exposure:1.04,offset:[-65,8,35],glow:.55,power:5},
- night:{sun:.34,color:0x9db7ef,sky:0x9aaaca,ground:0x465068,fill:.84,exposure:1.15,offset:[-45,65,35],glow:1,power:16}
+ day:{sun:2.15,color:0xfff0db,sky:0xddeeff,ground:0x73755d,fill:1.55,exposure:1.02,offset:SUN_DIRECTIONS.day,glow:0,power:0},
+ gold:{sun:2.5,color:GOLDEN_ATMOSPHERE.light,sky:GOLDEN_ATMOSPHERE.sky,ground:GOLDEN_ATMOSPHERE.ground,fill:1.12,exposure:1.04,offset:SUN_DIRECTIONS.gold,glow:.55,power:5},
+ night:{sun:.34,color:0x9db7ef,sky:0x9aaaca,ground:0x465068,fill:.84,exposure:1.15,offset:SUN_DIRECTIONS.night,glow:1,power:16}
 };
 
 // Interpretive low path lights. Grounded outside the paved trail; not a survey

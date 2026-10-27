@@ -48,3 +48,20 @@ test('original renderer callback is preserved and disposal does not overwrite a 
  const cull=installStaticColorCull(renderer,camera,[{object:mesh}]);cull.update();fn(mesh,{},camera);assert.equal(called,1);
  const later=()=>{};fn=later;cull.dispose();assert.equal(fn,later);mesh.geometry.dispose();mesh.material.dispose();
 });
+
+test('tight static boxes reject far-plane sphere false positives without clipping visible surfaces',()=>{
+ const camera=new THREE.PerspectiveCamera(45,16/9,.2,200);camera.updateMatrixWorld(true);
+ const geometry=new THREE.BoxGeometry(40,40,4),material=new THREE.MeshBasicMaterial();
+ const outside=new THREE.Mesh(geometry,material);outside.position.set(60,0,-211);outside.updateMatrixWorld(true);
+ const visible=new THREE.Mesh(geometry,material);visible.position.set(60,0,-199);visible.updateMatrixWorld(true);
+ geometry.computeBoundingSphere();
+ const frustum=new THREE.Frustum().setFromProjectionMatrix(camera.projectionMatrix);
+ assert.equal(frustum.intersectsSphere(geometry.boundingSphere.clone().applyMatrix4(outside.matrixWorld)),true);
+ let fn=null;const calls=[],renderer={getRenderObjectFunction:()=>fn,setRenderObjectFunction:value=>{fn=value;},renderObject(object){calls.push(object);}};
+ const cull=installStaticColorCull(renderer,camera,[{object:outside},{object:visible}]);cull.update();
+ fn(outside,{},camera);assert.equal(calls.length,0,'all vertices are past the far plane despite sphere admission');
+ fn(visible,{},camera);assert.deepEqual(calls,[visible]);
+ fn(outside,{},new THREE.OrthographicCamera());assert.equal(calls.length,2,'shadow views retain ownership');
+ camera.far=250;camera.updateProjectionMatrix();cull.update();fn(outside,{},camera);assert.equal(calls.length,3,'changed photo projection admits the newly visible box');
+ cull.dispose();geometry.dispose();material.dispose();
+});

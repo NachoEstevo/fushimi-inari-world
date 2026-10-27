@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import {GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 import {panoramaVisible} from './panorama-policy.mjs';
 
-export const VIEW_DISTANCES=Object.freeze({balanced:100,high:150,ultra:150});
-export const OUTLOOK_DISTANCES=Object.freeze({balanced:100,high:150,ultra:150});
-export const HORIZON_COLORS=Object.freeze({day:'#d7e6e7',gold:'#f6b978',night:'#34465c'});
+export const VIEW_DISTANCES=Object.freeze({balanced:150,high:200,ultra:200});
+export const OUTLOOK_DISTANCES=Object.freeze({balanced:150,high:200,ultra:200});
+export const HORIZON_COLORS=Object.freeze({day:'#d7e6e7',gold:GOLDEN_ATMOSPHERE.horizon,night:'#34465c'});
 
 // Render distance is independent of world construction and walking support.
 export function createViewingDistance({scene,camera,debugCamera=false,quality='balanced',timeOfDay='day'}){

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import {SUN_DIRECTIONS,GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,varying,screenDPR} from 'three/tsl';
 
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
-export const SKY_SUN_DIRECTIONS={day:[-45,65,35],gold:[-65,8,35]};
+export const SKY_SUN_DIRECTIONS=SUN_DIRECTIONS;
 export const SKY_CLOUD_DRIFT=.0018;
 export const skyDistanceScale=far=>Math.min(1,far/7500);
 export function installSky(scene,camera){
@@ -56,26 +57,26 @@ export function installSky(scene,camera){
   stars.frustumCulled=false;stars.renderOrder=-90;scene.add(stars);
   const palettes={
     day:['#3687c7','#89c8ec','#d7e6e7','#f8fbfc','#b9d2e0'],
-    gold:['#566f9c','#d3adab','#f6b978','#ffe0b1','#a991ac'],
+    gold:GOLDEN_ATMOSPHERE.skyPalette,
     night:['#081326','#172942','#34465c','#52647b','#293b52']
   };
   // Creative palettes retain each time-of-day's brightness: night remains dark.
   const creativePalettes={
     sakura:{
       day:['#a889bb','#dfb5ce','#f4d3d3','#fff1ec','#cda5bf'],
-      gold:['#8d709f','#d79cb7','#f2b8ba','#ffe1d6','#b583a3'],
+      gold:['#8d709f','#d88f9b',GOLDEN_ATMOSPHERE.horizon,'#ffd0ad','#aa737e'],
       night:['#17152d','#30213e','#493047','#6e506a','#382c49']
     },
     dreamcore:{
       day:['#929ed3','#c0cbe8','#e8ddd6','#fff5e8','#bdc1dc'],
-      gold:['#9189bc','#c3acd3','#efd0c5','#ffe9d8','#ada0c4'],
+      gold:['#9189bc','#cb9ba5',GOLDEN_ATMOSPHERE.horizon,'#ffdbc0','#b18491'],
       night:['#111a30','#242c46','#3c4158','#62667e','#2f3650']
     }
   };
   let mode='day',look='natural';
   function paint(){
     stars.visible=mode==='night';sunDisc.visible=mode!=='night';
-    sunTint.value.set(mode==='gold'?'#ff702c':'#fff4d0');
+    sunTint.value.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
     sunDirection.fromArray(SKY_SUN_DIRECTIONS[mode]??SKY_SUN_DIRECTIONS.day).normalize().multiplyScalar(5400);
     const [zenith,middle,horizon,lit,shade]=(creativePalettes[look]??palettes)[mode];
     const gradient=ctx.createLinearGradient(0,0,0,1024);

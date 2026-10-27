@@ -1,7 +1,8 @@
 import * as THREE from 'three/webgpu';
+import {SUN_DIRECTIONS} from './atmosphere-profile.mjs';
 import {Fn,If,float,vec4,uniform,texture,positionWorld,normalWorldGeometry,materialColor,dot,smoothstep} from 'three/tsl';
 
-const MODES={day:[-45/65,35/65],gold:[-65/8,35/8],night:[-45/65,35/65]};
+const MODES=Object.fromEntries(Object.entries(SUN_DIRECTIONS).map(([mode,[x,y,z]])=>[mode,[x/y,z/y]]));
 const validBounds=box=>box?.isBox3&&!box.isEmpty()&&[...box.min,...box.max].every(Number.isFinite);
 const boxOf=value=>value?.bounds??value;
 

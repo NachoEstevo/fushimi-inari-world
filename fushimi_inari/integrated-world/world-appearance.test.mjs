@@ -99,7 +99,7 @@ test('live quality, look and station transitions retain one environment without 
     shrine.add(redMesh,lacquerMesh,goldMesh);scene.add(shrine);
     appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group},legacy:{materials:{vermilionMat:red}}},
       hemi:new GPU.HemisphereLight(),sun:new GPU.DirectionalLight()});
-    assert.equal(redMesh.material.roughness,.68);assert.equal(redMesh.material.clearcoat,.08);
+    assert.equal(redMesh.material.roughness,.68);assert.equal(redMesh.material.clearcoat,0);
     assert.equal(redMesh.material.map,red.map);assert.equal(redMesh.material.roughnessMap,red.roughnessMap);
     assert.equal(red.roughness,.32,'source material remains untouched');
     assert.equal(lacquerMesh.material.metalness,0);assert.equal(lacquerMesh.material.roughness,.42);

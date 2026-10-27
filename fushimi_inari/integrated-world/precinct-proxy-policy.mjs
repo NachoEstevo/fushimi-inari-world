@@ -9,3 +9,12 @@ export function omitUnverifiedPrecinctProxy(building){
  return UNRESOLVED_APPROACH_PROXIES.has(building.id)&&tags.building==='yes'
   &&!tags.height&&!tags['building:levels']&&!tags.name;
 }
+
+// A sourced footprint is still useful map data, but an inferred flat 4 m box
+// is not a modeled shrine. Visitor rendering omits only these unresolved
+// religious envelopes; POIs, walking/collision data and detailed models remain.
+// The viewer's explicit mappedProxies=1 inspection mode retains the volumes.
+export function omitUnmodeledShrineProxy(building){
+ const tags=building.tags??{},sacred=tags.building==='shrine'||tags.religion==='shinto'||tags.amenity==='place_of_worship';
+ return sacred&&!Number.isFinite(Number.parseFloat(tags.height))&&!Number.isFinite(Number.parseFloat(tags['building:levels']));
+}

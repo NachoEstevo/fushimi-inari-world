@@ -15,6 +15,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const station=assembly.keihanStation;
   const materials=station?.group?createStationMaterialStudy(station):null;
   materials?.setEnabled(true);
+  materials?.setQuality(quality?.mode);
   const practicals=new THREE.Group();practicals.name='Station platform practical lights';
   for(const z of [-163,-176,-189]) {
     const light=new THREE.SpotLight('#fff1dc',18,11,1.25,.8,2);
@@ -48,7 +49,8 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
         material.metalness=0;
         material.roughness=Math.max(original.roughness,shrineKind==='paint'?.68:shrineKind==='lacquer'?.42:.5);
         if(material.isMeshPhysicalMaterial){
-          material.clearcoat=Math.min(material.clearcoat,.08);
+          // Painted timber uses one dielectric lobe, without a second coating graph.
+        material.clearcoat=0;
           material.clearcoatRoughness=Math.max(material.clearcoatRoughness,.38);
         }
         replacements.set(original,material);
@@ -94,6 +96,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   async function prepare() {
     if(disposed)return;
     stats.prepared=true;
+    materials?.setQuality(quality?.mode);
     await stationProbe.prepare();
     stats.localReflections=stationProbe.stats.enabled;
     stats.reflectionError=stationProbe.stats.error;

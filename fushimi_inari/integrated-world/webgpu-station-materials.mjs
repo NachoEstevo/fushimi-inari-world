@@ -107,6 +107,21 @@ export function createStationMaterialStudy(station) {
   });
   stats.meshes = bindings.length; stats.materials = replacements.size; stats.skippedMaterials = skipped.size;
   let disposed = false;
+  // Both profiles keep their existing shader features and texture bindings.
+  // Only scalar uniforms change, so a quality toggle never recompiles materials.
+  function setQuality(mode) {
+    if (disposed) return;
+    const high = mode === 'high' || mode === 'ultra';
+    for (const material of replacements.values()) {
+      const kind = material.userData.stationMaterialStudy;
+      if (kind === 'metal') material.roughness = high ? .72 : .52;
+      if (kind === 'green') {
+        material.roughness = high ? .72 : .55;
+        material.clearcoat = high ? .18 : .38;
+        material.clearcoatRoughness = high ? .42 : .32;
+      }
+    }
+  }
   function setEnabled(value) {
     if (disposed) return;
     stats.enabled = Boolean(value);
@@ -118,5 +133,5 @@ export function createStationMaterialStudy(station) {
     for (const material of replacements.values()) material.dispose();
     for (const texture of Object.values(textures)) texture.dispose();
   }
-  return { setEnabled, dispose, stats };
+  return { setEnabled, setQuality, dispose, stats };
 }
