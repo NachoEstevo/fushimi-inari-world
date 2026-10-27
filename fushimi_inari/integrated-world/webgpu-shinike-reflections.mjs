@@ -10,11 +10,17 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
   resources?.targets.push(target);
  }
  target.scissorTest=true;
- const visibility=new Map(),remember=(object,visible)=>{if(!object)return;if(!visibility.has(object))visibility.set(object,object.visible);object.visible=visible;};
+ const visibility=new Map(),shadows=new Map(),remember=(object,visible)=>{if(!object)return;if(!visibility.has(object))visibility.set(object,object.visible);object.visible=visible;};
  const previous={environment:scene.environment,background:scene.background,target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),autoClear:renderer.autoClear,xr:renderer.xr.enabled,clearColor:renderer.getClearColor(new THREE.Color()),clearAlpha:renderer.getClearAlpha(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),shadowAuto:renderer.shadowMap.autoUpdate,shadowNeeds:renderer.shadowMap.needsUpdate};
  let completed=false;
  try{
   scene.traverse(object=>{
+   // r180's ShadowNode reads the light's flags, not renderer.shadowMap's.
+   // Preserve pending walking-view updates while probe-only visibility is active.
+   if(object.isLight&&object.shadow&&!shadows.has(object.shadow)){
+    const shadow=object.shadow;shadows.set(shadow,{autoUpdate:shadow.autoUpdate,needsUpdate:shadow.needsUpdate});
+    shadow.autoUpdate=false;shadow.needsUpdate=false;
+   }
    const materials=Array.isArray(object.material)?object.material:[object.material];
    if(materials.some(m=>m?.userData.waterAppearance)||object.userData.shinikeSubmergedBacking||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
    if(object.isLOD)for(const level of object.levels)remember(level.object,level.object.visible);
@@ -30,6 +36,7 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
   return target;
  }finally{
   for(const [object,visible] of visibility)object.visible=visible;
+  for(const [shadow,state]of shadows){shadow.autoUpdate=state.autoUpdate;shadow.needsUpdate=state.needsUpdate;}
   scene.environment=previous.environment;scene.background=previous.background;
   renderer.xr.enabled=previous.xr;renderer.autoClear=previous.autoClear;
   renderer.shadowMap.autoUpdate=previous.shadowAuto;renderer.shadowMap.needsUpdate=previous.shadowNeeds;

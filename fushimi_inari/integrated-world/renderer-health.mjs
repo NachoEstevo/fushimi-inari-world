@@ -2,7 +2,7 @@
 export function installRendererHealth({renderer,getContext=()=>({}),audit=false,document=globalThis.document,now=()=>performance.now(),setInterval=globalThis.setInterval,clearInterval=globalThis.clearInterval,maxSamples=120,maxEvents=50}={}){
  const canvas=renderer.domElement,device=renderer.backend?.device,start=now(),samples=[],events=[];
  const sampleLimit=Math.max(1,Math.min(1000,Math.floor(maxSamples)||120)),eventLimit=Math.max(1,Math.min(200,Math.floor(maxEvents)||50));
- let disposed=false,failed=false,panel=null,timer=null;
+ let disposed=false,failed=false,panel=null,timer=null,firstError=null;
  const bounded=(value,depth=0)=>{
   if(value===null||typeof value==='boolean')return value;
   if(typeof value==='number')return Number.isFinite(value)?value:null;
@@ -19,7 +19,7 @@ export function installRendererHealth({renderer,getContext=()=>({}),audit=false,
   samples.push({elapsedMs:elapsed(),backend:renderer.backend?.isWebGPUBackend?'webgpu':'webgl2',memory:{geometries:Number.isFinite(memory.geometries)?memory.geometries:null,textures:Number.isFinite(memory.textures)?memory.textures:null},context});
   if(samples.length>sampleLimit)samples.shift();
  }
- const stats=()=>({failed,samples:[...samples],events:[...events]});
+ const stats=()=>({failed,firstError:firstError?{...firstError}:null,samples:[...samples],events:[...events]});
  function exportDiagnostic(){
   sample();const blob=new Blob([JSON.stringify(stats(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
   link.href=url;link.download='renderer-diagnostic.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0);
@@ -34,7 +34,11 @@ export function installRendererHealth({renderer,getContext=()=>({}),audit=false,
   document.body.append(panel);
  }
  function record(type,detail=''){
-  if(disposed)return;events.push({elapsedMs:elapsed(),type,detail:String(detail??'').slice(0,300)});if(events.length>eventLimit)events.shift();sample();
+  if(disposed)return;
+  const event={elapsedMs:elapsed(),type,detail:String(detail??'').slice(0,300)};
+  // Secondary command-buffer errors can flood the ring after the actual cause.
+  if(!firstError&&type!=='webglcontextrestored')firstError={...event,detail:String(detail??'').slice(0,1200)};
+  events.push(event);if(events.length>eventLimit)events.shift();sample();
  }
  function lost(type,detail){if(disposed)return;failed=true;record(type,detail);if(panel){panel.remove();panel=null;}show();}
  const onError=event=>record('uncapturederror',event.error?.message??'');

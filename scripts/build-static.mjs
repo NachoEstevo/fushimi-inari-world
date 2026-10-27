@@ -8,6 +8,7 @@ await mkdir(output,{recursive:true});await writeFile(path.join(output,'.static-b
 const files=[];
 async function copy(dir,predicate){
  for(const entry of await readdir(path.join(source,dir),{withFileTypes:true})){
+  if(entry.name.startsWith('.'))continue; // Local QA backups and caches are never release assets.
   const rel=path.posix.join(dir,entry.name);if(entry.isDirectory()){if(!['outputs','references','__pycache__'].includes(entry.name))await copy(rel,predicate);continue;}
   if(!predicate(rel))continue;
   const target=path.join(output,rel);await mkdir(path.dirname(target),{recursive:true});await copyFile(path.join(source,rel),target);files.push({path:rel,bytes:(await stat(target)).size});

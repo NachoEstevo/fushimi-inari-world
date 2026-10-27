@@ -68,6 +68,38 @@ test('prewarm uses the real scene pass type and MSAA before first render and res
  }
 });
 
+test('compilation state remains accurate without blocking rendering or leaking target state',async()=>{
+ const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1200,innerHeight:800,devicePixelRatio:1});
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),sun=new THREE.DirectionalLight(),priorTarget=new THREE.RenderTarget(8,8),priorMRT={};
+ let target=priorTarget,mrt=priorMRT,face=2,mip=3,draws=0,cityDraws=0;const pending=[];
+ const originalRender=THREE.PostProcessing.prototype.render;THREE.PostProcessing.prototype.render=function(){draws++;};
+ const renderer={samples:1,hasInitialized:()=>true,getColorBufferType:()=>THREE.HalfFloatType,getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){},
+  getRenderTarget:()=>target,getActiveCubeFace:()=>face,getActiveMipmapLevel:()=>mip,getMRT:()=>mrt,setMRT:value=>mrt=value,
+  setRenderTarget(value,f=0,m=0){target=value;face=f;mip=m;},getOutputRenderTarget:()=>null,getSize:value=>value.set(1200,800),
+  compileAsync(){assert.equal(quality.compiling,true);return new Promise((resolve,reject)=>pending.push({resolve,reject}));}};
+ const cityHorizon={compose:color=>color,render(){cityDraws++;},dispose(){}};
+ const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
+ const restored=()=>{assert.equal(target,priorTarget);assert.equal(mrt,priorMRT);assert.equal(face,2);assert.equal(mip,3);};
+ try{
+  const a=quality.compileAsync(scene,camera),b=quality.compileAsync(scene,camera);restored();assert.equal(quality.compiling,true);quality.render();assert.equal(draws,1);assert.equal(cityDraws,1);
+  pending[0].resolve();await a;assert.equal(quality.compiling,true);quality.render();assert.equal(draws,2);assert.equal(cityDraws,2);
+  pending[1].resolve();await b;assert.equal(quality.compiling,false);quality.render();assert.equal(draws,3);assert.equal(cityDraws,3);
+  const bad=quality.compileAsync(scene,camera);pending[2].reject(Error('pipeline failed'));await assert.rejects(bad,/pipeline failed/);restored();assert.equal(quality.compiling,false);
+  renderer.compileAsync=()=>{throw Error('synchronous failure');};assert.throws(()=>quality.compileAsync(scene,camera),/synchronous failure/);restored();assert.equal(quality.compiling,false);
+  quality.render();assert.equal(draws,4);assert.equal(cityDraws,4);
+ }finally{quality.dispose();priorTarget.dispose();THREE.PostProcessing.prototype.render=originalRender;for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}}
+});
+
+test('quality owns the WebGPU draw guard and releases it on dispose',()=>{
+ const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:800,innerHeight:600,devicePixelRatio:1});
+ let draws=0;const original=function(){draws++;},backend={isWebGPUBackend:true,draw:original,get:()=>({pipeline:null})};
+ const renderer={backend,getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){}};
+ const quality=createRenderQuality({renderer,scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),sun:new THREE.DirectionalLight()});
+ try{backend.draw({pipeline:{},object:{name:'pending'}});assert.equal(draws,0);assert.deepEqual(quality.pipelineStats,{skipped:1,lastObjectName:'pending'});quality.dispose();assert.equal(backend.draw,original);}finally{quality.dispose();for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}}
+});
+
 test('WebGPU presets bound pixel cost on ultrawide and high-DPI screens in increasing order',()=>{
   for(const [width,height] of [[3431,1264],[3840,2160],[8000,4000]]){
     let previous=0;

@@ -93,7 +93,7 @@ try {
   let renderBuildAudit=null,rendererHealth=null;
   rendererHealth=installRendererHealth({renderer,audit:query.get('gpuAudit')==='1',getContext:()=>({
     quality:document.body.dataset.renderQuality,timeOfDay:$('light').value,camera:document.body.dataset.camera?.split(',').map(Number),
-    prewarm:walkingPrewarm?.stats,textures:textureStreaming.stats,shafts:document.body.dataset.sunShafts
+    prewarm:walkingPrewarm?.stats,textures:textureStreaming.stats,shafts:document.body.dataset.sunShafts,pipelineReadiness:document.body.dataset.pipelineReadiness
   })});
   addEventListener('pagehide',event=>{if(!event.persisted)rendererHealth.dispose();});
   if(query.get('pipelineAudit')==='1'){
@@ -840,10 +840,11 @@ try {
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     const updateStart=movementFrameAudit?.active?performance.now():0;
     const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);
-    // Audit preparation owns this renderer while awaiting new pipelines. Its
-    // callback draws each settled pose; interleaved regular draws can consume
-    // an r180 pipeline before asynchronous compilation has completed.
-    if(shadowRouteAudit?.active&&renderPreparation.busy)return;
+    // r180 publishes async pipelines before the backend has finished creating
+    // them. Preserve the last frame while preparation owns this renderer; main
+    // and pond renders pause for explicit quality/teleport transactions only.
+    // Background warming uses the selective draw guard to keep walking fluid.
+    if(renderPreparation.busy)return;
     if(showcase?.preparing)return;
     if(!captureOwnsCamera&&(sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
     if(captureOwnsCamera){
@@ -897,7 +898,7 @@ try {
     // Keep the remaining mapped buildings visible near the walker too.
     // Capture only settled images; a probe made from placeholders must refresh.
     const textureState=textureStreaming.stats;
-    if(!arrival?.active&&textureState.pending===0)pondReflections.update(camera.position,[$('light').value,appearance.stats.look,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked,textureState.revision].join(':'));
+    if(!arrival?.active&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,[$('light').value,appearance.stats.look,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked,textureState.revision].join(':'));
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
@@ -914,7 +915,7 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShafts.stats);if(renderBuildAudit)document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShafts.stats);if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit)document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

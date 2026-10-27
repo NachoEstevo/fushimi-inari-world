@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {pathOffset} from './path-frame.mjs?v=10';
-import {fineGranite} from './surface-materials.mjs';
+import {fineGranite,senbonPaving} from './surface-materials.mjs';
 import {omotesandoPaving} from './omotesando-paving.mjs';
 import {outsideArrival} from './okusha-arrival.mjs';
 import {isMountainPathSegment,mountainShoulder,mountainPathUV,mountainTreadUV} from './mountain-path-layout.mjs';
@@ -176,21 +176,10 @@ export function buildPathMeshes(network,legacy,ground){
     }
   }
   const earth=legacy.materials.gravelMat.clone();earth.color.set('#71644d');
-  const tile=document.createElement('canvas');tile.width=512;tile.height=256;
-  const ctx=tile.getContext('2d'),pixels=ctx.createImageData(512,256);
-  let seed=91;
-  for(let i=0;i<pixels.data.length;i+=4){
-    seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-    const n=148+(seed/4294967296-.5)*22;
-    pixels.data[i]=n;pixels.data[i+1]=n+1;pixels.data[i+2]=n-4;pixels.data[i+3]=255;
-  }
-  ctx.putImageData(pixels,0,0);ctx.fillStyle='#66685f';
-  ctx.fillRect(0,0,512,2);ctx.fillRect(0,254,512,2);ctx.fillRect(254,0,3,256);
-  const paving=new THREE.CanvasTexture(tile);paving.wrapS=paving.wrapT=THREE.RepeatWrapping;paving.colorSpace=THREE.SRGBColorSpace;paving.anisotropy=8;
   // Fine granite without paving joints continuing vertically across risers.
   const stairFace=fineGranite();
   const materials={omotesando:omotesandoPaving(),precinct:legacy.materials.precinctPaving,stone:legacy.materials.flagstoneMat,edge:stairFace,earth,
-    senbon:new THREE.MeshStandardMaterial({map:paving,roughness:.91}),
+    senbon:senbonPaving(),
     street:new THREE.MeshStandardMaterial({color:0x636862,roughness:1}),
     restricted:new THREE.MeshStandardMaterial({color:0x766e5e,roughness:1}),
     rail:new THREE.MeshStandardMaterial({color:0x5b6667,metalness:.7,roughness:.4}),...mountainPathMaterials(legacy)};

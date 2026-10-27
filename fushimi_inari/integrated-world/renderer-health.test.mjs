@@ -27,6 +27,15 @@ test('device loss reveals recovery controls without replacing the renderer promi
  monitor.dispose();
 });
 
+test('the first GPU error survives a later flood of secondary validation errors',()=>{
+ const f=fixture(),monitor=health.installRendererHealth({...f.options,maxEvents:2});
+ f.device.dispatch('uncapturederror',{error:{message:'initial pipeline failure'}});
+ for(let i=0;i<20;i++)f.device.dispatch('uncapturederror',{error:{message:'invalid command buffer '+i}});
+ assert.equal(monitor.stats.events.length,2);
+ assert.equal(monitor.stats.firstError.detail,'initial pipeline failure');
+ assert.equal(monitor.stats.firstError.type,'uncapturederror');monitor.dispose();
+});
+
 test('WebGL loss and restoration are observed without intercepting browser events',()=>{
  const f=fixture();f.renderer.backend={isWebGPUBackend:false};let other=0;f.canvas.addEventListener('webglcontextlost',()=>other++);
  assert.equal(typeof health.installRendererHealth,'function');const monitor=health.installRendererHealth(f.options);

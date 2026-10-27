@@ -136,6 +136,7 @@ import {partitionInstances,subdivideShadowInstanceLeaves,freezeStaticInstanceTra
 import {collectInstancePrewarmEntries} from './instance-prewarm-entries.mjs';
 import {refineShrineFinishes} from './shrine-finishes.mjs?v=15';
 import {fineGranite,courtyardGravel,precinctPaving} from './surface-materials.mjs?v=16';
+import {refineSenbonSakaki} from './senbon-sakaki.mjs';
 import {entryHeight} from './entry-profile.mjs';
 import {precinctLevel,lowerCourtBlend,sanctuaryCourtBlend} from './precinct-grade.mjs?v=25e';
 import {buildSanctuaryLanding,buildSanctuaryApproaches} from './sanctuary-landing.mjs?v=96-release';
@@ -367,6 +368,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     // loose slabs and fence posts cannot be rigidly relocated with Okumiya:
     // the mapped staircase now owns this connection. Keep shrine groups intact.
     if(object.userData.zone==='okumiya'&&object.isMesh&&object.geometry.type==='BoxGeometry')return;
+    refineSenbonSakaki(object);
     refineEntranceObjects(object,legacy.materials);
     refineTemizuyaDetails(object);
     refineShrineFinishes(object,legacy.materials.entryStoneMat);

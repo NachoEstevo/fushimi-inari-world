@@ -33,14 +33,39 @@ export function precinctPaving(cobbles=false){
 export function fineGranite(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
   const ctx=canvas.getContext('2d'),pixels=ctx.createImageData(512,256);
-  let seed=91;
-  for(let i=0;i<pixels.data.length;i+=4){
-    seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-    const n=151+(seed/4294967296-.5)*50;
+  // Reference walk: mineral clusters on dressed grey treads, not independent
+  // high-contrast salt-and-pepper pixels. Bake once; keep the same sampler.
+  const hash=(x,y)=>{
+    let n=Math.imul((x&31)+91,374761393)^Math.imul((y&15)+37,668265263);
+    n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967295;
+  };
+  const smooth=t=>t*t*(3-2*t);
+  for(let y=0;y<256;y++)for(let x=0;x<512;x++){
+    const gx=x/16,gy=y/16,ix=Math.floor(gx),iy=Math.floor(gy),u=smooth(gx-ix),v=smooth(gy-iy);
+    const top=hash(ix,iy)*(1-u)+hash(ix+1,iy)*u;
+    const bottom=hash(ix,iy+1)*(1-u)+hash(ix+1,iy+1)*u;
+    const aggregate=(top*(1-v)+bottom*v-.5)*30;
+    const fine=(hash(x*7+y*3,y*5+x)-.5)*12;
+    const n=149+aggregate+fine,i=(y*512+x)*4;
     pixels.data[i]=n+3;pixels.data[i+1]=n+2;pixels.data[i+2]=n-3;pixels.data[i+3]=255;
   }
   ctx.putImageData(pixels,0,0);
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
   map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=8;
   return new THREE.MeshStandardMaterial({map,roughness:.96});
+}
+
+// DuckTravel Ae9AojJXt9I 24:13 and photo fHcXHFBi330: broad central
+// slab with narrower side courses. Width ratios are visual estimates.
+// Retain the existing 1.32 m across / .65 m along UV tile and shallow joints.
+export function senbonPaving(){
+  const material=fineGranite(),canvas=material.map.image,ctx=canvas.getContext('2d');
+  ctx.fillStyle='#66685f';
+  ctx.fillRect(101,0,2,256);ctx.fillRect(409,0,2,256);
+  // Central transverse joints wrap; the two edge courses stagger by half a tile.
+  ctx.fillRect(103,0,306,1);ctx.fillRect(103,255,306,1);
+  ctx.fillRect(0,127,101,2);ctx.fillRect(411,127,101,2);
+  material.map.needsUpdate=true;
+  material.bumpMap=material.map;material.bumpScale=.0015;
+  return material;
 }

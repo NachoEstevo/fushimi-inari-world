@@ -2,7 +2,6 @@
 fushimi_inari/outputs/
 fushimi_inari/references/
 # Local experiments, raw captures, downloaded originals and recoverable archives.
-# Previously committed, selected audit evidence remains tracked.
 /outputs/
 /.tmp/
 *.blend1
@@ -17,3 +16,10 @@ node_modules/
 investigacion-skill-3d.md
 .taste-skill/
 /dist/
+
+# Internal handoffs, plans and performance captures stay local.
+/HANDOFF-MAC-PERFORMANCE.md
+/docs/performance/
+/docs/superpowers/
+/.playwright-cli/
+/fushimi_inari/integrated-world/.qa-before*

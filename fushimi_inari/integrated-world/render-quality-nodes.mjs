@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import {pass} from 'three/tsl';
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
+import {installPendingPipelineGuard} from './pending-pipeline-guard.mjs';
 
 const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
 export function qualityPixelRatio(mode,dpr,width,height){
@@ -14,7 +15,8 @@ export function qualityPixelRatio(mode,dpr,width,height){
 // One scene pass feeds bloom and the output transform. There is no duplicate scene render.
 export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   let mode='balanced',look='natural',disposed=false,transitioning=false;
-  let pending=0,queue=Promise.resolve(),resolution;
+  let pending=0,compiling=0,queue=Promise.resolve(),resolution;
+  const pipelineGuard=installPendingPipelineGuard(renderer.backend);
   const originalTextures=new Map();
   const post=new THREE.PostProcessing(renderer);
   const scenePass=pass(scene,camera),foreground=scenePass.getTextureNode('output');
@@ -78,18 +80,22 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   function compileAsync(scope,view,targetScene){
     if(disposed)return Promise.reject(new Error('Render quality is disposed'));
     if(renderer.hasInitialized?.()===false)return Promise.reject(new Error('Initialize the renderer before compiling scene visuals'));
-    // PassNode configures type and MSAA lazily during graph setup. Mirror its
-    // actual setup before a pre-arrival compile, even before the first render.
-    scenePass.setup({renderer});
-    const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
+    compiling++;
     try{
-      renderer.setRenderTarget(scenePass.renderTarget);renderer.setMRT(scenePass.getMRT());
-      return renderer.compileAsync(scope,view,targetScene);
-    }finally{
-      // An initialized r180 renderer submits pipelines synchronously, then
-      // awaits backend work. Restore state before returning that promise.
-      renderer.setRenderTarget(previous.target,previous.face,previous.mip);renderer.setMRT(previous.mrt);
-    }
+      // PassNode configures type and MSAA lazily during graph setup. Mirror its
+      // actual setup before a pre-arrival compile, even before the first render.
+      scenePass.setup({renderer});
+      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
+      let work;
+      try{
+        renderer.setRenderTarget(scenePass.renderTarget);renderer.setMRT(scenePass.getMRT());
+        work=renderer.compileAsync(scope,view,targetScene);
+      }finally{
+        // Submission is synchronous; restore before waiting for GPU pipelines.
+        renderer.setRenderTarget(previous.target,previous.face,previous.mip);renderer.setMRT(previous.mrt);
+      }
+      return Promise.resolve(work).finally(()=>{compiling--;});
+    }catch(error){compiling--;throw error;}
   }
   function render(){
     if(disposed||transitioning)return;
@@ -104,5 +110,5 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   }
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,compileAsync,refreshTextures:textures,get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
+  return {setMode,setLook,resize,render,compileAsync,refreshTextures:textures,get compiling(){return compiling>0;},get pipelineStats(){return pipelineGuard.stats;},get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;pipelineGuard.dispose();cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
 }
