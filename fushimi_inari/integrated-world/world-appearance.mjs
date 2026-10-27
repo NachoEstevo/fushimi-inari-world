@@ -3,6 +3,7 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
 import {createStationReflectionReadiness} from './station-reflection-readiness.mjs';
+import {createMineralSurfaceFinish} from './mineral-surface-finish.mjs';
 
 // The caller owns renderer initialization, the render loop and time-of-day.
 export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
@@ -15,7 +16,6 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const station=assembly.keihanStation;
   const materials=station?.group?createStationMaterialStudy(station):null;
   materials?.setEnabled(true);
-  materials?.setQuality(quality?.mode);
   const practicals=new THREE.Group();practicals.name='Station platform practical lights';
   for(const z of [-163,-176,-189]) {
     const light=new THREE.SpotLight('#fff1dc',18,11,1.25,.8,2);
@@ -40,7 +40,12 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   // Shared replacements retain sharing; unrelated mapped art keeps its finish.
   const replacements=new Map(),bindings=[];
   function finish(original) {
-    if(original?.userData?.worldShrineFinish)return original;
+    if(original?.userData?.worldShrineFinish||original?.userData?.worldMineralFinish)return original;
+    if(replacements.has(original))return replacements.get(original);
+    // Calibrate only the known paving texture trio. Cloned steps, curbs and
+    // podiums keep the same source maps and share one finish per source material.
+    const mineral=createMineralSurfaceFinish(original,shrineMaterials.flagstoneMat);
+    if(mineral){replacements.set(original,mineral);return mineral;}
     const shrineKind=shrineFinishes.get(original)??sourceFinishes.get(original?.name);
     if(original?.isMeshStandardMaterial&&shrineKind){
       if(!replacements.has(original)){
@@ -87,7 +92,15 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const center=new THREE.Vector3(-302.4,31,-176);
   let look='natural',disposed=false,near=false;
   applyTo(scene);
-  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false};
+  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
+  function applyStationQuality(){
+    materials?.setQuality(quality?.mode);
+    // High brings out the floor and painted panels beneath the existing
+    // ceiling fixtures. Their positions, range and shadow budget stay fixed.
+    stats.practicalIntensity=quality?.mode==='high'||quality?.mode==='ultra'?32:18;
+    for(const light of practicals.children)if(light.isSpotLight)light.intensity=stats.practicalIntensity;
+  }
+  applyStationQuality();
   const lighting=createWorldLookLighting({scene,hemi,sun});
   const stationProbe=createStationReflectionReadiness({renderer,scene,station,quality,sun});
   const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;}};
@@ -96,7 +109,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   async function prepare() {
     if(disposed)return;
     stats.prepared=true;
-    materials?.setQuality(quality?.mode);
+    applyStationQuality();
     await stationProbe.prepare();
     stats.localReflections=stationProbe.stats.enabled;
     stats.reflectionError=stationProbe.stats.error;

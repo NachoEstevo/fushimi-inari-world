@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishPrecinctVeranda} from './precinct-veranda-materials.mjs';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {okumiyaLayout as layout,okumiyaRailRuns,okumiyaRafter,okumiyaRoofY,okumiyaLatticeReturns,okumiyaBargeboard} from './okumiya-layout.mjs';
 
@@ -29,6 +30,10 @@ export function refineOkumiya(object,materials){
   // Cancel the compressed source layout's old quarter turn. The geographic
   // adapter supplies the remaining yaw and the unchanged solid collider.
   object.rotation.y=-.06;
+  // IMG_6628 shows dressed matte granite. The shared paving normal has
+  // aggressive grain; soften only this podium without changing its source maps.
+  podium.material=podium.material.clone();podium.material.normalScale.set(.32,.32);
+  podium.material.roughness=.96;podium.material.metalness=0;
   const red=materials.vermilionMat,gold=materials.goldMat;
   const wood=new THREE.MeshStandardMaterial({color:'#192127',roughness:.91});
   const trim=new THREE.MeshStandardMaterial({color:'#514037',roughness:.86});
@@ -110,6 +115,7 @@ export function refineOkumiya(object,materials){
   // exterior stone podium and the public walkable terrain stay untouched.
   for(const column of columns)replaceGeometry(column,new THREE.BoxGeometry(.24,2.95,.24));
   veranda.position.y=layout.verandaFloor-.08;
+  finishPrecinctVeranda(veranda);
 
   // The original koshi texture mistakenly wrapped all four plaster walls.
   // Reuse that material on the front; the real side and rear remain white.

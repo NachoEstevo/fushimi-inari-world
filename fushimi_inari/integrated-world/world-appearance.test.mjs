@@ -97,13 +97,18 @@ test('live quality, look and station transitions retain one environment without 
     const gold=new GPU.MeshStandardMaterial({roughness:.2,metalness:.92});gold.name='MAT_Gold_Kanagu_Leaf';
     const shrine=new GPU.Group(),redMesh=new GPU.Mesh(new GPU.BoxGeometry(),red),lacquerMesh=new GPU.Mesh(redMesh.geometry,lacquer),goldMesh=new GPU.Mesh(redMesh.geometry,gold);
     shrine.add(redMesh,lacquerMesh,goldMesh);scene.add(shrine);
-    appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group},legacy:{materials:{vermilionMat:red}}},
+    const flagstone=new GPU.MeshStandardMaterial({map:new GPU.Texture(),normalMap:new GPU.Texture(),roughnessMap:new GPU.Texture(),roughness:.78,metalness:.03});flagstone.normalScale.set(1.25,1.25);
+    const floorA=new GPU.Mesh(redMesh.geometry,flagstone),floorB=new GPU.Mesh(redMesh.geometry,flagstone);shrine.add(floorA,floorB);
+    appearance=await installWorldAppearance({scene,renderer,camera,quality,assembly:{keihanStation:{group},legacy:{materials:{vermilionMat:red,flagstoneMat:flagstone}}},
       hemi:new GPU.HemisphereLight(),sun:new GPU.DirectionalLight()});
     assert.equal(redMesh.material.roughness,.68);assert.equal(redMesh.material.clearcoat,0);
     assert.equal(redMesh.material.map,red.map);assert.equal(redMesh.material.roughnessMap,red.roughnessMap);
     assert.equal(red.roughness,.32,'source material remains untouched');
     assert.equal(lacquerMesh.material.metalness,0);assert.equal(lacquerMesh.material.roughness,.42);
     assert.equal(goldMesh.material,gold,'authored gold keeps its metallic response');
+    assert.deepEqual(floorA.material.normalScale.toArray(),[.38,.38]);assert.equal(floorA.material.roughness,.94);
+    assert.equal(floorA.material,floorB.material);assert.equal(floorA.material.map,flagstone.map);assert.equal(flagstone.normalScale.x,1.25);
+    const mineralFinish=floorA.material;appearance.applyTo(shrine);assert.equal(floorA.material,mineralFinish);
     const redFinish=redMesh.material;appearance.applyTo(shrine);assert.equal(redMesh.material,redFinish);
     const importedRed=new GPU.MeshStandardMaterial({roughness:.3,metalness:1});importedRed.name='MAT_Vermilion_ShuIro';
     const importedPlaque=new GPU.MeshStandardMaterial({roughness:.32,metalness:.15});importedPlaque.name='MAT_Blue_Hengaku_Plaque';
@@ -120,11 +125,14 @@ test('live quality, look and station transitions retain one environment without 
     assert.equal(captures,0,'arrival frames do not lazily capture');
     const practicals=scene.getObjectByName('Station platform practical lights');
     assert.equal(practicals.visible,true);
+    const ceilingLights=practicals.children.filter(o=>o.isSpotLight);assert.equal(ceilingLights.length,3);
+    assert.ok(ceilingLights.every(o=>o.intensity===18&&!o.castShadow&&o.distance===11));
     const globalEnvironment=scene.environment;
     appearance.prepare();appearance.prepare();assert.equal(captures,0,'Balanced loading avoids six-view captures');
     assert.equal(appearance.stats.prepared,true);assert.equal(scene.environment,globalEnvironment);
     appearance.setLook('sakura');assert.equal(captures,0,'Balanced look changes do not capture');
     quality.mode='high';appearance.prepare();appearance.prepare();assert.equal(captures,0,'High does not synchronously capture the city');
+    assert.ok(ceilingLights.every(o=>o.intensity===32));
     for(let i=0;i<5;i++)appearance.update(i);
     camera.position.x=0;appearance.update(10);assert.equal(practicals.visible,true,'leaving the station retains the light pipeline');
     camera.position.x=-302.4;appearance.update(11);
@@ -132,12 +140,15 @@ test('live quality, look and station transitions retain one environment without 
     appearance.setLook('dreamcore');assert.equal(captures,0,'look changes do not capture the city');
     appearance.setLook('dreamcore');appearance.update(12);assert.equal(captures,0);
     quality.mode='balanced';appearance.prepare();appearance.update(13);
+    assert.ok(ceilingLights.every(o=>o.intensity===18));
     assert.equal(scene.environment,globalEnvironment);assert.equal(captures,0);
     quality.mode='ultra';appearance.prepare();appearance.update(14);
     assert.equal(captures,0,'Ultra retains the studio probe');assert.equal(scene.environment,globalEnvironment);
     appearance.updateBaseLighting(()=>{});assert.equal(captures,0);assert.equal(scene.environment,globalEnvironment);
     appearance.dispose();assert.equal(first.material,metal,'disposal restores deferred materials');
     assert.equal(redMesh.material,red);assert.equal(lacquerMesh.material,lacquer);
+    assert.equal(floorA.material,flagstone);assert.equal(floorB.material,flagstone);
+    flagstone.map.dispose();flagstone.normalMap.dispose();flagstone.roughnessMap.dispose();flagstone.dispose();
     redMesh.geometry.dispose();red.map.dispose();red.roughnessMap.dispose();red.dispose();lacquer.dispose();gold.dispose();importedRed.dispose();importedPlaque.dispose();
     first.geometry.dispose();metal.dispose();
   } finally {appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=original;}

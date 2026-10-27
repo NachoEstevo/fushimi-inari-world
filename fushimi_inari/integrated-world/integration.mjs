@@ -793,8 +793,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   // Preserve the pre-subdivision palette identity, including both LOD levels.
   // Season tints must not change just because the draw cells became smaller.
-  let seasonSourceGroup=0;
+  let seasonSourceGroup=0;const precinctVerandaFloors=[];
   root.traverse(object=>{
+    if(object.userData.precinctVerandaFinish)precinctVerandaFloors.push(object);
     if(object.isInstancedMesh&&(object.material===legacy.foliage[2].material||object.userData.seasonalMaple))object.userData.seasonSourceGroup=seasonSourceGroup++;
   });
   // Logical LOD/residency and colour batches stay intact; only shadow leaves split.
@@ -817,6 +818,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   for(const wax of findVotiveWaxToRetain(legacy.flickeringCandleMeshes))retained.add(wax);
   const residencyRetained=new Set();
   for(const object of legacy.interactables)object.traverse(child=>residencyRetained.add(child));
+  // Two multi-material veranda leaves keep their original side finish and
+  // shared timber top; retain them in the same sector residency/prewarm index.
+  for(const object of precinctVerandaFloors){retained.add(object);residencyRetained.add(object);}
   const staticBatches=batchStaticScene(root,retained,128,residencyRetained);
   const forestChunks=[];root.updateMatrixWorld(true);
   // Only completed, immutable foliage/torii owners qualify. Animated visitors,
@@ -828,7 +832,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,
     mitsuFrontageAprons,forest,margins,terraces,yotsutsuji,reception,mountainLandmarks:{ainomine:ainomine?.stats??null,kumataka:kumatakaRefinement},
-    nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
+    nearPrecinct:{tamayama:tamayamaCompound,okumiya:okumiyaRefinement,access:nearPrecinctAccess,verandaSurfaces:precinctVerandaFloors.length},source:'interactive_viewer/index.html',replaced:['compressed terrain','compressed path ribbons','illustrative distant city'],...legacy.report};
   const registerCheckpoint=(id,label,point,lookAt)=>{
     const anchor={id,label,source:[...point],target:[...point],checkpoint:[...point],lookAt};spatial.anchors.push(anchor);spatial.byId[id]=anchor;
   };

@@ -11,10 +11,12 @@ function fixture(){
 }
 test('proven rear-gable sightline is closed by actual roof geometry while interaction identity survives',()=>{
   const f=fixture(),callback=f.body.userData.interactable;
+  const inheritedRoof=f.details.children.find(o=>o.material?.metalness===.22);assert.equal(inheritedRoof.material.color.getHexString(),'848983');
   const lower=new Map();for(const mesh of f.details.children.filter(o=>['494536','242923'].includes(o.material?.color?.getHexString()))){const p=mesh.geometry.attributes.position,values=[];for(let i=0;i<p.count;i+=3)if(![0,1,2].every(j=>p.getY(i+j)>=3.25))for(let j=0;j<9;j++)values.push(p.array[i*3+j]);lower.set(mesh,values);}
   const origin=new THREE.Vector3(-5.6828727309,3.2332475133,-3.2434524),direction=new THREE.Vector3(-2.9843591761,.6280033048,3.5403781834).normalize(),ray=new THREE.Raycaster(origin,direction,0,10);
   f.root.updateMatrixWorld(true);assert.equal(ray.intersectObject(f.details,true).length,0,'baseline reproduces final court pixel600/180 rear gap');
   const r=buildKumatakaRoofR97(f.root);assert.ok(r);f.root.updateMatrixWorld(true);assert.ok(ray.intersectObject(r.group,true).length>0,'same real sightline hits completed rear roof envelope');
+  assert.equal(r.group.children.find(o=>o.material.metalness===.22).material.color.getHexString(),'848983');
   assert.equal(f.body.userData.interactable,callback);assert.equal(callback.onTrigger(),42);assert.ok(r.batches<=2&&r.triangles<7000);
   for(const [mesh,values]of lower){assert.equal(mesh.parent,f.details);assert.deepEqual(Array.from(mesh.geometry.attributes.position.array),values,'every original lower altar/timber triangle is preserved byte-for-byte');}
   assert.equal(r.triangles,3076);assert.equal(r.removedTriangles,1505);assert.equal(r.triangleDelta,1571);

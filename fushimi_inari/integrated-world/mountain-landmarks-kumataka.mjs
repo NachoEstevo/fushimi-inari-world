@@ -159,7 +159,7 @@ export function refineKumatakasha(object,materials){
   const palette=stonePalette(materials);
   palette.wood.color.set('#494536');palette.shaded.color.set('#565c50');
   palette.roof.dispose();palette.roof=(materials.copperRoofMat??materials.roofMat??palette.wood).clone();
-  palette.roof.color.set('#92846c');palette.roof.roughness=.81;palette.roof.metalness=.22;palette.roof.side=THREE.DoubleSide;
+  palette.roof.color.set('#848983');palette.roof.roughness=.81;palette.roof.metalness=.22;palette.roof.side=THREE.DoubleSide;
   const frameStats=openTimberFrame(body,palette);
   roof.removeFromParent();roof.geometry.dispose();curtain.removeFromParent();curtain.geometry.dispose();
   const details=new THREE.Group();details.name='Kumataka photographed timber pavilion and straw fringe';

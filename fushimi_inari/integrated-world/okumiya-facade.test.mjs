@@ -118,3 +118,13 @@ test('photographed corner lattice stays near the front and never wraps the main 
 test('pale gable fascia follows the unchanged roof with constant clearance',()=>{
  for(const side of [-1,1])for(const [x,y,z]of okumiyaBargeboard(side)){assert.equal(x,side*3.9);assert.ok(Math.abs(okumiyaRoofY(x,z)-y-.23)<1e-8);}
 });
+
+test('Okumiya podium softens exaggerated source normal relief without changing mineral maps or collider geometry',()=>{
+ const f=sourceFixture(),source=f.podium.material,geometry=f.podium.geometry;
+ source.map=new THREE.Texture();source.normalMap=new THREE.Texture();source.roughnessMap=new THREE.Texture();source.normalScale.set(1.25,1.25);source.roughness=.78;
+ const color=source.color.clone();refineOkumiya(f.group,f.materials);
+ assert.equal(f.podium.geometry,geometry);assert.notEqual(f.podium.material,source);
+ for(const key of ['map','normalMap','roughnessMap'])assert.equal(f.podium.material[key],source[key]);
+ assert.deepEqual(f.podium.material.normalScale.toArray(),[.32,.32]);assert.equal(f.podium.material.roughness,.96);assert.equal(f.podium.material.metalness,0);
+ assert.deepEqual(f.podium.material.color,color);assert.deepEqual(source.normalScale.toArray(),[1.25,1.25]);assert.equal(source.roughness,.78);
+});

@@ -23,7 +23,7 @@ export function buildKumatakaRoofR97(root){
   const details=owner.getObjectByName('Kumataka photographed timber pavilion and straw fringe');
   if(!details)return null;
   const named=color=>details.children.filter(o=>o.isMesh&&o.material?.color?.getHexString()===color);
-  const roof=named('92846c'),wood=named('494536'),dark=named('242923');
+  const roof=named('848983'),wood=named('494536'),dark=named('242923');
   if(roof.length!==1||wood.length!==1||dark.length!==1||roof[0].material.metalness!==.22)return null;
   const filtered=[wood[0],dark[0]].map(o=>lowerTriangles(o.geometry));if(filtered.some(g=>!g))return null;
   const group=new THREE.Group();group.name='Kumataka continuous swept roof R97';

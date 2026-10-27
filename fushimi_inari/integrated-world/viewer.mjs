@@ -488,7 +488,7 @@ try {
     const main=['mitsurugi','gozendani'].includes(id)?assembly.spatial.returning:assembly.spatial.main;
     let closest=0;for(let i=1;i<main.length;i++)if(Math.hypot(main[i][0]-node.point[0],main[i][2]-node.point[2])<Math.hypot(main[closest][0]-node.point[0],main[closest][2]-node.point[2]))closest=i;
     const point=anchor.checkpoint??(id==='azumamaro_entry'?[16.91,assembly.surfaces.height(16.91,15.9),15.9]:id==='mitsurugi'?main[closest]:id==='yotsu'||id==='chaya_s'?[801.414,163.85,-213.322]:id==='chaya_n'?[809.642,171.7,-245.871]:node.point);
-    const target=anchor.lookAt??(['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)]);
+    const target=anchor.lookAt??(['kojingamine','west_view'].includes(id)?[anchor.target[0]-1000,60,anchor.target[2]+650]:id==='yotsu'?[-800,60,-300]:['summit','ninomine','chaya_n','chaya_s','temizuya','reception','azumamaro_entry'].includes(id)?anchor.target:main[Math.min(closest+6,main.length-1)]);
     requestCheckpoint({id,label:anchor.label,point,target});
   }});
   const startGuided=$('walk').onclick;$('walk').onclick=()=>{if(!allowFastTravel||sectorPreparation?.busy)return;interruptArrival();walker.stop();startGuided();};

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {finishPrecinctVeranda} from './precinct-veranda-materials.mjs';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Photographic envelope refinement, not a measured reconstruction. Call before
@@ -13,7 +14,8 @@ export function refineGondenFacade(object,materials){
  for(const group of groups){
   const match=(w,h,d)=>group.children.find(m=>{const p=m.geometry?.parameters;return p?.width===w&&p.height===h&&p.depth===d;});
   const oldRoof=match(8.4,.75,6.6),wall=match(6.2,3.1,4.2);
-  const roof=oldRoof.material.clone();roof.color.set('#524b3a');roof.roughness=.97;roof.metalness=0;roof.side=THREE.DoubleSide;
+  const veranda=match(6.8,.16,4.8);if(veranda)finishPrecinctVeranda(veranda);
+  const roof=oldRoof.material.clone();roof.color.set('#524b3a');roof.roughness=.97;roof.metalness=0;roof.normalScale.set(.38,.38);roof.side=THREE.DoubleSide;
   const timber=new THREE.MeshStandardMaterial({color:'#65412c',roughness:.90});
   const red=materials.vermilionMat,black=materials.blackNemakiMat,gold=materials.goldMat,white=materials.plasterMat;
   // IMG_6572_20210311 explicitly shows the rear's white plaster and five red
@@ -33,7 +35,7 @@ export function refineGondenFacade(object,materials){
   const positions=[],uv=[];
   const strip=(za,zb)=>{
    const a=[-halfWidth(za),profile(za),za],b=[halfWidth(za),profile(za),za],c=[-halfWidth(zb),profile(zb),zb],d=[halfWidth(zb),profile(zb),zb];
-   for(const p of [a,c,b,b,c,d]){positions.push(...p);uv.push(p[0]/2,p[2]/2);}
+   for(const p of [a,c,b,b,c,d]){positions.push(...p);uv.push(p[0]/1.10,p[2]/.72);}
   };
   for(const [start,end]of [[-3.05,ridgeZ],[ridgeZ,3.55]])for(let i=0;i<24;i++)strip(start+(end-start)*i/24,start+(end-start)*(i+1)/24);
   const skin=new THREE.BufferGeometry();skin.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));skin.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));skin.computeVertexNormals();part(skin,roof);
