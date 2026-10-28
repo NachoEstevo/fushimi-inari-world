@@ -9,17 +9,21 @@ const boxOf=value=>value?.bounds??value;
 // Snapshot only the caller's already-known foliage/roof meshes. Instances are
 // kept separate: a forest batch's aggregate box would shade the empty court.
 // No scene traversal, render-target allocation, lights or shadow pass is used.
-export function collectPrecinctLeafBounds(objects,{region,maxInstances=8192,maxHorizontalSpan=Infinity}={}){
-  const result=[],matrix=new THREE.Matrix4(),instance=new THREE.Matrix4();
-  let inspected=0,truncated=false,skippedDegenerate=0,skippedOversized=0;
-  for(const object of objects){
+export function collectPrecinctLeafBounds(objects,{region,maxInstances=8192,maxHorizontalSpan=Infinity,sample=false}={}){
+  const result=[],matrix=new THREE.Matrix4(),instance=new THREE.Matrix4(),owners=Array.from(objects);
+  // Count input slots without reading any instance matrices or allocating boxes.
+  // Keep one global sampling phase across owners so late forest cells survive.
+  const availableInstances=owners.reduce((n,o)=>n+(o?.isMesh&&o.geometry?.attributes?.position?(o.isInstancedMesh?o.count:1):0),0);
+  const sampleStride=sample&&maxInstances>0?Math.max(1,Math.ceil(availableInstances/maxInstances)):1;
+  let inspected=0,truncated=false,skippedDegenerate=0,skippedOversized=0,inputIndex=0;
+  for(const object of owners){
     if(!object?.isMesh||!object.geometry?.attributes?.position)continue;
+    const count=object.isInstancedMesh?object.count:1,offset=inputIndex;inputIndex+=count;
     const geometry=object.geometry;
     if(!geometry.boundingBox)geometry.computeBoundingBox();
     if(!validBounds(geometry.boundingBox))continue;
     object.updateWorldMatrix(true,false);
-    const count=object.isInstancedMesh?object.count:1;
-    for(let i=0;i<count;i++){
+    for(let i=sample?(sampleStride-offset%sampleStride)%sampleStride:0;i<count;i+=sample?sampleStride:1){
       if(inspected++>=maxInstances){truncated=true;break;}
       matrix.copy(object.matrixWorld);
       if(object.isInstancedMesh){
@@ -35,7 +39,7 @@ export function collectPrecinctLeafBounds(objects,{region,maxInstances=8192,maxH
     }
     if(truncated)break;
   }
-  return {bounds:result,inspected:Math.min(inspected,maxInstances),truncated,skippedDegenerate,skippedOversized};
+  return {bounds:result,inspected:Math.min(inspected,maxInstances),truncated,skippedDegenerate,skippedOversized,availableInstances,sampleStride};
 }
 
 // Static material batches can contain unrelated roofs on opposite sides of a

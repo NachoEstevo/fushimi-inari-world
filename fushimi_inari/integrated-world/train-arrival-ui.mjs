@@ -13,7 +13,7 @@ export function installTrainArrivalUI({experience,focusTarget,isBlocked=()=>fals
   panel.innerHTML='<p id="arrival-phase" class="visually-hidden" role="status" aria-live="polite"></p><button id="arrival-skip">Skip</button>';
   document.body.append(panel);
   const options=document.createElement('div');options.className='arrival-settings';
-  options.innerHTML='<h3 class="menu-section">Train arrival</h3><p id="arrival-journey"></p><p id="arrival-reference"></p><button id="arrival-replay">Replay train arrival</button><label><input id="arrival-reduced-menu" type="checkbox"> Reduce arrival motion</label>';
+  options.innerHTML='<p id="arrival-journey" hidden></p><p id="arrival-reference" hidden></p><button id="arrival-replay">Replay arrival</button><label><input id="arrival-reduced-menu" type="checkbox"> Reduce motion</label>';
   document.getElementById('menu-arrival').append(options);
   const $=id=>document.getElementById(id);
   $('arrival-journey').textContent=labels.journey??'Kyoto → Inari · Platform 2';

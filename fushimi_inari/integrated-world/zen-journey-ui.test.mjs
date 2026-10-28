@@ -25,26 +25,27 @@ function fixture(options={}){
 
 test('one existing journal keeps its close header and switches accessible sections',()=>{
  const f=fixture();try{
-  assert.equal(f.binding.children[0],f.top);assert.equal(f.find('Your visit').attributes['aria-selected'],'true');assert.equal(f.find('Seals').attributes['aria-selected'],'false');
+  assert.equal(f.binding.children[0],f.top);assert.equal(f.find('Journal').attributes['aria-selected'],'true');assert.equal(f.find('Seals').attributes['aria-selected'],'false');
+  assert.equal(f.all.filter(node=>node.attributes.role==='tablist').length,1);assert.equal(f.find('Options').parent.open,false);
   f.find('Seals').click();assert.equal(f.seal.parent.hidden,false);assert.equal(f.find('Seals').attributes['aria-selected'],'true');
-  f.find('Your visit').click();assert.equal(f.find('Read the remembered postcard').hidden,true);f.find('Read the remembered postcard').click();assert.equal(f.journey.snapshot().moments.aki,undefined);
-  f.journey.recordMoment('postcard',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.equal(f.find('Read the remembered postcard').hidden,true);
-  f.journey.recordMoment('aki',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.equal(f.find('Read the remembered postcard').hidden,false);
-  const observations=f.find('Observations');observations.dispatch('keydown',{key:'ArrowRight',preventDefault(){}});assert.equal(f.find('Encounters').attributes['aria-selected'],'true');
+  f.find('Journal').click();assert.equal(f.journey.snapshot().moments.aki,undefined);
+  const note=f.all.find(node=>node.className==='zen-story-copy');f.journey.recordMoment('postcard',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.match(note.textContent,/platform/);
+  f.journey.recordMoment('aki',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.match(note.textContent,/Yotsutsuji/);
+  const sketches=f.find('Sketches');sketches.dispatch('keydown',{key:'ArrowRight',preventDefault(){}});assert.equal(f.find('Seals').attributes['aria-selected'],'true');
  }finally{f.cleanup();}assert.deepEqual(f.binding.children,[f.top,f.seal]);
 });
-test('ending appears only after root completes the train and export remains an explicit action',async()=>{
- const f=fixture();try{
+test('ending appears only after root completes the train and continuing releases its camera owner',async()=>{
+ let f;f=fixture({onContinueWalking:()=>f.calls.push('continue')});try{
   assert.equal(f.find('Postcard').hidden,true);f.find('Return by train').click();await Promise.resolve();assert.deepEqual(f.calls,['train']);assert.equal(f.journey.snapshot().visit.finishedAt,0);
   f.journey.recordMoment('return',{position:[0,1.7,0],mode:'walk',intent:'interact'});f.journey.finishVisit();f.ui.showEnding();
-  assert.equal(f.book.open,true);assert.equal(f.find('Postcard').hidden,false);assert.equal(f.find('Postcard').attributes['aria-selected'],'true');assert.equal(f.find('Save postcard PNG').disabled,undefined);
-  f.find('Continue walking').click();assert.equal(f.book.open,false);assert.equal(f.journey.snapshot().visit.number,2);assert.equal(f.journey.snapshot().visit.finishedAt,0);
+  assert.equal(f.book.open,true);assert.equal(f.find('Postcard').hidden,false);assert.equal(f.find('Postcard').attributes['aria-selected'],'true');assert.equal(f.find('Save postcard').disabled,undefined);
+  f.find('Continue walking').click();assert.equal(f.book.open,false);assert.equal(f.journey.snapshot().visit.number,2);assert.equal(f.journey.snapshot().visit.finishedAt,0);assert.deepEqual(f.calls,['train','continue']);
  }finally{f.cleanup();}
 });
 test('postcard prose reflects earned moments and never invents a photo or tea stop',()=>{
  const empty={moments:{},sketches:{},photoPrompts:{},story:{complete:false}};
- assert.doesNotMatch(zenPostcardLines(empty).join(' '),/stopped for tea|photograph from Yotsutsuji/);
- assert.match(zenPostcardLines({...empty,moments:{tea:1},photoPrompts:{'kyoto-view':2}}).join(' '),/stopped for tea.*photograph from Yotsutsuji/);
+ assert.doesNotMatch(zenPostcardLines(empty).join(' '),/Tea at|Kyoto from Yotsutsuji/);
+ assert.match(zenPostcardLines({...empty,moments:{tea:1},photoPrompts:{'kyoto-view':2}}).join(' '),/Kyoto from Yotsutsuji.*Tea at Suehiro-ya/);
 });
 test('observation ink stays hidden until a real validated view is recorded, then includes accessible descriptions',()=>{
  const f=fixture();try{
@@ -60,5 +61,40 @@ test('ending opens through its owner callback even when the journal button is st
   f.open.disabled=true;f.open.click=()=>{if(!f.open.disabled)f.book.open=true;};
   f.journey.recordMoment('return',{position:[0,1.7,0],mode:'walk',intent:'interact'});f.journey.finishVisit();f.ui.showEnding();
   assert.equal(opens,1);assert.equal(f.book.open,true);assert.equal(f.find('Postcard').attributes['aria-selected'],'true');f.ui.showEnding();assert.equal(opens,1);
+ }finally{f.cleanup();}
+});
+
+const captured=thumbnailId=>({position:[0,1.7,0],direction:[-1,0,0],mode:'walk',weather:'clear',fov:45,width:1920,height:1080,thumbnailId});
+const settledPhotos=async()=>{await Promise.resolve();await Promise.resolve();};
+const photoGrid=f=>f.all.find(node=>node.className==='zen-photo-grid');
+const postcardPreview=f=>f.all.find(node=>node.className==='zen-ending-photo').children[0];
+
+test('the postcard follows the latest available photo until the player makes a choice',async()=>{
+ const records=[{id:'new',url:'blob:new',persistent:true,createdAt:20},{id:'old',url:'blob:old',persistent:true,createdAt:10}],f=fixture({album:{list:async()=>records}});
+ try{
+  f.journey.recordPhoto(captured('old'));await settledPhotos();assert.equal(postcardPreview(f).src,'blob:old');
+  f.journey.recordPhoto(captured('new'));await settledPhotos();assert.equal(postcardPreview(f).src,'blob:new');
+  f.journey.recordMoment('return',{position:[0,1.7,0],mode:'walk',intent:'interact'});f.journey.finishVisit();f.ui.showEnding();await settledPhotos();assert.equal(postcardPreview(f).src,'blob:new');
+  assert.equal(photoGrid(f).children.find(node=>node.dataset.photoId==='new').attributes['aria-pressed'],'true');
+ }finally{f.cleanup();}
+});
+
+test('an explicit drawing survives new photos and repeated album refreshes',async()=>{
+ const records=[{id:'first',url:'blob:first',persistent:true,createdAt:10}],f=fixture({album:{list:async()=>records}});
+ try{
+  f.journey.recordPhoto(captured('first'));f.journey.recordMoment('return',{position:[0,1.7,0],mode:'walk',intent:'interact'});f.journey.finishVisit();f.ui.showEnding();await settledPhotos();
+  photoGrid(f).children.find(node=>node.dataset.photoId==='').click();assert.equal(postcardPreview(f).className,'zen-postcard-drawing');
+  records.unshift({id:'latest',url:'blob:latest',persistent:true,createdAt:20});f.journey.recordPhoto(captured('latest'));await settledPhotos();f.find('Photos').click();await settledPhotos();
+  assert.equal(postcardPreview(f).className,'zen-postcard-drawing');assert.equal(photoGrid(f).children.find(node=>node.dataset.photoId==='').attributes['aria-pressed'],'true');
+ }finally{f.cleanup();}
+});
+
+test('an explicit photo stays selected until its asset disappears, then falls back to the latest',async()=>{
+ let records=[{id:'new',url:'blob:new',persistent:true,createdAt:20},{id:'old',url:'blob:old',persistent:true,createdAt:10}];const f=fixture({album:{list:async()=>records}});
+ try{
+  f.journey.recordPhoto(captured('old'));f.journey.recordPhoto(captured('new'));await settledPhotos();photoGrid(f).children.find(node=>node.dataset.photoId==='old').click();
+  records.unshift({id:'latest',url:'blob:latest',persistent:true,createdAt:30});f.journey.recordPhoto(captured('latest'));await settledPhotos();assert.equal(postcardPreview(f).src,'blob:old');
+  records=records.filter(photo=>photo.id!=='old');f.find('Photos').click();await settledPhotos();assert.equal(postcardPreview(f).src,'blob:latest');
+  records=[];f.find('Photos').click();await settledPhotos();assert.equal(postcardPreview(f).className,'zen-postcard-drawing');
  }finally{f.cleanup();}
 });

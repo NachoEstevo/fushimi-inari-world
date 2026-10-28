@@ -50,6 +50,22 @@ test('original renderer callback is preserved and disposal does not overwrite a 
  const later=()=>{};fn=later;cull.dispose();assert.equal(fn,later);mesh.geometry.dispose();mesh.material.dispose();
 });
 
+test('draw dispatch forwards every r180 engine argument, return value and exception through original and default callbacks',()=>{
+ const camera=new THREE.PerspectiveCamera(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
+ mesh.position.set(0,0,-10);mesh.updateMatrixWorld(true);
+ const scene={},group={},lights={},clipping={},pass={},failure=new Error('backend failed');let fail=false,fn=null;
+ const args=[mesh,scene,camera,mesh.geometry,mesh.material,group,lights,clipping,pass];
+ const renderer={getRenderObjectFunction:()=>fn,setRenderObjectFunction:value=>{fn=value;},renderObject(...actual){
+  assert.equal(this,renderer);assert.deepEqual(actual,args);if(fail)throw failure;return pass;
+ }};
+ for(const previous of [null,renderer.renderObject]){
+  fn=previous;const cull=installStaticColorCull(renderer,camera,[{object:mesh}]);cull.update();
+  fail=false;assert.equal(fn(...args),pass);fail=true;assert.throws(()=>fn(...args),error=>error===failure);
+  cull.dispose();assert.equal(fn,previous);
+ }
+ mesh.geometry.dispose();mesh.material.dispose();
+});
+
 test('tight static boxes reject far-plane sphere false positives without clipping visible surfaces',()=>{
  const camera=new THREE.PerspectiveCamera(45,16/9,.2,200);camera.updateMatrixWorld(true);
  const geometry=new THREE.BoxGeometry(40,40,4),material=new THREE.MeshBasicMaterial();

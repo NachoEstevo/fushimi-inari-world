@@ -93,7 +93,9 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   let look='natural',disposed=false,near=false;
   applyTo(scene);
   const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
+  const lighting=createWorldLookLighting({scene,hemi,sun});
   function applyStationQuality(){
+    lighting.setQuality(quality?.mode);
     materials?.setQuality(quality?.mode);
     station?.fareGateDetail?.setQuality(quality?.mode);
     // The same three registered fixtures softly wash wall and platform in High.
@@ -107,7 +109,6 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     }
   }
   applyStationQuality();
-  const lighting=createWorldLookLighting({scene,hemi,sun});
   const stationProbe=createStationReflectionReadiness({renderer,scene,station,quality,sun});
   const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;}};
   // Retain the global environment. High prepares a station-only surrogate once
@@ -187,7 +188,7 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
     sakura:{hemi:'#f4c7e4',floor:'#766278',sun:'#ffbc91',ambient:.88,intensity:1.06,environment:.35},
     dreamcore:{hemi:'#d6dbff',floor:'#8c9e76',sun:'#ffffe7',ambient:1.06,intensity:1.15,environment:.42}
   };
-  let look='natural';
+  let look='natural',high=false;
   function restoreBaseLighting() {
     hemi.color.copy(baseline.hemi);hemi.groundColor.copy(baseline.floor);sun.color.copy(baseline.sun);
     hemi.intensity=baseline.ambient;sun.intensity=baseline.intensity;
@@ -200,10 +201,14 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
       hemi.groundColor.lerp(new THREE.Color(values.floor),.35);sun.color.lerp(new THREE.Color(values.sun),.35);
       hemi.intensity*=values.ambient;sun.intensity*=values.intensity;
     }
+    // Slightly less uniform skylight gives sunlit paving and timber separation
+    // in High. Keep night readable and never compound the saved day presets.
+    const daylightLook=high&&baseline.intensity>1;
+    if(daylightLook){hemi.intensity*=.88;sun.intensity*=1.04;}
     // The studio probe must follow daylight energy rather than lighting night as day.
     const daylight=LIGHT_PRESETS.day.sun+LIGHT_PRESETS.day.fill;
     const energy=THREE.MathUtils.clamp((baseline.intensity+baseline.ambient)/daylight,0,1);
-    scene.environmentIntensity=(values?.environment??.3)*energy;
+    scene.environmentIntensity=(values?.environment??.3)*energy*(daylightLook ? .9 : 1);
   }
   // Wrap the caller's synchronous day setter. Restoring before it runs also
   // supports setters that change only intensities, without saving tinted colors
@@ -219,5 +224,5 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
     } finally {applyLookLighting();}
   }
   applyLookLighting();
-  return {updateBaseLighting,setLook(name){look=Object.hasOwn(looks,name)?name:'natural';applyLookLighting();}};
+  return {updateBaseLighting,setQuality(mode){high=mode==='high'||mode==='ultra';applyLookLighting();},setLook(name){look=Object.hasOwn(looks,name)?name:'natural';applyLookLighting();}};
 }

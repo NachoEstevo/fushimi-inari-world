@@ -114,3 +114,32 @@ test('train photographs keep actual album metadata and reload within the cap wit
  for(let i=0;i<16;i++)j.recordPhoto({...details,thumbnailId:`train-window-${i}`});assert.equal(j.snapshot().photos.length,12);assert.ok(j.snapshot().photos.every(p=>p.mode==='train'&&p.promptIds.length===0));
  restored=createZenJourney({locations,storage:f.storage});assert.equal(restored.snapshot().photos.length,12);assert.deepEqual(restored.snapshot().photoPrompts,{});assert.ok(restored.snapshot().photos.every(p=>p.mode==='train'));assert.equal(restored.canRecordPhoto({...details,mode:'orbit'}),false);assert.equal(restored.canRecordPhoto({...details,mode:'fly'}),false);j.dispose();restored.dispose();
 });
+
+test('unchanged persistence payloads are read for concurrency but decoded only once',()=>{
+ const original=JSON.parse;let parses=0,reads=0,raw=null;JSON.parse=(...args)=>{parses++;return original(...args);};
+ let journey;
+ try{
+  journey=createZenJourney({locations,storage:{getItem(){reads++;return raw;},setItem(_,value){raw=value;}}});
+  for(let i=0;i<50;i++)journey.observe([0,1.7,0],{mode:'walk'});
+  assert.equal(reads,51);assert.equal(parses,1,'initial null payload is cached too');
+  assert.equal(journey.recordMoment('cat',context('station')),true);
+  for(let i=0;i<50;i++)journey.observe([0,1.7,0],{mode:'walk'});
+  assert.equal(reads,102);assert.equal(parses,1,'a successful write updates the cache without reparsing its own payload');
+  raw='{';journey.observe([0,1.7,0],{mode:'walk'});journey.observe([0,1.7,0],{mode:'walk'});assert.equal(parses,2,'malformed payloads are cached and safely ignored');
+ }finally{JSON.parse=original;journey?.dispose();}
+});
+
+test('cached storage events retain unions through delayed events and newer cross-tab visits',()=>{
+ const previous=globalThis.window,listeners=new Set();globalThis.window={addEventListener(name,fn){if(name==='storage')listeners.add(fn);},removeEventListener(name,fn){listeners.delete(fn);}};
+ let raw=null,time=1000,a,b,notifications=0;const storage={getItem:()=>raw,setItem:(_,value)=>raw=value};
+ try{
+  a=createZenJourney({locations,storage,now:()=>time++});b=createZenJourney({locations,storage,now:()=>time++});a.subscribe(()=>notifications++);
+  a.recordMoment('cat',context('station'));const old=raw;b.recordMoment('map',context('station'));const union=raw;
+  const event=value=>{for(const fn of listeners)fn({key:ZEN_JOURNEY_KEY,newValue:value});};
+  event(union);const count=notifications;event(union);assert.equal(notifications,count,'identical events do not rerender subscribers');
+  a.setIntention('views');const current=raw;event(old);a.observe([0,1.7,0],{mode:'walk'});
+  assert.equal(raw,current);assert.equal(a.snapshot().intention,'views');assert.ok(a.snapshot().moments.map&&a.snapshot().moments.cat);
+  b.recordMoment('return',context('station'));b.finishVisit();b.beginVisit();event(old);a.setWeather('drizzle');
+  const saved=JSON.parse(raw);assert.equal(saved.visit.number,2);assert.equal(saved.visit.finishedAt,0);assert.ok(saved.moments.cat&&saved.moments.map);assert.equal(saved.weather,'drizzle');
+ }finally{a?.dispose();b?.dispose();globalThis.window=previous;}
+});

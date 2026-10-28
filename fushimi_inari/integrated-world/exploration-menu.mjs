@@ -11,13 +11,12 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   const $=id=>document.getElementById(id);
   const menu=document.createElement('dialog');menu.id='exploration-menu';menu.setAttribute('aria-labelledby','menu-title');
   const tabs=['Explore','Routes','Settings'];
-  menu.innerHTML=`<div class="menu-heading"><div><h2 id="menu-title">Explore Inariyama</h2><p id="menu-context">Fushimi Inari Taisha</p></div><button id="menu-close" aria-label="Close menu">×</button></div><div class="menu-tabs" role="tablist" aria-label="Menu sections">${tabs.map((t,i)=>`<button role="tab" id="tab-${i}" aria-controls="pane-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${t}</button>`).join('')}</div>${tabs.map((t,i)=>`<section role="tabpanel" id="pane-${i}" aria-labelledby="tab-${i}" ${i?'hidden':''}></section>`).join('')}`;
+  menu.innerHTML=`<div class="menu-heading"><div><h2 id="menu-title">Menu</h2><p id="menu-context" hidden></p></div><button id="menu-close" aria-label="Close menu">×</button></div><div class="menu-tabs" role="tablist" aria-label="Menu sections">${tabs.map((t,i)=>`<button role="tab" id="tab-${i}" aria-controls="pane-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${t}</button>`).join('')}</div>${tabs.map((t,i)=>`<section role="tabpanel" id="pane-${i}" aria-labelledby="tab-${i}" ${i?'hidden':''}></section>`).join('')}`;
   menu.insertAdjacentHTML('beforeend','<p class="menu-credit">Made by <a href="https://nachoestevo.com" target="_blank" rel="noopener noreferrer">Ignacio Estevo</a></p>');
   document.body.append(menu);
 
-  $('pane-0').innerHTML=`<h3 class="menu-section">How to move</h3>
-    <div class="movement-modes"><button id="mode-walk">Walk</button>${allowDebugCamera?'<button id="mode-fly">Fly</button><button id="mode-orbit">Orbit</button>':''}</div>
-    <ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Click</kbd> enter mouse look · <kbd>Esc</kbd> release</li><li><kbd>Drag</kbd> look on touch screens</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li>${allowDebugCamera?'<li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li>':''}</ul>
+  $('pane-0').innerHTML=`<div class="movement-modes"><button id="mode-walk">Walk</button>${allowDebugCamera?'<button id="mode-fly">Fly</button><button id="mode-orbit">Orbit</button>':''}</div>
+    <details><summary>Controls</summary><ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Click</kbd> enter mouse look · <kbd>Esc</kbd> release</li><li><kbd>Drag</kbd> look on touch screens</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li>${allowDebugCamera?'<li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li>':''}</ul></details>
     ${allowFastTravel?'<h3 class="menu-section">Go to a place</h3>':''}`;
   places.hidden=!allowFastTravel;$('pane-0').append(places);
   $('overview').hidden=!allowDebugCamera;$('overview').textContent='Aerial overview';$('overview').classList.add('menu-link');$('pane-0').append($('overview'));
@@ -25,14 +24,13 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   for(const id of ['walk','stop','speed'])$(id).hidden=!allowFastTravel;
   document.querySelector('label[for="speed"]').hidden=!allowFastTravel;
 
-  $('pane-2').innerHTML=`<h3 class="menu-section">Sound</h3>
-    <label class="switch"><input id="sound-switch" type="checkbox"> Sound</label>
+  $('pane-2').innerHTML=`<label class="switch"><input id="sound-switch" type="checkbox"> Sound</label>
     <div id="sound-settings"><label for="ambient-volume">Volume</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
-    <label class="check"><input id="ambient-birds" type="checkbox" checked> Uguisu · field recording</label>
-    <label class="check"><input id="ambient-wind" type="checkbox" checked> Breeze and leaves</label>
-    <label class="check"><input id="ambient-chimes" type="checkbox" checked> Chimes near tea houses</label></div>
-    <h3 class="menu-section">Scene</h3><div id="scene-settings"></div>
-    <label for="render-quality">Rendering quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High quality</option></select>
+    <label class="check"><input id="ambient-birds" type="checkbox" checked> Birds</label>
+    <label class="check"><input id="ambient-wind" type="checkbox" checked> Wind</label>
+    <label class="check"><input id="ambient-chimes" type="checkbox" checked> Chimes</label></div>
+    <div id="scene-settings"></div>
+    <label for="render-quality">Quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High quality</option></select>
     ${allowDebugCamera?'<label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby - 220 m</option><option value="full">Entire world</option></select>':''}
     <div id="menu-arrival"></div>`;
   const light=document.querySelector('label[for="light"]');light.textContent='Time of day';$('scene-settings').append(light,$('light'));

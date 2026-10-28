@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {KEIHAN_SEATING as seatLayout,keihanCarSeatSpans} from './keihan-seat-layout.mjs';
 
 export function keihanServiceMaterial(){
  const m=new THREE.MeshStandardMaterial({color:'#eff2d9',roughness:.38,metalness:.12,emissive:'#ffffff',emissiveIntensity:.7,toneMapped:false});
@@ -27,26 +28,24 @@ export function keihanDisplayPlane(parts,material,{x,y,z,width,height,side=0,ide
 // Dimensions below are appearance estimates, not surveyed construction data.
 export function detailKeihanCar(parts,spec,p,carIndex,center){
  const {carWidth:W,carLength:L}=spec.train,selected=carIndex===spec.train.selectedCar;
+ const spans=keihanCarSeatSpans(spec.train,center,selected);
  let seats=0,dividers=0,windows=0;
  for(const side of [-1,1]){
   // A recessed sill and upper rubber gasket give glazing a real section.
-  const edges=[-L/2,...spec.train.doorOffsets.flatMap(v=>[v-.65,v+.65]),L/2];
-  for(let i=0;i<edges.length-1;i+=2){
-   const lo=edges[i],hi=edges[i+1],span=hi-lo,mid=(lo+hi)/2;
+  for(const {lo,hi,span,mid,pitch,seats:centers}of spans){
    if(selected)for(const y of [1.32,2.38])parts.box(.095,.035,span-.14,side*(W/2+.012),y,center+mid,p.dark);
    if(selected)parts.box(.13,.035,span-.16,side*(W/2-.025),1.29,center+mid,p.metal);
    const panes=Math.max(1,Math.round((span-.16)/1.35));
    for(let k=1;k<panes;k++)parts.box(.095,1.08,.045,side*(W/2+.012),1.85,center+lo+.08+(span-.16)*k/panes,p.dark);
    windows+=panes;
    if(!selected||span<=1)continue;
-   const count=Math.max(1,Math.floor((span-.30)/.46)),pitch=(span-.30)/count;
-   // Individual cushions/backrests break the monolithic bench silhouette.
-   for(let k=0;k<count;k++){
-    const z=center+lo+.15+pitch*(k+.5);
-    parts.box(.48,.16,pitch-.024,side*.98,.47,z,p.seat);
-    const back=new THREE.BoxGeometry(.115,.54,pitch-.024);
-    back.rotateZ(-side*.08);back.translate(side*1.18,.80,z);parts.put(back,p.seat);seats++;
-    parts.box(.40,.025,pitch-.04,side*.99,.568,z,p.seat);
+   // Individual cushions/backrests share their exact support layout with
+   // the return camera; this extraction does not alter emitted geometry.
+   for(const z of centers){
+    parts.box(seatLayout.cushionWidth,seatLayout.cushionHeight,pitch-seatLayout.cushionGap,side*seatLayout.cushionX,seatLayout.cushionY,z,p.seat);
+    const back=new THREE.BoxGeometry(seatLayout.backWidth,seatLayout.backHeight,pitch-seatLayout.cushionGap);
+    back.rotateZ(-side*seatLayout.backTilt);back.translate(side*seatLayout.backX,seatLayout.backY,z);parts.put(back,p.seat);seats++;
+    parts.box(seatLayout.capWidth,seatLayout.capHeight,pitch-seatLayout.capGap,side*seatLayout.capX,seatLayout.capY,z,p.seat);
    }
    parts.box(.12,.17,span-.38,side*1.19,.27,center+mid,p.metal);
    for(const end of [lo+.10,hi-.10]){

@@ -37,10 +37,11 @@ export function installStaticColorCull(renderer,camera,entries){
    }
   }
  });
- function draw(object,scene,view,...rest){
+ // Keep r180's fixed dispatch signature; a rest array here costs every draw.
+ function draw(object,scene,view,geometry,material,group,lightsNode,clippingContext,passId){
   const bound=bounds.get(object);
   if(view===camera&&bound&&(bound.sphere.center.distanceToSquared(center)>(radius+bound.sphere.radius+1e-3)**2||(bound.box&&!frustum.intersectsBox(bound.box)))){skipped++;return;}
-  submitted++;return (original??renderer.renderObject).call(renderer,object,scene,view,...rest);
+  submitted++;return (original??renderer.renderObject).call(renderer,object,scene,view,geometry,material,group,lightsNode,clippingContext,passId);
  }
  renderer.setRenderObjectFunction(draw);
  return {update(){camera.updateWorldMatrix(true,false);frustum.setFromProjectionMatrix(matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse),camera.coordinateSystem,camera.reversedDepth);center.setFromMatrixPosition(camera.matrixWorld);const z=camera.reversedDepth?(camera.coordinateSystem===WebGPUCoordinateSystem?0:-1):1;radius=0;for(const x of [-1,1])for(const y of [-1,1])radius=Math.max(radius,corner.set(x,y,z).unproject(camera).distanceTo(center));},get stats(){return {skipped,submitted,radius,objects:bounds.size};},dispose(){if(renderer.getRenderObjectFunction()===draw)renderer.setRenderObjectFunction(original);bounds.clear();}};

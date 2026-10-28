@@ -6,6 +6,7 @@ import {createMappedBuildingFinishes} from './mapped-building-finishes.mjs';
 import {installRendererHealth} from './renderer-health.mjs';
 import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
 import {createWalkingPrewarm} from './walking-prewarm.mjs';
+import {prepareWalkingNeighborhood} from './walking-neighborhood-preparation.mjs';
 import {installPrecinctLeafLight,collectPrecinctLeafBounds,collectPrecinctRoofBounds} from './precinct-leaf-light.mjs';
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
 import {omitUnverifiedPrecinctProxy,omitUnmodeledShrineProxy} from './precinct-proxy-policy.mjs';
@@ -143,10 +144,13 @@ try {
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await compileAddedGroup(quality,scene,group,camera,{batchSize:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
+    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await textureStreaming.prepareAt(camera.position);await compileAddedGroup(quality,scene,group,camera,{batchSize:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
     await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
-    detailChunks.add(group);preparationResidency.add(group);
-    walkingPrewarm?.append([{object:group,bounds:new THREE.Box3().setFromObject(group)}]);
+    group.updateWorldMatrix(true,true);
+    const bounds=new THREE.Box3().setFromObject(group);
+    detailChunks.add(group,{bounds:bounds.getBoundingSphere(new THREE.Sphere())});preparationResidency.add(group);
+    preparationBounds.set(group,bounds);walkingPreparationBounds.set(group,bounds);
+    walkingPrewarm?.append([{object:group,bounds}]);
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
   }});
@@ -553,27 +557,33 @@ try {
   const appearance=await installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality});
   // Snapshot only known crown instances; the atlas never scans the scene per frame.
   const leafRegion=new THREE.Box3(new THREE.Vector3(romon.target[0]-180,-100,romon.target[2]-260),new THREE.Vector3(romon.target[0]+360,400,romon.target[2]+180));
-  const leafMaterials=new Set(),roofObjects=[],crownObjects=[];
+  const leafMaterials=new Set(),roofObjects=[],crownObjects=[],botanicalCrowns=[];
   const crownGeometry=new Set(assembly.legacy.foliage.slice(1,3).map(mesh=>mesh.geometry));
   scene.traverse(object=>{
-    if(object.isInstancedMesh&&crownGeometry.has(object.geometry))crownObjects.push(object);
+    if(object.isInstancedMesh&&!object.userData.shadowOnly){
+      if(crownGeometry.has(object.geometry))crownObjects.push(object);
+      else if(object.userData.precinctCanopy)botanicalCrowns.push(object);
+    }
     for(const material of [object.material].flat()){
       if(material?.userData?.precinctLeafReceiver)leafMaterials.add(material);
-      if(object.isMesh&&material?.map&&material.map===assembly.legacy.materials.roofMat?.map)roofObjects.push(object);
+      if(object.isMesh&&!object.userData.shadowOnly&&material?.map&&material.map===assembly.legacy.materials.roofMat?.map)roofObjects.push(object);
     }
   });
+  const forestCrowns=collectPrecinctLeafBounds([...crownObjects,...botanicalCrowns],{maxInstances:8192,sample:true});
+  const shaftCoverage={canopies:forestCrowns.bounds.length,inspected:forestCrowns.inspected,truncated:forestCrowns.truncated,sampleStride:forestCrowns.sampleStride,availableInstances:forestCrowns.availableInstances};
+  const forestRoofs=collectPrecinctRoofBounds([...new Set(roofObjects)],{maxInstances:2048,maxHorizontalSpan:30});
   const leafCrowns=collectPrecinctLeafBounds(crownObjects,{region:leafRegion,maxInstances:8192});
-  const leafRoofs=collectPrecinctRoofBounds([...new Set(roofObjects)],{region:leafRegion,maxInstances:2048,maxHorizontalSpan:30});
+  const leafRoofs={...forestRoofs,bounds:forestRoofs.bounds.filter(b=>b.intersectsBox(leafRegion))};
   leafLight=installPrecinctLeafLight({canopies:leafCrowns.bounds,roofs:leafRoofs.bounds,materials:[...leafMaterials]},
     {strength:.28,enabled:quality.mode!=='balanced'&&query.get('leafLight')!=='0',mode:$('light').value});
   document.body.dataset.precinctLeafLight=JSON.stringify({...leafLight.stats,skippedAggregateRoofs:leafRoofs.skippedAggregate,skippedOversizedRoofs:leafRoofs.skippedOversized});
-  const shaftRoutes=[...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.spatial.main];
-  const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:leafCrowns.bounds,ground:assembly.ground});
-  const sunShafts=createLocalSunShafts({scene,sites:shaftSites,roofs:leafRoofs.bounds,audit:query.get('shaftAudit')==='1'});
+  const shaftRoutes=[...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.spatial.main,assembly.spatial.returning];
+  const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
+  const sunShafts=createLocalSunShafts({scene,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,includeImage:true,isCameraOwned:()=>!!zen?.active||!!arrival?.active,getCaptureContext:()=>({mode:zen?.returning.active||arrival?.active?'train':walker.mode,fov:camera.fov,weather:zen?.journey.snapshot().weather??'clear',light:$('light').value}),onCaptured:async details=>{journal?.recordPhoto(details);return await zen?.recordPhoto(details)??'';},render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,includeImage:true,isCameraOwned:()=>!!zen?.active||!!arrival?.active,getCaptureContext:()=>({mode:zen?.returning.cameraOwned||arrival?.active?'train':walker.mode,fov:camera.fov,weather:zen?.journey.snapshot().weather??'clear',light:$('light').value}),onCaptured:async details=>{journal?.recordPhoto(details);return await zen?.recordPhoto(details)??'';},render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -592,7 +602,11 @@ try {
       qualityPending++;
       try{await renderPreparation.run(async()=>{
       walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();
-      await quality.setMode(value);viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);textureStreaming.setMode(quality.mode);
+      textureStreaming.setMode(value);
+      try{await textureStreaming.prepareAt(camera.position);await quality.setMode(value);}
+      catch(error){textureStreaming.setMode(quality.mode);throw error;}
+      viewingDistance.setQuality(quality.mode);sunShadows.setQuality(quality.mode);
+      walkingPrewarm?.invalidate();
       walkingPrewarm?.setRadius(Math.min(prewarmViewRadius(camera)+24,300));
       leafLight.setEnabled(quality.mode!=='balanced'&&query.get('leafLight')!=='0');document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);
       sunShafts.setQuality(quality.mode);sunShafts.update(camera);
@@ -600,7 +614,10 @@ try {
       await appearance.prepare();
       await zen?.prepare(compileZen);
       if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4,reuseRenderScene:true});
-      document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);walkingPrewarm?.invalidate();
+      await prepareWalkingNeighborhood({entries:walkingPreparationBounds,position:camera.position,camera,scene,quality,textureStreaming,service:walkingPrewarm,
+        radius:Math.min(300,prewarmViewRadius(camera)+64),yieldWork:yieldPreparation,getLights:compilationLights.getLights,
+        onCompiled:objects=>renderBuildAudit?.noteCompiled(objects),report:reportWalkingNeighborhood});
+      document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);
       });}finally{
         qualityPending--;
         if(!qualityPending){
@@ -617,6 +634,14 @@ try {
     ...(streetCommerce.detailGroups??[]),...(assembly.keihanRail?.detailGroups??[])
   ]);
   const preparationBounds=new Map([...mappedBuildingEntries,...assembly.staticBatches.residencyEntries,...assembly.forestChunks].map(entry=>[entry.object,entry.bounds]));
+  // Known late detail owners also need walking admission. This one-time
+  // snapshot does not activate them or authorize static render culling.
+  for(const object of preparationResidency){
+    if(preparationBounds.has(object))continue;
+    object.updateWorldMatrix(true,true);
+    const bounds=new THREE.Box3().setFromObject(object);
+    if(!bounds.isEmpty()&&[...bounds.min,...bounds.max].every(Number.isFinite))preparationBounds.set(object,bounds);
+  }
   const yieldPreparation=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0));
   const checkpointStatus=document.createElement('output');checkpointStatus.id='checkpoint-status';checkpointStatus.hidden=true;
   checkpointStatus.setAttribute('role','status');checkpointStatus.setAttribute('aria-live','polite');checkpointStatus.setAttribute('aria-atomic','true');document.body.append(checkpointStatus);
@@ -714,6 +739,7 @@ try {
   const walkingViewDirection=new THREE.Vector3();
   renderBuildAudit?.noteRegistered([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})));
   const walkingCompileHistory=renderBuildAudit?[]:null;
+  const reportWalkingNeighborhood=stats=>{document.body.dataset.walkingNeighborhood=JSON.stringify(stats);};
   const walkingPreparationYield=createWalkingPreparationYield(),framePacedWalkingPreparation=query.get('prewarmFrameYield')!=='0';
   walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
     compile:async(object,{isCurrent})=>{
@@ -801,6 +827,13 @@ try {
     compile:()=>{appearance.update(0);return quality.compileAsync(scene,camera);},
     render:()=>quality.render(),settle:()=>renderer.waitForGPU()});
   if(!arrivalPrepared){await assembly.deferredBuildings.ensure();prepareNearby();await quality.compileAsync(scene,camera);}
+  loadingStage('Preparing nearby walking details…');
+  // Include the service's 40 m look-ahead around the starting platform, so an
+  // immediate walk or turn does not begin by exhausting cold nearby owners.
+  const initialWalkingPosition=arrivalPrepared?new THREE.Vector3().fromArray((assembly.keihanStation??assembly.inariStation).spec.arrival.platformPose.position):camera.position;
+  await prepareWalkingNeighborhood({entries:walkingPreparationBounds,position:initialWalkingPosition,camera,scene,quality,textureStreaming,service:walkingPrewarm,
+    radius:Math.min(300,prewarmViewRadius(camera)+64),yieldWork:yieldPreparation,getLights:compilationLights.getLights,
+    onCompiled:objects=>renderBuildAudit?.noteCompiled(objects),report:reportWalkingNeighborhood});
   if(arrivalPrepared){
     const preview=(assembly.keihanStation??assembly.inariStation).spec.arrival.interiorPose;
     camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
@@ -895,7 +928,7 @@ try {
   let movementFrameAudit=null;
   if(query.get('frameAudit')==='1'){
     const {installMovementFrameAudit}=await import('./movement-frame-audit.mjs');
-    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats}:{})})});
+    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,neighborhood:JSON.parse(document.body.dataset.walkingNeighborhood??'null'),staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats,walkingCompiles:walkingCompileHistory}:{})})});
     addEventListener('pagehide',event=>{if(!event.persisted)movementFrameAudit.dispose();});
   }
   let horizonAuditAt=0;
@@ -988,7 +1021,7 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShafts.stats);if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

@@ -1,14 +1,14 @@
-.zen-moment{box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 56px);overflow:auto;border:1px solid #b9af96;border-radius:7px;background:#eee6d3;color:#3e433a;padding:34px;box-shadow:0 24px 90px #17201a66;font:15px/1.6 Georgia,serif}
+.zen-moment{box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 56px);overflow:auto;border:1px solid #b9af96;border-radius:7px;background:#eee6d3;color:#3e433a;padding:26px;box-shadow:0 24px 90px #17201a66;font:15px/1.6 Georgia,serif}
 .zen-moment::backdrop{background:#15211dd1;backdrop-filter:blur(5px)}
-.zen-moment h2{font-size:28px;font-weight:400;line-height:1.2;letter-spacing:-.7px;margin:8px 0 18px}
+.zen-moment h2{font-size:21px;font-weight:400;line-height:1.3;margin:0 0 14px}
 .zen-moment p{margin:12px 0}
-.zen-kicker{font:10px/1.5 system-ui,sans-serif;letter-spacing:2.1px;color:#6b715c}
+.zen-kicker{display:none}
 .zen-moment button,.zen-tea button{font:12px/1.4 system-ui,sans-serif;letter-spacing:.2px;border:1px solid #8f957d;border-radius:3px;padding:11px 16px;background:#e3ddc8;color:#364637;cursor:pointer;touch-action:manipulation}
 .zen-moment button:focus-visible,.zen-tea button:focus-visible{outline:2px solid #a14c37;outline-offset:3px}
 .zen-moment button:disabled,.zen-tea button:disabled{opacity:.55;cursor:default}
 .zen-moment .zen-close{position:absolute;right:13px;top:10px;background:transparent;border:0;padding:4px 9px;font-size:24px}
 .zen-small{font:11px/1.6 system-ui,sans-serif;color:#6e7565}
-.zen-paper-object{position:relative;display:grid;place-items:center;min-height:215px;margin:28px 5px;padding:32px;background:linear-gradient(100deg,#dfd3b6,#f4ead1 46%,#ddd1b5 49%,#f1e5c9 52%,#ede1c4);border:1px solid #c2b598;box-shadow:3px 9px 15px #493c2a22;transform:rotate(-2deg);font:15px/1.8 Georgia,serif;letter-spacing:1px;text-align:center;color:#586047;transition:transform .55s ease,box-shadow .55s ease}
+.zen-paper-object{position:relative;display:grid;place-items:center;min-height:185px;margin:18px 0;padding:25px;background:linear-gradient(100deg,#dfd3b6,#f4ead1 46%,#ddd1b5 49%,#f1e5c9 52%,#ede1c4);border:1px solid #c2b598;box-shadow:3px 9px 15px #493c2a22;transform:rotate(-2deg);font:15px/1.8 Georgia,serif;letter-spacing:1px;text-align:center;color:#586047;transition:transform .55s ease,box-shadow .55s ease}
 .zen-paper-object.is-map{transform:perspective(700px) rotateY(-55deg) scaleX(.62);transform-origin:left center}
 .zen-paper-object.is-map.is-unfolding,.zen-paper-object.is-map.is-unfolded{transform:perspective(700px) rotateY(0) scaleX(1);box-shadow:2px 9px 20px #493c2a25}
 .zen-paper-route{display:none;width:100%;height:auto;margin-bottom:15px;overflow:visible}.is-map .zen-paper-route{display:block}.zen-route-hills{fill:none;stroke:#98a184;stroke-width:2;opacity:.5}.zen-route-line{fill:none;stroke:#a95a45;stroke-width:2.5;stroke-dasharray:4 3}.zen-route-stops{fill:#aa5945}.zen-route-names{font:10px Georgia,serif;letter-spacing:0;fill:#5f6751}.zen-paper-torii{width:160px;height:125px;margin-bottom:14px;fill:none;stroke:#a65a45;stroke-width:8}.is-map .zen-paper-torii{display:none}.is-map [data-paper-label]{font-size:9px;line-height:1.8;letter-spacing:.8px}
@@ -16,8 +16,8 @@
 .is-stamped .zen-paper-seal{opacity:.85;transform:rotate(-12deg) scale(1)}
 .is-pressing:after{content:"";position:absolute;right:27px;bottom:26px;width:55px;height:55px;border-radius:3px;background:#674b38;box-shadow:0 5px 8px #3e2e2444;transform:translateY(calc(-12px + var(--stamp-pressure,0)*10px));opacity:calc(.35 + var(--stamp-pressure,0)*.65)}
 .zen-conversation{background:#e7e3d4}
-.zen-aki-words{min-height:110px;font-size:19px;line-height:1.65}
-.zen-aki-choices{display:grid;gap:9px;margin:24px 0}
+.zen-aki-words{font-size:18px;line-height:1.55}
+.zen-aki-choices{display:grid;gap:8px;margin:18px 0 0}
 .zen-aki-choices button{text-align:left;background:#f2eddf}
 .zen-tea{position:fixed;z-index:32;left:50%;bottom:26px;transform:translateX(-50%);width:min(440px,calc(100vw - 30px));box-sizing:border-box;padding:17px 23px 20px;color:#ebe8d8;background:#27382eea;border:1px solid #a8ad8e44;border-radius:5px;text-align:center;box-shadow:0 8px 30px #17201a33;font:16px/1.5 Georgia,serif}
 .zen-tea .zen-kicker{color:#bec3a6;margin:0 0 6px}
@@ -26,5 +26,8 @@
 .zen-tea button{background:#e7dfca;border-color:#d0c8b1}
 .zen-tea[hidden]{display:none}
 body.photo-mode .zen-tea,body:has(#exploration-menu[open]) .zen-tea,body:has(#journey-journal[open]) .zen-tea{display:none}
-@media(max-width:540px){.zen-moment{padding:28px 23px}.zen-moment h2{font-size:25px}.zen-paper-object{min-height:185px;margin:22px 0;padding:25px;font-size:13px}.zen-aki-words{font-size:18px}.zen-tea{bottom:15px;padding:15px 17px}.zen-tea div{flex-wrap:wrap}}
+@media(max-width:540px){.zen-moment{padding:28px 23px}.zen-moment h2{font-size:21px}.zen-paper-object{min-height:185px;margin:22px 0;padding:25px;font-size:13px}.zen-aki-words{font-size:18px}.zen-tea{bottom:15px;padding:15px 17px}.zen-tea div{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.zen-paper-object,.zen-paper-seal{transition:none}.zen-paper-object.is-map{transform:none}}
+
+.zen-moment .zen-sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#zen-paper{text-align:center}

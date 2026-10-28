@@ -129,3 +129,28 @@ test('golden canopy projection follows the same solar direction as the visible d
   assert.equal(effect.stats.extraLights,0);assert.equal(effect.stats.extraDraws,0);assert.equal(effect.stats.sourceBytes,65536);
  }finally{effect.dispose();}
 });
+
+test('global canopy sampling spans every input owner within the cap and retains real world bounds',()=>{
+ const geometry=new THREE.BoxGeometry(2,4,2),material=new THREE.MeshStandardMaterial(),owners=[],counts=[5,7,6];let matrixReads=0;
+ for(let owner=0;owner<3;owner++){
+  const mesh=new THREE.InstancedMesh(geometry,material,counts[owner]);mesh.position.set(owner*100,owner*10,0);
+  for(let i=0;i<counts[owner];i++)mesh.setMatrixAt(i,new THREE.Matrix4().makeTranslation(i*4,10,0));
+  const getMatrix=mesh.getMatrixAt.bind(mesh);mesh.getMatrixAt=(...args)=>{matrixReads++;return getMatrix(...args);};owners.push(mesh);
+ }
+ const result=collectPrecinctLeafBounds(owners,{maxInstances:6,sample:true});
+ assert.equal(result.availableInstances,18);assert.equal(result.sampleStride,3);assert.equal(result.inspected,6);assert.equal(result.bounds.length,6);assert.equal(result.truncated,false);assert.equal(matrixReads,6,'only sampled instance transforms are read');
+ assert.deepEqual(result.bounds.map(b=>b.min.toArray()),[[-1,8,-1],[11,8,-1],[103,18,-1],[115,18,-1],[199,28,-1],[211,28,-1]]);
+ assert.deepEqual(result.bounds.map(b=>b.max.toArray()),[[1,12,1],[13,12,1],[105,22,1],[117,22,1],[201,32,1],[213,32,1]]);
+ const repeat=collectPrecinctLeafBounds(owners,{maxInstances:6,sample:true});assert.deepEqual(repeat.bounds,result.bounds);
+ const legacy=collectPrecinctLeafBounds(owners,{maxInstances:6});assert.equal(legacy.bounds.length,6);assert.equal(legacy.truncated,true);assert.equal(legacy.availableInstances,18);assert.equal(legacy.sampleStride,1);assert.ok(legacy.bounds.every(b=>b.max.x<200));geometry.dispose();material.dispose();
+});
+
+test('sampling handles exact budgets, nondivisible totals and empty input without claiming truncation',()=>{
+ const geometry=new THREE.BoxGeometry(2,4,2),material=new THREE.MeshStandardMaterial(),mesh=new THREE.InstancedMesh(geometry,material,24);
+ for(let i=0;i<24;i++)mesh.setMatrixAt(i,new THREE.Matrix4().makeTranslation(i*4,10,0));
+ const exact=collectPrecinctLeafBounds([mesh],{sample:true,maxInstances:8});assert.equal(exact.bounds.length,8);assert.equal(exact.sampleStride,3);assert.equal(exact.truncated,false);
+ mesh.count=23;const partial=collectPrecinctLeafBounds([mesh],{sample:true,maxInstances:8});assert.equal(partial.bounds.length,8);assert.equal(partial.sampleStride,3);assert.equal(partial.truncated,false);
+ mesh.count=17;const sparse=collectPrecinctLeafBounds([mesh],{sample:true,maxInstances:8});assert.equal(sparse.bounds.length,6);assert.equal(sparse.sampleStride,3);assert.equal(sparse.truncated,false);
+ mesh.count=8;const all=collectPrecinctLeafBounds([mesh],{sample:true,maxInstances:8});assert.equal(all.bounds.length,8);assert.equal(all.sampleStride,1);assert.equal(all.truncated,false);
+ const empty=collectPrecinctLeafBounds([],{sample:true,maxInstances:8});assert.equal(empty.bounds.length,0);assert.equal(empty.availableInstances,0);assert.equal(empty.sampleStride,1);assert.equal(empty.inspected,0);assert.equal(empty.truncated,false);geometry.dispose();material.dispose();
+});

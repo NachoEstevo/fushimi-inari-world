@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {createHash} from 'node:crypto';
 import {extendForest} from './forest.mjs';
 import {pathClearance} from './spatial.mjs';
+import {subdivideShadowInstanceLeaves} from './spatial-mesh.mjs';
 import {understoryGeometry,understoryBudget,createUnderstoryPlacement,understoryGround,understoryLOD} from './forest-understory.mjs';
 
 test('near and far foliage have finite normals and real outlines within the shared clearance budget',()=>{
@@ -92,6 +93,25 @@ test('understory changes preserve the pre-change forest seed, tree transforms an
     }
     assert.equal(hash(matrices),'feddb69428767ff00c80e6acbf95df22da8a6bc0d91fcf6596ff80eb3bc72d06');
     assert.ok(cells>0&&report.understory>0&&report.understory<=169);
+    const canopyOwners=[];
+    for(const child of root.children){
+      if(child.isLOD){
+        const isCrown=child.name!=='Forest understory · static fern/sedge LOD';
+        assert.equal(child.levels[0].object.userData.precinctCanopy===true,isCrown);
+        for(const level of child.levels.slice(1))assert.notEqual(level.object.userData.precinctCanopy,true,'far LOD copies never duplicate crown metadata');
+        if(isCrown)canopyOwners.push(child.levels[0].object);
+      }else if(child.isInstancedMesh){
+        const isCrown=child.geometry===legacy.foliage[1].geometry;
+        assert.equal(child.userData.precinctCanopy===true,isCrown,'only crown meshes receive canopy metadata');
+        if(isCrown)canopyOwners.push(child);
+      }
+    }
+    assert.ok(canopyOwners.some(o=>o.geometry===legacy.foliage[1].geometry));
+    assert.ok(canopyOwners.some(o=>o.parent.isLOD),'the authored botanical crowns retain the flag on their near LOD leaf');
+    const shadowReport=subdivideShadowInstanceLeaves(root,16);assert.ok(shadowReport.chunks>0);
+    const visibleCanopies=[];let shadowCanopies=0;
+    root.traverse(o=>{if(o.userData.precinctCanopy){if(o.userData.shadowOnly)shadowCanopies++;else visibleCanopies.push(o);}});
+    assert.deepEqual(visibleCanopies,canopyOwners);assert.ok(shadowCanopies>0,'shadow-only metadata copies must be filtered by the collector');
   }finally{
     if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
   }

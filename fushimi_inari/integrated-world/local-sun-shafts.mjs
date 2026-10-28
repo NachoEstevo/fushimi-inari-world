@@ -4,20 +4,35 @@ import {SUN_DIRECTIONS} from './atmosphere-profile.mjs';
 
 // Art-directed local haze, not raymarched volumetric light. Known roof boxes
 // reject whole ribbons; normal depth testing lets solid torii occlude the rest.
-export function chooseShaftSites({routes=[],canopies=[],ground,maxSites=24}={}){
- const sites=[],limit=Math.min(32,Math.max(0,maxSites));
+export function chooseShaftSites({routes=[],canopies=[],ground,maxSites=64}={}){
+ const sites=[],limit=Math.min(64,Math.max(0,Math.floor(maxSites))),pools=[];
+ const [sx,sy,sz]=SUN_DIRECTIONS.day;
  for(const route of routes){
+  const candidates=[];
   let spacing=20;
-  for(let i=1;i<route.length&&sites.length<limit;i++){
+  for(let i=1;i<route.length;i++){
    const a=route[i-1],p=route[i],dx=p[0]-a[0],dz=p[2]-a[2],step=Math.hypot(dx,dz);
    spacing+=step;if(spacing<12||step<1e-6)continue;
    const x=p[0]-dz/step*1.2,z=p[2]+dx/step*1.2,y=ground(x,z);
-   if(!Number.isFinite(y)||sites.some(s=>Math.hypot(s.point[0]-x,s.point[2]-z)<12))continue;
-   const crown=canopies.find(b=>x>b.min.x-2&&x<b.max.x+2&&z>b.min.z-2&&z<b.max.z+2&&b.max.y>y+5);
+   if(!Number.isFinite(y)||Math.abs(y-p[1])>3)continue;
+   // Aim at a trail-side landing, then locate its source inside an actual
+   // up-sun crown. A vertical source above the path misses it by 10–15 metres.
+   const crown=canopies.find(b=>{
+    const top=Math.min(y+18,b.max.y),rise=top-y-.15,px=x+sx/sy*rise,pz=z+sz/sy*rise;
+    return top>y+5&&top>=b.min.y&&px>b.min.x&&px<b.max.x&&pz>b.min.z&&pz<b.max.z;
+   });
    if(!crown)continue;
-   sites.push({point:[x,y+.15,z],topY:Math.min(y+18,crown.max.y),width:1.8+(sites.length%3)*.35});spacing=0;
+   const topY=Math.min(y+18,crown.max.y),rise=topY-y-.15;
+   candidates.push({point:[x,y+.15,z],source:[x+sx/sy*rise,topY,z+sz/sy*rise],topY,width:2.5+(candidates.length%3)*.4});spacing=0;
   }
+  if(candidates.length)pools.push(candidates);
  }
+ // Reserve coverage along every route before filling spare slots. The old
+ // first-N policy exhausted the budget before the upper mountain was visited.
+ const add=site=>{if(sites.length<limit&&!sites.some(s=>Math.hypot(s.point[0]-site.point[0],s.point[2]-site.point[2])<12))sites.push(site);};
+ const quota=Math.floor(limit/Math.max(1,pools.length));
+ for(const pool of pools)for(let i=0,n=Math.min(quota,pool.length);i<n;i++)add(pool[Math.floor((i+.5)*pool.length/n)]);
+ for(let i=0;i<Math.max(0,...pools.map(p=>p.length))&&sites.length<limit;i++)for(const pool of pools)if(pool[i])add(pool[i]);
  return sites;
 }
 
@@ -27,11 +42,17 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  // A slight widening away from the canopy is less rigid than a flat rectangle.
  for(let i=0;i<positions.count;i++)if(positions.getY(i)>0)positions.setX(i,positions.getX(i)*.45);
  positions.needsUpdate=true;geometry.computeBoundingSphere();
- const tint=uniform(new THREE.Color('#fff1cf')),strength=uniform(.13),q=uv();
+ const tint=uniform(new THREE.Color('#fff1cf')),strength=uniform(.19),q=uv();
  const cross=q.x.sub(.5),distance=positionWorld.sub(cameraPosition).length();
- const profile=exp(cross.mul(cross).mul(-24)).mul(float(1).sub(smoothstep(.32,.5,cross.abs())));
- const ends=smoothstep(0,.12,q.y).mul(float(1).sub(smoothstep(.7,1,q.y)));
- const grain=sin(q.y.mul(47).add(q.x.mul(13))).mul(.06).add(.94);
+ // Several uneven openings share one feathered ribbon and one draw. Avoid
+ // evenly striped grain, which reads as a luminous sheet instead of haze.
+ const bend=sin(q.y.mul(5.7)).mul(.025),u=cross.add(bend);
+ // WGSL pow has an invalid domain for negative bases, even with exponent 2.
+ const lobe=(center,falloff,weight)=>{const delta=u.sub(center);return exp(delta.mul(delta).mul(falloff)).mul(weight);};
+ const profile=lobe(-.23,-240,.48).add(lobe(.02,-85,.76)).add(lobe(.28,-380,.4))
+  .mul(float(1).sub(smoothstep(.32,.5,cross.abs())));
+ const ends=smoothstep(0,.23,q.y).mul(float(1).sub(smoothstep(.68,1,q.y)));
+ const grain=sin(q.y.mul(9).add(q.x.mul(17))).mul(.1).add(.9);
  const fade=smoothstep(1.5,4,distance).mul(float(1).sub(smoothstep(28,48,distance)));
  const material=new THREE.MeshBasicNodeMaterial({transparent:true,depthWrite:false,depthTest:true,
   side:THREE.DoubleSide,forceSinglePass:true,blending:THREE.AdditiveBlending,fog:true});
@@ -41,12 +62,12 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  mesh.castShadow=false;mesh.receiveShadow=false;mesh.renderOrder=2;mesh.count=0;scene.add(mesh);
  const axis=new THREE.Vector3(),view=new THREE.Vector3(),right=new THREE.Vector3(),normal=new THREE.Vector3(),fallback=new THREE.Vector3(0,0,1),scale=new THREE.Vector3();
  const matrix=new THREE.Matrix4(),hit=new THREE.Vector3(),ray=new THREE.Ray(),expanded=new THREE.Box3();
- const entries=sites.slice(0,32).map(s=>({...s,end:new THREE.Vector3(...s.point),source:new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false}));
+ const entries=sites.slice(0,64).map(s=>({...s,end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false}));
  const nearest=new Int16Array(cap),distances=new Float64Array(cap);
  let mode='day',quality='balanced',active=0,disposed=false,dirty=true,lastX,lastY,lastZ;
  function setMode(next){
   if(disposed)return;dirty=true;mode=Object.hasOwn(SUN_DIRECTIONS,next)?next:'day';axis.fromArray(SUN_DIRECTIONS[mode]).normalize();
-  tint.value.set(mode==='gold'?'#ffc18e':'#fff1cf');strength.value=mode==='gold'?.09:.13;
+  tint.value.set(mode==='gold'?'#ffc18e':'#fff1cf');strength.value=mode==='gold'?.12:.19;
   for(const entry of entries){
    // Clip the ray from its canopy origin. Starting at the floor would turn
    // capped low-sun rays into eye-level streaks with no source above them.

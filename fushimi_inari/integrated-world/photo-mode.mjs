@@ -4,15 +4,14 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
   const button=document.createElement('button');button.id='photo-open';button.setAttribute('aria-label','Photo mode');button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Photo mode</span>';document.body.append(button);
   const panel=document.createElement('section');panel.id='photo-panel';panel.hidden=true;panel.setAttribute('aria-label','Photo settings');
   panel.innerHTML=`<div class="menu-heading"><h2>Photo mode</h2><button id="photo-close" aria-label="Close photo mode">×</button></div>
-    <p class="photo-help">Frame a moment from your current position.</p>
     <label for="photo-yaw">Pan</label><input id="photo-yaw" type="range" min="-180" max="180" value="0">
     <label for="photo-pitch">Tilt</label><input id="photo-pitch" type="range" min="-70" max="70" value="0">
     <label for="photo-fov">Field of view <output id="photo-fov-value"></output></label><input id="photo-fov" type="range" min="20" max="85" value="45">
     <label for="photo-exposure">Exposure <output id="photo-exposure-value"></output></label><input id="photo-exposure" type="range" min="-2" max="2" step=".1" value="0">
-    <label for="photo-size">Resolution · longest edge</label><select id="photo-size"><option value="1920">1920 px</option><option value="3840" selected>4K · 3840 px</option></select>
+    <label for="photo-size">Resolution</label><select id="photo-size"><option value="1920">1920 px</option><option value="3840" selected>4K · 3840 px</option></select>
     <label class="photo-grid-label"><input id="photo-grid-toggle" type="checkbox"> Rule of thirds</label>
     <div class="row"><button id="photo-reset">Reset</button>${includeImage?'<button id="photo-keep" class="primary">Keep in journal</button>':''}<button id="photo-save">Save PNG</button></div>
-    <p id="photo-status" role="status">PNG · current screen aspect ratio · no UI</p><a id="photo-result" hidden target="_blank" rel="noopener">Open last photo</a>`;
+    <p id="photo-status" role="status"></p><a id="photo-result" hidden target="_blank" rel="noopener">Open last photo</a>`;
   document.body.append(panel);
   const grid=document.createElement('div');grid.id='photo-grid';grid.hidden=true;document.body.append(grid);
   const $=id=>document.getElementById(id);

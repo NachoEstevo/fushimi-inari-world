@@ -5,12 +5,29 @@ import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
 const crown=(x=0)=>new THREE.Box3(new THREE.Vector3(x-6,5,-6),new THREE.Vector3(x+6,18,6));
 
 test('shaft sites are deterministic, bounded and restricted to wooded routes',()=>{
- const options={routes:[Array.from({length:100},(_,i)=>[i*2,0,0])],canopies:[crown(),crown(20),crown(40)],ground:()=>0,maxSites:2};
+ const options={routes:[Array.from({length:100},(_,i)=>[i*2,0,0])],canopies:[crown(),crown(20),crown(40)].map(b=>b.translate(new THREE.Vector3(0,0,10))),ground:()=>0,maxSites:2};
  const sites=chooseShaftSites(options);
  assert.equal(sites.length,2);assert.deepEqual(sites,chooseShaftSites(options));
  assert.equal(chooseShaftSites({...options,canopies:[]}).length,0);
  assert.equal(chooseShaftSites({...options,ground:()=>NaN}).length,0);
- assert.ok(sites.every(s=>Number.isFinite(s.topY)&&s.width<=3));
+ assert.ok(sites.every(s=>Number.isFinite(s.topY)&&s.width<=3.5));
+ assert.ok(sites.every(s=>options.canopies.some(c=>c.containsPoint(new THREE.Vector3(...s.source)))));
+ const highCrown=new THREE.Box3(new THREE.Vector3(-20,25,15),new THREE.Vector3(0,40,35));
+ assert.equal(chooseShaftSites({routes:[[[0,0,0],[0,0,15]]],canopies:[highCrown],ground:()=>0}).length,0,'capped rays cannot start in empty air below a hillside crown');
+});
+
+test('a long lower route cannot consume mountain coverage; day rays land beside each path',()=>{
+ const routes=[Array.from({length:150},(_,i)=>[i*2,0,0]),Array.from({length:150},(_,i)=>[1000+i*2,80,0])];
+ const canopies=[new THREE.Box3(new THREE.Vector3(-30,5,-20),new THREE.Vector3(330,18,20)),
+  new THREE.Box3(new THREE.Vector3(970,85,-20),new THREE.Vector3(1330,98,20))];
+ const sites=chooseShaftSites({routes,canopies,ground:x=>x>500?80:0,maxSites:8});
+ assert.equal(sites.length,8);assert.equal(sites.filter(s=>s.point[0]>500).length,4);
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();
+ for(const site of sites){
+  const effect=createLocalSunShafts({scene,sites:[site],audit:true});effect.setQuality('high');camera.position.fromArray(site.point);camera.position.z+=5;effect.update(camera);
+  const end=effect.stats.placement[0].end;
+  assert.ok(Math.hypot(...end.map((v,i)=>v-site.point[i]))<1e-4,'day ribbon lands at its intended trail-side point');effect.dispose();
+ }
 });
 
 test('High uses a fixed instanced budget; Balanced and night have no draws',()=>{
@@ -30,6 +47,16 @@ test('High uses a fixed instanced budget; Balanced and night have no draws',()=>
  effect.setQuality('high');effect.update(camera);assert.equal(effect.mesh.geometry,geometry);assert.equal(effect.mesh.material,material);
  camera.position.set(1000,2,1000);effect.update(camera);assert.equal(effect.stats.active,0);
  effect.dispose();effect.dispose();assert.equal(geometries,1);assert.equal(materials,1);assert.equal(scene.children.length,0);
+});
+
+test('signed ray offsets use multiplication rather than pow with a negative shader-domain base',()=>{
+ const effect=createLocalSunShafts({scene:new THREE.Scene(),sites:[]});
+ let multiplications=0;
+ effect.mesh.material.opacityNode.traverse(node=>{
+  assert.notEqual(node.method,'pow','WGSL pow is undefined for the negative half of a signed ray profile');
+  if(node.op==='*')multiplications++;
+ });
+ assert.ok(multiplications>0);effect.dispose();
 });
 
 test('known roofs suppress intersecting shafts, and invalid camera transforms never upload NaN',()=>{

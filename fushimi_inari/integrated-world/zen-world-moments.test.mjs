@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {readFileSync} from 'node:fs';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createZenWorldMoments} from './zen-world-moments.mjs';
 import {createPaperMomentState} from './zen-paper-moments.mjs';
-import {createAkiConversation} from './zen-story-people.mjs';
+import {createAkiConversation,planZenStorySites} from './zen-story-people.mjs';
 import {createProximityInteractions} from './proximity-interaction.mjs';
 
 function documentFixture(){
@@ -24,6 +26,8 @@ function documentFixture(){
  Object.assign(doc,{head:node('head'),body:node('body'),createElement:node,addEventListener(){},removeEventListener(){},getElementById:id=>nodes.find(n=>n.id===id)});return doc;
 }
 
+const loadCatAsset=()=>{const bytes=readFileSync(new URL('../assets/models/cat/Mugi.glb',import.meta.url));return new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');};
+
 function fixture(){
  const scene=new THREE.Scene(),root=new THREE.Group();scene.add(root);
  const camera=new THREE.PerspectiveCamera();camera.position.set(-302,31.7,-184.9);camera.lookAt(-300.4,31,-184.9);
@@ -37,7 +41,7 @@ function fixture(){
   keihanStation:{built:true,spec:{platformFloor:30,publicExit:{position:[-302,30,-135]},route:{platformDoor:[-302,30,-182]},arrival:{platformPose:{position:[-302,31.7,-182],target:[-299,31.7,-182]}}}}};
  const shop={stats:{built:true,floor:30,front:{a:[40,30,20],b:[50,30,20],outward:[0,-1],inset:.42}}};
  const actions=[],seats=[],visitors={people:[{root:visitorRoot}],ready:Promise.resolve()};
- return {scene,camera,assembly,shop,visitors,actions,seats,bench,mesh,create:(options={})=>createZenWorldMoments({scene,camera,assembly,shop,visitors,onAction:e=>actions.push(e),onSeat:e=>seats.push(e),...options})};
+ return {scene,camera,assembly,shop,visitors,actions,seats,bench,mesh,create:(options={})=>createZenWorldMoments({scene,camera,assembly,shop,visitors,loadCatAsset,onAction:e=>actions.push(e),onSeat:e=>seats.push(e),...options})};
 }
 function advance(runtime,start,duration,state={mode:'walk'}){for(let t=.1;t<=duration+.001;t+=.1)runtime.update(.1,start+t,state);}
 
@@ -181,4 +185,45 @@ test('owned runtime unregisters actions and preserves borrowed bench/model resou
  assert.ok(runtime.stats.loadedModels>0);assert.ok(runtime.interactionRoots.every(o=>(o.userData.interactable?.reach??2.8)<=2.5));
  runtime.dispose();runtime.dispose();assert.deepEqual(f.assembly.legacy.interactables,[f.bench]);assert.equal(f.bench.userData.interactable,old);
  assert.equal(disposedGeometry,0);assert.equal(disposedMaterial,0);assert.equal(f.bench.parent?.userData.zone,'chaya_s');
+});
+
+test('paper dialog keeps the object and action without awarding an opening',async()=>{
+ const f=fixture(),doc=documentFixture(),runtime=f.create({document:doc});await runtime.ready;
+ const owner=runtime.interactionRoots.find(object=>object.userData.zenMoment==='postcard');f.camera.position.copy(owner.position).add(new THREE.Vector3(0,1.1,1));owner.userData.interactable.directAction();
+ const dialog=doc.getElementById('zen-paper');assert.equal(f.actions.length,0);assert.equal(dialog.open,true);
+ assert.doesNotMatch(dialog.innerHTML,/zen-kicker|data-paper-note|data-paper-label/);assert.match(dialog.innerHTML,/id="zen-paper-title" class="zen-sr-only"/);assert.match(dialog.innerHTML,/data-paper-status role="status" aria-live="polite"/);runtime.dispose();
+});
+
+test('a short postcard tap completes the stamp animation without requiring gesture instructions',async()=>{
+ const f=fixture(),doc=documentFixture(),runtime=f.create({document:doc});await runtime.ready;const owner=runtime.interactionRoots.find(object=>object.userData.zenMoment==='postcard');f.camera.position.copy(owner.position).add(new THREE.Vector3(0,1.1,1));runtime.update(.1,1,{mode:'walk'});owner.userData.interactable.directAction();
+ const action=doc.getElementById('zen-paper').querySelector('[data-paper-action]');action.dispatch('pointerdown',{pointerId:1});runtime.update(.1,1.1,{mode:'walk'});action.dispatch('pointerup');assert.equal(f.actions.length,0);
+ runtime.update(.1,1.8,{mode:'walk'});assert.equal(f.actions.filter(event=>event.type==='postcard').length,1);action.click({detail:1});runtime.update(.1,3,{mode:'walk'});assert.equal(f.actions.filter(event=>event.type==='postcard').length,1);runtime.dispose();
+});
+
+test('Aki keeps dialogue brief and records only a completed reply and farewell',async()=>{
+ const f=fixture(),doc=documentFixture(),runtime=f.create({document:doc});await runtime.ready;const owner=runtime.interactionRoots.find(object=>object.userData.zenMoment==='aki');f.camera.position.copy(owner.position).add(new THREE.Vector3(0,1.1,1));runtime.update(0,1,{mode:'walk'});owner.userData.interactable.directAction();
+ const dialog=doc.getElementById('zen-aki'),words=dialog.querySelector('[data-aki-words]'),choices=dialog.querySelector('[data-aki-choices]');assert.equal(dialog.querySelector('#zen-aki-title').textContent,'Aki');assert.doesNotMatch(dialog.innerHTML,/zen-kicker|zen-small/);assert.ok(words.textContent.split(/\s+/).length<=26);assert.equal(choices.children.length,2);assert.equal(f.actions.length,0);
+ choices.children[0].click();assert.ok(words.textContent.split(/\s+/).length<=22);assert.equal(f.actions.length,0);choices.children[0].click();assert.equal(f.actions.filter(event=>event.type==='meetstation').length,1);runtime.dispose();
+});
+
+test('Aki stands on supported ground outside the Kyoto viewpoint camera and its panorama',()=>{
+ const f=fixture(),checkpoint=f.assembly.spatial.byId.yotsu.checkpoint,sites=planZenStorySites(f.assembly);
+ assert.ok(sites.view);assert.ok(Math.hypot(sites.view[0]-checkpoint[0],sites.view[2]-checkpoint[2])>=3);assert.ok(sites.view[0]>=checkpoint[0]);assert.equal(sites.view[1],f.assembly.walkHeight(sites.view[0],sites.view[2]));
+ f.assembly.isWalkable=(x,z)=>x>checkpoint[0]+4&&z===checkpoint[2];const fallback=planZenStorySites(f.assembly);assert.ok(fallback.view);assert.ok(fallback.view[0]>checkpoint[0]+4);assert.equal(fallback.view[1],30);
+});
+
+test('a Kyoto photo before meeting Aki keeps the first station encounter available on return',async()=>{
+ for(const alreadyMet of [false,true]){
+  const f=fixture(),doc=documentFixture(),journey={snapshot:()=>({moments:alreadyMet?{aki:1}:{},photoPrompts:{'kyoto-view':2}})},runtime=f.create({document:doc,journey});await runtime.ready;
+  const actor=runtime.interactionRoots.find(object=>object.userData.zenMoment==='aki'),sites=runtime.stats.people.positions;
+  f.camera.position.fromArray(sites.view).add(new THREE.Vector3(0,1.7,0));runtime.update(0,1,{mode:'walk'});assert.equal(runtime.stats.people.stage,'view');
+  f.camera.position.fromArray(sites.station).add(new THREE.Vector3(0,1.1,1));runtime.update(0,2,{mode:'walk'});assert.equal(runtime.stats.people.stage,alreadyMet?'return':'station');
+  actor.userData.interactable.directAction();const choices=doc.getElementById('zen-aki').querySelector('[data-aki-choices]');assert.equal(f.actions.length,0);choices.children[0].click();assert.equal(f.actions.length,0);choices.children[0].click();assert.equal(f.actions[0]?.type,alreadyMet?'meetreturn':'meetstation');runtime.dispose();
+ }
+});
+
+test('paper pressure writes only advancing stamp progress, with no idle map or completed-card writes',async()=>{
+ const f=fixture(),doc=documentFixture(),runtime=f.create({document:doc});await runtime.ready;const dialog=doc.getElementById('zen-paper'),button=dialog.querySelector('[data-paper-action]'),paper=dialog.querySelector('[data-paper-object]'),writes=[],original=paper.style.setProperty;paper.style.setProperty=(key,value)=>{writes.push([key,value]);original(key,value);};
+ const open=kind=>{const owner=runtime.interactionRoots.find(o=>o.userData.zenMoment===kind);f.camera.position.copy(owner.position).add(new THREE.Vector3(0,1.1,1));owner.userData.interactable.directAction();};
+ open('map');runtime.update(.1,.1,{mode:'walk'});runtime.update(.1,.2,{mode:'walk'});assert.equal(writes.length,0);dialog.dispatch('cancel');open('postcard');button.click({detail:0});runtime.update(.1,.3,{mode:'walk'});assert.equal(writes.length,1);runtime.update(0,.3,{mode:'walk'});assert.equal(writes.length,1);runtime.update(.1,.4,{mode:'walk'});assert.equal(writes.length,2);runtime.update(.1,1,{mode:'walk'});const completed=writes.length;runtime.update(.1,2,{mode:'walk'});runtime.update(.1,3,{mode:'walk'});assert.equal(writes.length,completed);assert.equal(f.actions.filter(e=>e.type==='postcard').length,1);runtime.dispose();
 });

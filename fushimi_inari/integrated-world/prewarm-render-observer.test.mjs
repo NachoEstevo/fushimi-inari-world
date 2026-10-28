@@ -12,3 +12,19 @@ test('multi-material draws and callback-invalidated materials do not mark a whol
  const observer=observePrewarmRenders([{object:multi},{object:mesh}],{camera,service:{markRendered:o=>seen.push(o)},isRendering:()=>true});
  multi.onAfterRender(null,null,camera);mesh.onAfterRender(null,null,camera);assert.deepEqual(seen,[]);observer.dispose();
 });
+test('render callbacks retain the engine arguments, receiver and return value; thrown draws never warm',()=>{
+ const camera={},renderer={},scene={},geometry={},material={version:0},group={},failure=new Error('draw failed'),seen=[];
+ let fail=false;const mesh={isMesh:true,material,onAfterRender(...args){
+  assert.equal(this,mesh);assert.deepEqual(args,[renderer,scene,camera,geometry,material,group]);
+  if(fail)throw failure;return group;
+ }};
+ const original=mesh.onAfterRender,observer=observePrewarmRenders([{object:mesh}],{camera,service:{markRendered:o=>seen.push(o)},isRendering:()=>true});
+ assert.equal(mesh.onAfterRender(renderer,scene,camera,geometry,material,group),group);assert.deepEqual(seen,[mesh]);
+ fail=true;assert.throws(()=>mesh.onAfterRender(renderer,scene,camera,geometry,material,group),error=>error===failure);assert.deepEqual(seen,[mesh]);
+ observer.dispose();assert.equal(mesh.onAfterRender,original);
+});
+test('a callback replacing its material cannot warm the new material with the old draw',()=>{
+ const camera={},seen=[],drawn={version:0},replacement={version:0},mesh={isMesh:true,material:drawn,onAfterRender(){this.material=replacement;}};
+ const observer=observePrewarmRenders([{object:mesh}],{camera,service:{markRendered:o=>seen.push(o)},isRendering:()=>true});
+ mesh.onAfterRender(null,null,camera,null,drawn,null);assert.deepEqual(seen,[]);observer.dispose();
+});

@@ -12,7 +12,7 @@ export const teaHouses=[
   // 2013 courtyard photograph: two-storey main frontage faces west into
   // the L-shaped court; its north wall follows the uphill branch stair.
   {id:'way/301527779',name:'Nishimura-tei',floor:164.35,height:5.7,front:'west'},
-  {id:'way/626313775',name:'Nishimura-tei · anexo',floor:163.45,height:5.4,front:'north'},
+  {id:'way/626313775',name:'Nishimura-tei · annex',floor:163.45,height:5.4,front:'north'},
   {id:'way/626313685',name:'Okumura-tei',floor:171.7,height:3.2,front:'west'}
 ];
 export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){

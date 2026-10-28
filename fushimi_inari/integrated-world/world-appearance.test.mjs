@@ -37,6 +37,17 @@ async function fixture(mode='day') {
   return {scene,hemi,sun,day,lighting:createWorldLookLighting({scene,hemi,sun})};
 }
 
+test('High daylight contrast is reversible, noncompounding and preserves readable night',{skip:THREE.REVISION!=='180'},async()=>{
+ const {scene,hemi,sun,day,lighting}=await fixture();
+ const base=[hemi.intensity,sun.intensity,scene.environmentIntensity];
+ for(let i=0;i<10;i++)lighting.setQuality('high');
+ assert.equal(hemi.intensity,base[0]*.88);assert.equal(sun.intensity,base[1]*1.04);
+ lighting.updateBaseLighting(()=>day('gold'));assert.equal(hemi.intensity,LIGHT_PRESETS.gold.fill*.88);
+ lighting.updateBaseLighting(()=>day('night'));assert.equal(hemi.intensity,LIGHT_PRESETS.night.fill);assert.equal(sun.intensity,LIGHT_PRESETS.night.sun);
+ lighting.updateBaseLighting(()=>day('day'));lighting.setQuality('balanced');
+ assert.deepEqual([hemi.intensity,sun.intensity,scene.environmentIntensity],base);
+});
+
 test('night energy survives every look, and repeated selection never compounds',{skip:THREE.REVISION!=='180'},async()=>{
   const {scene,hemi,sun,day,lighting}=await fixture();
   lighting.setLook('sakura');lighting.updateBaseLighting(()=>day('night'));

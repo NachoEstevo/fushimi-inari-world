@@ -1,75 +1,74 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {createZenReturnTrain} from './zen-return-train.mjs';
-
+import {createKeihanStationSpec} from './keihan-station-spec.mjs';
+const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url)));
 function fixture(options={}){
- const scene=new THREE.Scene(),group=new THREE.Group();scene.add(group);
- const camera=new THREE.PerspectiveCamera();camera.position.set(4,11.7,0);camera.lookAt(0,11.7,0);
- const spec={route:{platformDoor:[4,10,0]},arrival:{interiorPose:{position:[0,11.725,0],target:[10,11.7,0]},platformPose:{position:[4,11.7,0],target:[10,11.7,0]},travelDirection:[0,0,1]}};
- const station={built:true,spec,group,offset:[0,0,0],door:0,setTrainOffset(value){this.offset=[...value];},setDoorOpen(value){this.door=value;}};
- const walker={active:true,paused:false,teleports:0,stop(){this.active=false;},start(){this.active=true;},pause(value){this.paused=value;},teleport(point,target){this.teleports++;camera.position.set(point[0],point[1]+1.7,point[2]);camera.lookAt(...target);this.active=true;return options.teleportSuccess!==false;}};
+ const scene=new THREE.Scene(),group=new THREE.Group();scene.add(group);const spec=createKeihanStationSpec(features,{height:()=>10});
+ const camera=new THREE.PerspectiveCamera();camera.position.fromArray(spec.arrival.platformPose.position);camera.lookAt(...spec.arrival.platformPose.target);
+ const station={built:true,spec,group,colliders:options.colliders??[],offset:[0,0,0],door:0,setTrainOffset(v){this.offset=[...v];},setDoorOpen(v){this.door=v;}};
+ const walker={active:true,paused:false,teleports:0,stop(){this.active=false;},start(){this.active=true;},pause(v){this.paused=v;},teleport(point,target){this.teleports++;if(options.teleportSuccess===false)return false;camera.position.set(point[0],point[1]+1.7,point[2]);camera.lookAt(...target);this.active=true;return true;}};
  const controls={enabled:true,target:new THREE.Vector3()};let completed=0,cancelled=0,begun=0;
  const train=createZenReturnTrain({station,camera,walker,controls,onBegin(){begun++;},onComplete(){completed++;},onCancel(){cancelled++;},...options});
- return {scene,station,camera,walker,controls,train,get completed(){return completed;},get cancelled(){return cancelled;},get begun(){return begun;}};
+ return {station,camera,walker,controls,train,get completed(){return completed;},get cancelled(){return cancelled;},get begun(){return begun;}};
 }
-const finish=f=>{for(let i=0;i<160&&f.train.active;i++)f.train.update(.1);};
+const finish=f=>{for(let i=0;i<240&&f.train.active;i++)f.train.update(.1);};
+const platform=f=>f.station.spec.arrival.platformPose.position;
 
-test('boarding requires the real platform doorway and correct walking height',()=>{
- const f=fixture();f.camera.position.x=9.1;assert.equal(f.train.start().ok,false);assert.equal(f.begun,0);
- f.camera.position.set(4,15,0);assert.equal(f.train.start().ok,false);
- f.camera.position.set(4,11.7,0);assert.equal(f.train.start().ok,true);assert.equal(f.train.active,true);
- assert.equal(f.walker.paused,true);assert.equal(f.controls.enabled,false);assert.equal(f.train.start().ok,false);f.train.dispose();
+test('boarding validates the doorway and takes sole camera ownership',()=>{
+ const f=fixture();f.camera.position.x+=6;assert.equal(f.train.start().ok,false);assert.equal(f.begun,0);
+ f.camera.position.fromArray(platform(f)).add(new THREE.Vector3(0,3,0));assert.equal(f.train.start().ok,false);
+ f.camera.position.fromArray(platform(f));assert.equal(f.train.start().ok,true);assert.equal(f.train.cameraOwned,true);assert.equal(f.walker.paused,true);assert.equal(f.controls.enabled,false);assert.equal(f.train.start().ok,false);f.train.dispose();
  const unavailable=createZenReturnTrain({});assert.equal(unavailable.start().ok,false);unavailable.dispose();
 });
-
-test('departure opens before crossing the threshold, closes before movement and restores a safe walking handoff',()=>{
- const f=fixture();f.train.start();let sawBoarding=false,sawClosing=false,sawDeparture=false,lastDistance=0,maxDistance=0;
- for(let i=0;i<150&&f.train.active;i++){
-  f.train.update(.1);const s=f.train.stats;
-  if(s.phase==='boarding'){sawBoarding=true;assert.equal(f.station.door,1);assert.equal(f.station.offset[2],0);}
-  if(s.phase==='closing'){sawClosing=true;assert.equal(f.station.offset[2],0);}
-  if(s.phase==='departing'){sawDeparture=true;assert.equal(f.station.door,0);assert.ok(f.station.offset[2]>=lastDistance);lastDistance=f.station.offset[2];maxDistance=Math.max(maxDistance,lastDistance);assert.ok(Math.abs(f.camera.position.z-f.station.offset[2])<1e-9);}
+test('return looks inward, follows the aisle, sits before departure and holds the final seat',()=>{
+ const f=fixture();f.train.start();const phases=new Set(),direction=new THREE.Vector3();let maxDistance=0;
+ for(let i=0;i<240&&f.train.active;i++){
+  f.train.update(.1);const s=f.train.stats;phases.add(s.phase);
+  if(s.phase==='boarding'){assert.equal(f.station.door,1);f.camera.getWorldDirection(direction);assert.ok(direction.dot(new THREE.Vector3(f.station.spec.track.east[0],0,f.station.spec.track.east[1]))<-.98);}
+  if(['aisle','turning','seating'].includes(s.phase))assert.equal(f.station.door,1);
+  if(s.phase==='departing'){assert.equal(f.station.door,0);assert.equal(s.seated,true);maxDistance=Math.max(maxDistance,s.distance);}
  }
- assert.ok(sawBoarding&&sawClosing&&sawDeparture);assert.ok(maxDistance>20&&maxDistance<=24,'camera remains over the authored track segment');assert.equal(f.completed,1);assert.equal(f.train.active,false);
- assert.equal(f.walker.paused,false);assert.equal(f.walker.active,true);assert.equal(f.walker.teleports,1);
- assert.deepEqual(f.station.offset,[0,0,0]);assert.equal(f.station.door,0);assert.deepEqual(f.camera.position.toArray(),[4,11.7,0]);
- f.train.update(1);assert.equal(f.completed,1);assert.equal(f.train.start().ok,true);finish(f);assert.equal(f.completed,2);f.train.dispose();
+ for(const phase of ['opening','boarding','aisle','turning','seating','closing','departing','complete'])assert.ok(phases.has(phase));
+ assert.ok(maxDistance>20&&maxDistance<=24);assert.equal(f.completed,1);assert.equal(f.train.active,false);assert.equal(f.train.cameraOwned,true);assert.equal(f.train.stats.seated,true);
+ assert.equal(f.walker.paused,true);assert.equal(f.walker.active,false);assert.equal(f.walker.teleports,0);assert.ok(Math.abs(f.camera.position.y-(f.station.spec.train.floor+.5805+.70))<1e-8);
+ const end=f.camera.position.clone();f.train.update(.1);assert.ok(f.camera.position.equals(end));assert.equal(f.completed,1);
+ assert.equal(f.train.continueWalking(),true);assert.equal(f.train.cameraOwned,false);assert.equal(f.walker.paused,false);assert.equal(f.walker.active,true);assert.equal(f.walker.teleports,1);
+ assert.ok(f.camera.position.distanceTo(new THREE.Vector3(...platform(f)))<1e-8);assert.ok(f.station.offset.every(v=>v===0));f.train.dispose();
 });
-
-test('pause discards time and invalid or huge deltas cannot skip phases',()=>{
+test('pause and invalid deltas preserve every phase and the completed seated hold',()=>{
  const f=fixture();f.train.start();f.train.update(1000);assert.equal(f.train.stats.elapsed,.1);
- const position=f.camera.position.clone(),door=f.station.door;
- for(const delta of [NaN,Infinity,-1,0])f.train.update(delta);assert.equal(f.train.stats.elapsed,.1);
- f.train.update(1000,{paused:true});assert.equal(f.train.stats.elapsed,.1);assert.ok(position.equals(f.camera.position));assert.equal(f.station.door,door);
- f.train.update(.1);assert.equal(f.train.stats.paused,false);assert.equal(f.train.stats.elapsed,.2);f.train.dispose();
+ for(let i=0;i<180&&f.train.active;i++){
+  const p=f.camera.position.clone(),q=f.camera.quaternion.clone(),time=f.train.stats.elapsed,door=f.station.door,offset=[...f.station.offset];
+  for(const dt of [NaN,Infinity,-1,0])f.train.update(dt);f.train.update(1000,{paused:true});assert.equal(f.train.stats.elapsed,time);assert.ok(p.equals(f.camera.position));assert.ok(q.equals(f.camera.quaternion));assert.equal(f.station.door,door);assert.deepEqual(f.station.offset,offset);f.train.update(.1);
+ }
+ const p=f.camera.position.clone();f.train.update(5,{paused:true});assert.ok(f.camera.position.equals(p));f.train.dispose();
 });
-
-test('cancel and disposal release ownership even when walker teleport rejects the handoff',()=>{
- for(const phaseUpdates of [1,14,38,62]){
-  const f=fixture({teleportSuccess:false});f.train.start();for(let i=0;i<phaseUpdates;i++)f.train.update(.1);
-  assert.equal(f.train.cancel(),true);assert.equal(f.train.active,false);assert.equal(f.walker.paused,false);assert.equal(f.cancelled,1);
-  assert.deepEqual(f.camera.position.toArray(),[4,11.7,0]);assert.deepEqual(f.station.offset,[0,0,0]);assert.equal(f.station.door,0);assert.equal(f.walker.active,true);
-  assert.equal(f.train.start().ok,true);f.train.dispose();assert.equal(f.train.active,false);assert.equal(f.walker.paused,false);
-  assert.equal(f.train.interactionRoot.parent,null);assert.equal(f.train.start().ok,false);f.train.dispose();
+test('cancel/disposal restore walking from every phase and completed hold, even if teleport rejects',()=>{
+ for(const updates of [1,15,38,55,72,95,180]){
+  const f=fixture({teleportSuccess:false});f.train.start();for(let i=0;i<updates;i++)f.train.update(.1);
+  assert.equal(f.train.cancel(),true);assert.equal(f.train.cameraOwned,false);assert.equal(f.walker.paused,false);assert.equal(f.cancelled,1);assert.ok(f.camera.position.distanceTo(new THREE.Vector3(...platform(f)))<1e-8);assert.ok(f.station.offset.every(v=>v===0));assert.equal(f.station.door,0);assert.equal(f.walker.active,true);
+  assert.equal(f.train.start().ok,true);f.train.dispose();assert.equal(f.train.cameraOwned,false);assert.equal(f.walker.paused,false);assert.equal(f.train.interactionRoot.parent,null);assert.equal(f.train.start().ok,false);f.train.dispose();
  }
 });
-
-test('reduced motion completes and can replay without moving the train',()=>{
- const f=fixture({reducedMotion:()=>true});f.train.start();
- while(f.train.active){f.train.update(.1);assert.deepEqual(f.station.offset,[0,0,0]);}
- assert.equal(f.completed,1);assert.equal(f.train.stats.reducedMotion,true);assert.ok(f.train.stats.elapsed<3);
- assert.equal(f.train.start().ok,true);finish(f);assert.equal(f.completed,2);f.train.dispose();
+test('skip respects pause and completes seated once; replay resets the old completed hold',()=>{
+ const f=fixture();f.train.start();const p=f.camera.position.clone();assert.equal(f.train.skip({paused:true}),false);assert.ok(f.camera.position.equals(p));
+ assert.equal(f.train.skip(),true);assert.equal(f.completed,1);assert.equal(f.train.cameraOwned,true);assert.equal(f.train.skip(),false);assert.equal(f.train.start().ok,true);finish(f);assert.equal(f.completed,2);assert.equal(f.train.stats.seated,true);f.train.dispose();
 });
-
-test('callback errors release camera and walking ownership before returning failure',()=>{
- const f=fixture({onBegin(){throw Error('begin callback');}});assert.equal(f.train.start().ok,false);
- assert.equal(f.train.active,false);assert.equal(f.walker.paused,false);assert.equal(f.walker.active,true);f.train.dispose();
+test('reduced motion still enters and sits while retaining a stationary train',()=>{
+ const f=fixture({reducedMotion:()=>true});f.train.start();while(f.train.active){f.train.update(.1);assert.ok(f.station.offset.every(v=>v===0));}
+ assert.equal(f.completed,1);assert.equal(f.train.stats.reducedMotion,true);assert.ok(f.train.stats.elapsed<4);assert.equal(f.train.stats.seated,true);assert.equal(f.train.cameraOwned,true);assert.equal(f.train.continueWalking(),true);assert.equal(f.train.start().ok,true);finish(f);assert.equal(f.completed,2);f.train.dispose();
 });
-
-test('a viewer begin callback cannot leave walking unpaused during departure ownership',()=>{
- const f=fixture();const original=f.train.stats;
- f.train.dispose();
- const train=createZenReturnTrain({station:f.station,camera:f.camera,walker:f.walker,controls:f.controls,onBegin(){f.walker.pause(false);f.controls.enabled=true;}});
- train.start();assert.equal(f.walker.paused,true);assert.equal(f.controls.enabled,false);assert.equal(original.active,false);train.dispose();
+test('callback failures release camera ownership and walking pause',()=>{
+ for(const callback of ['onBegin','onComplete']){const f=fixture({[callback](){throw Error('callback');}}),result=f.train.start();if(callback==='onBegin')assert.equal(result.ok,false);else finish(f);assert.equal(f.train.cameraOwned,false);assert.equal(f.walker.paused,false);assert.equal(f.walker.active,true);f.train.dispose();}
+});
+test('a viewer begin callback cannot unpause this camera owner',()=>{
+ const f=fixture();f.train.dispose();const train=createZenReturnTrain({station:f.station,camera:f.camera,walker:f.walker,controls:f.controls,onBegin(){f.walker.pause(false);f.controls.enabled=true;}});train.start();assert.equal(f.walker.paused,true);assert.equal(f.controls.enabled,false);train.dispose();
+});
+test('the initial approach preserves the normal walking body radius rather than squeezing between solids',()=>{
+ const spec=createKeihanStationSpec(features,{height:()=>10}),p=spec.arrival.platformPose.position;
+ const colliders=[-1,1].map(side=>({type:'box',args:[p[0]+1,p[2]+side*.76,.5,.5,0,spec.platformFloor,spec.platformFloor+2.5,'approach-wall']}));
+ const f=fixture({colliders});f.camera.position.x+=2;assert.equal(f.train.start().ok,false);assert.equal(f.train.cameraOwned,false);assert.equal(f.begun,0);f.train.dispose();
 });

@@ -80,6 +80,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     matrices.forEach((list,index)=>{
       if(!list.length)return;
       const mesh=new THREE.InstancedMesh(...assets[index],list.length);
+      if(index===1||index===2)mesh.userData.precinctCanopy=true;
       list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.castShadow=index!==3;mesh.receiveShadow=true;mesh.computeBoundingSphere();
       if(index===3){
         const tint=new THREE.Color(),position=new THREE.Vector3();

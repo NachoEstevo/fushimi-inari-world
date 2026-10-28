@@ -1033,10 +1033,10 @@ export async function buildLegacy(renderer, callbacks={}) {
       ctx.fillStyle = '#c8280e';
       ctx.font = 'bold 42px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(titleText, 256, 96);
+      ctx.fillText(titleText, 256, 96, 476);
       ctx.fillStyle = '#1b1815';
       ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(subText, 256, 162);
+      ctx.fillText(subText, 256, 162, 476);
       ctx.fillStyle = '#8c5a18';
       ctx.font = '21px sans-serif';
       ctx.fillText('FUSHIMI INARI TAISHA • 伏見稲荷大社', 256, 214);
@@ -1053,8 +1053,8 @@ export async function buildLegacy(renderer, callbacks={}) {
 
       registerInteractable(
         board,
-        `Señalización del Santuario — ${titleText}`,
-        loreDesc || `${subText}. Seguí las calzadas pavimentadas de granito Mikage-ishi y el minimapa interactivo [M] para recorrer todo el predio y la montaña.`,
+        `Trail sign · ${titleText}`,
+        loreDesc || 'Follow the paths to Senbon Torii and the mountain.',
         () => {
           minimapPanel.classList.add('expanded');
           callbacks.map?.();
@@ -1064,26 +1064,26 @@ export async function buildLegacy(renderer, callbacks={}) {
     }
 
     // 1. Lower Precinct Route Signs (順路) around Ge-haiden & Honden
-    createTrailSignboard(-5.6, -5.8,  0.22, '← 順路 千本鳥居', 'SENBON TORII (POR IZQUIERDA)');
-    createTrailSignboard( 5.6, -5.8, -0.22, '千本鳥居 順路 →', 'SENBON TORII (POR DERECHA)');
-    createTrailSignboard(-6.2, -18.8, 0.15, '↑ 千本鳥居・奥社', 'ESCALINATA NORTE A TORII');
-    createTrailSignboard( 6.2, -18.8,-0.15, '↑ 千本鳥居・奥社', 'ESCALINATA SUR A TORII');
+    createTrailSignboard(-5.6, -5.8,  0.22, '← 順路 千本鳥居', 'SENBON TORII · LEFT');
+    createTrailSignboard( 5.6, -5.8, -0.22, '千本鳥居 順路 →', 'SENBON TORII · RIGHT');
+    createTrailSignboard(-6.2, -18.8, 0.15, '↑ 千本鳥居・奥社', 'STEPS TO SENBON TORII');
+    createTrailSignboard( 6.2, -18.8,-0.15, '↑ 千本鳥居・奥社', 'STEPS TO SENBON TORII');
 
     // 2. SENBON TORII BIFURCATION DIVIDER POST (千本鳥居分岐 — 右側通行 Keep Right / Two-Way Twin Tunnels)
     //    Placed right in the V-split island between the Left (-2.05m) and Right (+2.05m) tunnels at z = -49.2!
     createTrailSignboard(
       -2.0, -49.2, 0.12,
       '← 復路 | 千本鳥居 | 往路 →',
-      'DOBLE TÚNEL SENBON TORII',
-      'En la bifurcación de Senbon Torii (千本鳥居), el camino se divide en dos túneles gemelos paralelos de 2 metros de ancho cada uno: el túnel derecho (往路) para el ascenso hacia Okusha Hōhaisho y el túnel izquierdo (復路) para el retorno. Ambos están 100% despejados y llevan a la explanada de Okusha.'
+      'SENBON TORII',
+      'Follow either torii passage to Okusha.'
     );
 
     // 3. YOTSUTSUJI CROSSROADS BIFURCATION SIGN (四ツ辻 — Circuito de las Tres Cumbres)
     createTrailSignboard(
       -18.0, -209.5, 0.0,
       '← 三ノ峰・一ノ峰 | 御劔社・一ノ峰 →',
-      'CIRCUITO CUMBRE (233m)',
-      'Encrucijada de Yotsutsuji (四ツ辻, 120m s.n.m.): aquí el sendero se bifurca en el circuito circular de la cumbre (O-yama-meguri). El camino izquierdo sube por Sannomine (三ノ峰) y Ninomine (二ノ峰) hasta la cima Ichinomine (233m); el camino derecho sube/regresa por el santuario Mitsurugi-sha (御劔社).'
+      'SUMMIT CIRCUIT',
+      'The summit circuit passes Sannomine, Ninomine and Ichinomine. The other branch leads toward Mitsurugi-sha.'
     );
 
     // Accurate Colliders for the Aligned Lower Precinct GLB Structures
@@ -1413,7 +1413,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       ctx.fillStyle = '#fff8ee';
       ctx.font = 'bold 38px serif';
       ctx.textAlign = 'center';
-      ctx.fillText('伏見稲荷大社 境内・稲荷山案内図  —  FUSHIMI INARI TAISHA MAP', 512, 70);
+      ctx.fillText('伏見稲荷大社 · SHRINE MAP', 512, 70);
 
       // Illustrated mountain silhouette & trail diagram on the board
       ctx.fillStyle = '#2d4c32';
@@ -1446,15 +1446,15 @@ export async function buildLegacy(renderer, callbacks={}) {
       ctx.textAlign = 'left';
       ctx.font = 'bold 22px sans-serif';
       const labels = [
-        '① JR稲荷駅・一番鳥居 (Estación JR & 1er Gran Torii)',
-        '② 表参道・二番鳥居・手水舎 (Avenida Omotesandō)',
-        '③ 楼門 (Puerta Rōmon 1589) & 外拝殿 (Ge-haiden)',
-        '④ 本殿 (Honden 1499)・権殿 (Gonden)・五社相殿',
-        '⑤ 玉山稲荷社 ➔ 奥宮参道石段 ➔ 奥宮・白狐社',
-        '⑥ 千本鳥居分岐 (Doble Túnel Senbon Torii)',
-        '⑦ 奥社奉拝所・絵馬・おもかる石 (Okusha & Omokaru-ishi)',
-        '⑧ 熊鷹社・新池 (Estanque Shin-ike) ➔ 三ツ辻 (Mitsu-tsuji)',
-        '⑨ 四ツ辻展望台 (Mirador Yotsutsuji 120m) ➔ 一ノ峰山頂 (233m)'
+        '① JR稲荷駅・一番鳥居 · JR Inari',
+        '② 表参道・手水舎 · Omotesando',
+        '③ 楼門・外拝殿 · Rōmon',
+        '④ 本殿・権殿・五社相殿 · Honden',
+        '⑤ 玉山稲荷社・奥宮・白狐社 · Okumiya',
+        '⑥ 千本鳥居 · Senbon Torii',
+        '⑦ 奥社奉拝所・おもかる石 · Okusha',
+        '⑧ 熊鷹社・新池 · Shin-ike',
+        '⑨ 四ツ辻・一ノ峰 · Yotsutsuji / Ichinomine'
       ];
       labels.forEach((txt, idx) => {
         ctx.fillText(txt, 46, 136 + idx * 48);

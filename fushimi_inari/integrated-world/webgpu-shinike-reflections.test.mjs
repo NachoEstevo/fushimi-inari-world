@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three/webgpu';
-import {captureShinikeEnvironment} from './webgpu-shinike-reflections.mjs';
+import {captureShinikeEnvironment,installShinikeReflections} from './webgpu-shinike-reflections.mjs';
 
 function fixture(fail=false){
  const scene=new THREE.Scene(),environment=new THREE.Texture();scene.environment=environment;
@@ -45,4 +45,40 @@ test('r180 pond capture restores every light shadow flag when PMREM throws',()=>
  const f=fixture(true);
  assert.throws(()=>captureShinikeEnvironment({...f,center:new THREE.Vector3(0,1,0),forestChunks:[],overlays:()=>[]}),/PMREM capture failed/);
  assert.equal(f.captures,1);assert.equal(f.outputDisposed,1);assert.equal(f.resources.targets.length,0);assert.equal(f.resources.current,null);f.restored();
+});
+
+test('pond walking validation and settling reuse vectors without exporting or cloning camera positions',()=>{
+ const water=new THREE.Mesh(new THREE.PlaneGeometry(5,5),new THREE.MeshStandardMaterial());water.material.userData.waterAppearance={kind:'shinike'};
+ let time=0,captures=0;const reflection=installShinikeReflections({water,now:()=>time},()=>{captures++;return {texture:{},dispose(){}};});
+ const position=new THREE.Vector3();
+ position.toArray=()=>{throw Error('camera position must not allocate an array');};
+ position.clone=()=>{throw Error('camera position must not be cloned during update');};
+ try{
+  reflection.update(position,'day');
+  for(let frame=1;frame<=120;frame++){time=frame*16;position.x=frame*.05;reflection.update(position,'day');}
+  assert.equal(captures,0,'continuous walking must not unlock a reflection capture');
+  time+=299;reflection.update(position,'day');assert.equal(captures,0);
+  time+=1;reflection.update(position,'day');assert.equal(captures,1,'capture remains available after exactly300ms at rest');
+  for(const axis of ['x','y','z'])for(const invalid of [NaN,Infinity,-Infinity]){const value=position[axis];position[axis]=invalid;time+=1000;reflection.update(position,'gold');position[axis]=value;}
+  assert.equal(captures,1,'invalid camera positions do not enter the capture schedule');
+ }finally{reflection.dispose();water.geometry.dispose();water.material.dispose();}
+});
+
+test('pond reports CPU capture duration independently of settling time, including failed attempts',()=>{
+ const water=new THREE.Mesh(new THREE.PlaneGeometry(5,5),new THREE.MeshStandardMaterial());water.material.userData.waterAppearance={kind:'shinike'};
+ let time=0,cpu=100,attempts=0,clockReads=0;
+ const reflection=installShinikeReflections({water,now:()=>time,clock:()=>{clockReads++;return cpu;}},()=>{
+  cpu+=[2400.25,16.5,8][attempts++];if(attempts===3)throw Error('capture timing failure');return {texture:{},dispose(){}};
+ });
+ const position=new THREE.Vector3();
+ try{
+  reflection.update(position,'day');assert.equal(clockReads,0);assert.equal(reflection.stats.captureStartedAt,null);
+  time=1000;reflection.update(position,'day');
+  assert.equal(reflection.stats.captureCpuMs,2400.25);assert.equal(reflection.stats.maxCaptureCpuMs,2400.25);assert.equal(reflection.stats.captureStartedAt,100);assert.equal(reflection.stats.captures,1);
+  time=2000;reflection.update(position,'gold');time=3000;reflection.update(position,'gold');
+  assert.equal(reflection.stats.captureCpuMs,16.5);assert.equal(reflection.stats.maxCaptureCpuMs,2400.25);assert.equal(reflection.stats.captureStartedAt,2500.25);assert.equal(reflection.stats.captures,2);
+  time=4000;reflection.update(position,'night');time=5000;reflection.update(position,'night');
+  assert.equal(reflection.stats.captureCpuMs,8);assert.equal(reflection.stats.maxCaptureCpuMs,2400.25);assert.equal(reflection.stats.captureStartedAt,2516.75);assert.equal(reflection.stats.captures,2);assert.equal(reflection.stats.error,'capture timing failure');
+  time=6000;reflection.update(position,'night');assert.equal(attempts,3);assert.equal(clockReads,6,'each attempt is timed once without changing retry policy');
+ }finally{reflection.dispose();water.geometry.dispose();water.material.dispose();}
 });

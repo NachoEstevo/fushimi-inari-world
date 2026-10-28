@@ -5,10 +5,11 @@ export function observePrewarmRenders(entries,{camera,service,isRendering}){
  for(const {object}of entries){
   if(!object.isMesh||Array.isArray(object.material)||callbacks.has(object))continue;
   const original=object.onAfterRender,owned=Object.hasOwn(object,'onAfterRender');
-  function after(...args){
+  // Match Object3D's six draw arguments without allocating an array per draw.
+  function after(renderer,scene,view,geometry,drawMaterial,group){
    const material=object.material,version=material?.version;
-   const result=original.apply(this,args);
-   if(args[2]===camera&&isRendering()&&object.material===material&&material?.version===version)service.markRendered(object);
+   const result=original.call(this,renderer,scene,view,geometry,drawMaterial,group);
+   if(view===camera&&isRendering()&&object.material===material&&material?.version===version)service.markRendered(object);
    return result;
   }
   callbacks.set(object,{original,owned,after});object.onAfterRender=after;

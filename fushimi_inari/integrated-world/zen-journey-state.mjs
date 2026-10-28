@@ -63,21 +63,24 @@ function merge(a,b){
 }
 
 export function createZenJourney({storage=null,locations={},now=()=>Date.now()}={}){
- let state=blank(),persistent=!!storage,disposed=false,serial=0,lastTime=0;const listeners=new Set();
+ let state=blank(),persistent=!!storage,disposed=false,serial=0,lastTime=0,lastRaw=Symbol('unread');const listeners=new Set();
  const timestamp=()=>{const n=now();return lastTime=Math.max(lastTime+1,positive(n)?n:Date.now());};
  function accept(value){merge(state,value);lastTime=Math.max(lastTime,...Object.values(state.settingsAt),...Object.values(state.moments),...Object.values(state.sketches),...Object.values(state.photoPrompts),...state.photos.map(p=>p.createdAt),state.visit.updatedAt);}
- function refresh(){if(persistent)try{accept(decode(storage.getItem(ZEN_JOURNEY_KEY)));}catch{persistent=false;}}
+ function acceptRaw(raw){if(raw===lastRaw)return false;accept(decode(raw));lastRaw=raw;return true;}
+ // Keep the GET before every write/observation for cross-tab concurrency;
+ // identical stored bytes need no repeated decode, merge or photo cloning.
+ function refresh(){if(persistent)try{acceptRaw(storage.getItem(ZEN_JOURNEY_KEY));}catch{persistent=false;}}
  function snapshot(){
   const photos=state.photos.map(p=>({...p,position:[...p.position],direction:[...p.direction],promptIds:[...p.promptIds]}));
   const readyToReturn=Math.max(state.moments.aki??0,state.photoPrompts['kyoto-view']??0,state.moments.tea??0);
   const stage=!state.moments.aki?0:!state.photoPrompts['kyoto-view']?1:!state.moments.tea?2:!(state.moments.return>readyToReturn)?3:4;
   return {version:2,intention:state.intention,weather:state.weather,moments:{...state.moments},sketches:{...state.sketches},photoPrompts:{...state.photoPrompts},photos,story:{stage,complete:stage===4},visit:{...state.visit},persistent};
  }
- function changed(){if(persistent)try{storage.setItem(ZEN_JOURNEY_KEY,JSON.stringify(state));}catch{persistent=false;}for(const fn of listeners)fn(snapshot());}
+ function changed(){if(persistent)try{const raw=JSON.stringify(state);storage.setItem(ZEN_JOURNEY_KEY,raw);lastRaw=raw;}catch{persistent=false;}for(const fn of listeners)fn(snapshot());}
  function setting(field,id){if(disposed||!choices[field].includes(id))return false;refresh();if(state[field]===id)return false;state[field]=id;state.settingsAt[field]=timestamp();changed();return true;}
  refresh();
  // Existing seals remain owned by the original journal, under its original key.
- const onStorage=event=>{if(disposed||event.key!==ZEN_JOURNEY_KEY)return;accept(decode(event.newValue));for(const fn of listeners)fn(snapshot());};
+ const onStorage=event=>{if(disposed||event.key!==ZEN_JOURNEY_KEY||!acceptRaw(event.newValue))return;for(const fn of listeners)fn(snapshot());};
  globalThis.window?.addEventListener?.('storage',onStorage);
  return {snapshot,setIntention:id=>setting('intention',id),setWeather:id=>setting('weather',id),
   canRecordPhoto(details={}){return !disposed&&!!photoRecord({...details,id:'eligibility',createdAt:1});},
