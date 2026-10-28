@@ -111,7 +111,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     }});
   function interact(){
     const result=proximity.run();if(!result)return;
-    onInteraction(result.object);
+    onInteraction(result.object,result.event);
     panel.hidden=true;feedback.textContent=result.message;feedbackUntil=performance.now()+2600;feedback.hidden=false;
     updateInteraction();
   }
@@ -122,7 +122,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   });
   addEventListener('keyup',e=>keys.delete(e.code));
   addEventListener('blur',()=>{keys.clear();footsteps.reset();pointerLook.release();});
-  return {stop,start,get pointerLooking(){return pointerLook.engaged;},releasePointerLock:()=>pointerLook.release(),fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},get pace(){return pace;},setPace(value){pace=value==='fast'?'fast':'slow';},pause(value){paused=value;keys.clear();footsteps.reset();if(value){pointerLook.release();hint.hidden=true;feedback.hidden=true;}},get active(){return active;},teleport(point,target){
+  return {stop,start,interact:()=>{if(!inputBlocked(null,true))interact();},get pointerLooking(){return pointerLook.engaged;},releasePointerLock:()=>pointerLook.release(),fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},get pace(){return pace;},setPace(value){pace=value==='fast'?'fast':'slow';},pause(value){paused=value;keys.clear();footsteps.reset();if(value){pointerLook.release();hint.hidden=true;feedback.hidden=true;}},get active(){return active;},teleport(point,target){
     keys.clear();footsteps.reset();pointerLook.release();panel.hidden=true;
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){

@@ -62,3 +62,10 @@ test('inactive walking, menu, photo mode and focused controls block interaction 
  assert.equal(interactionInputBlocked(state),false);
  for(const override of [{active:false},{paused:true},{flying:true},{body:{classList:{contains:()=>true}}},{document:{querySelector:()=>({})}},{target:{closest:()=>({})}}])assert.equal(interactionInputBlocked({...state,...override}),true);
 });
+
+test('typed successful actions preserve a readable message and completed event without treating opening as collection',()=>{
+ const camera=new PerspectiveCamera();camera.position.set(0,1.7,0);const owner=new Group();owner.position.z=-1;let collected=false,time=0;
+ owner.userData.interactable={proximity:true,cooldownMs:0,directAction:()=>collected?{message:'Tea collected.',event:{type:'drink.collected',drink:'tea'}}:{message:'Choose a drink.'}};owner.updateMatrixWorld(true);
+ const runtime=createProximityInteractions({targets:[owner],camera,now:()=>time++});assert.equal(runtime.run().event,undefined);
+ collected=true;const result=runtime.run();assert.equal(result.message,'Tea collected.');assert.deepEqual(result.event,{type:'drink.collected',drink:'tea'});
+});

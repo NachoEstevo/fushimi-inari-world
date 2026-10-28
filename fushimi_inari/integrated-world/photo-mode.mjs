@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,allowDebugCamera=false,onCaptured,render=()=>renderer.render(scene,camera)}){
+export function installPhotoMode({renderer,scene,camera,walker,controls,overlays,allowDebugCamera=false,onCaptured,includeImage=false,isCameraOwned=()=>false,getCaptureContext=()=>({}),render=()=>renderer.render(scene,camera)}){
   const button=document.createElement('button');button.id='photo-open';button.setAttribute('aria-label','Photo mode');button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Photo mode</span>';document.body.append(button);
   const panel=document.createElement('section');panel.id='photo-panel';panel.hidden=true;panel.setAttribute('aria-label','Photo settings');
   panel.innerHTML=`<div class="menu-heading"><h2>Photo mode</h2><button id="photo-close" aria-label="Close photo mode">×</button></div>
@@ -11,7 +11,7 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
     <label for="photo-exposure">Exposure <output id="photo-exposure-value"></output></label><input id="photo-exposure" type="range" min="-2" max="2" step=".1" value="0">
     <label for="photo-size">Resolution · longest edge</label><select id="photo-size"><option value="1920">1920 px</option><option value="3840" selected>4K · 3840 px</option></select>
     <label class="photo-grid-label"><input id="photo-grid-toggle" type="checkbox"> Rule of thirds</label>
-    <div class="row"><button id="photo-reset">Reset</button><button id="photo-save" class="primary">Save PNG</button></div>
+    <div class="row"><button id="photo-reset">Reset</button>${includeImage?'<button id="photo-keep" class="primary">Keep in journal</button>':''}<button id="photo-save">Save PNG</button></div>
     <p id="photo-status" role="status">PNG · current screen aspect ratio · no UI</p><a id="photo-result" hidden target="_blank" rel="noopener">Open last photo</a>`;
   document.body.append(panel);
   const grid=document.createElement('div');grid.id='photo-grid';grid.hidden=true;document.body.append(grid);
@@ -38,18 +38,18 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
     if(!saved||busy)return;
     camera.quaternion.copy(saved.rotation);camera.fov=saved.fov;camera.updateProjectionMatrix();renderer.toneMappingExposure=saved.exposure;
     saved.objects.forEach(([o,v])=>o.visible=v);
-    const restoreMode=allowDebugCamera?saved.mode:'walk';
+    const owned=isCameraOwned(),restoreMode=owned||allowDebugCamera?saved.mode:'walk';
     if(walker.mode!==restoreMode){if(restoreMode==='fly')walker.fly();else if(restoreMode==='walk')walker.start();else walker.stop();}
-    controls.enabled=allowDebugCamera&&saved.controls;walker.pause(false);saved=null;
+    controls.enabled=allowDebugCamera&&saved.controls&&!owned;walker.pause(owned);saved=null;
     panel.hidden=true;grid.hidden=true;$('photo-grid-toggle').checked=false;document.body.classList.remove('photo-mode');button.focus();
   }
-  async function capture(){
-    if(busy||!saved)return;busy=true;$('photo-save').disabled=true;$('photo-status').textContent='Rendering photo…';
+  async function capture(download=true){
+    if(busy||!saved)return;busy=true;$('photo-save').disabled=true;if($('photo-keep'))$('photo-keep').disabled=true;$('photo-status').textContent='Rendering photo…';
     const size=renderer.getSize(new THREE.Vector2()),ratio=renderer.getPixelRatio(),aspect=camera.aspect;
     // 3840 fits the minimum texture limit of both supported graphics backends.
-    const max=Math.min(Number($('photo-size').value),3840);
+    const max=Math.min(Number($('photo-size').value),download?3840:1920);
     const width=Math.round(aspect>=1?max:max*aspect),height=Math.round(aspect>=1?max/aspect:max);
-    const captureDetails={position:camera.position.toArray(),direction:camera.getWorldDirection(new THREE.Vector3()).toArray(),width,height};
+    const captureDetails={...getCaptureContext(),position:camera.position.toArray(),direction:camera.getWorldDirection(new THREE.Vector3()).toArray(),width,height};
     try{
       let image;
       try{
@@ -70,19 +70,19 @@ export function installPhotoMode({renderer,scene,camera,walker,controls,overlays
       const blob=await image,url=URL.createObjectURL(blob),link=document.createElement('a');
       if(lastURL)URL.revokeObjectURL(lastURL);lastURL=url;
       $('photo-result').href=url;$('photo-result').hidden=false;
-      link.href=url;link.download=`fushimi-inari-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;link.click();
-      $('photo-status').textContent=`Saved ${width} × ${height} PNG`;
+      link.href=url;link.download=`fushimi-inari-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;if(download)link.click();
+      $('photo-status').textContent=download?`Saved ${width} × ${height} PNG`:'Photo captured';
       // Notify only after a real PNG exists; snapshot pose before asynchronous
       // encoding so later camera changes cannot earn a different photograph.
-      try{const note=onCaptured?.(captureDetails);if(typeof note==='string'&&note)$('photo-status').textContent+=' · '+note;}
+      try{const note=await onCaptured?.(includeImage?{...captureDetails,blob}:captureDetails);if(typeof note==='string'&&note)$('photo-status').textContent+=' · '+note;}
       catch(error){console.warn('Photo capture observer failed',error);}
     }catch(error){$('photo-status').textContent=`Could not save photo: ${error.message}. Try 1920 px.`;}
-    finally{busy=false;$('photo-save').disabled=false;}
+    finally{busy=false;$('photo-save').disabled=false;if($('photo-keep'))$('photo-keep').disabled=false;}
   }
-  button.onclick=open;$('photo-close').onclick=close;$('photo-reset').onclick=reset;$('photo-save').onclick=capture;
+  button.onclick=open;$('photo-close').onclick=close;$('photo-reset').onclick=reset;$('photo-save').onclick=()=>capture(true);if(includeImage)$('photo-keep').onclick=()=>capture(false);
   for(const id of ['photo-yaw','photo-pitch','photo-fov','photo-exposure'])$(id).oninput=apply;
   $('photo-grid-toggle').onchange=e=>grid.hidden=!e.target.checked;
   // Installed before the exploration-menu listener so Escape closes only this mode.
   addEventListener('keydown',e=>{if(saved&&e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();close();}},true);
-  return {get active(){return !!saved;}};
+  return {get active(){return !!saved;},open,close};
 }

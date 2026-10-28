@@ -37,6 +37,7 @@ export function createProximityInteractions({targets,camera,now=()=>performance.
  }).sort((a,b)=>a.distance-b.distance).slice(0,4);},run(){const object=find();if(!object)return null;const data=object.userData.interactable,time=now();
   if(time-(lastRun.get(data)??-Infinity)<(data.cooldownMs??1800))return null;
   lastRun.set(data,time);const action=data.directAction??data.actions?.[0]?.run??data.onTrigger;
-  return {object,message:action.call(data)??data.prompt??data.actions?.[0]?.label??'Done'};
+  const value=action.call(data),typed=value&&typeof value==='object'&&typeof value.message==='string';
+  return {object,message:typed?value.message:value??data.prompt??data.actions?.[0]?.label??'Done',...(typed&&typeof value.event?.type==='string'?{event:value.event}:{})};
  }};
 }

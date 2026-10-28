@@ -47,7 +47,7 @@ export function buildYotsutsujiContextR95(root,features,materials={}){
  const quad=(a,b,c,d,m)=>parts.sheet([...a,...b,...c,...a,...c,...d],m);
  const line=(a,b,r,m)=>parts.beam(a,b,r,m,r,6);
  const [main,annex]=frames;
- const awnings=[];
+ const awnings=[],rainShelters=[];
  const awning=(start,end,back,front,projection,drop,label)=>{
   const count=Math.ceil((end-start)/.28);
   for(let i=0;i<count;i++){
@@ -57,6 +57,8 @@ export function buildYotsutsujiContextR95(root,features,materials={}){
   }
   line(main.world(start,.15,back),main.world(end,.15,back),.033,metal);
   for(const u of [start,end])line(main.world(u,.18,back-.18),main.world(u,projection,front-.035),.024,metal);
+  rainShelters.push({id:`yotsutsuji-main-awning-${awnings.length}`,sourceFeature:main.id,
+   points:[main.world(start,.19,0),main.world(end,.19,0),main.world(end,projection,0),main.world(start,projection,0)],floor:main.floor,roofY:main.floor+front-drop});
   awnings.push({label,start,end,projection,minHeight:front-drop});
  };
  // New skins sit above the owner's 2.8m plain eave; they do not intersect its
@@ -85,8 +87,10 @@ export function buildYotsutsujiContextR95(root,features,materials={}){
   const a=start+(end-start)*i/curtains+.025,b=start+(end-start)*(i+1)/curtains-.025;
   quad(annex.world(a,.25,2.69),annex.world(b,.25,2.69),annex.world(b,.29,2.18),annex.world(a,.29,2.18),cloth);
  }
+ rainShelters.push({id:'yotsutsuji-annex-canopy',sourceFeature:annex.id,
+  points:[annex.world(start,.14,0),annex.world(end,.14,0),annex.world(end,projection,0),annex.world(start,projection,0)],floor:annex.floor,roofY:annex.floor+3.07});
  const stats=parts.flush();
- group.userData={built:true,stats,facades:frames.map(({id,edge,length,floor})=>({id,edge,length,floor})),awnings,canopy:{projection,bays,minHeight:3.07},curtains,
+ group.userData={built:true,stats,facades:frames.map(({id,edge,length,floor})=>({id,edge,length,floor})),awnings,rainShelters,canopy:{projection,bays,minHeight:3.07},curtains,
   collidersAdded:0,terrainChanged:false,
   sources:['https://zekkeikana.com/kyoto/fusimiku/fushimiinari/yotsutsuji13.jpg','https://zekkeikana.com/kyoto/fusimiku/fushimiinari/yotsutsuji14.jpg'],
   limits:'Photographs dated 17 February 2013; ring registration, dimensions, striped intervals and cloth count inferred. Opaque pale panel approximation of translucent cover. No source photograph textures, lettering, new steps, retaining extension or skyline.'};

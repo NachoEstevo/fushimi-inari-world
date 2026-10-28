@@ -8,14 +8,14 @@ function node(tag='div'){
   setAttribute(name,value){this[name]=value;},append(...children){this.children.push(...children);},before(child){this.sibling=child;},replaceChildren(){this.children=[];},focus(){},remove(){},
   addEventListener(type,fn){listeners.set(type,fn);},showModal(){this.open=true;},close(){this.open=false;listeners.get('close')?.();},querySelector(id){return this.elements[id.slice(1)];},querySelectorAll(){return this.tabs??[];}};
 }
-function fixture(){
+function fixture(options={}){
  const previous={document:globalThis.document,window:globalThis.window},nodes=[],menu=node(),body=node(),head=node(),listeners=new Map();
  const document={body,head,hidden:false,createElement(tag){const element=node(tag);nodes.push(element);if(tag==='dialog'){
   element.elements=Object.fromEntries(['journal-number','journal-place','journal-note','journal-discoveries','journal-seal','journal-stamp-title','journal-state','journal-collect','journal-prev','journal-next','journal-complete','journal-save','journal-close','journal-overview'].map(id=>[id,node()]));
   element.tabs=Array.from({length:5},(_,i)=>({...node('button'),dataset:{page:String(i)}}));}return element;},getElementById:()=>menu,querySelector:()=>null};
  globalThis.document=document;globalThis.window={addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:type=>listeners.delete(type)};
  const camera={position:{x:0,y:1.7,z:0}},controls={enabled:true},walker={pause(){},releasePointerLock(){}},anchors={entrance:{target:[0,0,0]},yotsu:{target:[100,20,40]}};
- const ui=installJourneyJournal({camera,controls,walker,assembly:{spatial:{byId:anchors}},storage:null});
+ const ui=installJourneyJournal({camera,controls,walker,assembly:{spatial:{byId:anchors}},storage:null,...options});
  return {ui,camera,document,button:menu.sibling,book:nodes.find(n=>n.tag==='dialog'),notice:body.children[1],cleanup(){ui.dispose();globalThis.document=previous.document;globalThis.window=previous.window;}};
 }
 
@@ -36,3 +36,5 @@ test('only a captured and correctly oriented viewpoint photo adds the optional n
   f.button.onclick();assert.match(f.book.elements['journal-overview'].textContent,/1 of 4/i);
  }finally{f.cleanup();}
 });
+
+test('journal may open while seated and closing preserves the existing camera owner',()=>{const pauses=[],f=fixture({walker:{pause:value=>pauses.push(value),releasePointerLock(){}},cameraOwned:()=>true});try{f.button.onclick();assert.equal(f.book.open,true);f.book.close();assert.equal(pauses.at(-1),true);}finally{f.cleanup();}});

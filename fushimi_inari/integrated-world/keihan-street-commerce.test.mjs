@@ -69,7 +69,7 @@ test('direct machine interaction dispenses and collects with a live proximity pr
  const machine=installKeihanStreetCommerce(fixture()).machines[0],data=machine.group.userData.interactable;
  assert.equal(data.prompt,'Get a drink');assert.equal(data.proximity,true);
  data.directAction();assert.equal(machine.can.visible,true);assert.equal(data.prompt,'Collect drink');
- assert.match(data.directAction(),/Green tea collected/);assert.equal(machine.can.visible,false);
+ assert.match(data.directAction().message,/Green tea collected/);assert.equal(machine.can.visible,false);
  assert.equal(machine.controller.state.selected,1);assert.equal(data.prompt,'Get a drink');
  data.directAction();assert.equal(machine.can.material.color.getHexString(),new THREE.Color(STREET_DRINKS[1].color).getHexString());
 });
@@ -114,4 +114,9 @@ test('commerce disposal releases its own shared resources once and removes only 
  assert.equal(r.group.parent,null);assert.equal(a.root.getObjectByName('Keihan commerce r104'),undefined);
  assert.deepEqual(a.legacy.interactables,[other]);assert.equal(a.colliders.length,existingColliders.length);assert.ok(a.colliders.every((c,i)=>c===existingColliders[i]));
  assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterials,materials.size);assert.equal(releasedTextures,1);
+});
+
+test('only a collected drink produces a carried-drink completion event',async()=>{
+ const {createDrinkCollectionAction,createDrinkMachineState}=await import('./keihan-street-commerce.mjs');const controller=createDrinkMachineState(),act=createDrinkCollectionAction(controller,'station-machine');
+ assert.equal(typeof act(),'string');const collected=act();assert.equal(collected.event.type,'drink.collected');assert.equal(collected.event.drink,'Green tea');assert.equal(collected.event.machineId,'station-machine');assert.equal(controller.state.collected,1);assert.equal(typeof act(),'string');assert.equal(controller.state.collected,1);
 });

@@ -1,0 +1,13 @@
+.zen-experience-notice{position:fixed;z-index:42;left:50%;bottom:110px;transform:translateX(-50%);max-width:min(540px,calc(100vw - 48px));margin:0;padding:12px 19px;background:#eae3d0f5;color:#374238;border:1px solid #b4ae97;border-radius:4px;font:14px/1.6 Georgia,serif;box-shadow:0 8px 30px #18281d22;pointer-events:none}
+.zen-experience-notice[hidden],#zen-departure[hidden],.zen-pocket-actions[hidden],#zen-interact[hidden]{display:none}
+.zen-pocket-actions{position:fixed;right:24px;bottom:310px;display:flex;gap:7px;z-index:30}
+.zen-pocket-actions button,#zen-interact,#zen-departure button,.zen-visit-extras button{font:12px/1.5 system-ui,sans-serif;padding:11px 15px;background:#e9e1cd;color:#374337;border:1px solid #a5a98c;border-radius:4px;cursor:pointer;touch-action:manipulation}
+.zen-pocket-actions button:focus-visible,#zen-interact:focus-visible,#zen-departure button:focus-visible,.zen-visit-extras button:focus-visible{outline:2px solid #a65440;outline-offset:3px}
+.zen-pocket-actions button:disabled{opacity:.6;cursor:default}
+.zen-visit-extras{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:10px 0 22px}.zen-visit-extras label{max-width:330px;font:11px/1.6 system-ui,sans-serif;color:#626b58}.zen-visit-extras input{accent-color:#8c4939;vertical-align:middle}
+#zen-departure{position:fixed;z-index:40;left:50%;bottom:30px;transform:translateX(-50%);width:min(480px,calc(100vw - 32px));box-sizing:border-box;padding:20px;text-align:center;background:#26382eea;color:#e9e6d7;border:1px solid #b8c39a44;border-radius:5px;box-shadow:0 8px 30px #15261c33}
+#zen-departure p{font:20px/1.45 Georgia,serif;margin:0 0 18px}#zen-departure button{margin:0 4px}
+#zen-interact{position:fixed;z-index:29;left:50%;bottom:82px;transform:translateX(-50%);max-width:calc(100vw - 40px);background:#26372bea;color:#efecd9;border-color:#aab18a66}
+body:has(dialog[open]) .zen-pocket-actions,body.photo-mode .zen-pocket-actions,body:has(dialog[open]) #zen-interact,body.photo-mode #zen-interact{display:none}
+@media(pointer:fine){#zen-interact{display:none}}
+@media(max-width:540px){.zen-pocket-actions{right:15px;bottom:250px;flex-direction:column}#zen-departure{bottom:15px;padding:17px}.zen-experience-notice{bottom:120px}#zen-departure p{font-size:18px}}

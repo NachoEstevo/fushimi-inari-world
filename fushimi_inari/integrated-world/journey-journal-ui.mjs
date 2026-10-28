@@ -3,7 +3,7 @@ import {JOURNAL_KEY,JOURNEY_STAMPS,JOURNEY_DISCOVERIES,createJourneyJournal,jour
 const glyph='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 5c-3-2-7-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3"/></svg>';
 const seal=index=>`<svg viewBox="0 0 160 160" aria-hidden="true"><rect x="14" y="14" width="132" height="132" rx="${index===4?54:5}"/><rect x="21" y="21" width="118" height="118" rx="${index===4?48:2}"/><path d="M42 54q38 10 76 0M45 66h70M47 82h66M56 67l-4 45m52-45 4 45M80 67v15"/>${index>=2?'<path d="m38 115 25-23 17 13 23-20 23 30"/>':''}<text x="80" y="41" text-anchor="middle">INARIYAMA</text><text x="80" y="133" text-anchor="middle">${JOURNEY_STAMPS[index].mark}</text></svg>`;
 
-export function installJourneyJournal({camera,assembly,walker,controls,isBlocked=()=>false,storage:providedStorage}={}){
+export function installJourneyJournal({camera,assembly,walker,controls,isBlocked=()=>false,cameraOwned=()=>false,storage:providedStorage}={}){
   let storage=providedStorage;
   if(storage===undefined){try{storage=window.localStorage;}catch{storage=null;}}
   const progress=createJourneyJournal({storage});
@@ -60,7 +60,7 @@ export function installJourneyJournal({camera,assembly,walker,controls,isBlocked
   function close(){book.close();}
   button.onclick=open;$('journal-close').onclick=close;
   book.addEventListener('cancel',event=>{event.preventDefault();close();});
-  book.addEventListener('close',()=>{document.body.classList.remove('journal-open');walker.pause(isBlocked());controls.enabled=wasControlsEnabled&&!isBlocked();button.focus();});
+  book.addEventListener('close',()=>{document.body.classList.remove('journal-open');walker.pause(isBlocked()||cameraOwned());controls.enabled=wasControlsEnabled&&!isBlocked()&&!cameraOwned();button.focus();});
   book.addEventListener('click',event=>{if(event.target!==book)return;const r=book.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();});
   $('journal-prev').onclick=()=>{page=Math.max(0,page-1);render(true);};$('journal-next').onclick=()=>{page=Math.min(4,page+1);render(true);};
   for(const tab of book.querySelectorAll('[data-page]'))tab.onclick=()=>{page=Number(tab.dataset.page);render(true);};
@@ -70,7 +70,7 @@ export function installJourneyJournal({camera,assembly,walker,controls,isBlocked
   window.addEventListener('keydown',onKey);window.addEventListener('storage',onStorage);
   render();
   function announce(discovery){toast.textContent=`Journal · ${discovery.title}`;toast.hidden=false;noticeUntil=performance.now()+2800;render();}
-  return {get active(){return book.open;},update(time){if(time-last<500)return;last=time;render();if(!toast.hidden&&time>noticeUntil)toast.hidden=true;
+  return {open,get active(){return book.open;},update(time){if(time-last<500)return;last=time;render();if(!toast.hidden&&time>noticeUntil)toast.hidden=true;
       if(!book.open&&toast.hidden){const ready=progress.available(context()).find(id=>!noticed.has(id));if(ready){noticed.add(ready);const stamp=JOURNEY_STAMPS.find(s=>s.id===ready);toast.textContent=`${stamp.place} · seal available — press J`;toast.hidden=false;noticeUntil=time+2800;}}
     },
     recordInteraction(object){

@@ -31,6 +31,7 @@ import {installShinikeReflections} from './shinike-reflections.mjs?v=repair-2026
 import {installCityPanorama} from './city-panorama.mjs';
 import {installExplorationMenu} from './exploration-menu.mjs?v=usability-9';
 import {installJourneyJournal} from './journey-journal-ui.mjs';
+import {installZenExperience} from './zen-experience.mjs';
 import {observePrewarmRenders} from './prewarm-render-observer.mjs';
 import {createPrewarmFrameBudget} from './prewarm-frame-budget.mjs';
 import {prewarmViewRadius} from './prewarm-view-radius.mjs';
@@ -325,8 +326,9 @@ try {
   const graph=buildGraph(features.paths,terrain);
   const stationRoutes=buildStationApproachRoutes(assembly,features,terrain);
   let activeRoute=[],routeLine=null,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
-  let arrival=null,arrivalUI=null;
+  let arrival=null,arrivalUI=null,zen=null;
   function interruptArrival(){
+    zen?.cancelActivity();
     // If the requested destination is unavailable, remain on a safe platform.
     if(arrival?.active)arrival.skip();
     arrival?.cancel();
@@ -360,7 +362,7 @@ try {
     clearRoute();
     $('custom-fields').hidden=$('itinerary').value!=='custom';
     const stationKey=$('itinerary').value;
-    const completeKeihan=stationKey==='keihan_loop';
+    const completeKeihan=stationKey==='keihan_loop',viewsOnly=stationKey==='zen_views';
     const stationSelected=['keihan','keihan_omotesando','jr'].includes(stationKey);
     $('branch').hidden=stationSelected;document.querySelector('label[for="branch"]').hidden=stationSelected;
     if(stationSelected){
@@ -375,7 +377,7 @@ try {
     }
     let chosen=[$('start').value,...($('via').value?[$('via').value]:[]),$('destination').value].map(id=>landmarks.find(p=>p.id===id));
     if($('itinerary').value!=='custom'){
-      const names=['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)','三ノ峰','二ノ峰','一ノ峰'];
+      const names=viewsOnly?['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)']:['楼門','奥社奉拝所','熊鷹社','四ツ辻 (Yottsu tsuji)','三ノ峰','二ノ峰','一ノ峰'];
       if($('itinerary').value==='loop'||completeKeihan)names.push('御劔社','御膳谷奉拝所','四ツ辻 (Yottsu tsuji)','楼門');
       chosen=names.map(name=>landmarks.find(p=>p.tags.name===name));
       const branch=features.paths.find(p=>p.id===$('branch').value);
@@ -392,17 +394,17 @@ try {
       route.push(...(i===1?segment:segment.slice(1)));
     }
     const mountainRoute=resample(route,terrain,2);
-    activeRoute=completeKeihan?joinKeihanSummitLoop(stationRoutes.keihan_omotesando,mountainRoute,assembly.walkHeight):mountainRoute;
+    activeRoute=(completeKeihan||viewsOnly)?joinKeihanSummitLoop(stationRoutes.keihan_omotesando,mountainRoute,assembly.walkHeight):mountainRoute;
     if(!activeRoute){$('route-info').textContent='The station approach and summit loop could not be joined at Rōmon.';drawMap();return;}
     if(activeRoute.length<2){$('route-info').textContent='Start and destination share the same network point.';drawMap();return;}
     const stats=routeMetrics(activeRoute),gaps=snapped.map(s=>Math.round(s.distance));
     $('route-info').textContent=`${(stats.length/1000).toFixed(2)} km · ↑ ${Math.round(stats.ascent)} m · ↓ ${Math.round(stats.descent)} m. Elevation estimated from DEM.`;
-    $('route-stops').textContent=[...(completeKeihan?stationRoutes.keihan_omotesando.stops.slice(0,-1):[]),...chosen.map(displayName)].join(' → ');
+    $('route-stops').textContent=[...((completeKeihan||viewsOnly)?stationRoutes.keihan_omotesando.stops.slice(0,-1):[]),...chosen.map(displayName)].join(' → ');
     $('route-gaps').textContent=`Maximum landmark-to-path distance: ${Math.max(...gaps)} m. Routes reach mapped trail nodes, without invented links to buildings.`;
     showRoute();
   }
   function showRoute(){
-    const lift=['keihan','keihan_omotesando','keihan_loop','jr'].includes($('itinerary').value)?.08:1;
+    const lift=['keihan','keihan_omotesando','keihan_loop','zen_views','jr'].includes($('itinerary').value)?.08:1;
     routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+lift,p[2]))),
       new THREE.LineBasicMaterial({color:0xff7146,depthTest:true}));
     routeLine.renderOrder=20;scene.add(routeLine);profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
@@ -472,7 +474,7 @@ try {
   const publicWalkDomain=createPublicWalkDomain(assembly);
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
   let journal=null,sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
-  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:object=>journal?.recordInteraction(object),onStart:()=>{walking=false;$('stop').disabled=true;}});
+  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:(object,event)=>{journal?.recordInteraction(object);if(event?.type==='drink.collected')zen?.collectDrink(event);},onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     for(const [id,label,x,z,tx,tz] of [
@@ -571,7 +573,7 @@ try {
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
-  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,onCaptured:details=>journal?.recordPhoto(details)?'Panorama added to your journal.':'',render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
+  const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,includeImage:true,isCameraOwned:()=>!!zen?.active||!!arrival?.active,getCaptureContext:()=>({mode:zen?.returning.active||arrival?.active?'train':walker.mode,fov:camera.fov,weather:zen?.journey.snapshot().weather??'clear',light:$('light').value}),onCaptured:async details=>{journal?.recordPhoto(details);return await zen?.recordPhoto(details)??'';},render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
@@ -585,7 +587,7 @@ try {
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   renderPreparation=createRenderPreparationQueue({onBusy:busy=>{if(busy)walkingPrewarm?.setBlocked(true);}});
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
-    sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0),
+    sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>!!zen?.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0),
     onRenderQuality:async value=>{
       qualityPending++;
       try{await renderPreparation.run(async()=>{
@@ -596,18 +598,19 @@ try {
       sunShafts.setQuality(quality.mode);sunShafts.update(camera);
       if(quality.mode==='high')await compileAddedGroup(quality,scene,sunShafts.mesh,camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoot:true,getLights:compilationLights.getLights});
       await appearance.prepare();
+      await zen?.prepare(compileZen);
       if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4,reuseRenderScene:true});
       document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);walkingPrewarm?.invalidate();
       });}finally{
         qualityPending--;
         if(!qualityPending){
-          const blocked=photo.active||menu.active||journal.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
+          const blocked=!!zen?.active||photo.active||menu.active||journal.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
           walker.pause(blocked);controls.enabled=allowDebugCamera&&!blocked&&!walker.active&&$('stop').disabled;
         }
       }
     },
     onDetailDistance:value=>{detailDistance=value;}});
-  journal=installJourneyJournal({camera,assembly,walker,controls,isBlocked:()=>photo.active||menu.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+  journal=installJourneyJournal({camera,assembly,walker,controls,cameraOwned:()=>!!zen?.active,isBlocked:()=>!!zen?.world.active||!!zen?.returning.active||photo.active||menu.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
   const preparationResidency=new Set([
     ...mappedBuildingEntries.map(entry=>entry.object),...assembly.staticBatches.residencyEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),
     ...(videoMerchandise.detailGroups??[]),...(stationDetails.detailGroups??[]),...(observedStreet.detailGroups??[]),
@@ -641,7 +644,7 @@ try {
         walker.pause(true);controls.enabled=false;$('photo-open').disabled=true;
       }else if(!value&&sectorPause){
         const previous=sectorPause;sectorPause=null;
-        const blocked=photo.active||menu.active||journal.active||qualityPending>0||!!arrival?.active||document.body.classList.contains('welcome-open');
+        const blocked=!!zen?.active||photo.active||menu.active||journal.active||qualityPending>0||!!arrival?.active||document.body.classList.contains('welcome-open');
         walker.pause(blocked);
         if(!previous.committed){controls.enabled=previous.controls&&!blocked;controls.target.copy(previous.target);}else if(blocked)controls.enabled=false;
         $('photo-open').disabled=previous.photoDisabled;
@@ -751,6 +754,30 @@ try {
   document.getElementById('sound-settings').insertAdjacentHTML('beforeend',`<details class="sound-credits"><summary>Recorded sound credits</summary><p>Real recordings, adapted to this scene. Railway sounds are not exact Keihan recordings; Arrival voices were supplied for this experience: Japanese, then English.</p><ul><li><a href="https://freesound.org/people/MrAuralization/sounds/162068/" target="_blank" rel="noopener">Crossing near Fushimi Inari — MrAuralization</a> · CC BY 4.0</li><li><a href="https://freesound.org/people/Hinoki.owo/sounds/796687/" target="_blank" rel="noopener">Suica gate in Tokyo — Hinoki.owo</a> · CC BY 4.0</li><li><a href="https://lpc.opengameart.org/content/fantozzis-footsteps-grasssand-stone" target="_blank" rel="noopener">Stone / sand footsteps — Fantozzi, edited by qubodup</a> · CC0</li><li>Odakyu rail joints — Cassiopeia sweet · public domain</li><li>JR Nambu door alarm — Hitachi-Train · public domain</li></ul><p><a href="../assets/audio/recorded-rail/manifest.json" target="_blank" rel="noopener">Rail recording sources</a> · <a href="../assets/audio/recorded-station/CREDITS.md" target="_blank" rel="noopener">Station recording sources</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Recordings are volume-adjusted, looped or stopped to follow scene events.</p></details>`);
   const flashlight=installFlashlight(scene,camera);
   const visitors=installVisitors(assembly);
+  const compileZen=roots=>compileSelectedVisuals(quality,scene,roots,camera,{batchSize:2,reuseRenderScene:true,includeHiddenRoots:true,getLights:compilationLights.getLights});
+  const zenViews=document.createElement('option');zenViews.value='zen_views';zenViews.textContent='Station → Kyoto views';$('itinerary').append(zenViews);
+  function applyZenIntention(id){
+    if(id==='wander'){clearRoute();$('route-info').textContent='Follow your curiosity. A route is optional.';drawMap();return;}
+    $('itinerary').value=id==='views'?'zen_views':'keihan_loop';trace();
+  }
+  zen=installZenExperience({scene,camera,walker,controls,assembly,shop:summitShop,visitors,streetCommerce,audio,audit:query.has('audit')||query.get('gpuAudit')==='1',
+    getTimeOfDay:()=>$('light').value,getQuality:()=>quality.mode,
+    getBlocked:()=>photo.active||menu.active||journal.active||!!arrival?.active||renderPreparation.busy||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open'),
+    openJournal:()=>journal.open(),onTimeOfDay:mode=>{$('light').value=mode;$('light').onchange();},
+    onPhoto:prompt=>{zen.selectPhotoPrompt(prompt);photo.open();},
+    onIntention:applyZenIntention});
+  if(query.get('audit')==='1'){
+    for(const [i,owner] of zen.world.interactionRoots.entries()){
+      const target=owner.getWorldPosition(new THREE.Vector3()),id=`audit_zen_${i}`;
+      const seatProp=['cat','map','postcard'].includes(owner.userData.zenMoment);
+      const teaApproach=owner.userData.zenMoment==='tea'?summitShop.stats.front.outward:null;
+      const x=target.x+(teaApproach?teaApproach[0]*2:seatProp?0:-1.5),z=target.z+(teaApproach?teaApproach[1]*2:seatProp?-1.5:1.0),y=assembly.walkHeight(x,z);
+      const anchor={id,label:`Review · ${owner.userData.interactable?.title??owner.name}`,target:[target.x,target.y+.8,target.z],checkpoint:[x,y,z],lookAt:[target.x,target.y+.8,target.z]};
+      assembly.spatial.byId[id]=anchor;const option=document.createElement('option');option.value=id;option.textContent=anchor.label;$('place').append(option);$('checkpoint-select').append(option.cloneNode(true));
+    }
+  }
+  loadingStage('Preparing small encounters and weather…');
+  await zen.prepare(compileZen);
   if(renderBuildAudit)visitors.ready.then(()=>document.body.dataset.visitorsReadyAt=String(performance.now()),()=>document.body.dataset.visitorsReadyAt='failed');
   const wildlife=createForestWildlife(assembly);
   document.body.dataset.forestWildlife=JSON.stringify({count:wildlife.count});
@@ -759,7 +786,7 @@ try {
   const pondReflections=installShinikeReflections({scene,renderer,
     water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
-  addEventListener('pagehide',event=>{if(!event.persisted){visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){zen.dispose();visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
@@ -780,7 +807,7 @@ try {
   }
   document.body.dataset.arrivalRenderPrepared=String(arrivalPrepared);
   document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
-  trace();
+  applyZenIntention(zen.journey.snapshot().intention);
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
     const {position:[x,z],lookAt:[tx,tz]}=assembly.omotesandoArrival.spawn;
@@ -793,9 +820,9 @@ try {
     const isKeihan=arrivalStation===assembly.keihanStation;
     arrival=createTrainArrivalExperience({sequenceOptions:arrivalStation.spec.arrival,
       station:arrivalStation,camera,controls,walker,allowDebugCamera,
-      onBegin:()=>{walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
+      onBegin:()=>{zen?.cancelActivity();walking=false;marker.visible=false;$('stop').disabled=true;$('interaction').hidden=true;},
       onFallback:startAtOmotesando,onState:state=>arrivalUI?.update(state)});
-    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>photo.active||menu.active||journal.active||(sectorPreparation.busy||qualityPending>0),
+    arrivalUI=installTrainArrivalUI({experience:arrival,focusTarget:renderer.domElement,isBlocked:()=>!!zen?.active||photo.active||menu.active||journal.active||(sectorPreparation.busy||qualityPending>0),
       labels:isKeihan?{stationName:'Fushimi-Inari',line:'Keihan Main Line · Platform 2',journey:'Gion-shijo → Fushimi-Inari · Southbound',reference:'Keihan station plan and mapped platform; train and dimensions interpreted from references.',exitHint:'Turn right along the platform to the exit · WASD to walk · click the scene, then move the mouse to look · Esc releases the cursor'}:{}});
     // The train waits behind the welcome sheet so its sound and motion start together.
     startTrainArrivalAfterWelcome({welcome,experience:arrival,reducedMotion:()=>arrivalUI.reducedMotion,onGesture:()=>{audio.setEnabled(true);menu.syncSound();}});
@@ -813,7 +840,7 @@ try {
     showcase=installShowcaseCapture({canvas:renderer.domElement,camera,controls,station:arrivalStation,assembly,
       overlays:[routeLine,marker,landmarkGroup],
       onBegin(){
-        arrival?.cancel();walking=false;walker.pause(true);walkingPrewarm.setBlocked(true);
+        zen?.cancelActivity();arrival?.cancel();walking=false;walker.pause(true);walkingPrewarm.setBlocked(true);
         captureSize={size:renderer.getSize(new THREE.Vector2()),ratio:renderer.getPixelRatio(),aspect:camera.aspect,fov:camera.fov};
         renderer.setDrawingBufferSize(1920,1080,1);camera.aspect=16/9;camera.fov=58;camera.updateProjectionMatrix();
       },
@@ -841,7 +868,7 @@ try {
   if(query.get('shadowAudit')==='1'){
     const {installShadowRouteAudit}=await import('./shadow-route-audit.mjs');
     shadowRouteAudit=installShadowRouteAudit({camera,assembly,settleDurationMs:liveFlowAudit?0:2000,
-      onBegin(){renderBuildAudit?.reset();arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(!liveFlowAudit);},
+      onBegin(){zen?.cancelActivity();renderBuildAudit?.reset();arrival?.cancel();walking=false;walker.pause(true);controls.enabled=false;walkingPrewarm.setBlocked(!liveFlowAudit);},
       onEnd(){walker.pause(true);walkingPrewarm.setBlocked(!liveFlowAudit);document.body.dataset.walkingPrewarmAtEnd=JSON.stringify(walkingPrewarm.stats);if(renderBuildAudit)document.body.dataset.renderBuildAuditAtEnd=JSON.stringify(renderBuildAudit.stats);},
       getStats:()=>({calls:renderer.info.render.drawCalls??renderer.info.render.calls,triangles:renderer.info.render.triangles,shadowUpdates:sunShadows.stats.updates}),
       async prepare(views){
@@ -889,11 +916,14 @@ try {
     if(renderPreparation.busy)return;
     if(showcase?.preparing)return;
     if(!captureOwnsCamera&&(sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
+    zen.update(dt,time,{blocked:captureOwnsCamera||!!arrival?.active||photo.active||menu.active||journal.active||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open')});
     if(captureOwnsCamera){
       // Capture is the sole camera owner, including during route preparation.
     }else if(arrival?.active){
       const holdDoors=arrival.snapshot.phase==='stopped'&&arrival.snapshot.phaseProgress>.94&&audio.arrivalSpeechActive();
       arrival.update(holdDoors?0:dt,{paused:photo.active||menu.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    }else if(zen.active){
+      // A seated pause, conversation or return train owns its controls.
     }else if(walking&&activeRoute.length>1&&!menu.active&&!photo.active&&!journal.active&&!(sectorPreparation.busy||qualityPending>0)){
       const motion=advanceGuidedRoute(activeRoute,routeProgress,travelled,dt*Number($('speed').value),canMove);
       routeProgress=motion.index;travelled=motion.travelled;
@@ -914,22 +944,23 @@ try {
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
       document.body.dataset.orbitClearance=JSON.stringify(guard);
     }
+    zen.afterCamera(dt,time,{blocked:captureOwnsCamera||!!arrival?.active||photo.active||menu.active||journal.active||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open')});
     sunShadows.update(time,camera.position,sunOffset);
     viewingDistance.update(camera.position,dt);
     routeLighting.update(camera,dt);
     candleFlames.update(time);
 
     for(const water of waterControllers)water.update(time/1000);
-    fareGates?.update(camera.position.toArray(),time/1000,document.hidden||menu.active||photo.active||journal.active);
+    fareGates?.update(camera.position.toArray(),time/1000,document.hidden||zen.active||menu.active||photo.active||journal.active);
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
     sunShafts.update(camera);sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
     camera.getWorldDirection(walkingViewDirection);
-    walkingPrewarm.update(camera.position,time,{direction:walkingViewDirection,blocked:document.hidden||(!!shadowRouteAudit&&!liveFlowAudit)||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
+    walkingPrewarm.update(camera.position,time,{direction:walkingViewDirection,blocked:document.hidden||zen.active||(!!shadowRouteAudit&&!liveFlowAudit)||!!showcase?.active||!!arrival?.active||menu.active||photo.active||journal.active||renderPreparation.busy||(sectorPreparation.busy||qualityPending>0)||document.body.classList.contains('welcome-open')});
     if(aheadCheckpoint!==document.body.dataset.checkpoint){aheadCheckpoint=document.body.dataset.checkpoint;aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;}
-    if(!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&!journal.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
+    if(!zen.active&&!arrival?.active&&!(sectorPreparation.busy||qualityPending>0)&&!photo.active&&!menu.active&&!journal.active&&time-aheadPrefetchAt>1500&&camera.position.distanceToSquared(aheadPrefetchPosition)>=36){
       const ahead=camera.position.clone().sub(aheadPrefetchPosition);ahead.y=0;
       if(ahead.lengthSq()>0)textureStreaming.prefetch(ahead.normalize().multiplyScalar(40).add(camera.position));
       aheadPrefetchPosition.copy(camera.position);aheadPrefetchAt=time;
@@ -962,7 +993,7 @@ try {
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
     if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs));
 
   }

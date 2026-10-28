@@ -17,6 +17,15 @@ export function createDrinkMachineState(onChange=()=>{}){
   collect(){if(state.phase!=='dispensed')return 'Choose a drink and press Dispense first.';const name=STREET_DRINKS[state.selected].name;state.phase='ready';state.collected++;onChange(state);return `${name} collected. Enjoy your walk!`;},report};
 }
 
+// A typed completion follows collection, never dispensing or a proximity visit.
+export function createDrinkCollectionAction(controller,machineId){
+ return ()=>{
+  if(controller.state.phase!=='dispensed')return controller.dispense();
+  const drink=STREET_DRINKS[controller.state.selected],message=controller.collect();controller.select();
+  return {message,event:{type:'drink.collected',drink:drink.name,color:drink.color,machineId}};
+ };
+}
+
 function atlasTexture(){
  if(typeof document==='undefined'){const t=new THREE.DataTexture(new Uint8Array([235,230,208,255]),1,1);t.needsUpdate=true;return t;}
  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;const c=canvas.getContext('2d');
@@ -139,7 +148,7 @@ export function installKeihanStreetCommerce(assembly){
   const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.material.color.set(STREET_DRINKS[state.selected].color);lamp.position.x=-.37+state.selected*.118;});
   owner.userData.interactable={language:'en',title:'Street drink machine',description:'Choose a drink, dispense it, then collect it from the lower tray.',note:'Interactive scene prop · no payment required.',actions:[{label:'Next drink',run:()=>controller.select()},{label:'Dispense',run:()=>controller.dispense()},{label:'Collect drink',run:()=>controller.collect()}]};
   Object.assign(owner.userData.interactable,{proximity:true,cooldownMs:650,
-   directAction(){if(controller.state.phase==='dispensed'){const result=controller.collect();controller.select();return result;}return controller.dispense();}});
+   directAction:createDrinkCollectionAction(controller,spec.id??owner.name)});
   Object.defineProperty(owner.userData.interactable,'prompt',{get:()=>controller.state.phase==='dispensed'?'Collect drink':'Get a drink',enumerable:true});
   if(!spec.existingCollider)colliders.push({type:'box',args:[spec.position[0],spec.position[2],.52,.35,spec.yaw,spec.position[1],spec.position[1]+1.85,'keihan-street-vending']});
   machines.push({group:owner,spec,controller,can,lamp});
