@@ -10,8 +10,8 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
   resources?.targets.push(target);
  }
  target.scissorTest=true;
- const visibility=new Map(),shadows=new Map(),remember=(object,visible)=>{if(!object)return;if(!visibility.has(object))visibility.set(object,object.visible);object.visible=visible;};
- const previous={environment:scene.environment,background:scene.background,target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),autoClear:renderer.autoClear,xr:renderer.xr.enabled,clearColor:renderer.getClearColor(new THREE.Color()),clearAlpha:renderer.getClearAlpha(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),shadowAuto:renderer.shadowMap.autoUpdate,shadowNeeds:renderer.shadowMap.needsUpdate};
+ const visibility=new Map(),shadows=new Map(),lodLevels=new Map(),remember=(object,visible)=>{if(!object)return;if(!visibility.has(object))visibility.set(object,object.visible);object.visible=visible;};
+ const previous={environment:scene.environment,background:scene.background,matrixAuto:scene.matrixWorldAutoUpdate,target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),autoClear:renderer.autoClear,xr:renderer.xr.enabled,clearColor:renderer.getClearColor(new THREE.Color()),clearAlpha:renderer.getClearAlpha(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),shadowAuto:renderer.shadowMap.autoUpdate,shadowNeeds:renderer.shadowMap.needsUpdate};
  let completed=false;
  try{
   scene.traverse(object=>{
@@ -23,21 +23,26 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
    }
    const materials=Array.isArray(object.material)?object.material:[object.material];
    if(materials.some(m=>m?.userData.waterAppearance)||object.userData.shinikeSubmergedBacking||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
-   if(object.isLOD)for(const level of object.levels)remember(level.object,level.object.visible);
+   if(object.isLOD){lodLevels.set(object,object.getCurrentLevel());for(const level of object.levels)remember(level.object,level.object.visible);}
   });
   for(const object of overlays())remember(object,false);
   for(const {object,bounds} of forestChunks)remember(object,center.distanceTo(bounds.center)<bounds.radius+220);
   // Water receivers are hidden; retain the stable global environment for scenery.
   // Temporarily removing it invalidates cached r180 standard-material bindings.
   scene.environment=resources?.environment??previous.environment;renderer.xr.enabled=false;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=false;
+  // Only the probe camera changes between the six faces; reuse the same world
+  // transforms without taking ownership from a caller that already froze them.
+  if(previous.matrixAuto===true)scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;
   generator.fromScene(scene,0,.1,12000,{size,position:center,renderTarget:target});
   completed=true;
   if(resources){resources.current=target;return {texture:target.texture,dispose(){}};}
   return target;
  }finally{
   for(const [object,visible] of visibility)object.visible=visible;
+  // Pinned r180 stores hysteresis state separately from level visibility.
+  for(const [object,level]of lodLevels)object._currentLevel=level;
   for(const [shadow,state]of shadows){shadow.autoUpdate=state.autoUpdate;shadow.needsUpdate=state.needsUpdate;}
-  scene.environment=previous.environment;scene.background=previous.background;
+  scene.environment=previous.environment;scene.background=previous.background;scene.matrixWorldAutoUpdate=previous.matrixAuto;
   renderer.xr.enabled=previous.xr;renderer.autoClear=previous.autoClear;
   renderer.shadowMap.autoUpdate=previous.shadowAuto;renderer.shadowMap.needsUpdate=previous.shadowNeeds;
   renderer.setClearColor(previous.clearColor,previous.clearAlpha);renderer.setRenderTarget(previous.target,previous.face,previous.mip);
@@ -49,7 +54,7 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
 
 export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[],now=()=>performance.now(),clock=()=>performance.now()},capture=null){
   const stats={captures:0,resolution:128,facesPerCapture:6,error:null,captureCpuMs:null,maxCaptureCpuMs:0,captureStartedAt:null};
-  if(!water?.isMesh||water.material?.userData.waterAppearance?.kind!=='shinike')return {stats,update(){},dispose(){}};
+  if(!water?.isMesh||water.material?.userData.waterAppearance?.kind!=='shinike')return {stats,position:null,async prepare(){return {prepared:false,captures:0,error:null};},update(){},dispose(){}};
   // Keep both the capture graph and its two textures alive while renderer node
   // bindings can still reference them. Only installation disposal releases them.
   const resources=capture?null:{generator:new THREE.PMREMGenerator(renderer),targets:[],current:null,environment:scene.environment};
@@ -59,7 +64,31 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
   const material=water.material,originalMap=material.envMap,originalIntensity=material.envMapIntensity;
   const settledAnchor=new THREE.Vector3(),lastPosition=new THREE.Vector3();
   let current=null,attemptedKey=null,pendingKey=null,keySince=0,settledSince=null,lastTime=null,disposed=false;
-  return {stats,update(position,appearanceKey){
+  function refresh(){
+    try{
+      // CPU submission/driver time only; this does not wait for GPU completion.
+      const started=clock();stats.captureStartedAt=started;let next;
+      try{next=captureEnvironment({scene,renderer,center,forestChunks,overlays});}
+      finally{stats.captureCpuMs=Math.max(0,clock()-started);stats.maxCaptureCpuMs=Math.max(stats.maxCaptureCpuMs,stats.captureCpuMs);}
+      if(!next?.texture)throw Error('Shin-ike environment capture returned no texture');
+      const previous=current;current=next;material.envMap=next.texture;material.envMapIntensity=1.15;material.needsUpdate=true;
+      previous?.dispose();stats.captures++;stats.error=null;return true;
+    }catch(error){stats.error=String(error.message??error);return false;}
+  }
+  return {stats,get position(){return center.clone();},async prepare({appearanceKey,settle=async()=>{}}={}){
+    const before=stats.captures;
+    // Exercise the actual capture graph and both retained output textures while
+    // loading owns the renderer. Only a fully settled explicit appearance key
+    // can replace its first-visit refresh; unkeyed preparation just warms it.
+    for(let i=0;i<2;i++){
+      if(disposed)return {prepared:false,captures:stats.captures-before,error:stats.error};
+      const success=refresh();await settle();
+      if(!success)return {prepared:false,captures:stats.captures-before,error:stats.error};
+    }
+    const prepared=!disposed;
+    if(prepared&&typeof appearanceKey==='string')attemptedKey=appearanceKey;
+    return {prepared,captures:stats.captures-before,error:stats.error};
+  },update(position,appearanceKey){
     if(disposed||!Number.isFinite(position.x)||!Number.isFinite(position.y)||!Number.isFinite(position.z))return;
     const time=now();
     if(pendingKey!==appearanceKey){pendingKey=appearanceKey;keySince=time;}
@@ -79,15 +108,7 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
     // Coalesce changing looks while walking. Keep the previous environment until
     // one stable key can be captured after arrival; a failed key is not retried.
     attemptedKey=appearanceKey;
-    try{
-      // CPU submission/driver time only; this does not wait for GPU completion.
-      const started=clock();stats.captureStartedAt=started;let next;
-      try{next=captureEnvironment({scene,renderer,center,forestChunks,overlays});}
-      finally{stats.captureCpuMs=Math.max(0,clock()-started);stats.maxCaptureCpuMs=Math.max(stats.maxCaptureCpuMs,stats.captureCpuMs);}
-      if(!next?.texture)throw Error('Shin-ike environment capture returned no texture');
-      const previous=current;current=next;material.envMap=next.texture;material.envMapIntensity=1.15;material.needsUpdate=true;
-      previous?.dispose();stats.captures++;stats.error=null;
-    }catch(error){stats.error=String(error.message??error);}
+    refresh();
   },dispose(){
     if(disposed)return;disposed=true;
     material.envMap=originalMap;material.envMapIntensity=originalIntensity;material.needsUpdate=true;current?.dispose();current=null;

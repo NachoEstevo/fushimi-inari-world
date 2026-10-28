@@ -205,3 +205,39 @@ test('reverting mode during a partially applied tier restores every source group
  const appended=base.clone(),group=new THREE.Group();group.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:appended})));scene.add(group);stream.index(group,{append:true});
  stream.setMode('high');await stream.prepare(scene,new THREE.Vector3());assert.ok([...textures,appended].every(t=>t.image.width===256));assert.equal(stream.stats.pending,0);
 });
+
+test('local image revisions change only for applied nearby images, including cached tier returns',async()=>{
+ const requests=[],stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}}),scene=new THREE.Scene(),position=new THREE.Vector3();
+ const near=stream.load('../assets/textures/local-revision.png'),far=stream.load('../assets/textures/distant-revision.png');
+ const local=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:near})),distant=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:far}));distant.position.x=1000;scene.add(local,distant);stream.index(scene);
+ const placeholder=stream.revisionAt(position);assert.equal(typeof placeholder,'string');assert.equal(stream.stats.pending,0,'reading a revision must not request images');
+ assert.deepEqual(await stream.prepareAt(position),{textures:1,failed:0});const balanced=stream.revisionAt(position);assert.notEqual(balanced,placeholder);
+ const globalRevision=stream.stats.revision;await stream.prepareAt(new THREE.Vector3(1000,0,0));assert.ok(stream.stats.revision>globalRevision);
+ assert.equal(stream.revisionAt(position),balanced,'distant image completion cannot invalidate this probe');
+ stream.setMode('high');assert.equal(stream.revisionAt(position),balanced,'a requested tier does not change an applied image');assert.equal(stream.stats.pending,0);
+ await stream.prepareAt(position);const high=stream.revisionAt(position);assert.notEqual(high,balanced);assert.equal(near.image.width,256);assert.equal(far.image.width,64);
+ stream.setMode('balanced');await stream.prepareAt(position);assert.notEqual(stream.revisionAt(position),balanced,'returning to a cached tier still applies a new image revision');assert.equal(near.image.width,64);assert.equal(requests.length,3);await settled(stream);
+});
+
+test('local image revision indexing admits new nearby records while duplicate or distant users stay stable',async()=>{
+ const stream=createTextureStreaming({loadImage:async()=>({width:64,height:64})}),scene=new THREE.Scene(),position=new THREE.Vector3(),existing=stream.load('../assets/textures/revision-existing.png');
+ scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:existing})));stream.index(scene);await stream.prepareAt(position);const initial=stream.revisionAt(position);
+ const group=new THREE.Group(),map=stream.load('../assets/textures/revision-appended.png');group.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));scene.add(group);
+ assert.equal(stream.revisionAt(position),initial,'unindexed textures do not belong to the local scene');
+ stream.index(group,{append:true});const appended=stream.revisionAt(position);assert.notEqual(appended,initial,'index generation invalidates the cached selection');
+ await stream.prepareAt(position);const loaded=stream.revisionAt(position);assert.notEqual(loaded,appended);
+ const duplicate=new THREE.Group();duplicate.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:existing})));scene.add(duplicate);stream.index(duplicate,{append:true});assert.equal(stream.revisionAt(position),loaded,'multiple users of an unchanged image do not add revisions');
+ const distant=new THREE.Group();distant.position.x=1000;distant.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:stream.load('../assets/textures/revision-far-append.png')})));scene.add(distant);stream.index(distant,{append:true});assert.equal(stream.revisionAt(position),loaded);
+ stream.index(scene);assert.equal(stream.revisionAt(position),loaded,'rebuilding the same index does not change image content');await settled(stream);
+});
+
+test('repeated image revision reads at one point reuse the spatial query without queuing work',()=>{
+ const stream=createTextureStreaming(),scene=new THREE.Scene();scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:stream.load('../assets/textures/revision-cache.png')})));stream.index(scene);
+ const original=THREE.Sphere.prototype.distanceToPoint;let checks=0;
+ THREE.Sphere.prototype.distanceToPoint=function(position){checks++;return original.call(this,position);};
+ try{
+  const first=stream.revisionAt(new THREE.Vector3());assert.equal(checks,1);
+  for(let i=0;i<100;i++)assert.equal(stream.revisionAt(new THREE.Vector3()),first);assert.equal(checks,1,'equal coordinates reuse the cached result');
+  stream.revisionAt(new THREE.Vector3(1,0,0));assert.equal(checks,2,'a different point reselects nearby owners');assert.equal(stream.stats.pending,0);
+ }finally{THREE.Sphere.prototype.distanceToPoint=original;}
+});

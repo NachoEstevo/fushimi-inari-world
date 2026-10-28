@@ -11,6 +11,7 @@ export function textureTierURL(url,mode){
 export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false,maxSourceGroupsPerTick=1}={}){
  const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0,maxUploadGroupTextures=0,maxUploadGroupPixels=0;
  const cells=new Map(),largeUsers=[],ready=[],indexedObjects=new Set();let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
+ let indexGeneration=0,revisionCache=null;
  const tier=()=>mode;
  const pending=()=>queue.length+active+ready.length;
  // Reporting can serialize many texture clones in audit mode. Keep it off the
@@ -37,7 +38,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   let count=0;const started=performance.now();
   while(count<Math.max(1,maxSourceGroupsPerTick)&&performance.now()-started<2){
    const next=job.groups.next();
-   if(next.done){r.current=loadedTier;r.ready=false;revision++;return true;}
+   if(next.done){r.current=loadedTier;r.ready=false;r.appliedVersion++;revision++;return true;}
    const textures=next.value;count++;
    maxUploadGroupTextures=Math.max(maxUploadGroupTextures,textures.size);
    maxUploadGroupPixels=Math.max(maxUploadGroupPixels,(image.width??0)*(image.height??0));
@@ -78,7 +79,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function request(r){if(r.current===tier()||r.pending||r.queued||r.ready||r.error)return;r.queued=true;queue.push(r);}
  function load(url){
   const absolute=new URL(url,import.meta.url).href;let r=records.get(absolute);
-  if(!r){r={url:absolute,textures:new Set(),groups:new Map(),images:new Map()};records.set(absolute,r);}
+  if(!r){r={url:absolute,textures:new Set(),groups:new Map(),images:new Map(),appliedVersion:0};records.set(absolute,r);}
   // These maps supply the painted wood color on otherwise white materials.
   // Keep that material identity while a nearby image loads (or fails), without
   // tinting stone gates or changing normal/roughness map semantics.
@@ -94,6 +95,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function index(scene,{append=false}={}){
   // Deferred assets already belong to the live scene. Index their own subtree
   // without revisiting every static mesh and recomputing instanced bounds.
+  indexGeneration++;revisionCache=null;
   if(!append){users=[];cells.clear();largeUsers.length=0;indexedObjects.clear();for(const r of records.values())r.userCount=0;}
   lastPosition=null;elapsed=1;scene.updateWorldMatrix(true,true);scene.traverse(o=>{
   if(!o.geometry||indexedObjects.has(o))return;const used=new Set();
@@ -113,6 +115,15 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
    for(let z=Math.floor((position.z-264)/260);z<=Math.floor((position.z+264)/260);z++)for(const u of cells.get(x+','+z)??[])nearby.add(u);
   for(const {sphere,used}of nearby)if(sphere.distanceToPoint(position)<264)for(const r of used)result.add(r);
   return result;
+ }
+ // A probe depends on local applied images, not distant downloads. The global
+ // counter invalidates this one-point query cache without entering its value.
+ function revisionAt(position){
+  const {x,y,z}=position,cached=revisionCache;
+  if(cached&&cached.x===x&&cached.y===y&&cached.z===z&&cached.revision===revision&&cached.indexGeneration===indexGeneration)return cached.value;
+  const images=[...nearbyRecords(position)].map(r=>[r.url,r.current??null,r.appliedVersion]);
+  images.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
+  const value=JSON.stringify(images);revisionCache={x,y,z,revision,indexGeneration,value};return value;
  }
  function prefetch(position){const nearby=nearbyRecords(position);for(const r of nearby)request(r);schedule();return nearby;}
  async function prepareAt(position,{timeoutMs=20000}={}){
@@ -135,6 +146,6 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   }
   drain();
  }
- return {load,index,update,prefetch,prepareAt,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending(),maxUploadGroupTextures,maxUploadGroupPixels};}};
+ return {load,index,update,prefetch,prepareAt,revisionAt,setMode(next){mode=next==='high'||next==='ultra'?'high':'balanced';elapsed=1;lastPosition=null;for(const r of records.values())r.error=null;},async prepare(scene,position){index(scene);update(position);while(pending())await new Promise(resolve=>setTimeout(resolve,25));emit(true);},get stats(){return {registered:records.size,users:users.length,revision,pending:pending(),maxUploadGroupTextures,maxUploadGroupPixels};}};
 }
 export const textureStreaming=createTextureStreaming({audit:typeof location!=='undefined'&&(new URLSearchParams(location.search).has('audit')||new URLSearchParams(location.search).has('textureAudit')),report:value=>{if(typeof document!=='undefined')document.body.dataset.textureStreaming=JSON.stringify(value);}});

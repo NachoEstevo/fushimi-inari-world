@@ -7,6 +7,7 @@ import {installRendererHealth} from './renderer-health.mjs';
 import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
 import {createWalkingPrewarm} from './walking-prewarm.mjs';
 import {prepareWalkingNeighborhood} from './walking-neighborhood-preparation.mjs';
+import {prepareShinikeForWalking} from './shinike-probe-preparation.mjs';
 import {installPrecinctLeafLight,collectPrecinctLeafBounds,collectPrecinctRoofBounds} from './precinct-leaf-light.mjs';
 import {prepareTrainArrival} from './arrival-render-preparation.mjs';
 import {omitUnverifiedPrecinctProxy,omitUnmodeledShrineProxy} from './precinct-proxy-policy.mjs';
@@ -809,9 +810,18 @@ try {
   document.body.dataset.forestWildlife=JSON.stringify({count:wildlife.count});
   const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
   installSeasons(assembly,canopy);
-  const pondReflections=installShinikeReflections({scene,renderer,
-    water:assembly.root.getObjectByName('Shin-ike flat olive-gray water R97'),
+  const shinikeWater=assembly.root.getObjectByName('Shin-ike flat olive-gray water R97');
+  const pondReflections=installShinikeReflections({scene,renderer,water:shinikeWater,
     forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
+  const pondPosition=pondReflections.position,pondKeyState={};
+  function pondAppearanceKey(){
+    const light=$('light').value,look=appearance.stats.look,season=document.body.dataset.season;
+    const buildings=$('buildings').checked,aerial=$('aerial-canopy').checked,textures=pondPosition?textureStreaming.revisionAt(pondPosition):'';
+    if(light!==pondKeyState.light||look!==pondKeyState.look||season!==pondKeyState.season||buildings!==pondKeyState.buildings||aerial!==pondKeyState.aerial||textures!==pondKeyState.textures){
+      Object.assign(pondKeyState,{light,look,season,buildings,aerial,textures,key:[light,look,season,buildings,aerial,textures].join(':')});
+    }
+    return pondKeyState.key;
+  }
   addEventListener('pagehide',event=>{if(!event.persisted){zen.dispose();visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
@@ -821,6 +831,12 @@ try {
     sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);sky.update();
     canopy.update(camera);panorama.update(camera,$('buildings').checked);
   };
+  loadingStage('Preparing pond reflections…');
+  try{
+    const prepared=await prepareShinikeForWalking({probe:pondReflections,water:shinikeWater,camera,scene,quality,detailChunks,textureStreaming,
+      restoreView:prepareNearby,settle:()=>renderer.waitForGPU(),getLights:compilationLights.getLights,getAppearanceKey:pondAppearanceKey});
+    document.body.dataset.pondPreparation=JSON.stringify(prepared);
+  }catch(error){document.body.dataset.pondPreparation=JSON.stringify({prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
   loadingStage('Preparing train and platform…');
   const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
     prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
@@ -1004,7 +1020,7 @@ try {
     // Keep the remaining mapped buildings visible near the walker too.
     // Capture only settled images; a probe made from placeholders must refresh.
     const textureState=textureStreaming.stats;
-    if(!arrival?.active&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,[$('light').value,appearance.stats.look,document.body.dataset.season,$('buildings').checked,$('aerial-canopy').checked,textureState.revision].join(':'));
+    if(!arrival?.active&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,pondAppearanceKey());
     document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
     if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
