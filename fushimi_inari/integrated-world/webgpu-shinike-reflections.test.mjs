@@ -9,6 +9,8 @@ function fixture(fail=false,matrixAutoUpdate=true){
  const updateScene=scene.updateMatrixWorld;let matrixUpdates=0;
  scene.updateMatrixWorld=function(...args){matrixUpdates++;return updateScene.apply(this,args);};
  const water=new THREE.Mesh(new THREE.PlaneGeometry(),new THREE.MeshStandardMaterial());water.material.userData.waterAppearance={kind:'shinike'};scene.add(water);
+ const mote=new THREE.Sprite(new THREE.SpriteMaterial()),dormantMote=new THREE.Sprite(new THREE.SpriteMaterial()),ordinarySprite=new THREE.Sprite(new THREE.SpriteMaterial());
+ mote.userData.environmentTransient=true;dormantMote.userData.environmentTransient=true;dormantMote.visible=false;scene.add(mote,dormantMote,ordinarySprite);
  const sun=new THREE.DirectionalLight(),spot=new THREE.SpotLight(),hidden=new THREE.Group(),point=new THREE.PointLight();
  sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;spot.shadow.autoUpdate=true;spot.shadow.needsUpdate=false;
  point.shadow.autoUpdate=false;point.shadow.needsUpdate=false;hidden.visible=false;hidden.add(point);scene.add(sun,spot,hidden);
@@ -26,7 +28,7 @@ function fixture(fail=false,matrixAutoUpdate=true){
   setViewport(value){viewport.copy(value);},setScissor(value){scissor.copy(value);},setScissorTest(value){scissorTest=value;}};
  const output=new THREE.RenderTarget(384,512);let outputDisposed=0;output.addEventListener('dispose',()=>outputDisposed++);
  const resources={targets:[output],current:null,environment,generator:{fromScene(value,sigma,near,far,options){
-  captures++;assert.equal(value,scene);assert.equal(options.renderTarget,output);assert.equal(water.visible,false);assert.equal(renderer.shadowMap.autoUpdate,false);assert.equal(renderer.shadowMap.needsUpdate,false);
+  captures++;assert.equal(mote.visible,false,'volatile creative particles must not compile or bake into the pond environment');assert.equal(dormantMote.visible,false);assert.equal(ordinarySprite.visible,true,'ordinary scene sprites remain eligible');assert.equal(value,scene);assert.equal(options.renderTarget,output);assert.equal(water.visible,false);assert.equal(renderer.shadowMap.autoUpdate,false);assert.equal(renderer.shadowMap.needsUpdate,false);
   for(const light of lights){assert.equal(light.shadow.autoUpdate,false,'r180 reads the individual light shadow autoUpdate flag');assert.equal(light.shadow.needsUpdate,false,'pending main-view atlas updates must not be consumed during the pond probe');}
   // Match r180 Renderer: each of the six scene renders updates world matrices
   // only when the scene owns automatic updates. Probe cameras update separately.
@@ -36,7 +38,7 @@ function fixture(fail=false,matrixAutoUpdate=true){
  }}};
  const restored=()=>{
   lights.forEach((light,i)=>{assert.equal(light.shadow.autoUpdate,states[i].autoUpdate);assert.equal(light.shadow.needsUpdate,states[i].needsUpdate);});
-  assert.equal(water.visible,true);assert.equal(hidden.visible,false);assert.equal(scene.environment,environment);
+  assert.equal(mote.visible,true);assert.equal(dormantMote.visible,false);assert.equal(ordinarySprite.visible,true);assert.equal(water.visible,true);assert.equal(hidden.visible,false);assert.equal(scene.environment,environment);
   assert.equal(scene.matrixWorldAutoUpdate,matrixAutoUpdate);
   assert.equal(renderer.shadowMap.autoUpdate,true);assert.equal(renderer.shadowMap.needsUpdate,true);assert.equal(renderer.xr.enabled,true);assert.equal(renderer.autoClear,false);
   assert.equal(target,originalTarget);assert.equal(face,2);assert.equal(mip,1);assert.equal(scissorTest,true);assert.equal(clearAlpha,.7);assert.equal(clearColor.getHex(),0x123456);
@@ -176,5 +178,14 @@ test('incomplete preparation never marks an explicit key as captured',async()=>{
    assert.equal(attempts,2);reflection.update(new THREE.Vector3(),'day');time=1000;reflection.update(new THREE.Vector3(),'day');
    assert.equal(attempts,3,`${failure} failure leaves the same appearance eligible for normal refresh`);
   }finally{reflection.dispose();water.geometry.dispose();water.material.dispose();}
+ }
+});
+
+
+test('transient creative sprites stay out of probe captures and recover exact visibility after success or failure',()=>{
+ for(const fail of [false,true]){
+  const f=fixture(fail),capture=()=>captureShinikeEnvironment({...f,center:new THREE.Vector3(0,1,0),forestChunks:[],overlays:()=>[]});
+  if(fail)assert.throws(capture,/PMREM capture failed/);else capture();
+  f.restored();assert.equal(f.matrixUpdates,1);if(!fail)f.output.dispose();
  }
 });

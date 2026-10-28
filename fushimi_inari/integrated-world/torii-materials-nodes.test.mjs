@@ -31,3 +31,17 @@ test('untextured torii retain red paint and alpha without creating invalid textu
   assert.equal(materials.fresh.color.getHex(),0xd94816);assert.equal(source.userData.precinctLeafReceiver,undefined);
   Object.values(materials).forEach(m=>m.dispose());source.dispose();
 });
+
+test('unlettered painted columns retain a bounded colour graph instead of deeply multiplying wood grain',()=>{
+  const map=new THREE.Texture(),normalMap=new THREE.Texture(),source=new THREE.MeshPhysicalMaterial({map,normalMap,color:0xd94816});
+  const materials=toriiMaterials({torii:{fresh:source,weathered:source},materials:{vermilionMat:source}},{separateInk:true});
+  for(const material of Object.values(materials)){
+    assert.ok(material.colorNode,'paint controls the base colour even for freshly replaced posts');
+    assert.equal(material.color.getHex(),0xffffff,'material colour cannot multiply a second red tint over the paint');
+    assert.ok(material.normalScale.x<=.25&&material.normalScale.y<=.25,'coated timber keeps fine grain below the scale of carved grooves');
+    const textures=new Set();material.colorNode.traverse(node=>{if(node.isTextureNode)textures.add(node.value);});
+    assert.deepEqual([...textures],[map],'the existing colour image is reused without a second texture layer');
+    assert.equal(material.normalMap,normalMap);material.dispose();
+  }
+  assert.equal(source.color.getHex(),0xd94816);assert.equal(source.normalScale.x,1);source.dispose();map.dispose();normalMap.dispose();
+});

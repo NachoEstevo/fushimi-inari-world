@@ -19,7 +19,7 @@ export function toriiMaterials(legacy,{separateInk=false}={}){
   const beam=nodeCopy(legacy.materials.vermilionMat);
   // Painted timber is dielectric. Copied metallic/lacquer settings turn the
   // horizontal beam toward white under the bright studio environment.
-  beam.color.set(0xffffff);beam.normalScale.set(.18,.18);beam.roughness=.72;
+  beam.color.set(0xffffff);beam.normalScale.set(.12,.12);beam.roughness=.72;
   beam.metalness=0;beam.clearcoat=.02;beam.envMapIntensity=.25;
   if(separateInk){
     // The old column colour/normal maps contain baked, identical donor text.
@@ -29,14 +29,17 @@ export function toriiMaterials(legacy,{separateInk=false}={}){
       mat.normalMap=legacy.materials.vermilionMat.normalMap;
       mat.roughnessMap=null;
     }
-    fresh.color.set(0xd94816);weathered.color.set(0xffffff);
-    fresh.normalScale.set(.22,.22);weathered.normalScale.set(.38,.38);
+    fresh.color.set(0xffffff);weathered.color.set(0xffffff);
+    fresh.normalScale.set(.14,.14);weathered.normalScale.set(.24,.24);
   }
   const paint=(material,pigment,wear)=>{
     const texel=material.map?texture(material.map):null;
     material.colorNode=vec4(materialReference('color','color').mul(mix(vec3(...pigment),texel?.rgb??vec3(1),wear)),texel?.a??float(1));
   };
-  paint(weathered,[.60,.075,.018],.30);paint(beam,[.68,.075,.012],.10);
+  // Inari-nuri reads as a coat of vermilion paint. A small amount of the
+  // original timber map survives beneath it rather than becoming dark ribs.
+  if(separateInk)paint(fresh,[.68,.080,.018],.12);
+  paint(weathered,[.60,.075,.018],.20);paint(beam,[.68,.075,.012],.10);
   // Three's node material applies vertex/instance colour after colorNode. Keep
   // the paint graph multiplicative and let that owner apply instance tint once.
   for(const material of [fresh,weathered,beam])material.userData={...material.userData,precinctLeafReceiver:true};

@@ -18,6 +18,7 @@ await copy('integrated-world',p=>!p.endsWith('.test.mjs')&&/\.(mjs|html|css|json
 await copy('geography',p=>/\.(json|mjs|css)$/.test(p)&&!p.endsWith('.test.mjs'));
 await copy('assets/textures',p=>/\.(png|webp|json)$/.test(p));
 await copy('assets/audio',p=>/\.(mp3|ogg|json|md)$/.test(p));
+await copy('assets/illustrations/sketches',p=>p.endsWith('.webp'));
 await copy('assets/models/visitors',p=>/\.(glb|md)$/.test(p));
 await copy('assets/models/cat',p=>/\.(glb|glb\.gz|md)$/.test(p));
 await copyFile(path.join(source,'assets/social-preview.png'),path.join(output,'assets/social-preview.png'));

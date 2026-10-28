@@ -1,0 +1,50 @@
+{
+  "acquired": "2026-10-28",
+  "assets": [
+    {
+      "id": "first-light",
+      "title": "First Light Particles",
+      "author": "Yoiyami",
+      "source": "https://opengameart.org/content/first-light-particles-%E2%80%93-cc0-atmospheric-pianoambient-track",
+      "download": "https://opengameart.org/sites/default/files/first_light_particles_0.wav",
+      "file": "first-light.ogg",
+      "edits": "Loudness adjusted to -23 LUFS; stereo Opus 64 kbps VBR, 48 kHz. Complete composition, no remix or looping.",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "original_sha256": "f0538a1a67450cc1d5e305fad5bc0d5d422ad809f720d695ab356e55fbe40fc5",
+      "sha256": "132f4051d750241cbe9e110abd1846f01a1d8d70e6f7415b8bbd7e7dbd807def",
+      "bytes": 1342891,
+      "duration_seconds": 131.8065
+    },
+    {
+      "id": "blue-hour",
+      "title": "Yoiyami Core Theme – Deep Blue Ambient Piano",
+      "author": "Yoiyami",
+      "source": "https://opengameart.org/content/yoiyami-core-theme-%E2%80%93-deep-blue-ambient-piano",
+      "download": "https://opengameart.org/sites/default/files/yoiyami_core_theme_0.wav",
+      "file": "blue-hour.ogg",
+      "edits": "Loudness adjusted to approximately -23 LUFS, with a further 1.2 dB trim after the first loudness pass; stereo Opus 64 kbps VBR, 48 kHz. Complete composition, no remix or looping.",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "original_sha256": "613d462f5229568ad98dcbe870036ccdf858f5ae33c63386cace86548809cb60",
+      "sha256": "a325aeb2aa2a75c16dcb4c15686c3c62e457400daedb250660ef8eebee90121e",
+      "bytes": 1991500,
+      "duration_seconds": 235.0065
+    },
+    {
+      "id": "tottori-bamboo",
+      "title": "Birds, wind through bamboo and a little waterstream - Japan - Binaural",
+      "author": "tomasloos",
+      "source": "https://freesound.org/people/tomasloos/sounds/843520/",
+      "download": "https://cdn.freesound.org/previews/843/843520_1680683-hq.mp3",
+      "file": "tottori-bamboo.ogg",
+      "edits": "Source: public high-quality preview. Excerpt 45–85 seconds; tail/head equal-power two-second crossfade makes a 38-second loop. High-pass 70 Hz, low-pass 10 kHz, -28 LUFS; stereo Opus 48 kbps VBR. Recorded in Tottori, not Fushimi Inari; used as a local acoustic interpretation around Shin-ike.",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "original_sha256": "4b73d8d77a459322794a9d5d00c81b00ea083ca990fd664713f8934c10c3d299",
+      "sha256": "f5eb1a2a556bc804cd60d0cd73d55f1a38babd36955715bf1f4d17b2910998b1",
+      "bytes": 196296,
+      "duration_seconds": 38.0065
+    }
+  ]
+}

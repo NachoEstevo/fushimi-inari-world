@@ -22,7 +22,7 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
     shadow.autoUpdate=false;shadow.needsUpdate=false;
    }
    const materials=Array.isArray(object.material)?object.material:[object.material];
-   if(materials.some(m=>m?.userData.waterAppearance)||object.userData.shinikeSubmergedBacking||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
+   if(object.userData.environmentTransient===true||materials.some(m=>m?.userData.waterAppearance)||object.userData.shinikeSubmergedBacking||object.name==='Visitor flashlight'||/^Visitor \d+ · /.test(object.name))remember(object,false);
    if(object.isLOD){lodLevels.set(object,object.getCurrentLevel());for(const level of object.levels)remember(level.object,level.object.visible);}
   });
   for(const object of overlays())remember(object,false);

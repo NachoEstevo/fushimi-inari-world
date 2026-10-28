@@ -6,6 +6,7 @@ import {routeSpec} from './route-spec.mjs';
 import {toriiVariation} from './torii-variation.mjs';
 import {senbonLayout} from './senbon-layout.mjs';
 import {toriiMaterials} from './torii-materials.mjs?v=29';
+import {toriiCrossbeamGeometry} from './torii-crossbeam-geometry.mjs';
 
 // Refines the original Inari-torii construction at its actual small-gate scale.
 // Materials are inherited; architecture elsewhere is left intact.
@@ -21,14 +22,9 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
     base.translate(side*s.pillarCenters/2,s.blackBaseHeight/2,0);black.push(base);
   }
   box(2.55,.14,.13,0,s.crossbarUnderside+.07,0,beams);
-  box(2.78,.13,.18,0,s.height-.17,0,beams);
-  box(.14,.23,.12,0,s.height-.35,0,beams);
-  // Curved, continuous kasagi profile instead of overlapping square end blocks.
-  for(let i=0;i<16;i++){
-    const x=-s.beamWidth/2+(i+.5)*s.beamWidth/16;
-    const lift=.075*Math.pow(Math.abs(x)/(s.beamWidth/2),3);
-    box(s.beamWidth/16+.008,.10,.22,x,s.height-.05+lift,0,black);
-  }
+  beams.push(toriiCrossbeamGeometry({width:2.78,height:.13,depth:.18,centerY:s.height-.161,endRise:.075,curveWidth:s.beamWidth}));
+  box(.14,.25,.12,0,s.height-.34,0,beams);
+  black.push(toriiCrossbeamGeometry({width:s.beamWidth,height:.10,depth:.22,centerY:s.height-.05,endRise:.075}));
   const redGeo=mergeGeometries(red),blackGeo=mergeGeometries(black),beamGeo=mergeGeometries(beams);
   beams.forEach(g=>g.dispose());
   red.forEach(g=>g.dispose());black.forEach(g=>g.dispose());

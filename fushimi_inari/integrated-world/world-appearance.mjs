@@ -4,6 +4,9 @@ import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
 import {createStationReflectionReadiness} from './station-reflection-readiness.mjs';
 import {createMineralSurfaceFinish} from './mineral-surface-finish.mjs';
+import {createSoftLightMotes} from './soft-light-motes.mjs';
+import {normalizeVisualLook} from './visual-look.mjs';
+import {compileSelectedVisuals} from './scoped-compilation.mjs';
 
 // The caller owns renderer initialization, the render loop and time-of-day.
 export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
@@ -87,15 +90,16 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   }
   const motion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const petalField=createSakuraPetalField(),petals=petalField.mesh;
-  petals.name='Local sakura petals';petals.frustumCulled=false;petals.visible=false;
+  petals.name='Local sakura petals';petals.userData.environmentTransient=true;petals.frustumCulled=false;petals.visible=false;
   petals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(petals);
+  const motes=createSoftLightMotes();scene.add(motes.mesh);
   const center=new THREE.Vector3(-302.4,31,-176);
   let look='natural',disposed=false,near=false;
   applyTo(scene);
-  const stats={look,nearStation:false,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
+  const stats={look,nearStation:false,motes:motes.stats,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
   const lighting=createWorldLookLighting({scene,hemi,sun});
   function applyStationQuality(){
-    lighting.setQuality(quality?.mode);
+    lighting.setQuality(quality?.mode);motes.setQuality(quality?.mode);
     materials?.setQuality(quality?.mode);
     station?.fareGateDetail?.setQuality(quality?.mode);
     // The same three registered fixtures softly wash wall and platform in High.
@@ -118,15 +122,16 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     stats.prepared=true;
     applyStationQuality();
     await stationProbe.prepare();
+    if(typeof quality?.compileAsync==='function')await compileSelectedVisuals(quality,scene,[motes.mesh,petals],camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoots:true});
     stats.localReflections=stationProbe.stats.enabled;
     stats.reflectionError=stationProbe.stats.error;
     stats.stationProbe=stationProbe.stats;
   }
   function setLook(name) {
     if(disposed)return;
-    const next=['sakura','dreamcore'].includes(name)?name:'natural';
+    const next=normalizeVisualLook(name);
     quality?.setLook(next);
-    look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;
+    look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;motes.setEnabled(look==='soft-light');motes.setReducedMotion(motion?.matches);
     lighting.setLook(next);
     stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;
   }
@@ -135,8 +140,8 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     near=!!station?.group&&Math.hypot(camera.position.x-center.x,camera.position.z-center.z)<70;
     stats.nearStation=near;
     petals.visible=look==='sakura'&&!motion?.matches;
-    if(!petals.visible)return;
-    petalField.update(camera.position,time);
+    motes.setReducedMotion(motion?.matches);motes.update(camera.position,time);
+    if(petals.visible)petalField.update(camera.position,time);
   }
   function dispose() {
     if(disposed)return;disposed=true;
@@ -144,7 +149,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     materials?.dispose();
     for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
     for(const material of replacements.values())material.dispose();
-    scene.remove(practicals,petals);petalField.dispose();
+    scene.remove(practicals,petals);petalField.dispose();motes.dispose();
     practicals.traverse(object=>{if(object.isLight)object.dispose?.();});
     if(scene.environment===environment.texture)scene.environment=previousEnvironment;
     scene.environmentIntensity=previousIntensity;environment.dispose();
@@ -186,7 +191,7 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
   const baseline={hemi:hemi.color.clone(),floor:hemi.groundColor.clone(),ambient:hemi.intensity,sun:sun.color.clone(),intensity:sun.intensity};
   const looks={
     sakura:{hemi:'#f4c7e4',floor:'#766278',sun:'#ffbc91',ambient:.88,intensity:1.06,environment:.35},
-    dreamcore:{hemi:'#d6dbff',floor:'#8c9e76',sun:'#ffffe7',ambient:1.06,intensity:1.15,environment:.42}
+    'soft-light':{hemi:'#f0eadf',floor:'#68735f',sun:'#fff2cf',ambient:.98,intensity:1.04,environment:.34}
   };
   let look='natural',high=false;
   function restoreBaseLighting() {
@@ -224,5 +229,5 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
     } finally {applyLookLighting();}
   }
   applyLookLighting();
-  return {updateBaseLighting,setQuality(mode){high=mode==='high'||mode==='ultra';applyLookLighting();},setLook(name){look=Object.hasOwn(looks,name)?name:'natural';applyLookLighting();}};
+  return {updateBaseLighting,setQuality(mode){high=mode==='high'||mode==='ultra';applyLookLighting();},setLook(name){look=normalizeVisualLook(name);applyLookLighting();}};
 }

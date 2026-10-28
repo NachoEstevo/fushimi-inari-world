@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {SUN_DIRECTIONS,GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
+import {normalizeVisualLook} from './visual-look.mjs';
 import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,varying,screenDPR} from 'three/tsl';
 
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
@@ -24,8 +25,8 @@ export function installSky(scene,camera){
   const sunCore=float(1).sub(smoothstep(.104,.115,sunRadius));
   const sunHalo=exp(sunRadius.mul(sunRadius).mul(-24)).mul(.25);
   const sunMaterial=new THREE.SpriteNodeMaterial({transparent:true,depthWrite:false,toneMapped:false,fog:false});
-  const sunTint=uniform(new THREE.Color('#fff4d0'));
-  sunMaterial.colorNode=vec3(sunTint);
+  const sunTint=uniform(new THREE.Color('#fff4d0')),sunCenter=uniform(new THREE.Color('#fff9e6'));
+  sunMaterial.colorNode=mix(sunTint,sunCenter,float(1).sub(smoothstep(.015,.115,sunRadius)));
   sunMaterial.opacityNode=sunCore.add(sunHalo).mul(float(1).sub(smoothstep(.4,.5,sunRadius)));
   const sunDisc=new THREE.Sprite(sunMaterial);sunDisc.name='Solar disc';sunDisc.scale.setScalar(350);
   sunDisc.frustumCulled=false;sunDisc.renderOrder=-98;scene.add(sunDisc);
@@ -67,8 +68,8 @@ export function installSky(scene,camera){
       gold:['#8d709f','#d88f9b',GOLDEN_ATMOSPHERE.horizon,'#ffd0ad','#aa737e'],
       night:['#17152d','#30213e','#493047','#6e506a','#382c49']
     },
-    dreamcore:{
-      day:['#929ed3','#c0cbe8','#e8ddd6','#fff5e8','#bdc1dc'],
+    'soft-light':{
+      day:['#829eae','#c1d0cd','#e8dfca','#fff4dc','#a7b9b3'],
       gold:['#9189bc','#cb9ba5',GOLDEN_ATMOSPHERE.horizon,'#ffdbc0','#b18491'],
       night:['#111a30','#242c46','#3c4158','#62667e','#2f3650']
     }
@@ -77,6 +78,7 @@ export function installSky(scene,camera){
   function paint(){
     stars.visible=mode==='night';sunDisc.visible=mode!=='night';
     sunTint.value.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
+    sunCenter.value.set(mode==='gold'?'#ffb16a':'#fff9e6');
     sunDirection.fromArray(SKY_SUN_DIRECTIONS[mode]??SKY_SUN_DIRECTIONS.day).normalize().multiplyScalar(5400);
     const [zenith,middle,horizon,lit,shade]=(creativePalettes[look]??palettes)[mode];
     const gradient=ctx.createLinearGradient(0,0,0,1024);
@@ -104,7 +106,7 @@ export function installSky(scene,camera){
     mode=next;paint();
   }
   function setLook(value){
-    const next=Object.hasOwn(creativePalettes,value)?value:'natural';
+    const next=normalizeVisualLook(value);
     if(next===look)return;
     look=next;paint();
   }
@@ -112,7 +114,9 @@ export function installSky(scene,camera){
   return {setMode,setLook,update(){
     const seconds=performance.now()/1000,scale=skyDistanceScale(camera.far);
     dome.scale.setScalar(scale);clouds.scale.setScalar(scale);distanceScale.value=scale;
-    sunDisc.scale.setScalar(350*scale);
+    // The opaque core occupies 22% of the sprite. Enlarge that core at sunset
+    // (~1.7 degrees) while preserving its direction and the daytime disc.
+    sunDisc.scale.setScalar((mode==='gold'?740:350)*scale);
     dome.position.copy(camera.position);clouds.position.copy(camera.position);stars.position.copy(camera.position);
     sunDisc.position.copy(camera.position).addScaledVector(sunDirection,scale);
     clouds.rotation.y=(seconds-startedAt)*SKY_CLOUD_DRIFT;starTime.value=seconds;

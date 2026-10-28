@@ -52,6 +52,8 @@ test('observation ink stays hidden until a real validated view is recorded, then
   const drawings=f.all.filter(e=>e.className==='zen-drawing');assert.equal(drawings.length,3);assert.ok(drawings.every(e=>e.hidden&&!e.innerHTML));
   assert.equal(f.journey.recordMoment('sketch-city',{position:[200,21.7,0],direction:[1,0,0],mode:'walk',intent:'observe',fov:45}),false);assert.equal(drawings[2].hidden,true);
   assert.equal(f.journey.recordMoment('sketch-city',{position:[200,21.7,0],direction:[-1,0,0],mode:'walk',intent:'observe',fov:45}),true);
+  assert.ok(!drawings[2].innerHTML,'earned artwork does not load while the journal is closed');
+  f.book.open=true;f.find('Sketches').click();
   assert.equal(drawings[2].hidden,false);assert.match(drawings[2].innerHTML,/role="img".*aria-labelledby="zen-ink-city-title zen-ink-city-desc"/);assert.match(drawings[2].innerHTML,/<title.*A city in layers<\/title>/);assert.match(drawings[2].innerHTML,/<desc.*An authored ink drawing/);assert.ok(drawings.slice(0,2).every(e=>e.hidden&&!e.innerHTML));
  }finally{f.cleanup();}
 });

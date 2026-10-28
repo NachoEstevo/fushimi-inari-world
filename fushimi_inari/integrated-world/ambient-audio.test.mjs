@@ -33,3 +33,10 @@ test('bird playback and mute remain responsive between diagnostic ticks',async()
  f.ctx.currentTime=.26;f.audio.update(f.camera);assert.equal(f.reports.at(-1).birdCalls,1);assert.equal(f.reports.at(-1).bird,'ready');
  f.audio.setEnabled(false);assert.equal(f.sources[1].stops,1);assert.equal(f.reports.at(-1).enabled,false);
 });
+
+test('disposal stops the wind and active birds once; late decoding cannot revive the soundscape',async()=>{
+ const f=fixture();await new Promise(resolve=>setImmediate(resolve));f.audio.setEnabled(true);f.camera.position.x=200;f.ctx.currentTime=.01;f.audio.update(f.camera);
+ assert.equal(f.sources.length,2);f.audio.dispose();f.audio.dispose();assert.ok(f.sources.every(source=>source.stops===1));
+ const reports=f.reports.length;f.ctx.currentTime=100;f.audio.setEnabled(true);f.audio.update(f.camera);assert.equal(f.reports.length,reports);assert.equal(f.sources.length,2);
+ const pending=fixture();pending.audio.setEnabled(true);pending.audio.dispose();await new Promise(resolve=>setImmediate(resolve));pending.camera.position.x=200;pending.ctx.currentTime=100;pending.audio.update(pending.camera);assert.equal(pending.sources.length,1);
+});

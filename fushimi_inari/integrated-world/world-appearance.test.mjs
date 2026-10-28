@@ -81,7 +81,7 @@ test('return to daylight restores daylight environment and latest preset hue',{s
   const {scene,sun,day,lighting}=await fixture('night');
   lighting.setLook('dreamcore');lighting.updateBaseLighting(()=>day('gold'));
   const gold=new THREE.Color(LIGHT_PRESETS.gold.color);
-  assert.ok(sun.color.equals(gold.clone().lerp(new THREE.Color('#ffffe7'),.35)));
+  assert.ok(sun.color.equals(gold.clone().lerp(new THREE.Color('#fff2cf'),.35)));
   lighting.updateBaseLighting(()=>day('day'));lighting.setLook('natural');
   assert.equal(scene.environmentIntensity,.3);
   assert.ok(sun.color.equals(new THREE.Color(LIGHT_PRESETS.day.color)));

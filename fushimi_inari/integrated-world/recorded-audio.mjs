@@ -71,7 +71,7 @@ export function createRecordedAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
  }
  const attenuation=(position,origin,range)=>Math.max(0,1-Math.hypot(position[0]-origin[0],position[1]-origin[1],position[2]-origin[2])/range)**2;
  return {
-  get announcementActive(){return voiceLoading||(enabled&&!voiceRunStarted&&['moving','decelerating','stopped'].includes(currentPhase))||[...shots].some(s=>s.id.startsWith('announcement'));},
+  get announcementActive(){if(voiceLoading||(enabled&&!voiceRunStarted&&['moving','decelerating','stopped'].includes(currentPhase)))return true;for(const shot of shots)if(shot.id.startsWith('announcement'))return true;return false;},
   pause(value){paused=!!value;if(paused)stopAll();report();},
   setEnabled(value){enabled=!!value;voiceRunStarted=false;events.reset();if(!enabled)stopAll();else for(const id of ['rolling','doors','announcementJa','announcementEn','gate'])load(id);report();},
   setVolume(value){bus.gain.setTargetAtTime(Math.max(0,Math.min(1,Number(value)||0)),ctx.currentTime,.08);},

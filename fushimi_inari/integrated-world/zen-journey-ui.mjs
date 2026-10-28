@@ -1,4 +1,5 @@
 import {ZEN_INTENTIONS,ZEN_PHOTO_PROMPTS,ZEN_SKETCHES} from './zen-journey-state.mjs';
+import {ZEN_SKETCH_ART as SKETCH_INK} from './zen-sketch-art.mjs';
 
 const AKI=[
  'Aki is on the station platform.',
@@ -7,11 +8,7 @@ const AKI=[
  'Meet Aki again at the station.',
  'Back at the station with Aki.'
 ];
-const SKETCH_INK=Object.freeze({
- 'sketch-canal':'<svg viewBox="0 0 320 125" role="img" aria-labelledby="zen-ink-canal-title zen-ink-canal-desc"><title id="zen-ink-canal-title">Two banks, one ribbon</title><desc id="zen-ink-canal-desc">An authored ink drawing: two uneven canal banks narrow into the distance, with a few light ripples between them.</desc><path d="M15 111 49 91 88 76 130 60 163 44 183 26M91 115 121 92 151 76 176 59 196 42 207 26M27 104l18 2m27-22 17 3m26-18 13 3m17-17 11 2M109 108l15 1m18-23 11 1m18-20 9 1M9 114l26 1m31-18 16 2M196 24l18-1"/><path class="zen-ink-soft" d="m21 92 9-16m19 7 9-20m21 9 5-15m145 43-5-23m27 12-6-27m-32 8-3-14M174 21l13-4 20 2 17-2"/></svg>',
- 'sketch-gates':'<svg viewBox="0 0 320 170" role="img" aria-labelledby="zen-ink-gates-title zen-ink-gates-desc"><title id="zen-ink-gates-title">The space between</title><desc id="zen-ink-gates-desc">An authored ink drawing of three nested torii frames. Open paper between the pillars emphasizes the repeating spaces along the passage.</desc><path d="M27 27q132 19 266 0M36 43h248M47 66h225M71 45l-9 113m187-113 9 113M102 61q58 9 116 0M107 74h106M113 89h94M123 75l-5 70m80-70 5 70M137 86q23 4 46 0M140 96h40M145 106h30M149 97l-2 37m26-37 2 37"/><path class="zen-ink-soft" d="m62 162 85-28m111 28-83-28M36 158l-12 4m260-4 13 4M132 148l54-1m-75 11 97-1"/></svg>',
- 'sketch-city':'<svg viewBox="0 0 320 145" role="img" aria-labelledby="zen-ink-city-title zen-ink-city-desc"><title id="zen-ink-city-title">A city in layers</title><desc id="zen-ink-city-desc">An authored ink drawing with small rooftops in the foreground, a broken city horizon in the middle, and a soft line of hills behind.</desc><path d="m17 119 18-13 17 13m-13-9v20m11-14 13-9 16 9m-2 8 19-15 20 15m-12-10v20m10-17 18-12 20 12m-6 8 19-13 19 13m-13-8v16m13-18 17-12 18 12m-2 9 18-14 19 14m-9-8v17m13-18 18-12 18 12M24 135l272 1"/><path class="zen-ink-soft" d="M15 88h17v-9h12v8h18v-12h9v10h19v-6h13v8h19v-15h11v12h21v-8h10v9h21v-13h12v11h22v-7h12v8h19v-12h10v10h23M12 59l29-6 23 3 22-12 28 4 27-11 28 7 28-15 27 7 24-7 26 12 34-4M34 66l47-2m37-6 47-1m35-5 52 1"/></svg>'
-});
+
 const element=(tag,className,text)=>{const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e;};
 const button=(text,action,className)=>{const b=element('button',className,text);b.type='button';b.onclick=action;return b;};
 export function zenPostcardLines(state){
@@ -47,7 +44,7 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
  if(title)title.textContent='Journal';if(eyebrow)eyebrow.hidden=true;
  seals.append(...original.filter(e=>e!==top));
  const visit=element('section','zen-visit');visit.id='zen-visit';
- const style=element('link');style.rel='stylesheet';style.href=new URL('./zen-journey.css',import.meta.url).href;document.head.append(style);
+ const style=element('link');style.rel='stylesheet';style.href=new URL('./zen-journey.css?v=zen-craft-1',import.meta.url).href;document.head.append(style);
  let disposed=false,selectedPhotoId,photos=[],photoSignature='',request=0,last=-Infinity,wasOpen=false,current='story';
  const status=element('p','zen-status');status.hidden=true;status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  function announce(text){status.hidden=false;status.textContent=text;}
@@ -76,22 +73,23 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
   for(const [key,pane]of Object.entries(panes))pane.hidden=key!==id;
   for(const item of tabs){const selected=item.id===id;item.tab.setAttribute('aria-selected',String(selected));item.tab.tabIndex=selected?0:-1;}
   if(id==='photos'||id==='ending')refreshPhotos();
+  loadVisibleSketches();
  }
  const storyCopy=element('p','zen-story-copy');
  const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(storyCopy,returnButton);
  const photoGrid=element('div','zen-photo-grid'),albumStatus=element('p','zen-fine'),photoIdeas=element('details','zen-photo-ideas');photoIdeas.append(element('summary','','Photo ideas'));
  const photoLabels={
-  'canal-light':['Canal','Canal bridge · 35–75°'],
-  'gate-rhythm':['Senbon Torii','Along the passage · 30–70°'],
-  'kyoto-view':['Yotsutsuji','Face west · 35–80°'],
-  'mountain-pause':['Ichinomine','Level view · 35–80°']
+  'canal-light':['Canal','Canal bridge'],
+  'gate-rhythm':['Senbon Torii','Along the passage'],
+  'kyoto-view':['Yotsutsuji','Face west'],
+  'mountain-pause':['Ichinomine','Level view']
  };
  const promptNodes=new Map();for(const prompt of ZEN_PHOTO_PROMPTS){const card=element('div','zen-prompt'),[label,hint]=photoLabels[prompt.id],heading=element('span','',label),action=button('Photo',()=>{book.close();onPhoto(prompt.id);});action.setAttribute('aria-label',`Photograph ${label}`);card.append(heading,element('small','',hint),action);photoIdeas.append(card);promptNodes.set(prompt.id,{heading,label});}
  panes.photos.append(button('Take photo',()=>{book.close();onPhoto(null);},'zen-primary'),albumStatus,photoGrid,photoIdeas);
  const sketchLabels={
-  'sketch-canal':['Canal','Canal bridge · face the water · 35–75°'],
-  'sketch-gates':['Torii','Senbon Torii · along the passage · 30–70°'],
-  'sketch-city':['Kyoto','Yotsutsuji · face west · 35–80°']
+  'sketch-canal':['Canal','Canal bridge · face the water'],
+  'sketch-gates':['Torii','Senbon Torii · along the passage'],
+  'sketch-city':['Kyoto','Yotsutsuji · face west']
  };
  const sketchNodes=new Map();for(const sketch of ZEN_SKETCHES){const card=element('article','zen-sketch'),drawing=element('div','zen-drawing'),[label,hint]=sketchLabels[sketch.id];drawing.hidden=true;
   const note=element('p','zen-fine',hint),action=button('Sketch',()=>{const ok=journey.recordMoment(sketch.id,{...getContext(),intent:'observe'});announce(ok?'Sketch saved.':hint);});action.setAttribute('aria-label',`Sketch ${label}`);
@@ -107,9 +105,15 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
   if(disposed)return;const state=journey.snapshot();tabs.at(-1).tab.hidden=!state.visit.finishedAt;
   for(const input of intentionInputs)input.checked=input.value===state.intention;weather.value=state.weather;storyCopy.textContent=AKI[state.story.stage];
   for(const prompt of ZEN_PHOTO_PROMPTS){const node=promptNodes.get(prompt.id);node.heading.textContent=`${state.photoPrompts?.[prompt.id]?'✓ ':''}${node.label}`;}
-  for(const sketch of ZEN_SKETCHES){const node=sketchNodes.get(sketch.id),found=!!state.sketches[sketch.id];node.drawing.hidden=!found;if(found&&!node.drawing.innerHTML)node.drawing.innerHTML=SKETCH_INK[sketch.id];node.note.hidden=found;node.action.disabled=found;node.action.textContent=found?'Saved':'Sketch';}
+  for(const sketch of ZEN_SKETCHES){const node=sketchNodes.get(sketch.id),found=!!state.sketches[sketch.id];node.drawing.hidden=!found;node.note.hidden=found;node.action.disabled=found;node.action.textContent=found?'Saved':'Sketch';}
+  loadVisibleSketches();
   saveState.hidden=state.persistent;saveState.textContent=state.persistent?'':'This visit only. Browser storage unavailable.';
   const signature=state.photos.map(photo=>`${photo.id}:${photo.thumbnailId}`).join('|');if(signature!==photoSignature){photoSignature=signature;refreshPhotos();}
+ }
+ function loadVisibleSketches(){
+  if(!book.open||current!=='sketches')return;
+  const state=journey.snapshot();
+  for(const sketch of ZEN_SKETCHES){const node=sketchNodes.get(sketch.id);if(state.sketches[sketch.id]&&!node.drawing.innerHTML)node.drawing.innerHTML=SKETCH_INK[sketch.id];}
  }
  function chosenPhoto(){return selectedPhotoId===null?null:photos.find(photo=>photo.id===selectedPhotoId)??photos[0]??null;}
  function selectPhoto(id){selectedPhotoId=id;renderPhotoSelection();}

@@ -26,6 +26,7 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
 
   $('pane-2').innerHTML=`<label class="switch"><input id="sound-switch" type="checkbox"> Sound</label>
     <div id="sound-settings"><label for="ambient-volume">Volume</label><input id="ambient-volume" type="range" min="0" max="100" value="55">
+    <label class="check"><input id="ambient-music" type="checkbox" checked> Music</label>
     <label class="check"><input id="ambient-birds" type="checkbox" checked> Birds</label>
     <label class="check"><input id="ambient-wind" type="checkbox" checked> Wind</label>
     <label class="check"><input id="ambient-chimes" type="checkbox" checked> Chimes</label></div>

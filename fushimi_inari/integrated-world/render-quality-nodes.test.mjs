@@ -143,9 +143,9 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(disposed,0);
     assert.equal(report().maxPixels,2000000);
     quality.setLook('dreamcore');
-    assert.equal(report().look,'dreamcore');assert.equal(report().bloom,.65*.65);
+    assert.equal(report().look,'soft-light');assert.equal(report().bloom,.36*.65);
     await quality.setMode('high');
-    assert.equal(report().shadowSize,2048);assert.equal(report().bloom,.65);
+    assert.equal(report().shadowSize,2048);assert.equal(report().bloom,.36);
     assert.equal(texture.anisotropy,16);assert.equal(quality.detailScale,1.25);
     await quality.setMode('ultra');
     assert.equal(quality.mode,'high','legacy Ultra selects High quality');
@@ -160,7 +160,7 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(quality.detailScale,1.25);
     await quality.setMode('balanced');
     assert.equal(report().shadowSize,2048);assert.equal(texture.anisotropy,4);
-    assert.equal(quality.detailScale,1);assert.equal(report().look,'dreamcore');
+    assert.equal(quality.detailScale,1);assert.equal(report().look,'soft-light');
     await quality.setMode('invalid');assert.equal(quality.mode,'balanced');
     assert.equal(disposed,0,'returning to Balanced preserves the shadow atlas');
     shadowNode.renderShadow(frame);

@@ -27,7 +27,7 @@
 .zen-sketch:first-child{padding-top:0}
 .zen-sketch-name{display:block;font:17px/1.4 Georgia,serif}
 .zen-sketch p{margin:7px 0 12px}
-.zen-drawing{width:min(100%,300px);margin:12px 0;color:#77644b}
+.zen-drawing{width:min(100%,560px);margin:14px 0 18px;color:#77644b}
 .zen-drawing svg{display:block;width:100%;height:auto;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .zen-drawing .zen-ink-soft{opacity:.55;stroke-width:1.1}
 .zen-ending-photo{background:#e2d5b9;padding:16px;border:1px solid #b9aa8c}

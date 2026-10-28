@@ -1,42 +1,32 @@
 import {createFootstepAudio} from './footstep-audio.mjs?v=complete-route-1';
 import {createRecordedAudio} from './recorded-audio.mjs?v=audio-small-1';
 import {createAmbience} from './ambient-audio.mjs';
-export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null,recorded=null,footsteps=null;
-    document.addEventListener('visibilitychange',()=>{
-      recorded?.pause(document.hidden);
+import {createWalkingMusic} from './walking-music.mjs';
+import {createPondSoundscape} from './pond-soundscape.mjs';
+export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null,recorded=null,footsteps=null,music=null,pond=null,disposed=false;
+    let musicControl=null;
+    const musicPreference=()=>music?.setMusicEnabled(musicControl?.checked!==false);
+    const position=[0,0,0],recordedState={position},musicState={paused:false,voice:false};
+    function visibility(){
+      recorded?.pause(document.hidden);music?.pause(document.hidden);
       if(document.hidden)footsteps?.stop();
-      if(audioCtx&&audioEnabled){if(document.hidden)audioCtx.suspend();else audioCtx.resume();}
-    });
+      if(audioCtx&&audioEnabled){if(document.hidden)audioCtx.suspend()?.catch?.(()=>{});else audioCtx.resume()?.catch?.(()=>{});}
+    }
+    document.addEventListener('visibilitychange',visibility);
     function initAmbientAudio() {
       if (audioCtx) return;
+      musicControl=document.getElementById('ambient-music');musicControl?.addEventListener('change',musicPreference);
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const bufferSize = audioCtx.sampleRate * 3;
-      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
-      const whiteNoise = audioCtx.createBufferSource();
-      whiteNoise.buffer = noiseBuffer;
-      whiteNoise.loop = true;
-
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = 360;
-      filter.Q.value = 2.0;
-
-      const gain = audioCtx.createGain();
-      gain.gain.value = 0.045;
-      whiteNoise.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioCtx.destination);
-      // Continuous legacy noise is replaced by intermittent breeze.
-      whiteNoise.disconnect();filter.disconnect();gain.disconnect();
       footsteps=createFootstepAudio(audioCtx,{onStats:stats=>document.body.dataset.footstepAudio=JSON.stringify(stats)});
       footsteps.setVolume(Number(document.getElementById('ambient-volume')?.value??55)/100);
       footsteps.load();
       ambience=createAmbience(audioCtx);
       recorded=createRecordedAudio(audioCtx,{onStats:stats=>document.body.dataset.recordedAudio=JSON.stringify(stats)});
       recorded.setVolume(Number(document.getElementById('ambient-volume')?.value??55)/100);
+      music=createWalkingMusic(audioCtx,{onStats:stats=>document.body.dataset.walkingMusic=JSON.stringify(stats)});
+      pond=createPondSoundscape(audioCtx,{onStats:stats=>document.body.dataset.pondSoundscape=JSON.stringify(stats)});
+      musicPreference();
+      const volume=Number(document.getElementById('ambient-volume')?.value??55)/100;music.setVolume(volume);pond.setVolume(volume);
     }
 
     function playBellChime() {
@@ -81,5 +71,22 @@ export function createAudio(){let audioCtx=null,audioEnabled=false,ambience=null
 
 
 return {arrivalSpeechActive:()=>recorded?.announcementActive??false,bell:()=>{if(audioEnabled)playBellChime();},water:()=>{if(audioEnabled)playWaterSplashSound();},
-step:playFootstepTick,update:(camera,night,world)=>{ambience?.update(camera,night);if(world)recorded?.update({position:camera.position.toArray(),...world});},setRecordedVolume:value=>{recorded?.setVolume(value);footsteps?.setVolume(value);},get enabled(){return audioEnabled;},setEnabled(value){initAmbientAudio();audioEnabled=!!value;ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);if(audioEnabled)audioCtx.resume();else {footsteps?.stop();audioCtx.suspend();}return audioEnabled;},toggle(){return this.setEnabled(!audioEnabled);}};
+step:playFootstepTick,update:(camera,night,world)=>{
+ if(disposed)return;ambience?.update(camera,night);
+ if(world){
+  position[0]=camera.position.x;position[1]=camera.position.y;position[2]=camera.position.z;
+  recordedState.gate=world.gate;recordedState.gateState=world.gateState;recordedState.arrival=world.arrival;recordedState.rail=world.rail;recordedState.time=world.time;recordedState.paused=world.paused;
+  recorded?.update(recordedState);
+ }
+ const phase=world?.arrival?.phase;musicState.paused=!!world?.paused||!!phase&&phase!=='idle'&&phase!=='complete'&&phase!=='cancelled';
+ musicState.voice=!musicState.paused&&!!recorded?.announcementActive;
+ music?.update(camera.position,musicState);pond?.update(camera.position,night,musicState);
+},setRecordedVolume:value=>{recorded?.setVolume(value);footsteps?.setVolume(value);music?.setVolume(value);pond?.setVolume(value);},
+get enabled(){return audioEnabled;},setEnabled(value){
+ if(disposed)return false;audioEnabled=!!value;if(!audioEnabled&&!audioCtx)return false;initAmbientAudio();ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);music.setEnabled(audioEnabled);pond.setEnabled(audioEnabled);
+ if(audioEnabled)audioCtx.resume()?.catch?.(()=>{});else {footsteps?.stop();audioCtx.suspend()?.catch?.(()=>{});}return audioEnabled;
+},toggle(){return this.setEnabled(!audioEnabled);},dispose(){
+ if(disposed)return;disposed=true;audioEnabled=false;document.removeEventListener('visibilitychange',visibility);musicControl?.removeEventListener('change',musicPreference);
+ music?.dispose();pond?.dispose();recorded?.dispose();ambience?.dispose();footsteps?.stop();audioCtx?.close?.()?.catch?.(()=>{});
+}};
 }

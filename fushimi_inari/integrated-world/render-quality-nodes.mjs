@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import {pass} from 'three/tsl';
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {installPendingPipelineGuard} from './pending-pipeline-guard.mjs';
+import {normalizeVisualLook,LOOK_BLOOM} from './visual-look.mjs';
 
 const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
 export function qualityPixelRatio(mode,dpr,width,height){
@@ -23,12 +24,12 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   const color=cityHorizon?cityHorizon.compose(foreground,scenePass.getTextureNode('depth')):foreground;
   const glow=bloom(color,.12,.35,1.2);
   post.outputNode=color.add(glow);
-  const looks={natural:{strength:.12,radius:.35,threshold:1.2},sakura:{strength:.30,radius:.5,threshold:1.05},dreamcore:{strength:.65,radius:.7,threshold:.85}};
+  const looks=LOOK_BLOOM;
   function report(status=transitioning?'resizing':'ready'){
     document.body.dataset.renderQuality=JSON.stringify({mode,look,status,pixelRatio:renderer.getPixelRatio(),shadowSize:sun.shadow.mapSize.x,ao:false,bloom:glow.strength.value,detailScale:mode==='high'?1.25:1,maxPixels:presets[mode].maxPixels});
   }
   function setLook(next){
-    look=Object.hasOwn(looks,next)?next:'natural';
+    look=normalizeVisualLook(next);
     const values=looks[look];
     glow.strength.value=values.strength*(mode==='balanced'?.65:1);
     glow.radius.value=values.radius;glow.threshold.value=values.threshold;report();

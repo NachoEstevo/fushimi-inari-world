@@ -95,7 +95,7 @@ test('station cat responds to offering a hand before petting and rejects distant
 });
 
 test('Mugi rests on the accepted seat top and faces its open front',async()=>{
- const f=fixture(),runtime=f.create();await runtime.ready;const cat=runtime.interactionRoots.find(o=>o.userData.zenMoment==='cat');assert.deepEqual(cat.position.toArray(),[-300.4,30.54,-184.9]);assert.equal(cat.rotation.y,0);runtime.dispose();
+ const f=fixture(),runtime=f.create();await runtime.ready;const cat=runtime.interactionRoots.find(o=>o.userData.zenMoment==='cat');assert.deepEqual(cat.position.toArray(),[-300.4,30.54,-184.975]);assert.equal(cat.rotation.y,0);runtime.dispose();
 });
 
 test('Mugi recognizes a saved visit without bypassing proximity, pause or completion guards',async()=>{

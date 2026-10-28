@@ -4,9 +4,9 @@ export function createAmbience(ctx,{document=globalThis.document,fetcher=globalT
   const bus=ctx.createGain();bus.gain.value=.55;bus.connect(ctx.destination);
   let bird=null,load='loading',nextBird=0,nextChime=0,enabled=false,birdCalls=0,chimeCalls=0;
   const volumeControl=document.getElementById('ambient-volume'),windControl=document.getElementById('ambient-wind'),birdControl=document.getElementById('ambient-birds'),chimeControl=document.getElementById('ambient-chimes');
-  let lastReport=-Infinity,lastNight=false,lastBreeze=0;
+  let lastReport=-Infinity,lastNight=false,lastBreeze=0,disposed=false;
   fetcher('../assets/audio/uguisu-koba-chan.ogg').then(r=>{if(!r.ok)throw Error(r.status);return r.arrayBuffer();})
-    .then(b=>ctx.decodeAudioData(b)).then(b=>{bird=b;load='ready';}).catch(()=>{load='unavailable';});
+    .then(b=>ctx.decodeAudioData(b)).then(b=>{if(!disposed){bird=b;load='ready';}}).catch(()=>{if(!disposed)load='unavailable';});
   const noise=ctx.createBuffer(1,ctx.sampleRate*8,ctx.sampleRate),data=noise.getChannelData(0);
   let brown=0;
   for(let i=0;i<data.length;i++){brown=(brown+(Math.random()*2-1)*.025)/1.015;data[i]=brown*4;}
@@ -38,9 +38,9 @@ export function createAmbience(ctx,{document=globalThis.document,fetcher=globalT
     document.body.dataset.ambience=JSON.stringify({enabled,bird:load,activeSources:enabled?sources.size:0,birdCalls,chimeCalls,night:lastNight,breeze:Number(lastBreeze.toFixed(2))});
   }
   return {
-    setEnabled(value){enabled=value;if(!value){for(const s of sources)s.stop();nextBird=0;nextChime=0;}report(true);},
+    setEnabled(value){if(disposed)return;enabled=value;if(!value){for(const s of sources)s.stop();nextBird=0;nextChime=0;}report(true);},
     update(camera,night=false){
-      const now=ctx.currentTime;
+      if(disposed)return;const now=ctx.currentTime;
       const volume=Number(volumeControl?.value??55)/100;
       bus.gain.setTargetAtTime(enabled?volume:0,now,.2);
       if(!enabled)return;
@@ -66,6 +66,9 @@ export function createAmbience(ctx,{document=globalThis.document,fetcher=globalT
         }
       }
       lastNight=night;lastBreeze=breeze;report();
+    },dispose(){
+      if(disposed)return;disposed=true;enabled=false;for(const source of sources){try{source.stop();}catch{}}sources.clear();
+      wind.stop();wind.disconnect();filter.disconnect();windGain.disconnect();bus.disconnect();bird=null;
     }
   };
 }

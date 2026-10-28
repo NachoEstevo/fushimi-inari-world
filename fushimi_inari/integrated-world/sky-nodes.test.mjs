@@ -21,6 +21,8 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     const direction=sun.position.clone().sub(camera.position).normalize();
     assert.ok(direction.distanceTo(new THREE.Vector3(...SKY_SUN_DIRECTIONS.gold).normalize())<1e-10);
     const elevation=THREE.MathUtils.radToDeg(Math.asin(direction.y));assert.ok(elevation>=3&&elevation<=4,'sunset disc stays three to four degrees above the true horizon');
+    const angularDiameter=THREE.MathUtils.radToDeg(2*Math.atan(sun.scale.x*.22/(2*sun.position.distanceTo(camera.position))));
+    assert.ok(angularDiameter>1.5&&angularDiameter<2,'the warm sunset core remains legible as a broad cinematic disc, rather than only enlarging its transparent halo');
     assert.ok(direction.distanceTo(new THREE.Vector3(...LIGHT_PRESETS.gold.offset).normalize())<1e-10,'visible disc and directional shadows share one solar direction');
     for(const look of ['natural','sakura','dreamcore']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HORIZON_COLORS.gold,'golden sky meets the same haze as the scene fog');}
     const tints=[];sun.material.colorNode.traverse(node=>{if(node.isUniformNode&&node.value?.isColor)tints.push(node.value.getHexString());});
