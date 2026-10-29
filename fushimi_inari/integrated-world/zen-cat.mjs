@@ -2,14 +2,14 @@ import * as THREE from 'three';
 import {loadCompressedGLB} from './compressed-glb.mjs';
 import {withinZenInteractionReach} from './zen-interaction-reach.mjs';
 
-const CAT_URL=new URL('../assets/models/cat/Mugi.glb?v=cat-life-1',import.meta.url).href;
-// The author's CC0 coat now has one skinned mesh and offline-baked paw IK.
-// Runtime blends four small clips; it never deforms vertices or solves IK on CPU.
+const CAT_URL=new URL('../assets/models/cat/Mugi.glb?v=cat-natural-2',import.meta.url).href;
+// One seated anatomical skin, with all paw IK baked offline.
+// Runtime blends authored clips; it never deforms vertices or solves IK on CPU.
 export function createZenCat({assembly,camera,journey,onAction=()=>{},loadAsset=()=>loadCompressedGLB(CAT_URL)}){
  const group=new THREE.Group();group.name='Mugi · station cat';group.userData.zenMoment='cat';
  const floor=assembly.keihanStation?.spec?.platformFloor,roots=[],materials=new Set(),geometries=new Set(),textures=new Set(),skeletons=new Set();
- let disposed=false,blocked=false,time=0,phase='watching',started=-Infinity,recorded=false,familiar=false,head=null,loaded=false;
- let modelRoot=null,mixer=null,actions=null,current=null,activeTime=0,poseSince=0,nextStretch=8.5,gazeYaw=0;
+ let disposed=false,blocked=false,phase='watching',started=-Infinity,recorded=false,familiar=false,head=null,loaded=false;
+ let modelRoot=null,mixer=null,actions=null,current=null,activeTime=0,poseSince=0,nextStretch=11.5,gazeYaw=0;
  const stats={cats:0,loadedModels:0,batches:0,triangles:0,materials:0,lights:0,textures:0,bones:0,clips:0,pose:'idle',loadError:null,get familiar(){return familiar;}};
  if(!Number.isFinite(floor))return {group,interactionRoots:roots,stats,ready:Promise.resolve(),update(){},dispose(){}};
  const recognize=state=>{if(state?.moments?.cat){familiar=true;recorded=true;}};recognize(journey?.snapshot?.());const unsubscribe=journey?.subscribe?.(recognize);
@@ -26,10 +26,10 @@ export function createZenCat({assembly,camera,journey,onAction=()=>{},loadAsset=
   get prompt(){return phase==='watching'?(familiar?'Say hello again to Mugi':'Offer your hand to Mugi'):phase==='greeting'?(familiar?'Gently stroke your familiar friend':'Gently stroke Mugi'):'Say hello to Mugi';},
   directAction(){
    if(disposed||!loaded||blocked||!withinZenInteractionReach(camera,group))return 'Mugi watches the platform.';
-   if(phase==='watching'){phase='greeting';started=time;pose('greet');nextStretch=activeTime+20;return familiar?'Mugi remembers your hand and leans close for another quiet hello.':'You offer your hand. Mugi leans forward to sniff.';}
-   if(phase==='greeting'&&time-started<.8)return 'Let Mugi come to you.';
-   if(phase==='purring'&&time-started<.8)return 'Mugi is still enjoying that gentle stroke.';
-   const recognized=familiar;phase='purring';started=time;pose('pet');nextStretch=activeTime+22;if(!recorded){recorded=true;onAction({type:'cat',site:'station',completed:true});}familiar=true;
+   if(phase==='watching'){phase='greeting';started=activeTime;pose('greet');nextStretch=activeTime+20;return familiar?'Mugi remembers your hand and leans close for another quiet hello.':'You offer your hand. Mugi leans forward to sniff.';}
+   if(phase==='greeting'&&activeTime-started<.8)return 'Let Mugi come to you.';
+   if(phase==='purring'&&activeTime-started<.8)return 'Mugi is still enjoying that gentle stroke.';
+   const recognized=familiar;phase='purring';started=activeTime;pose('pet');nextStretch=activeTime+22;if(!recorded){recorded=true;onAction({type:'cat',site:'station',completed:true});}familiar=true;
    onAction({type:'cat.pet',site:'station',completed:true});
    return recognized?'A familiar stroke. Mugi settles beside you and purrs.':'A gentle stroke. Mugi relaxes and purrs.';
   }};
@@ -51,12 +51,12 @@ export function createZenCat({assembly,camera,journey,onAction=()=>{},loadAsset=
   group.add(model);group.userData.interactable=interaction;assembly.root.add(group);assembly.legacy.interactables.push(group);group.updateMatrixWorld(true);loaded=true;
   stats.cats=1;stats.loadedModels=1;stats.materials=materials.size;stats.textures=textures.size;stats.bones=body.skeleton.bones.length;stats.clips=clips.length;
  })().catch(error=>{releaseModel();stats.loadError=error?.message??String(error);});
- return {group,interactionRoots:roots,stats,ready,update(dt,now,{blocked:hold=false}={}){
-  if(disposed)return;time=Number.isFinite(now)?now:time;blocked=hold;if(!loaded)return;
+ return {group,interactionRoots:roots,stats,ready,update(dt,_now,{blocked:hold=false}={}){
+  if(disposed)return;blocked=hold;if(!loaded)return;
   const distance=camera.position.distanceToSquared(group.position);group.visible=distance<3600;if(!group.visible||hold)return;
   const step=Number.isFinite(dt)?Math.min(Math.max(dt,0),.1):0;activeTime+=step;
-  if(phase==='greeting'&&time-started>15)phase='watching';
-  if(phase==='purring'&&time-started>=6){phase='watching';pose('idle');}
+  if(phase==='greeting'&&activeTime-started>15)phase='watching';
+  if(phase==='purring'&&activeTime-started>=6){phase='watching';pose('idle');}
   if((stats.pose==='groom'||stats.pose==='greet')&&activeTime-poseSince>=current.getClip().duration-.3){pose('idle');nextStretch=activeTime+25;}
   if(phase==='watching'&&stats.pose==='idle'&&activeTime>=nextStretch)pose('groom');
   mixer.update(step);

@@ -3,14 +3,28 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const KEY='ichinomineRefinement';
 const near=(a,b)=>Math.abs(a-b)<.002;
+function riceSheafCrest(ctx,x,y){
+  ctx.lineWidth=2.2;ctx.fillStyle='#f4f0df';
+  // Paired ears of rice surround an untouched red centre. Stems, grain and
+  // the lower bindings interpret the photographed daki-ine; not traced pixels.
+  for(const side of [-1,1])for(const radius of [43,52,61]){
+    ctx.beginPath();ctx.arc(x,y,radius,side<0?Math.PI/2+.19:-Math.PI/2+.19,side<0?Math.PI*1.5-.19:Math.PI/2-.19);ctx.stroke();
+    for(let i=0;i<10;i++){
+      const angle=-1.33+i*2.66/9,cx=x+side*Math.cos(angle)*radius,cy=y+Math.sin(angle)*radius;
+      ctx.beginPath();ctx.ellipse(cx,cy,5.5,1.9,side*angle+.58*side,0,Math.PI*2);ctx.fill();
+    }
+    ctx.beginPath();ctx.moveTo(x+side*radius*.19,y+radius*.98);ctx.lineTo(x+side*(radius*.19+6),y+radius+8);ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(x,y,30,0,Math.PI*2);ctx.stroke();
+}
 function curtainTexture(createCanvas){
   const canvas=createCanvas();canvas.width=1024;canvas.height=256;
   const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Ichinomine curtain canvas unavailable');
   ctx.fillStyle='#a91319';ctx.fillRect(0,0,1024,256);
   ctx.strokeStyle='#f4f0df';ctx.lineWidth=3;
-  // The two circular motifs and inscription follow the 2018 reference; their
-  // precise ornament and cloth dimensions are interpreted, not surveyed.
-  for(const x of [252,772])for(const radius of [37,31,19]){ctx.beginPath();ctx.arc(x,151,radius,0,Math.PI*2);ctx.stroke();}
+  // 2018 frontal reference and jinjafan photograph 105 agree on the pair of
+  // rice-sheaf crests. Their ornament and cloth dimensions are not surveyed.
+  for(const x of [252,772])riceSheafCrest(ctx,x,151);
   ctx.fillStyle='#f4f0df';ctx.font='bold 40px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('神大廣末',512,52);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
@@ -27,6 +41,7 @@ function box(parts,w,h,d,x,y,z){const g=new THREE.BoxGeometry(w,h,d);g.translate
 function batch(group,parts,material,name){
   const geometry=mergeGeometries(parts);for(const part of parts)part.dispose();
   geometry.computeBoundingSphere();const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
+  return mesh;
 }
 
 // A quarter-metre tile keeps the baked mineral clusters at granite grain scale.
@@ -67,6 +82,79 @@ function stoneDetails(object,materials){
   }};
 }
 
+// The frontal and oblique photographs show short coursed retaining returns,
+// granite end posts and an OPEN tamagaki behind them, not a tall perimeter wall.
+// https://jinjafan.jp/2601658/spots/407/ (photographs 105, 106 and 107).
+// Width, course height and concealed depth remain photographic estimates.
+// Coordinates belong to the existing worship-canopy owner, above its terrace.
+// The existing terrace ends at local z=1.60; even end-post caps stay behind it.
+const STONE_RETURNS=Object.freeze([-1,1].flatMap(side=>[
+ Object.freeze({x:side*4.6,z:1.36,width:2.12,depth:.38,along:'x'}),
+ Object.freeze({x:side*5.46,z:-.5925,width:.38,depth:3.465,along:'z'})
+]));
+function stoneSideReturns(group,source){
+ if(!source?.clone)return null;
+ const stone=source.clone();stone.name='Ichinomine weathered granite boundary';stone.color.set('#92928a');stone.roughness=1;stone.metalness=0;
+ const parts=[];let blocks=0;
+ function block(w,h,d,x,y,z,phase=0){
+  const bevel=Math.min(.012,h*.15),shape=new THREE.Shape(),hw=w/2-bevel,hh=h/2-bevel;
+  shape.moveTo(-hw,-hh);shape.lineTo(hw,-hh);shape.lineTo(hw,hh);shape.lineTo(-hw,hh);shape.closePath();
+  const original=new THREE.ExtrudeGeometry(shape,{depth:d-2*bevel,steps:1,bevelEnabled:true,bevelSegments:1,bevelSize:bevel,bevelThickness:bevel,curveSegments:1});
+  original.translate(0,0,-(d-2*bevel)/2);
+  const geometry=metricStepGeometry(original);original.dispose();const uv=geometry.attributes.uv;
+  for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)+phase*.37,uv.getY(i)+phase*.23);
+  geometry.translate(x,y,z);parts.push(geometry);
+ }
+ for(const wall of STONE_RETURNS){
+  const length=wall.along==='x'?wall.width:wall.depth;
+  for(let row=0;row<4;row++){
+   let start=-length/2,index=0;
+   while(start<length/2-.025){
+    const end=Math.min(length/2,start+(index===0&&row%2?.33:.66)),span=end-start-.014,offset=(start+end)/2;
+    if(span>.025){block(wall.along==='x'?span:wall.width,.251,wall.along==='z'?span:wall.depth,
+     wall.x+(wall.along==='x'?offset:0),.1395+row*.265,wall.z+(wall.along==='z'?offset:0),blocks++);}
+    start=end;index++;
+   }
+  }
+  // The returns end at a mortar joint: no coplanar overlapping cap slabs.
+  block(wall.width+(wall.along==='z'?.035:0),.10,wall.depth+(wall.along==='x'?.035:0),wall.x,1.115,wall.z);
+ }
+ for(const side of [-1,1])for(const [x,z] of [[3.76,1.36],[5.46,1.36],[5.46,-2.125]]){
+  block(.44,.14,.44,side*x,.07,z);block(.34,1.34,.34,side*x,.74,z);block(.44,.075,.44,side*x,1.4425,z);
+ }
+ const mesh=batch(group,parts,stone,'Ichinomine low granite side returns');
+ const stats={segments:4,blocks,posts:6,draws:1,triangles:mesh.geometry.index?mesh.geometry.index.count/3:mesh.geometry.attributes.position.count/3,newTextures:0};
+ const point=new THREE.Vector3(),scale=new THREE.Vector3();
+ return {stats,getColliders(){
+  group.updateWorldMatrix(true,true);const matrix=group.matrixWorld,e=matrix.elements;
+  scale.setFromMatrixScale(matrix);const yaw=Math.atan2(e[8],e[10]);
+  const bottom=point.set(0,0,0).applyMatrix4(matrix).y,top=point.set(0,1.48,0).applyMatrix4(matrix).y;
+  return STONE_RETURNS.map(wall=>{
+   point.set(wall.x,0,wall.z).applyMatrix4(matrix);
+   return {type:'box',args:[point.x,point.z,(wall.width+.06)*scale.x/2,(wall.depth+.06)*scale.z/2,yaw,Math.min(bottom,top),Math.max(bottom,top),'ichinomine_stone_boundary']};
+  });
+ }};
+}
+
+function removeUnsourcedSummitTrim(canopy){
+  const removed=[],stats={plaque:0,goldBands:0};
+  // Neither the 2018 frontal photograph nor jinjafan 105 has this legacy
+  // plaque over the cloth inscription or the four bright pillar collars.
+  // Match the authored dimensions AND placement, only in this canopy.
+  canopy.children.forEach((mesh,index)=>{
+    const p=mesh.geometry?.parameters,v=mesh.position;if(!mesh.isMesh||!p)return;
+    const plaque=mesh.geometry.type==='BoxGeometry'&&near(p.width,.62)&&near(p.height,1.12)&&near(p.depth,.12)&&near(v.x,0)&&near(v.y,3.43)&&near(v.z,1.872);
+    const band=mesh.geometry.type==='CylinderGeometry'&&near(p.radiusTop,.175)&&near(p.radiusBottom,.175)&&near(p.height,.12)&&near(Math.abs(v.x),2.288)&&near(v.y,3.07)&&near(Math.abs(v.z),1.512);
+    if(plaque||band){removed.push({mesh,index});stats[plaque?'plaque':'goldBands']++;}
+  });
+  for(const {mesh} of removed)canopy.remove(mesh);
+  return {stats,restore(){
+    for(const {mesh,index} of removed)if(mesh.parent===null){
+      canopy.add(mesh);canopy.children.splice(canopy.children.indexOf(mesh),1);canopy.children.splice(Math.min(index,canopy.children.length),0,mesh);
+    }
+  }};
+}
+
 // The original canopy and interaction remain owners. The added geometry is an
 // interpretation of the photo; source meshes and shared textures are untouched.
 export function refineIchinomine(object,materials={}, {createCanvas=()=>document.createElement('canvas')}={}){
@@ -95,12 +183,14 @@ export function refineIchinomine(object,materials={}, {createCanvas=()=>document
   for(const side of [-1,1]){box(edges,1.62,.045,.06,side*1.53,.82,1.68);for(const x of [.77,2.29])box(edges,.045,.78,.05,side*x,.43,1.68);}
   box(edges,6.65,.055,.08,0,roof.position.y+.76*.28+.08,2.50);batch(group,edges,metal,'Low handrail and roof edge');
   const stone=stoneDetails(object,materials);
+  const boundary=stoneSideReturns(group,materials.entryStoneMat);
+  const trim=removeUnsourcedSummitTrim(canopy);
   let disposed=false;
-  const result={group,originalGeometry,stats:{crests:2,tassels:7,extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs},dispose(){
+  const result={group,originalGeometry,getColliders:()=>disposed?[]:boundary?.getColliders()??[],stats:{crests:2,tassels:7,extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs,...(boundary?{stoneBoundary:boundary.stats}:{}),...(trim.stats.plaque+trim.stats.goldBands?{referenceCorrections:trim.stats}:{})},dispose(){
     if(disposed)return;disposed=true;group.removeFromParent();
     for(const mesh of group.children){mesh.geometry.dispose();mesh.material.dispose();}
     if(curtain.geometry===geometry)curtain.geometry=originalGeometry;if(curtain.material===material)curtain.material=originalMaterial;
-    geometry.dispose();material.dispose();texture.dispose();stone.dispose();if(object.userData[KEY]===result)delete object.userData[KEY];
+    geometry.dispose();material.dispose();texture.dispose();stone.dispose();trim.restore();if(object.userData[KEY]===result)delete object.userData[KEY];
   }};
   object.userData[KEY]=result;return result;
 }

@@ -46,7 +46,7 @@ export function refineShrineRoofs(object){
       if(sibling===roof||sibling.geometry?.type!=='BoxGeometry')continue;
       const d=sibling.geometry.parameters;
       // Official Ichinomine view shows one broad canopy without the projecting
-      // front gable used by the two lower peaks. Keep its hanging plaque.
+      // front gable used by the two lower peaks. Summit fittings are refined separately.
       if(object.userData.zone==='summit'&&((Math.abs(d.width-2.35)<.001&&Math.abs(d.height-.52)<.001)||(Math.abs(d.width-.55)<.001&&Math.abs(d.height-.34)<.001))){parent.remove(sibling);continue;}
       if(Math.abs(d.height-.36)<.001&&d.width>4.8){parent.remove(sibling);continue;}
       if(Math.abs(d.height-.24)<.001&&d.width>4.8)sibling.position.y=base+rise+.13;

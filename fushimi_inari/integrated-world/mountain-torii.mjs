@@ -126,6 +126,8 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
   // Chunk spatially so the whole mountain is not drawn from inside one tunnel.
   const chunks=new Map();
   matrices.forEach(entry=>{const m=entry.m,key=`${Math.floor(m.elements[12]/80)},${Math.floor(m.elements[14]/80)}`;if(!chunks.has(key))chunks.set(key,[]);chunks.get(key).push(entry);});
+  // Photographed mountain gates sit on mineral footings below the black sleeve.
+  // Reuse its existing map and instanced footprint; individual stations remain inferred.
   let supportCount=0;
   const supportGeometry=new THREE.CylinderGeometry(1,1,1,16),scale=new THREE.Vector3(),rotation=new THREE.Quaternion(),position=new THREE.Vector3();
   for(const chunk of chunks.values()){
@@ -135,7 +137,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
       supports.push(new THREE.Matrix4().compose(new THREE.Vector3(foot.x,(foot.bottom+foot.top)/2,foot.z),rotation,new THREE.Vector3(.144*entry.thickness*scale.x,foot.top-foot.bottom,.144*entry.thickness*scale.z)));
     }}
     if(!supports.length)continue;
-    const mesh=new THREE.InstancedMesh(supportGeometry,legacy.materials.blackNemakiMat,supports.length);mesh.name='Mountain torii grounded nemaki';supports.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=mesh.receiveShadow=true;mesh.computeBoundingSphere();root.add(mesh);supportCount+=supports.length;
+    const mesh=new THREE.InstancedMesh(supportGeometry,legacy.materials.entryStoneMat,supports.length);mesh.name='Mountain torii mineral foundations';supports.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=mesh.receiveShadow=true;mesh.computeBoundingSphere();root.add(mesh);supportCount+=supports.length;
   }
   for(const chunk of chunks.values())for(const thickness of [1,1.22,1.45]){
     const entries=chunk.filter(e=>e.thickness===thickness);

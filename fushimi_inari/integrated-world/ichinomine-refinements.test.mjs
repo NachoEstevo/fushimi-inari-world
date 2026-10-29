@@ -10,10 +10,11 @@ function fixture(zone='summit'){
  original.position.set(0,2.67,1.584);canopy.position.set(0,1.02,-1.35);canopy.add(roof,original);object.add(canopy);
  return {object,canopy,roof,original,materials:{vermilionMat:new THREE.MeshStandardMaterial({map:new THREE.Texture(),normalMap:new THREE.Texture()})}};
 }
-function canvas(){const texts=[];return {width:0,height:0,texts,getContext(){return {fillRect(){},beginPath(){},arc(){},stroke(){},fillText(t){texts.push(t);},set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},set textAlign(v){},set textBaseline(v){}};}};}
+function canvas(){const texts=[],grains=[];return {width:0,height:0,texts,grains,getContext(){return {fillRect(){},beginPath(){},arc(){},moveTo(){},lineTo(){},ellipse(...args){grains.push(args);},fill(){},stroke(){},fillText(t){texts.push(t);},set fillStyle(v){},set strokeStyle(v){},set lineWidth(v){},set font(v){},set textAlign(v){},set textBaseline(v){}};}};}
 test('summit-only signature yields split curtain, seven tassels and bounded detail batches',()=>{
  const f=fixture(),c=canvas();const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>c});
  assert.ok(result);assert.deepEqual(result.stats,{crests:2,tassels:7,extraBatches:4,lanterns:0,stairs:0});assert.ok(c.texts.includes('神大廣末'));assert.equal(c.width,1024);assert.equal(c.height,256);
+ assert.ok(c.grains.length>80);for(const grain of c.grains){assert.ok(grain[1]-grain[2]>75&&grain[1]+grain[2]<235,'rice grain clipped or invading inscription');}
  assert.notEqual(f.original.geometry,result.originalGeometry);const p=f.original.geometry.attributes.position;
  const lower=[];for(let i=0;i<p.count;i++)if(p.getY(i)<-.2)lower.push([p.getX(i),p.getY(i)]);
  assert.ok(Math.min(...lower.filter(([x])=>Math.abs(x)>1.9).map(([,y])=>y))<Math.min(...lower.filter(([x])=>Math.abs(x)<.2).map(([,y])=>y)));
@@ -52,4 +53,64 @@ test('only the matched summit lantern pair and six treads receive reversible sto
  let disposedSteps=0;for(const step of steps)step.geometry.addEventListener('dispose',()=>disposedSteps++);
  result.dispose();assert.equal(disposedSteps,6);for(let l=0;l<2;l++)for(let i=0;i<7;i++){assert.equal(lamps[l].children[i].geometry,original[l][i].geometry);assert.equal(lamps[l].children[i].material,original[l][i].material);}
  steps.forEach((s,i)=>{assert.equal(s.material,oldSteps[i].material);assert.equal(s.geometry,oldSteps[i].geometry);});assert.equal(sharedDisposed,0);
+});
+
+test('photographed low stone side returns leave the stair and frontage open and share existing granite maps',()=>{
+ const f=fixture(),source=new THREE.MeshStandardMaterial({map:new THREE.Texture(),normalMap:new THREE.Texture()});f.materials.entryStoneMat=source;
+ const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()});
+ assert.equal(result.stats.stoneBoundary.segments,4);assert.equal(result.stats.stoneBoundary.draws,1);assert.equal(result.stats.stoneBoundary.newTextures,0);
+ assert.ok(result.stats.stoneBoundary.triangles<5500);assert.ok(result.stats.stoneBoundary.blocks>=60);assert.equal(result.stats.stoneBoundary.posts,6);
+ const walls=result.group.getObjectByName('Ichinomine low granite side returns');assert.ok(walls);assert.equal(walls.material.map,source.map);assert.equal(walls.material.normalMap,source.normalMap);
+ walls.geometry.computeBoundingBox();const bounds=walls.geometry.boundingBox;assert.ok(bounds.min.x>=-5.71&&bounds.max.x<=5.71);assert.ok(bounds.min.z> -2.5&&bounds.max.z<=1.60,'front return overhangs its existing raised terrace');
+ const colliders=result.getColliders();assert.equal(colliders.length,4);
+ const inside=(c,x,z)=>{const a=c.args,dx=x-a[0],dz=z-a[1],cs=Math.cos(a[4]),sn=Math.sin(a[4]);return Math.abs(dx*cs-dz*sn)<a[2]&&Math.abs(dx*sn+dz*cs)<a[3];};
+ for(let x=-3.3;x<=3.3;x+=.15)for(let z=-3.5;z<=5;z+=.25)assert.equal(colliders.some(c=>inside(c,x,z)),false,`central access blocked at ${x},${z}`);
+ assert.equal(colliders.some(c=>inside(c,5.46,-1.4)),true);assert.equal(colliders.some(c=>inside(c,-5.46,-1.4)),true);
+ assert.equal(colliders.some(c=>inside(c,6.3,-1.4)),false);assert.equal(colliders.some(c=>inside(c,-6.3,-1.4)),false);
+ walls.updateWorldMatrix(true,false);const vertices=walls.geometry.attributes.position,point=new THREE.Vector3();
+ for(let i=0;i<vertices.count;i++){
+  point.fromBufferAttribute(vertices,i).applyMatrix4(walls.matrixWorld);
+  assert.ok(colliders.some(c=>{const a=c.args;return Math.abs(point.x-a[0])<=a[2]+1e-6&&Math.abs(point.z-a[1])<=a[3]+1e-6&&point.y>=a[5]-1e-6&&point.y<=a[6]+1e-6;}),'rendered stone has no physical owner');
+ }
+ let shared=0;for(const value of [source,source.map,source.normalMap])value.addEventListener('dispose',()=>shared++);result.dispose();result.dispose();assert.equal(shared,0);
+});
+
+test('stone return collisions follow the same transformed owner and stay within rendered post height',()=>{
+ const f=fixture();f.materials.entryStoneMat=new THREE.MeshStandardMaterial({map:new THREE.Texture()});
+ const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()}),before=result.getColliders();
+ f.object.position.set(120,30,-70);f.object.rotation.y=.73;f.object.scale.setScalar(1.4);
+ const after=result.getColliders(),point=new THREE.Vector3();
+ f.object.updateWorldMatrix(true,true);
+ for(let i=0;i<before.length;i++){
+  const a=before[i].args,b=after[i].args;point.set(a[0],a[5],a[1]).applyMatrix4(f.object.matrixWorld);
+  assert.ok(Math.abs(b[0]-point.x)<1e-7&&Math.abs(b[1]-point.z)<1e-7&&Math.abs(b[5]-point.y)<1e-7);
+  assert.ok(Math.abs(b[2]-a[2]*1.4)<1e-7&&Math.abs(b[3]-a[3]*1.4)<1e-7);assert.ok(Math.abs(b[4]-.73)<1e-7);
+  assert.ok(Math.abs(b[6]-b[5]-1.48*1.4)<1e-7);assert.equal(b.at(-1),'ichinomine_stone_boundary');
+ }
+});
+
+function addLegacyOrnaments(f){
+ const gold=new THREE.MeshStandardMaterial({metalness:.88}),texture=new THREE.Texture();
+ const plaque=new THREE.Mesh(new THREE.BoxGeometry(.62,1.12,.12),new THREE.MeshStandardMaterial({map:texture}));plaque.position.set(0,3.43,1.872);plaque.rotation.x=.10;
+ const bands=[];for(const x of [-2.288,2.288])for(const z of [-1.512,1.512]){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.175,.175,.12,14),gold);mesh.position.set(x,3.07,z);bands.push(mesh);}
+ f.canopy.add(plaque,...bands);return {plaque,bands,texture,gold};
+}
+test('only canonical summit plaque and pillar collars disappear from the photographed open frontage',()=>{
+ const f=fixture(),ornaments=addLegacyOrnaments(f);
+ const neighborPlaque=ornaments.plaque.clone();neighborPlaque.position.x=.12;
+ const neighborBand=ornaments.bands[0].clone();neighborBand.position.z+=.12;
+ const differentBand=new THREE.Mesh(new THREE.CylinderGeometry(.175,.175,.13,14),ornaments.gold);differentBand.position.copy(ornaments.bands[0].position);
+ const nested=new THREE.Group(),nestedPlaque=ornaments.plaque.clone();nested.add(nestedPlaque);f.canopy.add(neighborPlaque,neighborBand,differentBand,nested);
+ const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()});
+ assert.equal(ornaments.plaque.parent===null,true);for(const band of ornaments.bands)assert.equal(band.parent===null,true);
+ assert.deepEqual(result.stats.referenceCorrections,{plaque:1,goldBands:4});
+ for(const mesh of [neighborPlaque,neighborBand,differentBand,nested])assert.equal(mesh.parent===f.canopy,true);assert.equal(nestedPlaque.parent===nested,true);
+ for(const zone of ['ninomine','sannomine']){const other=fixture(zone),trim=addLegacyOrnaments(other);assert.equal(refineIchinomine(other.object,other.materials,{createCanvas:()=>canvas()}),null);for(const mesh of [trim.plaque,...trim.bands])assert.equal(mesh.parent===other.canopy,true);}
+});
+test('disposing reference correction restores original sibling order without releasing borrowed trim or texture',()=>{
+ const f=fixture(),ornaments=addLegacyOrnaments(f),original=[...f.canopy.children],sources=new Set([ornaments.texture,ornaments.gold]);
+ for(const mesh of [ornaments.plaque,...ornaments.bands]){sources.add(mesh.geometry);sources.add(mesh.material);}
+ let disposals=0;for(const source of sources)source.addEventListener('dispose',()=>disposals++);
+ const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()});result.dispose();result.dispose();
+ assert.deepEqual(f.canopy.children.map(mesh=>mesh.uuid),original.map(mesh=>mesh.uuid));assert.equal(disposals,0);assert.equal(ornaments.plaque.material.map===ornaments.texture,true);
 });

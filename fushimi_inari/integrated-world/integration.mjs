@@ -351,7 +351,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
     return northCourtGrade(x,z,azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1])));
   }
-  let kumatakaRefinement=null,okumiyaRefinement=null;
+  let kumatakaRefinement=null,okumiyaRefinement=null,ichinomineRefinement=null;
   function moveObject(object){
     if(isUnsupportedEntranceProp(object))return;
     // The illustrative flank pavilion was carried with Gehaiden onto the
@@ -376,6 +376,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     refineShrineFinishes(object,legacy.materials.entryStoneMat);
     const summitDetail=refineIchinomine(object,legacy.materials);
     if(summitDetail){
+      ichinomineRefinement=summitDetail;
       document.body.dataset.ichinomineRefinement=JSON.stringify(summitDetail.stats);
       addEventListener('pagehide',event=>{if(!event.persisted)summitDetail.dispose();});
     }
@@ -514,6 +515,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(c.type==='box')args[4]=(args[4]??0)+f.yaw;
     return {type:c.type,args};
   }).filter(Boolean);
+  if(ichinomineRefinement)colliders.push(...ichinomineRefinement.getColliders());
   document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
   document.body.dataset.mitsurugiRegistration=JSON.stringify(registerMitsurugi(root,features,surfaces,colliders));
   const mitsurugiCafe=buildMitsurugiCafeFrontage(root,features,surfaces,colliders,legacy.materials);

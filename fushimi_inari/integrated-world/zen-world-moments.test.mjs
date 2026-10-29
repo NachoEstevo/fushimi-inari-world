@@ -90,7 +90,7 @@ test('station cat responds to offering a hand before petting and rejects distant
  f.camera.position.copy(cat.position).add(new THREE.Vector3(-1,1,0));
  runtime.update(.1,1,{blocked:true,mode:'walk'});cat.userData.interactable.directAction();assert.equal(f.actions.length,0);
  runtime.update(.1,2,{blocked:false,mode:'walk'});assert.match(cat.userData.interactable.directAction(),/hand|sniff/i);assert.equal(f.actions.length,0);
- runtime.update(.1,4,{mode:'walk'});assert.match(cat.userData.interactable.directAction(),/purr|stroke/i);assert.equal(f.actions.filter(e=>e.type==='cat').length,1);
+ advance(runtime,2,.9);assert.match(cat.userData.interactable.directAction(),/purr|stroke/i);assert.equal(f.actions.filter(e=>e.type==='cat').length,1);
  cat.userData.interactable.directAction();assert.equal(f.actions.filter(e=>e.type==='cat').length,1);runtime.dispose();
 });
 
@@ -103,7 +103,7 @@ test('Mugi recognizes a saved visit without bypassing proximity, pause or comple
  const cat=runtime.interactionRoots.find(o=>o.userData.zenMoment==='cat');assert.equal(runtime.stats.cat.familiar,true);assert.match(cat.userData.interactable.prompt,/again|familiar/i);
  f.camera.position.set(0,31.7,0);assert.match(cat.userData.interactable.directAction(),/watches/i);assert.equal(f.actions.length,0);
  f.camera.position.copy(cat.position).add(new THREE.Vector3(-1,1.1,0));runtime.update(.1,1,{blocked:true,mode:'walk'});assert.match(cat.userData.interactable.directAction(),/watches/i);
- runtime.update(.1,2,{mode:'walk'});assert.match(cat.userData.interactable.directAction(),/remember|familiar|again/i);runtime.update(.1,4,{mode:'walk'});assert.match(cat.userData.interactable.directAction(),/purr|stroke/i);assert.equal(f.actions.filter(e=>e.type==='cat').length,0);
+ runtime.update(.1,2,{mode:'walk'});assert.match(cat.userData.interactable.directAction(),/remember|familiar|again/i);advance(runtime,2,.9);assert.match(cat.userData.interactable.directAction(),/purr|stroke/i);assert.equal(f.actions.filter(e=>e.type==='cat').length,0);
  runtime.dispose();assert.equal(listeners.size,0);
 });
 
@@ -113,9 +113,9 @@ test('a saved cat encounter arriving through storage updates recognition without
 });
 
 test('successful repeat pets signal feedback while the cat achievement remains one-time',async()=>{
- const f=fixture(),runtime=f.create();await runtime.ready;const cat=runtime.interactionRoots.find(o=>o.userData.zenMoment==='cat');f.camera.position.copy(cat.position).add(new THREE.Vector3(-1,1.1,0));runtime.update(.1,1,{mode:'walk'});cat.userData.interactable.directAction();runtime.update(.1,2,{mode:'walk'});cat.userData.interactable.directAction();
+ const f=fixture(),runtime=f.create();await runtime.ready;const cat=runtime.interactionRoots.find(o=>o.userData.zenMoment==='cat');f.camera.position.copy(cat.position).add(new THREE.Vector3(-1,1.1,0));runtime.update(.1,1,{mode:'walk'});cat.userData.interactable.directAction();advance(runtime,1,.9);cat.userData.interactable.directAction();
  assert.equal(f.actions.filter(e=>e.type==='cat').length,1);assert.equal(f.actions.filter(e=>e.type==='cat.pet').length,1);
- runtime.update(.1,2.2,{mode:'walk'});cat.userData.interactable.directAction();assert.equal(f.actions.filter(e=>e.type==='cat.pet').length,1);runtime.update(.1,3,{mode:'walk'});cat.userData.interactable.directAction();assert.equal(f.actions.filter(e=>e.type==='cat.pet').length,2);assert.equal(f.actions.filter(e=>e.type==='cat').length,1);runtime.dispose();
+ runtime.update(.1,2.2,{mode:'walk'});cat.userData.interactable.directAction();assert.equal(f.actions.filter(e=>e.type==='cat.pet').length,1);advance(runtime,2.2,.9);cat.userData.interactable.directAction();assert.equal(f.actions.filter(e=>e.type==='cat.pet').length,2);assert.equal(f.actions.filter(e=>e.type==='cat').length,1);runtime.dispose();
 });
 
 test('paper moments need a completed unfold and a held stamp gesture',()=>{
