@@ -3,20 +3,20 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installStaticInstanceBufferNames} from './static-instance-buffer-names.mjs';
 
-test('owned static matrix buffers receive stable per-node ordinals across stages while other arguments and returns are preserved',()=>{
+for(const revision of [180,186])test(`r${revision} owned static matrix buffers retain stable names and native arguments`,()=>{
  const object={isInstancedMesh:true,instanceMatrix:{array:new Float32Array(32*16),usage:THREE.StaticDrawUsage}},objects=new WeakSet([object]),calls=[],result={};
  const builder={object,getUniformFromNode(...args){calls.push({receiver:this,args});return result;}},backend={isWebGPUBackend:true,createNodeBuilder(...args){assert.equal(this,backend);assert.deepEqual(args,[object,42]);return builder;}};
- const handle=installStaticInstanceBufferNames(backend,{objects,revision:180}),node={isBufferNode:true,bufferType:'mat4',value:object.instanceMatrix.array},other={...node};
+ const handle=installStaticInstanceBufferNames(backend,{objects,revision}),node={isBufferNode:true,bufferType:'mat4',value:object.instanceMatrix.array},other={...node};
  assert.equal(handle.enabled,true);assert.equal(backend.createNodeBuilder(object,42)===builder,true);
  assert.equal(builder.getUniformFromNode(node,'buffer','vertex',null)===result,true);builder.getUniformFromNode(node,'buffer','fragment');builder.getUniformFromNode(other,'buffer','vertex');
  assert.deepEqual(calls.map(call=>call.args[3]),['fushimiStaticInstanceMatrices0','fushimiStaticInstanceMatrices0','fushimiStaticInstanceMatrices1']);
  assert.ok(calls.every(call=>call.receiver===builder));assert.equal(calls[0].args[0]===node,true);assert.equal(calls[0].args[1],'buffer');handle.dispose();
 });
 
-test('explicit names reserve their identifiers while unrelated, dynamic and unowned buffers remain unmodified',()=>{
+for(const revision of [180,186])test(`r${revision} explicit names reserve identifiers and unrelated buffers stay unchanged`,()=>{
  const array=new Float32Array(16),object={isInstancedMesh:true,instanceMatrix:{array,usage:THREE.StaticDrawUsage}},objects=new WeakSet([object]),calls=[];
  const builder={object,getUniformFromNode(...args){calls.push(args);return args[3];}},backend={isWebGPUBackend:true,createNodeBuilder:()=>builder};
- const handle=installStaticInstanceBufferNames(backend,{objects,revision:180});backend.createNodeBuilder();const matrix={isBufferNode:true,bufferType:'mat4',value:array};
+ const handle=installStaticInstanceBufferNames(backend,{objects,revision});backend.createNodeBuilder();const matrix={isBufferNode:true,bufferType:'mat4',value:array};
  builder.getUniformFromNode({...matrix,value:new Float32Array(16)},'buffer','vertex','fushimiStaticInstanceMatrices0');
  assert.equal(builder.getUniformFromNode(matrix,'buffer','vertex'),'fushimiStaticInstanceMatrices1');
  for(const [node,type,name]of [[matrix,'buffer','authored'],[{...matrix,bufferType:'vec4'},'buffer',undefined],[{...matrix,value:new Float32Array(16)},'buffer',undefined],[{...matrix,isBufferNode:false},'buffer',undefined],[matrix,'storageBuffer',undefined]]){
@@ -30,7 +30,7 @@ test('factory disposal preserves ownership and unsupported runtimes never instal
  const original=()=>({getUniformFromNode(){}}),prototype={createNodeBuilder:original},backend=Object.assign(Object.create(prototype),{isWebGPUBackend:true}),objects=new WeakSet();
  const handle=installStaticInstanceBufferNames(backend,{objects,revision:180});assert.equal(Object.hasOwn(backend,'createNodeBuilder'),true);handle.dispose();handle.dispose();assert.equal(Object.hasOwn(backend,'createNodeBuilder'),false);
  const next=installStaticInstanceBufferNames(backend,{objects,revision:180}),later=()=>{};backend.createNodeBuilder=later;next.dispose();assert.equal(backend.createNodeBuilder===later,true);
- for(const [candidate,revision]of [[{isWebGPUBackend:false,createNodeBuilder:original},180],[{isWebGPUBackend:true,createNodeBuilder:original},181]]){
+ for(const [candidate,revision]of [[{isWebGPUBackend:false,createNodeBuilder:original},180],...[179,181,182,183,184,185,187,'186.1',null].map(revision=>[{isWebGPUBackend:true,createNodeBuilder:original},revision])]){
   const before=candidate.createNodeBuilder,unsupported=installStaticInstanceBufferNames(candidate,{objects,revision});assert.equal(unsupported.enabled,false);assert.equal(candidate.createNodeBuilder===before,true);unsupported.dispose();
  }
 });
@@ -46,10 +46,10 @@ test('preexisting stage declarations are reserved and disposed builder wrappers 
  assert.equal(builder.getUniformFromNode({...matrix},'buffer','vertex'),undefined);assert.equal(handle.stats.renamed,renamed);
 });
 
-test('real r180 WGSL uniforms share declarations while preserving independent buffers and binding positions',{skip:THREE.REVISION!=='180'},async()=>{
+test(`real r${THREE.REVISION} WGSL uniforms share declarations with independent buffers`,{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const [{default:WGSLNodeBuilder},{default:BufferNode}]=await Promise.all([import('three/src/renderers/webgpu/nodes/WGSLNodeBuilder.js'),import('three/src/nodes/accessors/BufferNode.js')]);
  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial(),a=new THREE.InstancedMesh(geometry,material,64),b=new THREE.InstancedMesh(geometry,material,64);b.count=43;
- const objects=new WeakSet([a,b]),backend={isWebGPUBackend:true,createNodeBuilder:object=>new WGSLNodeBuilder(object,{})};
+ const objects=new WeakSet([a,b]),backend={isWebGPUBackend:true,createNodeBuilder:object=>new WGSLNodeBuilder(object,{debug:{diagnostics:{keywords:true}}})};
  const plainA=backend.createNodeBuilder(a),plainB=backend.createNodeBuilder(b);plainA.getUniformFromNode(new BufferNode(a.instanceMatrix.array,'mat4',64),'buffer','vertex');plainB.getUniformFromNode(new BufferNode(b.instanceMatrix.array,'mat4',64),'buffer','vertex');
  assert.notEqual(plainA.getUniforms('vertex'),plainB.getUniforms('vertex'));
  const handle=installStaticInstanceBufferNames(backend,{objects}),ba=backend.createNodeBuilder(a),bb=backend.createNodeBuilder(b);
@@ -60,11 +60,11 @@ test('real r180 WGSL uniforms share declarations while preserving independent bu
  handle.dispose();a.dispose();b.dispose();geometry.dispose();material.dispose();
 });
 
-test('real r180 preexisting explicit buffer declarations reserve their .value property names',{skip:THREE.REVISION!=='180'},async()=>{
+test(`real r${THREE.REVISION} explicit buffer declarations reserve their .value names`,{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const [{default:WGSLNodeBuilder},{default:BufferNode}]=await Promise.all([import('three/src/renderers/webgpu/nodes/WGSLNodeBuilder.js'),import('three/src/nodes/accessors/BufferNode.js')]);
  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial(),object=new THREE.InstancedMesh(geometry,material,32),objects=new WeakSet([object]),foreign=new Float32Array(16);
  const backend={isWebGPUBackend:true,createNodeBuilder(value){
-  const builder=new WGSLNodeBuilder(value,{});builder.shaderStage='vertex';
+  const builder=new WGSLNodeBuilder(value,{debug:{diagnostics:{keywords:true}}});builder.shaderStage='vertex';
   builder.getUniformFromNode(new BufferNode(foreign,'mat4',1),'buffer','vertex','fushimiStaticInstanceMatrices0');return builder;
  }};
  const handle=installStaticInstanceBufferNames(backend,{objects}),builder=backend.createNodeBuilder(object);

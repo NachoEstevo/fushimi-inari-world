@@ -11,7 +11,7 @@ test('terrain street distances compile inside a lazy bounds branch',()=>{
  const layout=makeKeihanStreetGroundMask(features);
  assert.equal(layout.segments.length,43);
  // Compile the actual TSL flow without a renderer, canvas or GPU device.
- const builder=new THREE.NodeBuilder(null,{backend:{isWebGPUBackend:true}});
+ const builder=new THREE.NodeBuilder(null,{backend:{isWebGPUBackend:true},debug:{diagnostics:false}});
  builder.setShaderStage('fragment');
  const flow=builder.flowStagesNode(keihanStreetWeight(layout,vec2(-300,-100)),'float');
  const start=flow.code.indexOf('if (');

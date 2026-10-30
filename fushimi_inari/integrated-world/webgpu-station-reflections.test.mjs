@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {REVISION} from 'three';
 
-test('station probe stays local, alternates bounded targets and restores state', {skip:REVISION!=='180'}, async()=>{
+test('station probe stays local, alternates bounded targets and restores state', {skip:!['180','186'].includes(REVISION)}, async()=>{
  const THREE=await import('three/webgpu');
  const {createStationReflectionStudy}=await import('./webgpu-station-reflections.mjs');
  const scene=new THREE.Scene(), environment=new THREE.Texture(), originalMap=new THREE.Texture();
@@ -34,7 +34,7 @@ test('station probe stays local, alternates bounded targets and restores state',
  }finally{study.dispose();THREE.PMREMGenerator.prototype.fromScene=original;geometry.dispose();metal.dispose();floor.dispose();environment.dispose();originalMap.dispose();}
 });
 
-test('bounded preparation captures only a capped station surrogate once', {skip:REVISION!=='180'}, async()=>{
+test('bounded preparation captures only a capped station surrogate once', {skip:!['180','186'].includes(REVISION)}, async()=>{
  const THREE=await import('three/webgpu');
  const {createStationReflectionStudy}=await import('./webgpu-station-reflections.mjs');
  const {STATION_PROXY_LIMITS}=await import('./station-reflection-proxy.mjs');

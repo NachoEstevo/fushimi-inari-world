@@ -1,5 +1,5 @@
-// Test-only loader. Install three@0.180.0 under .tmp/webgpu-runtime first.
-// Keep legacy tests on their original runtime; the browser pins r180 via import map.
+// Test-only loader. Install three@0.186.1 under .tmp/webgpu-runtime first.
+// Keep legacy geometry tests on their original runtime; the viewer pins r186.1.
 const root=new URL('../.tmp/webgpu-runtime/node_modules/three/',import.meta.url).href;
 export async function resolve(specifier,context,next){
  if(specifier==='three'||specifier==='three/webgpu')return {url:root+'build/three.webgpu.js',shortCircuit:true};

@@ -26,7 +26,7 @@ export async function createStationReflectionProxy(station,{yieldStage=()=>new P
       stats.meshes>=STATION_PROXY_LIMITS.meshes||stats.triangles+triangles>STATION_PROXY_LIMITS.triangles){stats.skipped++;}
    else{
     const mapped=original.map(materialFor), mesh=new Mesh(source.geometry,Array.isArray(source.material)?mapped:mapped[0]);
-    mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);mesh.name=source.name;
+    mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);mesh.matrixWorldNeedsUpdate=true;mesh.name=source.name;
     scene.add(mesh);stats.meshes++;stats.triangles+=triangles;
    }
    if((i+1)%STATION_PROXY_LIMITS.batch===0)await yieldStage();

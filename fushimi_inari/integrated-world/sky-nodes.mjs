@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {SUN_DIRECTIONS,GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 import {normalizeVisualLook} from './visual-look.mjs';
+import {createPaintedClouds} from './aozora-clouds.mjs';
 import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,varying,screenDPR} from 'three/tsl';
 
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
@@ -79,7 +80,8 @@ export function installSky(scene,camera){
       night:['#111a30','#242c46','#3c4158','#62667e','#2f3650']
     }
   };
-  let mode='day',look='natural';
+  let mode='day',look='natural',disposed=false;
+  const paintedClouds=createPaintedClouds({onReady(){if(look==='aozora'&&!disposed)paint();}});
   function paint(){
     stars.visible=mode==='night';sunDisc.visible=mode!=='night';
     sunTint.value.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
@@ -88,13 +90,15 @@ export function installSky(scene,camera){
     const [zenith,middle,horizon,lit,shade]=(creativePalettes[look]??palettes)[mode];
     const gradient=ctx.createLinearGradient(0,0,0,1024);
     gradient.addColorStop(0,zenith);gradient.addColorStop(.30,middle);
-    if(look==='aozora'&&mode==='day'){gradient.addColorStop(.42,'#279deb');gradient.addColorStop(.475,'#8cd5f1');}
+    if(look==='aozora'&&mode==='day'){gradient.addColorStop(.42,'#1388d5');gradient.addColorStop(.475,'#49afe3');gradient.addColorStop(.50,'#a7d5e8');}
     gradient.addColorStop(.51,horizon);gradient.addColorStop(1,horizon);
     ctx.fillStyle=gradient;ctx.fillRect(0,0,2048,1024);
     cloudCtx.clearRect(0,0,2048,1024);
+    cloudMaterial.color.set(look==='aozora'?(mode==='gold'?'#ffc0a1':mode==='night'?'#344d83':'#ffffff'):'#ffffff');
     // Broken banks leave blue sky and a clear sunset horizon between them.
     const banks=look==='aozora'?[[180,390,118,48],[520,433,92,32],[850,350,148,65],[1200,415,108,44],[1530,330,96,55],[1840,440,125,40]]:[[180,402,118,22],[520,433,92,16],[850,350,148,30],[1200,415,108,20],[1530,330,96,22],[1840,440,125,19]];
-    for(const [x,y,w,h] of banks){
+    const painted=look==='aozora'&&paintedClouds.paint(cloudCtx);
+    for(const [x,y,w,h] of painted?[]:banks){
       cloudCtx.save();cloudCtx.filter=look==='aozora'?'blur(1.8px)':'blur(5px)';cloudCtx.globalAlpha=mode==='night'?.32:.86;
       const cloud=cloudCtx.createLinearGradient(0,y-h,0,y+h);
       cloud.addColorStop(0,lit);cloud.addColorStop(.55,lit);cloud.addColorStop(1,shade);
@@ -114,11 +118,16 @@ export function installSky(scene,camera){
   }
   function setLook(value){
     const next=normalizeVisualLook(value);
+    if(next==='aozora')void paintedClouds.prepare();
     if(next===look)return;
     look=next;paint();
   }
   paint();
-  return {setMode,setLook,update(){
+  return {setMode,setLook,get stats(){return {...paintedClouds.stats,look,mode,canvasBytes:2*2048*1024*4};},dispose(){
+    if(disposed)return;disposed=true;paintedClouds.dispose();
+    for(const object of [dome,clouds,sunDisc,stars]){scene.remove(object);if(object===dome||object===clouds)object.geometry.dispose();object.material.dispose();}
+    texture.dispose();cloudTexture.dispose();
+  },update(){
     const seconds=performance.now()/1000,scale=skyDistanceScale(camera.far);
     dome.scale.setScalar(scale);clouds.scale.setScalar(scale);distanceScale.value=scale;
     // The opaque core occupies 22% of the sprite. Enlarge that core at sunset
@@ -126,6 +135,6 @@ export function installSky(scene,camera){
     sunDisc.scale.setScalar((mode==='gold'?740:350)*scale);
     dome.position.copy(camera.position);clouds.position.copy(camera.position);stars.position.copy(camera.position);
     sunDisc.position.copy(camera.position).addScaledVector(sunDirection,scale);
-    clouds.rotation.y=(seconds-startedAt)*SKY_CLOUD_DRIFT;starTime.value=seconds;
+    clouds.rotation.y=(look==='aozora'?1.4:0)+(seconds-startedAt)*SKY_CLOUD_DRIFT;starTime.value=seconds;
   }};
 }

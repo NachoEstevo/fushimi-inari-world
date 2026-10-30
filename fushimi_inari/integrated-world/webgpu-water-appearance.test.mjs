@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {REVISION,Vector3,Mesh,PlaneGeometry} from 'three';
 
-test('r180 water keeps stable node controls, authored levels and Shin-ike optics',{skip:REVISION!=='180'},async()=>{
+test('r180 water keeps stable node controls, authored levels and Shin-ike optics',{skip:!['180','186'].includes(REVISION)},async()=>{
  const {createWaterAppearance,createBasinWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  for(const kind of ['pond','lake','shinike']){
   const material=createWaterAppearance({kind}),control=material.userData.waterAppearance,time=control.uniforms.uWaTime;
@@ -16,7 +16,7 @@ test('r180 water keeps stable node controls, authored levels and Shin-ike optics
  basin.userData.waterAppearance.setMode('night');assert.equal(basin.envMapIntensity,.08);
 });
 
-test('r180 Shin-ike probe preserves bounded appearance caching and releases old output',{skip:REVISION!=='180'},async()=>{
+test('r180 Shin-ike probe preserves bounded appearance caching and releases old output',{skip:!['180','186'].includes(REVISION)},async()=>{
  const {createWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  const {installShinikeReflections}=await import('./webgpu-shinike-reflections.mjs');
  const material=createWaterAppearance({kind:'shinike'}),water=new Mesh(new PlaneGeometry(5,5),material);
@@ -28,7 +28,7 @@ test('r180 Shin-ike probe preserves bounded appearance caching and releases old 
  reflection.dispose();reflection.dispose();assert.equal(disposed,2);assert.equal(material.envMap,null);
 });
 
-test('native probe retains one generator and two alternating textures until disposal',{skip:REVISION!=='180'},async()=>{
+test('native probe retains one generator and two alternating textures until disposal',{skip:!['180','186'].includes(REVISION)},async()=>{
  const THREE=await import('three/webgpu');
  const {createWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  const {installShinikeReflections}=await import('./webgpu-shinike-reflections.mjs');
@@ -51,7 +51,7 @@ test('native probe retains one generator and two alternating textures until disp
 });
 
 
-test('Shin-ike capture coalesces stale looks until nearby and settled',{skip:REVISION!=='180'},async()=>{
+test('Shin-ike capture coalesces stale looks until nearby and settled',{skip:!['180','186'].includes(REVISION)},async()=>{
  const {createWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  const {installShinikeReflections}=await import('./webgpu-shinike-reflections.mjs');
  const water=new Mesh(new PlaneGeometry(5,5),createWaterAppearance({kind:'shinike'}));
@@ -70,7 +70,7 @@ test('Shin-ike capture coalesces stale looks until nearby and settled',{skip:REV
  reflection.dispose();
 });
 
-test('Shin-ike failed stable capture does not retry every frame',{skip:REVISION!=='180'},async()=>{
+test('Shin-ike failed stable capture does not retry every frame',{skip:!['180','186'].includes(REVISION)},async()=>{
  const {createWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  const {installShinikeReflections}=await import('./webgpu-shinike-reflections.mjs');
  const water=new Mesh(new PlaneGeometry(5,5),createWaterAppearance({kind:'shinike'}));
@@ -83,7 +83,7 @@ test('Shin-ike failed stable capture does not retry every frame',{skip:REVISION!
 });
 
 
-test('Shin-ike does not capture during normal per-frame walking',{skip:REVISION!=='180'},async()=>{
+test('Shin-ike does not capture during normal per-frame walking',{skip:!['180','186'].includes(REVISION)},async()=>{
  const {createWaterAppearance}=await import('./webgpu-water-appearance.mjs');
  const {installShinikeReflections}=await import('./webgpu-shinike-reflections.mjs');
  const water=new Mesh(new PlaneGeometry(5,5),createWaterAppearance({kind:'shinike'}));

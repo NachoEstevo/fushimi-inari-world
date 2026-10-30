@@ -7,6 +7,7 @@ import {createMineralSurfaceFinish} from './mineral-surface-finish.mjs';
 import {createSoftLightMotes} from './soft-light-motes.mjs';
 import {normalizeVisualLook} from './visual-look.mjs';
 import {compileSelectedVisuals} from './scoped-compilation.mjs';
+import {createAozoraFoliage} from './aozora-foliage.mjs';
 
 // The caller owns renderer initialization, the render loop and time-of-day.
 export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
@@ -42,6 +43,8 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   // Only named, already-metallic plain finishes otherwise qualify outside the station.
   // Shared replacements retain sharing; unrelated mapped art keeps its finish.
   const replacements=new Map(),bindings=[];
+  const foliage=createAozoraFoliage(assembly.legacy);
+  let foliageReady=false,removeSeasonListener=()=>{};
   function finish(original) {
     if(original?.userData?.worldShrineFinish||original?.userData?.worldMineralFinish)return original;
     if(replacements.has(original))return replacements.get(original);
@@ -87,6 +90,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
       bindings.push({object,original,next});object.material=next;
     }
     });
+    if(foliageReady)foliage.applyTo(root);
   }
   const motion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const petalField=createSakuraPetalField(),petals=petalField.mesh;
@@ -96,7 +100,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const center=new THREE.Vector3(-302.4,31,-176);
   let look='natural',disposed=false,near=false;
   applyTo(scene);
-  const stats={look,nearStation:false,motes:motes.stats,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null};
+  const stats={look,nearStation:false,motes:motes.stats,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null,get foliage(){return foliage.stats;}};
   const lighting=createWorldLookLighting({scene,hemi,sun});
   function applyStationQuality(){
     lighting.setQuality(quality?.mode);motes.setQuality(quality?.mode);
@@ -133,6 +137,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     quality?.setLook(next);
     look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;motes.setEnabled(look==='soft-light');motes.setReducedMotion(motion?.matches);
     lighting.setLook(next);
+    foliage.setLook(next);
     stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;
   }
   function update(time=0) {
@@ -147,6 +152,8 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     if(disposed)return;disposed=true;
     stationProbe.dispose();
     materials?.dispose();
+    removeSeasonListener();
+    foliage.dispose();
     for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
     for(const material of replacements.values())material.dispose();
     scene.remove(practicals,petals);petalField.dispose();motes.dispose();
@@ -154,7 +161,12 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     if(scene.environment===environment.texture)scene.environment=previousEnvironment;
     scene.environmentIntensity=previousIntensity;environment.dispose();
   }
-  return {prepare,update,setLook,updateBaseLighting,applyTo,dispose,stats};
+  return {prepare,update,setLook,updateBaseLighting,applyTo,dispose,stats,setTimeOfDay:mode=>foliage.setTimeOfDay(mode),prepareFoliage(){
+    if(disposed||foliageReady)return;foliageReady=true;foliage.applyTo(scene);
+    const select=document.getElementById('season');
+    const sync=()=>foliage.setSeason(select?.value??'spring');sync();select?.addEventListener('change',sync);
+    removeSeasonListener=()=>select?.removeEventListener('change',sync);
+  }};
 }
 
 // A sparse shell leaves the immediate view clear. All petals share one small,

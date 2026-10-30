@@ -76,3 +76,17 @@ test('r180 pending pipelines skip only their own draw until late GPU completion'
    object.dispose();geometry.dispose();material.dispose();
   }
  });
+
+test('r186 native pipeline readiness rejects pending handles without installing the legacy guard',
+ {skip:THREE.REVISION!=='186'},async()=>{
+  const [{default:DataMap},{default:Pipelines}]=await Promise.all([
+   import('three/src/renderers/common/DataMap.js'),import('three/src/renderers/common/Pipelines.js')]);
+  const backend=new DataMap();backend.isWebGPUBackend=true;backend.draw=()=>{};
+  const original=backend.draw,pipelines=new Pipelines(backend,{}),object={pipeline:{}};
+  pipelines.get(object).pipeline=object.pipeline;
+  const handle=installPendingPipelineGuard(backend);assert.equal(backend.draw,original);
+  assert.equal(pipelines.isReady(object),false);
+  backend.get(object.pipeline).pipeline=null;assert.equal(pipelines.isReady(object),false);
+  backend.get(object.pipeline).pipeline={ready:true};assert.equal(pipelines.isReady(object),true);
+  handle.dispose();assert.equal(backend.draw,original);
+ });

@@ -1,10 +1,10 @@
 import {REVISION,StaticDrawUsage} from 'three';
 
-// r180's default NodeBuffer_<global id> defeats shader sharing across otherwise
+// r180/r186's default NodeBuffer_<global id> defeats shader sharing across otherwise
 // identical static cells. Reserve a local name BEFORE WGSL registers bindings;
 // never rewrite shader text or change a node's data, ordering or descriptors.
 export function installStaticInstanceBufferNames(backend,{objects,revision=REVISION}={}){
- const enabled=String(revision)==='180'&&backend?.isWebGPUBackend===true&&typeof backend.createNodeBuilder==='function'&&objects instanceof WeakSet;
+ const enabled=['180','186'].includes(String(revision))&&backend?.isWebGPUBackend===true&&typeof backend.createNodeBuilder==='function'&&objects instanceof WeakSet;
  const original=backend?.createNodeBuilder,owned=backend&&Object.hasOwn(backend,'createNodeBuilder'),seen=new WeakSet();let disposed=false,builders=0,renamed=0;
  function create(...args){
   const builder=original.apply(this,args);

@@ -15,7 +15,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
 renderer.setSize(innerWidth,innerHeight);
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.type=THREE.PCFShadowMap;
 document.querySelector('#stage').append(renderer.domElement);
 await renderer.init();
 const nativeWebGPU=renderer.backend.isWebGPUBackend===true;
@@ -57,7 +57,7 @@ const views={entrance:{eye:[-282,36,-114],target:[-303,32,-142]},platform:{eye:[
 function selectView(name){const view=views[name];camera.position.set(...view.eye);controls.target.set(...view.target);controls.update();document.querySelectorAll('[data-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.view===name)));}
 
 // Official r180 TSL bloom graph; strength is separate from exposure.
-const post=new THREE.PostProcessing(renderer);
+const post=new THREE.RenderPipeline(renderer);
 const scenePass=pass(scene,camera),color=scenePass.getTextureNode('output');
 const bloomPass=bloom(color,.2,.35,1.15);
 post.outputNode=color.add(bloomPass);

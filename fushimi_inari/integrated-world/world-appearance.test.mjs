@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
 
-test('sakura field stays sparse and outside the immediate camera view',{skip:THREE.REVISION!=='180'},async()=>{
+test('sakura field stays sparse and outside the immediate camera view',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
   const {createSakuraPetalField}=await import('./world-appearance.mjs');
   const field=createSakuraPetalField(),camera=new THREE.Vector3(100,20,-30),matrix=new THREE.Matrix4();
   try {
@@ -37,7 +37,7 @@ async function fixture(mode='day') {
   return {scene,hemi,sun,day,lighting:createWorldLookLighting({scene,hemi,sun})};
 }
 
-test('High daylight contrast is reversible, noncompounding and preserves readable night',{skip:THREE.REVISION!=='180'},async()=>{
+test('High daylight contrast is reversible, noncompounding and preserves readable night',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {scene,hemi,sun,day,lighting}=await fixture();
  const base=[hemi.intensity,sun.intensity,scene.environmentIntensity];
  for(let i=0;i<10;i++)lighting.setQuality('high');
@@ -48,7 +48,7 @@ test('High daylight contrast is reversible, noncompounding and preserves readabl
  assert.deepEqual([hemi.intensity,sun.intensity,scene.environmentIntensity],base);
 });
 
-test('night energy survives every look, and repeated selection never compounds',{skip:THREE.REVISION!=='180'},async()=>{
+test('night energy survives every look, and repeated selection never compounds',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
   const {scene,hemi,sun,day,lighting}=await fixture();
   lighting.setLook('sakura');lighting.updateBaseLighting(()=>day('night'));
   assert.equal(sun.intensity,LIGHT_PRESETS.night.sun*1.06);
@@ -66,7 +66,7 @@ test('night energy survives every look, and repeated selection never compounds',
   assert.ok(hemi.color.equals(new THREE.Color(LIGHT_PRESETS.night.sky)));
 });
 
-test('partial day updates restore raw colors before capture and preserve selected tint',{skip:THREE.REVISION!=='180'},async()=>{
+test('partial day updates restore raw colors before capture and preserve selected tint',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
   const {scene,hemi,sun,lighting}=await fixture('gold');
   const base=sun.color.clone();lighting.setLook('sakura');
   lighting.updateBaseLighting(()=>{sun.intensity=.1;hemi.intensity=.2;});
@@ -77,7 +77,7 @@ test('partial day updates restore raw colors before capture and preserve selecte
   assert.ok(sun.color.equals(base));assert.equal(sun.intensity,.1);
 });
 
-test('return to daylight restores daylight environment and latest preset hue',{skip:THREE.REVISION!=='180'},async()=>{
+test('return to daylight restores daylight environment and latest preset hue',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
   const {scene,sun,day,lighting}=await fixture('night');
   lighting.setLook('dreamcore');lighting.updateBaseLighting(()=>day('gold'));
   const gold=new THREE.Color(LIGHT_PRESETS.gold.color);
@@ -87,7 +87,7 @@ test('return to daylight restores daylight environment and latest preset hue',{s
   assert.ok(sun.color.equals(new THREE.Color(LIGHT_PRESETS.day.color)));
 });
 
-test('live quality, look and station transitions retain one environment without scene captures',{skip:THREE.REVISION!=='180'},async()=>{
+test('live quality, look and station transitions retain one environment without scene captures',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
   const GPU=await import('three/webgpu');
   const {installWorldAppearance}=await import('./world-appearance.mjs');
   const original=GPU.PMREMGenerator.prototype.fromScene;
@@ -166,7 +166,7 @@ test('live quality, look and station transitions retain one environment without 
 });
 
 
-test('High prepares only the bounded station surrogate once and keeps the global environment', {skip:THREE.REVISION!=='180'},async()=>{
+test('High prepares only the bounded station surrogate once and keeps the global environment', {skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const GPU=await import('three/webgpu'),{installWorldAppearance}=await import('./world-appearance.mjs');
  const fromScene=GPU.PMREMGenerator.prototype.fromScene,captures=[];
  GPU.PMREMGenerator.prototype.fromScene=function(scene,sigma,near,far,options){
@@ -192,7 +192,7 @@ test('High prepares only the bounded station surrogate once and keeps the global
  }finally{appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=fromScene;geometry.dispose();source.dispose();}
 });
 
- test('Aozora cool skylight and warm sunlight are reversible without brightening night',{skip:THREE.REVISION!=='180'},async()=>{
+ test('Aozora cool skylight and warm sunlight are reversible without brightening night',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {scene,hemi,sun,lighting,day}=await fixture();
  const original=[hemi.color.clone(),sun.color.clone(),hemi.intensity,sun.intensity];
  lighting.setLook('aozora');assert.ok(!hemi.color.equals(original[0]));

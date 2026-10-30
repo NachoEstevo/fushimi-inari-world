@@ -103,9 +103,12 @@ function completionDigest(scene,report){
 // Independently reproduced from the four original HEAD 7c18302 modules under
 // each runtime. ConeGeometry emits 12 triangles in r164 and 8 in r180;
 // twelve lantern roofs account for the 48-triangle Gehaiden difference.
+// r186 independently reproduced from unchanged HEAD f448b9f builders. New
+// SphereGeometry ring-radius math changes Gehaiden's existing fastener bytes.
 const originalCompletionDigests={
  '164':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'6d83b1e644c1531a23bbc2d4e8dfc5034e767c9b5fda15f2ca7dff06caf2fc77'},
- '180':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'d0244071c0650d5b627a13d9a9846e9e6f0e66b4c1dd7f9d3d2497e69cd73a00'}
+ '180':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'d0244071c0650d5b627a13d9a9846e9e6f0e66b4c1dd7f9d3d2497e69cd73a00'},
+ '186':{romon:'87a161c95f74a0d14425ca493166b79a3fe9e912e486bb1fe8e34ee9c690be39',gehaiden:'42bd8b43b023320a285601652ea92b0b540a8caf5843a48437ffdcbbce76a7e2'}
 };
 for(const zone of ['romon','gehaiden'])test(`${zone}: staged architecture preserves original production buffers and yields bounded work`,()=>{
  assert.equal(typeof architectureStages.refineRomonGehaidenR95Stages,'function');

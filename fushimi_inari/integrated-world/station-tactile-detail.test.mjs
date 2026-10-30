@@ -46,7 +46,7 @@ test('unsupported station contracts add no geometry or resource owners',()=>{
  }
 });
 
-test('existing bounded reflection surrogate excludes the instanced detail rather than multiplying probe geometry',{skip:THREE.REVISION!=='180'},async()=>{
+test('existing bounded reflection surrogate excludes the instanced detail rather than multiplying probe geometry',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {createStationReflectionProxy}=await import('./station-reflection-proxy.mjs');
  const station=fixture(),source=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial());station.group.add(source);
  const detail=createStationTactileDetail(station);detail.setEnabled(true);

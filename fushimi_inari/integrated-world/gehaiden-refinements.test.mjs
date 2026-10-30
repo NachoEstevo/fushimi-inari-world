@@ -28,10 +28,17 @@ function digest(scene){
  return createHash('sha256').update(JSON.stringify(objects)).digest('hex');
 }
 // Captured from the original synchronous implementation before introducing stages.
-const originalDigest='9deb3b80c45be7e36bc69e938f862a3d46f8ade37bb1afbffaf9842d2dc7b1b5';
+// r186 independently reproduced from unchanged HEAD f448b9f builders: newer
+// SphereGeometry ring-radius math changes fastener position/normal bytes.
+const originalDigests={
+ '164':'9deb3b80c45be7e36bc69e938f862a3d46f8ade37bb1afbffaf9842d2dc7b1b5',
+ '180':'9deb3b80c45be7e36bc69e938f862a3d46f8ade37bb1afbffaf9842d2dc7b1b5',
+ '186':'0e96addaccd58f22c4a8736bdc59af3637851828a2ea98fd6a797e6877a67c74'
+};
 
 test('staged Gehaiden preserves every original production buffer, transform, binding and diagnostic',()=>{
  assert.equal(typeof refinement.refineGehaidenStages,'function');
+ const originalDigest=originalDigests[THREE.REVISION];assert.ok(originalDigest,`Original production digest required for Three r${THREE.REVISION}`);
  for(const staged of [false,true]){
   const scene=fixture();let returned;
   if(staged){const stages=refinement.refineGehaidenStages(scene),labels=[];let step;do{step=stages.next();if(!step.done)labels.push(step.value);}while(!step.done);returned=step.value;assert.ok(labels.length>20);assert.ok(labels.includes('gehaiden:rails'));assert.ok(labels.includes('gehaiden:fittings'));}

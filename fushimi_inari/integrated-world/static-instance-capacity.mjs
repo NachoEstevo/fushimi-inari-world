@@ -1,13 +1,14 @@
 import {REVISION,StaticDrawUsage,InstancedBufferAttribute} from 'three';
 
-// r180 emits a uniform mat4 array sized from instanceMatrix.count for <=1000
+// r180/r186 emit uniform mat4 arrays sized from instanceMatrix.count for <=1000
 // entries. Group storage capacities before FIRST compilation while preserving
 // every authored matrix and the independent mesh.count used by draws/bounds.
 // Pass only explicit immutable owners; growing into the spare slots is not an
-// authored placement. Larger arrays already use r180's vertex-attribute path.
+// authored placement. Keep this mitigation within 64000 bytes even when r186's
+// backend supports a larger uniform buffer; larger capacities stay untouched.
 export function padStaticInstanceMatrices(roots,{revision=REVISION,onEligible=()=>{}}={}){
  const stats={eligible:0,padded:0,uniqueBefore:0,uniqueAfter:0,capacitiesBefore:[],capacitiesAfter:[],extraBytes:0};
- if(String(revision)!=='180')return stats;
+ if(!['180','186'].includes(String(revision)))return stats;
  const seen=new Set(),before=new Set(),after=new Set();
  for(const root of roots)root?.traverse?.(mesh=>{
   if(seen.has(mesh)||!mesh.isInstancedMesh)return;seen.add(mesh);

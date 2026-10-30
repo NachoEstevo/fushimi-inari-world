@@ -1,7 +1,9 @@
+import {REVISION} from 'three';
 // Three r180 caches a pipeline before createRenderPipelineAsync resolves.
 // Guard its WebGPU draw boundary so unrelated ready objects can still render.
-export function installPendingPipelineGuard(backend){
- if(!backend?.isWebGPUBackend||typeof backend.get!=='function'||typeof backend.draw!=='function')return {get stats(){return {skipped:0,lastObjectName:''};},dispose(){}};
+// r186 performs this readiness check natively; leave its draw path untouched.
+export function installPendingPipelineGuard(backend,{revision=REVISION}={}){
+ if(String(revision)!=='180'||!backend?.isWebGPUBackend||typeof backend.get!=='function'||typeof backend.draw!=='function')return {get stats(){return {skipped:0,lastObjectName:''};},dispose(){}};
  const original=backend.draw,owned=Object.hasOwn(backend,'draw');
  let skipped=0,lastObjectName='';
  function draw(renderObject,info){

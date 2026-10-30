@@ -3,6 +3,8 @@ import {pass,uniform,vec3,vec4,mix} from 'three/tsl';
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {installPendingPipelineGuard} from './pending-pipeline-guard.mjs';
 import {normalizeVisualLook,LOOK_BLOOM,LOOK_GRADE} from './visual-look.mjs';
+import {settleRenderer} from './renderer-settle.mjs';
+import {compileScenePass} from './scene-pass-compilation.mjs';
 
 const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
 export function qualityPixelRatio(mode,dpr,width,height){
@@ -19,7 +21,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   let pending=0,compiling=0,queue=Promise.resolve(),resolution;
   const pipelineGuard=installPendingPipelineGuard(renderer.backend);
   const originalTextures=new Map();
-  const post=new THREE.PostProcessing(renderer);
+  const post=new THREE.RenderPipeline(renderer);
   const scenePass=pass(scene,camera),foreground=scenePass.getTextureNode('output');
   const color=cityHorizon?cityHorizon.compose(foreground,scenePass.getTextureNode('depth')):foreground;
   const glow=bloom(color,.12,.35,1.2);
@@ -56,7 +58,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
     pending++;transitioning=true;report();
     const task=queue.then(async()=>{
       if(disposed)return;
-      await renderer.waitForGPU?.();
+      await settleRenderer(renderer);
       if(!disposed)change();
     });
     queue=task.catch(()=>{});
@@ -89,16 +91,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
     try{
       // PassNode configures type and MSAA lazily during graph setup. Mirror its
       // actual setup before a pre-arrival compile, even before the first render.
-      scenePass.setup({renderer});
-      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
-      let work;
-      try{
-        renderer.setRenderTarget(scenePass.renderTarget);renderer.setMRT(scenePass.getMRT());
-        work=renderer.compileAsync(scope,view,targetScene);
-      }finally{
-        // Submission is synchronous; restore before waiting for GPU pipelines.
-        renderer.setRenderTarget(previous.target,previous.face,previous.mip);renderer.setMRT(previous.mrt);
-      }
+      const work=compileScenePass(renderer,scenePass,scope,view,targetScene);
       return Promise.resolve(work).finally(()=>{compiling--;});
     }catch(error){compiling--;throw error;}
   }

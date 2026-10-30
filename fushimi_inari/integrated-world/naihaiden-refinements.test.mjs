@@ -17,12 +17,26 @@ export function loadNaihaidenSource(){
   const materials={vermilionMat:mats.find(m=>m.name==='MAT_Vermilion_ShuIro'),goldMat:mats.find(m=>m.name==='MAT_Gold_Kanagu_Leaf')};return {scene,materials};
 }
 
+function productionDigest(scene){
+ const h=createHash('sha256');scene.traverse(o=>{if(!o.isMesh)return;h.update(o.name);h.update(o.material.name);for(const [name,a]of Object.entries(o.geometry.attributes)){h.update(name);h.update(new Uint8Array(a.array.buffer,a.array.byteOffset,a.array.byteLength));}if(o.geometry.index){const a=o.geometry.index.array;h.update(new Uint8Array(a.buffer,a.byteOffset,a.byteLength));}});
+ return h.digest('hex');
+}
+// Reproduced from unchanged HEAD f448b9f builders under each runtime. r186's
+// SphereGeometry math changes floral fitting/carving position and normal bytes.
+const originalDigests={
+ '164':'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2',
+ '180':'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2',
+ '186':'b5e42a7cd3b51aad40529726be6e5bce0519424cb554caa63c654e4dfd1e7975'
+};
+
 test('cooperative stages preserve the original GLB buffers and commit only after completing',()=>{
+ const expectedDigest=originalDigests[THREE.REVISION];assert.ok(expectedDigest,`Original production digest required for Three r${THREE.REVISION}`);
  const {scene,materials}=loadNaihaidenSource(),original=[...scene.children],work=naihaiden.refineNaihaidenStages?.(scene,materials);assert.ok(work);
  let step,count=0;do{step=work.next();if(!step.done){count++;assert.match(step.value,/^naihaiden:/);assert.deepEqual(scene.children,original);}}while(!step.done);
  assert.ok(count>10);assert.equal(step.value.exposedRafterTrianglesRemoved,1728);
- const h=createHash('sha256');scene.traverse(o=>{if(!o.isMesh)return;h.update(o.name);h.update(o.material.name);for(const [name,a]of Object.entries(o.geometry.attributes)){h.update(name);h.update(new Uint8Array(a.array.buffer,a.array.byteOffset,a.array.byteLength));}if(o.geometry.index){const a=o.geometry.index.array;h.update(new Uint8Array(a.buffer,a.byteOffset,a.byteLength));}});
- assert.equal(h.digest('hex'),'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2');
+ assert.equal(productionDigest(scene),expectedDigest);
+ const synchronous=loadNaihaidenSource();refineNaihaiden(synchronous.scene,synchronous.materials);
+ assert.equal(productionDigest(synchronous.scene),expectedDigest);
 });
 
 test('actual GLB gets one sagging prayer facade while roof, stairs and lanterns retain exact geometry',()=>{

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 
-test('isolated horizon stays within its pixel budget at common aspect ratios',{skip:THREE.REVISION!=='180'},async()=>{
+test('isolated horizon stays within its pixel budget at common aspect ratios',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {cityHorizonSize,CITY_HORIZON_MAX_PIXELS}=await import('./city-horizon-pass.mjs');
  for(const [width,height]of [[1920,1080],[3840,2160],[5120,1440],[390,844],[1,1]]){
   const [w,h]=cityHorizonSize(width,height);
@@ -11,7 +11,7 @@ test('isolated horizon stays within its pixel budget at common aspect ratios',{s
  }
 });
 
-test('horizon renders only its city root and restores renderer and ownership',{skip:THREE.REVISION!=='180'},async()=>{
+test('horizon renders only its city root and restores renderer and ownership',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {createCityHorizonPass}=await import('./city-horizon-pass.mjs');
  const {vec4,float}=await import('three/tsl');
  const worldScene=new THREE.Scene(),root=new THREE.Group(),nearWorld=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
@@ -35,10 +35,17 @@ test('horizon renders only its city root and restores renderer and ownership',{s
  const pass=createCityHorizonPass({renderer,worldScene,root,camera});
  try{
   assert.equal(root.parent.name,'Isolated mapped city horizon');assert.equal(worldScene.children.includes(nearWorld),true);
-  const foreground=vec4(.2,.4,.6,1),composition=pass.compose(foreground,float(1));
-  assert.ok(composition.isNode);assert.equal(composition.method,'mix');
-  assert.equal(composition.aNode,foreground,'mix first operand is the foreground, never its factor');
-  assert.notEqual(composition.cNode,foreground,'the scalar depth/alpha mask supplies the interpolation factor');
+  const foreground=vec4(.2,.4,.6,1),depth=float(1),composition=pass.compose(foreground,depth);
+  const mixes=[];composition.traverse(node=>{if(node.isMathNode&&node.method==='mix')mixes.push(node);});
+  assert.equal(mixes.length,1,'composition has one foreground/horizon interpolation');
+  const [blend]=mixes,maskNodes=[];blend.cNode.traverse(node=>maskNodes.push(node));
+  assert.equal(blend.aNode,foreground,'mix first operand is the foreground, never its factor');
+  assert.ok(maskNodes.includes(depth),'depth controls the interpolation factor');
+  assert.ok(!maskNodes.includes(foreground),'foreground color never supplies the interpolation factor');
+  assert.ok(maskNodes.some(node=>node.isSplitNode&&node.components==='w'&&node.node.value===pass.texture),'horizon alpha controls the interpolation factor');
+  const horizonNodes=[];blend.bNode.traverse(node=>horizonNodes.push(node));
+  assert.ok(horizonNodes.some(node=>node.isSplitNode&&node.components==='xyz'&&node.node.value===pass.texture),'second operand uses the horizon RGB');
+  assert.ok(horizonNodes.some(node=>node.isSplitNode&&node.components==='w'&&node.node===foreground),'second operand preserves foreground alpha');
   root.visible=false;pass.render();assert.equal(renders,0);assert.equal(pass.stats.active,false);
   root.visible=true;pass.render();assert.equal(renders,1);assert.equal(pass.stats.active,true);
   assert.equal(activeTarget,target);assert.equal(renderer.autoClear,false);assert.equal(camera.far,100);
@@ -68,7 +75,7 @@ test('horizon renders only its city root and restores renderer and ownership',{s
 });
 
 
-test('fully fogged terrain admits the horizon before clear depth while nearby silhouettes occlude',{skip:THREE.REVISION!=='180'},async()=>{
+test('fully fogged terrain admits the horizon before clear depth while nearby silhouettes occlude',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {cityHorizonDepthGate}=await import('./city-horizon-pass.mjs');
  for(const coordinateSystem of [THREE.WebGLCoordinateSystem,THREE.WebGPUCoordinateSystem]){
   const camera=new THREE.PerspectiveCamera(70,1.6,.1,100);camera.coordinateSystem=coordinateSystem;camera.updateProjectionMatrix();
@@ -84,7 +91,7 @@ test('fully fogged terrain admits the horizon before clear depth while nearby si
   const noFog=cityHorizonDepthGate(camera,null);assert.ok(Math.abs(noFog.threshold-1)<1e-12);
  }
 });
-test('hidden horizon prewarm compiles actual Basic materials and target without activating a viewport',{skip:THREE.REVISION!=='180'},async()=>{
+test('hidden horizon prewarm compiles actual Basic materials and target without activating a viewport',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
  const {createCityHorizonPass}=await import('./city-horizon-pass.mjs');
  const worldScene=new THREE.Scene(),root=new THREE.Group(),camera=new THREE.PerspectiveCamera(70,1,.1,100);
  const geometry=new THREE.BoxGeometry(),source=new THREE.MeshLambertMaterial();
