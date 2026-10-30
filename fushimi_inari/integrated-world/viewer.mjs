@@ -906,7 +906,7 @@ try {
   loadingStage('Preparing pond reflections…');
   try{
     const prepared=await prepareShinikeForWalking({probe:pondReflections,water:shinikeWater,camera,scene,quality,detailChunks,textureStreaming,
-      restoreView:prepareNearby,settle:()=>settleRenderer(renderer),getLights:compilationLights.getLights,getAppearanceKey:pondAppearanceKey});
+      waitForTextures:false,restoreView:prepareNearby,settle:()=>settleRenderer(renderer),getLights:compilationLights.getLights,getAppearanceKey:pondAppearanceKey});
     document.body.dataset.pondPreparation=JSON.stringify(prepared);
   }catch(error){document.body.dataset.pondPreparation=JSON.stringify({prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
   loadingStage('Preparing train and platform…');
