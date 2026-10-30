@@ -55,8 +55,8 @@ test('night energy survives every look, and repeated selection never compounds',
   const intensity=scene.environmentIntensity,color=sun.color.clone();
   for(let i=0;i<10;i++)lighting.setLook('sakura');
   assert.equal(scene.environmentIntensity,intensity);assert.ok(sun.color.equals(color));
-  assert.equal(hemi.intensity,LIGHT_PRESETS.night.fill*.88);
-  for(const look of ['natural','sakura','dreamcore']) {
+  assert.equal(hemi.intensity,LIGHT_PRESETS.night.fill*.92);
+  for(const look of ['natural','sakura','dreamcore','aozora']) {
     lighting.setLook(look);
     assert.ok(scene.environmentIntensity<.14,'night studio IBL remains below half the natural day value');
     assert.ok(sun.intensity<.4,'creative look preserves night sun energy');
@@ -71,7 +71,7 @@ test('partial day updates restore raw colors before capture and preserve selecte
   const base=sun.color.clone();lighting.setLook('sakura');
   lighting.updateBaseLighting(()=>{sun.intensity=.1;hemi.intensity=.2;});
   assert.equal(sun.intensity,.1*1.06);
-  assert.ok(sun.color.equals(base.clone().lerp(new THREE.Color('#ffbc91'),.35)));
+  assert.ok(sun.color.equals(base.clone().lerp(new THREE.Color('#ffe3bd'),.35)));
   assert.ok(scene.environmentIntensity<.03);
   lighting.setLook('natural');
   assert.ok(sun.color.equals(base));assert.equal(sun.intensity,.1);
@@ -190,4 +190,17 @@ test('High prepares only the bounded station surrogate once and keeps the global
   quality.mode='balanced';await appearance.prepare();assert.equal(finish.envMap,null);assert.equal(scene.environment,environment);
   quality.mode='high';await appearance.prepare();assert.equal(captures.length,1);assert.equal(appearance.stats.localReflections,true);
  }finally{appearance?.dispose();GPU.PMREMGenerator.prototype.fromScene=fromScene;geometry.dispose();source.dispose();}
+});
+
+ test('Aozora cool skylight and warm sunlight are reversible without brightening night',{skip:THREE.REVISION!=='180'},async()=>{
+ const {scene,hemi,sun,lighting,day}=await fixture();
+ const original=[hemi.color.clone(),sun.color.clone(),hemi.intensity,sun.intensity];
+ lighting.setLook('aozora');assert.ok(!hemi.color.equals(original[0]));
+ const colors=[hemi.color.clone(),sun.color.clone()];
+ for(let i=0;i<20;i++){lighting.setLook('sakura');lighting.setLook('aozora');}
+ assert.ok(hemi.color.equals(colors[0]));assert.ok(sun.color.equals(colors[1]));
+ lighting.updateBaseLighting(()=>day('night'));assert.ok(scene.environmentIntensity<.14);
+ lighting.updateBaseLighting(()=>day('day'));lighting.setLook('natural');
+ assert.ok(hemi.color.equals(original[0]));assert.ok(sun.color.equals(original[1]));
+ assert.equal(hemi.intensity,original[2]);assert.equal(sun.intensity,original[3]);
 });

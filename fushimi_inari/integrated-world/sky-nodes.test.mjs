@@ -24,7 +24,7 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     const angularDiameter=THREE.MathUtils.radToDeg(2*Math.atan(sun.scale.x*.22/(2*sun.position.distanceTo(camera.position))));
     assert.ok(angularDiameter>1.5&&angularDiameter<2,'the warm sunset core remains legible as a broad cinematic disc, rather than only enlarging its transparent halo');
     assert.ok(direction.distanceTo(new THREE.Vector3(...LIGHT_PRESETS.gold.offset).normalize())<1e-10,'visible disc and directional shadows share one solar direction');
-    for(const look of ['natural','sakura','dreamcore']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HORIZON_COLORS.gold,'golden sky meets the same haze as the scene fog');}
+    for(const look of ['natural','sakura','dreamcore','aozora']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HORIZON_COLORS.gold,'golden sky meets the same haze as the scene fog');}
     const tints=[];sun.material.colorNode.traverse(node=>{if(node.isUniformNode&&node.value?.isColor)tints.push(node.value.getHexString());});
     assert.ok(tints.includes(GOLDEN_ATMOSPHERE.disc.slice(1)),'the rendered solar disc uses the shared red-orange tint');
     assert.equal(sun.material.toneMapped,false);
@@ -35,6 +35,12 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     sky.setMode('night');assert.equal(sun.visible,false);
     assert.ok(scene.children.find(object=>object.isSprite&&object!==sun).visible);
     sky.setLook('sakura');sky.setLook('dreamcore');sky.setMode('day');sky.update();assert.ok(sun.visible);
+    sky.setLook('aozora');const textureCount=scene.children.filter(o=>o.material.map).length,cloudMap=clouds.material.map;
+    const blue=canvases[0].context.gradients.at(-1);assert.equal(blue[0][1],'#0754bb');
+    const paintCount=canvases[0].context.paints;for(let i=0;i<60;i++)sky.update();
+    assert.equal(canvases[0].context.paints,paintCount);assert.equal(clouds.material.map,cloudMap);
+    assert.equal(scene.children.filter(o=>o.material.map).length,textureCount);
+
     const dome=scene.children.find(object=>object.geometry?.parameters.radius===6000);
     for(const far of [700,1000,1400,12000]){
       camera.far=far;sky.update();const scale=skyDistanceScale(far);

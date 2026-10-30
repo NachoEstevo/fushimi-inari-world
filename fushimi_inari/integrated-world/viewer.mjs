@@ -723,7 +723,7 @@ try {
     }
   });
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
-  const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="soft-light">Soft light</option>';
+  const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="soft-light">Soft light</option><option value="aozora">Aozora</option>';
   $('scene-settings').append(lookLabel,lookSelect);
   lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
   // Stable matrix-buffer capacities share r180 shaders across static cells.

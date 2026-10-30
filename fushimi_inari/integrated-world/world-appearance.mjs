@@ -190,7 +190,8 @@ export function createSakuraPetalField() {
 export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
   const baseline={hemi:hemi.color.clone(),floor:hemi.groundColor.clone(),ambient:hemi.intensity,sun:sun.color.clone(),intensity:sun.intensity};
   const looks={
-    sakura:{hemi:'#f4c7e4',floor:'#766278',sun:'#ffbc91',ambient:.88,intensity:1.06,environment:.35},
+    sakura:{hemi:'#dddef5',floor:'#787784',sun:'#ffe3bd',ambient:.92,intensity:1.06,environment:.33},
+    aozora:{hemi:'#94cafa',floor:'#698776',sun:'#fff0cf',ambient:.94,intensity:1.08,environment:.32},
     'soft-light':{hemi:'#f0eadf',floor:'#68735f',sun:'#fff2cf',ambient:.98,intensity:1.04,environment:.34}
   };
   let look='natural',high=false;

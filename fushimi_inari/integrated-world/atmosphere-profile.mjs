@@ -7,6 +7,6 @@ export const SUN_DIRECTIONS=Object.freeze({
 });
 
 export const GOLDEN_ATMOSPHERE=Object.freeze({
- light:0xff8a55,sky:0xe4ac8e,ground:0x735047,disc:'#ff623b',horizon:'#e99568',
- skyPalette:Object.freeze(['#6b6688','#d58c75','#e99568','#ffce9e','#a16f7e'])
+ light:0xff9662,sky:0x9daecf,ground:0x65555b,disc:'#ff623b',horizon:'#ec9a74',
+ skyPalette:Object.freeze(['#555e9d','#b17d9f','#ec9a74','#ffe5b9','#937b9b'])
 });

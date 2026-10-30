@@ -142,6 +142,7 @@ test('WebGPU switches apply shadows, filtering, creative looks and restore Balan
     assert.equal(report().shadowSize,2048);
     assert.equal(disposed,0);
     assert.equal(report().maxPixels,2000000);
+    quality.setLook('aozora');assert.equal(report().look,'aozora');assert.equal(report().bloom,.20*.65);
     quality.setLook('dreamcore');
     assert.equal(report().look,'soft-light');assert.equal(report().bloom,.36*.65);
     await quality.setMode('high');

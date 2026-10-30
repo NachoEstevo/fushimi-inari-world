@@ -64,9 +64,14 @@ export function installSky(scene,camera){
   // Creative palettes retain each time-of-day's brightness: night remains dark.
   const creativePalettes={
     sakura:{
-      day:['#a889bb','#dfb5ce','#f4d3d3','#fff1ec','#cda5bf'],
-      gold:['#8d709f','#d88f9b',GOLDEN_ATMOSPHERE.horizon,'#ffd0ad','#aa737e'],
+      day:['#7899cf','#c1bce4','#f4d5df','#fff8ed','#b7b3cf'],
+      gold:['#686eaf','#c88eaf',GOLDEN_ATMOSPHERE.horizon,'#ffe3d1','#a282a8'],
       night:['#17152d','#30213e','#493047','#6e506a','#382c49']
+    },
+    aozora:{
+      day:['#0754bb','#1074d6','#d7e6e7','#fffaf0','#8badd2'],
+      gold:['#314f9b','#ad83bc',GOLDEN_ATMOSPHERE.horizon,'#ffe6c2','#777eae'],
+      night:['#071435','#172b57','#34465c','#788fb5','#263a64']
     },
     'soft-light':{
       day:['#829eae','#c1d0cd','#e8dfca','#fff4dc','#a7b9b3'],
@@ -83,12 +88,14 @@ export function installSky(scene,camera){
     const [zenith,middle,horizon,lit,shade]=(creativePalettes[look]??palettes)[mode];
     const gradient=ctx.createLinearGradient(0,0,0,1024);
     gradient.addColorStop(0,zenith);gradient.addColorStop(.30,middle);
+    if(look==='aozora'&&mode==='day'){gradient.addColorStop(.42,'#279deb');gradient.addColorStop(.475,'#8cd5f1');}
     gradient.addColorStop(.51,horizon);gradient.addColorStop(1,horizon);
     ctx.fillStyle=gradient;ctx.fillRect(0,0,2048,1024);
     cloudCtx.clearRect(0,0,2048,1024);
     // Broken banks leave blue sky and a clear sunset horizon between them.
-    for(const [x,y,w,h] of [[180,402,118,22],[520,433,92,16],[850,350,148,30],[1200,415,108,20],[1530,330,96,22],[1840,440,125,19]]){
-      cloudCtx.save();cloudCtx.filter='blur(5px)';cloudCtx.globalAlpha=mode==='night'?.32:.86;
+    const banks=look==='aozora'?[[180,390,118,48],[520,433,92,32],[850,350,148,65],[1200,415,108,44],[1530,330,96,55],[1840,440,125,40]]:[[180,402,118,22],[520,433,92,16],[850,350,148,30],[1200,415,108,20],[1530,330,96,22],[1840,440,125,19]];
+    for(const [x,y,w,h] of banks){
+      cloudCtx.save();cloudCtx.filter=look==='aozora'?'blur(1.8px)':'blur(5px)';cloudCtx.globalAlpha=mode==='night'?.32:.86;
       const cloud=cloudCtx.createLinearGradient(0,y-h,0,y+h);
       cloud.addColorStop(0,lit);cloud.addColorStop(.55,lit);cloud.addColorStop(1,shade);
       cloudCtx.fillStyle=cloud;cloudCtx.beginPath();
