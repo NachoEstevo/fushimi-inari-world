@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createWaterAppearance} from './water-appearance.mjs?v=immersion-20261025c';
-import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
+import {clipMitsuTerrain,clipMitsuTerrainAsync} from './mitsu-frontage-aprons.mjs';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 export const SHINIKE_ID='way/105449705';
 const NAME='Shin-ike single horizontal water owner R97';
@@ -47,6 +48,19 @@ function legacyFallenLog(root,plan){
 // Clip one mapped ring through the existing exact polygon-subtraction owner.
 // Original exterior triangle planes stay unchanged; no height sampler changes.
 export function buildShinikeWaterR97(root,features,materials={},options={}){
+ const work=shinikeWaterWork(root,features,materials,options,clipMitsuTerrain);let step=work.next();
+ while(!step.done)step=work.next(step.value);return step.value;
+}
+export async function buildShinikeWaterR97Async(root,features,materials={},options={}){
+ const yieldWork=options.yieldWork??yieldStartupTask,checkpoint=createStartupCheckpoint({yieldWork,clock:options.clock});
+ const work=shinikeWaterWork(root,features,materials,options,(v,m)=>clipMitsuTerrainAsync(v,m,{yieldWork}));let step=work.next();
+ while(!step.done){
+  const result=step.value?await step.value:undefined;
+  const pause=checkpoint();if(pause)await pause;
+  step=work.next(result);
+ }return step.value;
+}
+function* shinikeWaterWork(root,features,materials,options,clipWork){
  const previous=root.getObjectByName(NAME);if(previous)return previous.userData;
  const plan=shinikeLayoutR97(features);if(!plan)return {built:false,builtIds:[],reason:'mapped-shinike-signature-required'};
  const legacy=legacyPlane(root);if(!legacy)return {built:false,builtIds:[],reason:'unique-legacy-water-signature-required'};
@@ -56,7 +70,12 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
  const shoreline=[];let covered=0,min=Infinity,max=-Infinity,minWitness=null;
  // Intersect every pond-boundary segment with each original triangle using
  // barycentric half-spaces. This records actual cut-edge creases and heights.
- for(let i=0;i<terrain.length;i+=9){const vs=[0,1,2].map(k=>Array.from(terrain.slice(i+k*3,i+k*3+3))),flat=vs.map(xy);if(Math.max(...flat.map(p=>p[0]))<plan.bounds[0]||Math.min(...flat.map(p=>p[0]))>plan.bounds[1]||Math.max(...flat.map(p=>p[1]))<plan.bounds[2]||Math.min(...flat.map(p=>p[1]))>plan.bounds[3])continue;
+ for(let i=0;i<terrain.length;i+=9){
+  if(i%2304===0)yield;
+  // The pond occupies a tiny part of the world. Reject remote triangles before
+  // allocating their polygon/coordinate arrays; accepted arithmetic is exact.
+  if(Math.max(terrain[i],terrain[i+3],terrain[i+6])<plan.bounds[0]||Math.min(terrain[i],terrain[i+3],terrain[i+6])>plan.bounds[1]||Math.max(terrain[i+2],terrain[i+5],terrain[i+8])<plan.bounds[2]||Math.min(terrain[i+2],terrain[i+5],terrain[i+8])>plan.bounds[3])continue;
+  const vs=[0,1,2].map(k=>Array.from(terrain.slice(i+k*3,i+k*3+3))),flat=vs.map(xy);
   const [a,b,c]=vs,det=(b[0]-a[0])*(c[2]-a[2])-(b[2]-a[2])*(c[0]-a[0]);if(Math.abs(det)<1e-12)continue;
   const bary=p=>{const u=((p[0]-a[0])*(c[2]-a[2])-(p[1]-a[2])*(c[0]-a[0]))/det,v=((b[0]-a[0])*(p[1]-a[2])-(b[2]-a[2])*(p[0]-a[0]))/det;return [1-u-v,u,v];};
   const height=p=>bary(p).reduce((sum,v,k)=>sum+v*vs[k][1],0);
@@ -72,7 +91,7 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
  if(min<waterLevel+.03)return {built:false,builtIds:[],reason:'water-above-lowest-retained-shore',waterLevel,min,minWitness};
  const clipTerrain=vertices=>{if(vertices.length%9||!vertices.every(Number.isFinite))throw Error('Shin-ike terrain requires finite triangle positions');return clipMitsuTerrain(vertices,plan.triangles);};
  // Validate clipping before removing the legacy plane or attaching any geometry.
- const clipped=clipTerrain(terrain);if(!clipped.length)return {built:false,builtIds:[],reason:'terrain-clip-unexpectedly-empty'};
+ const clipped=yield clipWork(terrain,plan.triangles);if(!clipped.length)return {built:false,builtIds:[],reason:'terrain-clip-unexpectedly-empty'};
  const group=new THREE.Group();group.name=NAME;const waterPositions=[];
  for(const original of plan.triangles){const tri=polygonArea(original)>0?[original[0],original[2],original[1]]:original;for(const [x,z]of tri)waterPositions.push(x,waterLevel,z);}
  const water=new THREE.Mesh(geometry(waterPositions),createWaterAppearance({kind:'shinike'}));water.name='Shin-ike flat olive-gray water R97';water.receiveShadow=true;group.add(water);
@@ -105,6 +124,7 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
   return outer.map((p,i)=>[p[0]+(toe[i][0]-p[0])*t,p[1]+(bedLevel-p[1])*drop,p[2]+(toe[i][2]-p[2])*t]);
  });
  for(let band=0;band<bankBands;band++){
+ yield;
  const bandOuter=bankRings[band],bandInner=bankRings[band+1],combined=bandOuter.concat(bandInner),faces=THREE.ShapeUtils.triangulateShape(bandOuter.map(p=>new THREE.Vector2(p[0],p[2])),[bandInner.map(p=>new THREE.Vector2(p[0],p[2]))]);
  for(const face of faces){const tri=face.map(i=>combined[i]),projection=tri.map(xy),det=polygonArea(projection)*2;if(Math.abs(det)<1e-9)continue;const [a,b,c]=tri;
   const height=p=>{const u=((p[0]-a[0])*(c[2]-a[2])-(p[1]-a[2])*(c[0]-a[0]))/det,v=((b[0]-a[0])*(p[1]-a[2])-(b[2]-a[2])*(p[0]-a[0]))/det;return a[1]+u*(b[1]-a[1])+v*(c[1]-a[1]);};
@@ -123,6 +143,6 @@ export function buildShinikeWaterR97(root,features,materials={},options={}){
  const bedMaterial=new THREE.MeshStandardMaterial({color:'#30382a',roughness:1,metalness:0,side:THREE.DoubleSide,transparent:false,opacity:1,depthWrite:true});
  const bed=new THREE.Mesh(geometry(bedPositions),bedMaterial);bed.name='Shin-ike bounded dark silt visual backing R98';bed.receiveShadow=true;bed.userData.shinikeSubmergedBacking=true;group.add(bed);
  const dryBankArea=exposedBankArea(bankPositions,waterLevel);
- group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:3,bedLevel,backingDepth,dryBankArea,visibleWaterArea:plan.area-dryBankArea,bankToeLevel:bedLevel,backingTriangles:bedPositions.length/9,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankBands,bankProfile:'cosine shoulder and submerged toe',bankSlope:'Eight nested inward contour bands toward centroid; inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset and cosine shoulder profile inferred, not surveyed. No external terrain, route, shrine pier, reflection pass or GPU work.'};
+ group.userData={built:true,builtIds:[SHINIKE_ID],revision:'R97',waterLevel,legacyWaterLevel,minRetainedShore:min,minShoreWitness:minWitness,pondArea:plan.area,ring:plan.ring,materialBatches:3,bedLevel,backingDepth,dryBankArea,visibleWaterArea:plan.area-dryBankArea,bankToeLevel:bedLevel,backingTriangles:bedPositions.length/9,waterTriangles:waterPositions.length/9,bankTriangles:bankPositions.length/9,shorelineSegments:shoreline.length,terrainRange:[min,max],maximumExposedBank:max-waterLevel,maximumBankInset:4,bankBands,bankProfile:'cosine shoulder and submerged toe',bankSlope:'Eight nested inward contour bands toward centroid; inset min(4,max(.35,drop*1.25),distance*.3), clipped and nonoverlapping',legacyPlanesRemoved:1,removedLegacyLogs:0,collidersAdded:0,walkingChanged:false,clipTerrain,clipTerrainAsync:async(vertices,{yieldWork=yieldStartupTask}={})=>{if(vertices.length%9||!vertices.every(Number.isFinite))throw Error('Shin-ike terrain requires finite triangle positions');return clipMitsuTerrainAsync(vertices,plan.triangles,{yieldWork});},source:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0009_20190202.jpg',limits:'Single fixed horizontal datum is no higher than legacy water and 40mm below lowest actual retained shoreline; absolute level inferred, not surveyed. Muted olive-gray appearance and lower water observed; exact DEM-cut sloped earth bank heights/inset and cosine shoulder profile inferred, not surveyed. No external terrain, route, shrine pier, reflection pass or GPU work.'};
  root.add(group);legacy.removeFromParent();const fallenLog=legacyFallenLog(root,plan);if(fallenLog){fallenLog.removeFromParent();group.userData.removedLegacyLogs=1;}return group.userData;
 }

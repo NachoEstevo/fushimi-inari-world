@@ -78,13 +78,13 @@ step:playFootstepTick,update:(camera,night,world)=>{
   recordedState.gate=world.gate;recordedState.gateState=world.gateState;recordedState.arrival=world.arrival;recordedState.rail=world.rail;recordedState.time=world.time;recordedState.paused=world.paused;
   recorded?.update(recordedState);
  }
- const phase=world?.arrival?.phase;musicState.paused=!!world?.paused||!!phase&&phase!=='idle'&&phase!=='complete'&&phase!=='cancelled';
+ const phase=world?.arrival?.phase;musicState.paused=!!document.hidden||!!(world?.musicPaused??world?.paused)||!!phase&&phase!=='idle'&&phase!=='complete'&&phase!=='cancelled';
  musicState.voice=!musicState.paused&&!!recorded?.announcementActive;
  music?.update(camera.position,musicState);pond?.update(camera.position,night,musicState);
 },setRecordedVolume:value=>{recorded?.setVolume(value);footsteps?.setVolume(value);music?.setVolume(value);pond?.setVolume(value);},
 get enabled(){return audioEnabled;},setEnabled(value){
- if(disposed)return false;audioEnabled=!!value;if(!audioEnabled&&!audioCtx)return false;initAmbientAudio();ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);music.setEnabled(audioEnabled);pond.setEnabled(audioEnabled);
- if(audioEnabled)audioCtx.resume()?.catch?.(()=>{});else {footsteps?.stop();audioCtx.suspend()?.catch?.(()=>{});}return audioEnabled;
+ if(disposed)return false;audioEnabled=!!value;if(!audioEnabled&&!audioCtx)return false;initAmbientAudio();ambience.setEnabled(audioEnabled);recorded.setEnabled(audioEnabled);music.setEnabled(audioEnabled);music.pause(document.hidden);pond.setEnabled(audioEnabled);
+ if(audioEnabled&&!document.hidden)audioCtx.resume()?.catch?.(()=>{});else {footsteps?.stop();audioCtx.suspend()?.catch?.(()=>{});}return audioEnabled;
 },toggle(){return this.setEnabled(!audioEnabled);},dispose(){
  if(disposed)return;disposed=true;audioEnabled=false;document.removeEventListener('visibilitychange',visibility);musicControl?.removeEventListener('change',musicPreference);
  music?.dispose();pond?.dispose();recorded?.dispose();ambience?.dispose();footsteps?.stop();audioCtx?.close?.()?.catch?.(()=>{});

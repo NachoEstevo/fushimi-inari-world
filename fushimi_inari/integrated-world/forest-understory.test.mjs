@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createHash} from 'node:crypto';
 import {extendForest} from './forest.mjs';
+import * as forestBuilders from './forest.mjs';
 import {pathClearance} from './spatial.mjs';
 import {subdivideShadowInstanceLeaves} from './spatial-mesh.mjs';
 import {understoryGeometry,understoryBudget,createUnderstoryPlacement,understoryGround,understoryLOD} from './forest-understory.mjs';
@@ -22,6 +23,34 @@ test('near and far foliage have finite normals and real outlines within the shar
 });
 
 const path=(width,z=0)=>({tags:{highway:'footway',width},points:[[-20,0,z],[20,0,z]]});
+
+test('paced forest preserves every instance, colour and collider while yielding within its budget',async()=>{
+  assert.equal(typeof forestBuilders.extendForestAsync,'function');
+  const previousDocument=globalThis.document;
+  globalThis.document={createElement:()=>({width:128,height:128,getContext:()=>new Proxy({},{get:()=>()=>{}})})};
+  try{
+    const run=async paced=>{
+      const root=new THREE.Group(),colliders=[];let elapsed=0,yields=0,lastYield=0,maxSlice=0;
+      const legacy={foliage:Array.from({length:4},()=>new THREE.Mesh(new THREE.SphereGeometry(1,8,6),new THREE.MeshStandardMaterial()))};
+      const paths=[{tags:{highway:'footway',width:'2'},points:[[110,60,0],[180,60,0]]}];
+      const ground=(x,z)=>{elapsed+=.05;return x>=110&&x<170&&Math.abs(z)<40?60:0;};
+      const args=[root,legacy,{paths,buildings:[],water:[]},[],ground,pathClearance(paths),colliders];
+      const report=paced?await forestBuilders.extendForestAsync(...args,{budgetMs:8,now:()=>elapsed,yieldWork:async()=>{yields++;maxSlice=Math.max(maxSlice,elapsed-lastYield);lastYield=elapsed;}}):extendForest(...args);
+      const objects=[];root.traverse(o=>{
+        objects.push({type:o.type,name:o.name,position:o.position.toArray(),quaternion:o.quaternion.toArray(),scale:o.scale.toArray(),
+          matrices:o.instanceMatrix?Array.from(o.instanceMatrix.array):null,colours:o.instanceColor?Array.from(o.instanceColor.array):null,
+          attributes:o.geometry?Object.fromEntries(Object.entries(o.geometry.attributes).map(([name,a])=>[name,Array.from(a.array)])):null});
+      });
+      return {report,colliders,objects,yields,maxSlice};
+    };
+    const original=await run(false),paced=await run(true);
+    assert.deepEqual(paced.report,original.report);assert.deepEqual(paced.colliders,original.colliders);assert.deepEqual(paced.objects,original.objects);
+    assert.ok(paced.yields>1);
+    assert.ok(paced.maxSlice<10,'candidate and tree work check the 8 ms budget without waiting for a full forest row');
+  }finally{
+    if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+  }
+});
 test('full plant silhouette clears wide mapped paths, branch intersections and endpoints',()=>{
   const place=createUnderstoryPlacement([path('12'),{tags:{highway:'steps'},points:[[0,0,-10],[0,0,20]]}]);
   assert.equal(place(10,6.9,.8),false,'centre outside a road is insufficient');

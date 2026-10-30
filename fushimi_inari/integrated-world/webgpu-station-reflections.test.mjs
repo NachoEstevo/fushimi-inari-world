@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {REVISION} from 'three';
 
-test('station probe stays local, alternates bounded targets and restores state', {skip:!['180','186'].includes(REVISION)}, async()=>{
+test('station probe stays local, alternates bounded targets and restores state', {skip:!['180','186','187'].includes(REVISION)}, async()=>{
  const THREE=await import('three/webgpu');
  const {createStationReflectionStudy}=await import('./webgpu-station-reflections.mjs');
  const scene=new THREE.Scene(), environment=new THREE.Texture(), originalMap=new THREE.Texture();
@@ -12,13 +12,24 @@ test('station probe stays local, alternates bounded targets and restores state',
  const floor=new THREE.MeshStandardMaterial();
  const receiver=new THREE.Mesh(geometry,metal), matte=new THREE.Mesh(geometry,floor);
  group.add(receiver,matte);scene.add(group);
- const renderer={xr:{enabled:true},autoClear:true,getRenderTarget:()=>null,getActiveCubeFace:()=>0,
+ const renderer={xr:{enabled:true},autoClear:true,autoClearColor:false,autoClearDepth:true,autoClearStencil:false,getMRT:()=>null,getRenderTarget:()=>null,getActiveCubeFace:()=>0,
   getActiveMipmapLevel:()=>0,getClearColor:v=>v,getClearAlpha:()=>1,setClearColor(){},setRenderTarget(){}};
  const original=THREE.PMREMGenerator.prototype.fromScene,targets=new Set();let fail=false;
  THREE.PMREMGenerator.prototype.fromScene=function(s,sigma,near,far,{renderTarget,position}){
   assert.equal(s.environment,null);assert.equal(receiver.visible,false);assert.equal(matte.visible,true);
   assert.deepEqual(position.toArray(),[1,3.65,3]);
-  targets.add(renderTarget);if(fail)throw new Error('capture failed');return renderTarget;
+  if(REVISION==='187'){
+   this._setSize(256);const native=this._allocateTarget();
+   try{
+    assert.equal(renderTarget.constructor,native.constructor);assert.equal(renderTarget.width,native.width);assert.equal(renderTarget.height,native.height);assert.equal(renderTarget.depthBuffer,native.depthBuffer);
+    for(const key of ['mapping','type','minFilter','magFilter','generateMipmaps','colorSpace','isPMREMTexture'])assert.equal(renderTarget.texture[key],native.texture[key],key);
+    assert.deepEqual(renderTarget.texture.mipmaps,native.texture.mipmaps);
+   }finally{native.dispose();}
+  }
+  targets.add(renderTarget);if(fail){
+   // Native r187 PMREM sets these before scene submission and does not restore on error.
+   renderer.autoClearColor=true;renderer.autoClearDepth=true;renderer.autoClearStencil=true;throw new Error('capture failed');
+  }return renderTarget;
  };
  const study=await createStationReflectionStudy({renderer,scene,station:{group,spec:{train:{doorPosition:[1,2,3]}}}});
  try{
@@ -29,12 +40,13 @@ test('station probe stays local, alternates bounded targets and restores state',
   study.capture();assert.equal(metal.envMap,first);assert.equal(targets.size,2);
   fail=true;assert.throws(()=>study.capture(),/capture failed/);
   assert.equal(metal.envMap,first);assert.equal(scene.environment,environment);assert.equal(receiver.visible,true);
+  assert.deepEqual([renderer.autoClearColor,renderer.autoClearDepth,renderer.autoClearStencil],[false,true,false]);
   study.setEnabled(false);assert.equal(metal.envMap,originalMap);
   study.setEnabled(true);study.dispose();assert.equal(metal.envMap,originalMap);
  }finally{study.dispose();THREE.PMREMGenerator.prototype.fromScene=original;geometry.dispose();metal.dispose();floor.dispose();environment.dispose();originalMap.dispose();}
 });
 
-test('bounded preparation captures only a capped station surrogate once', {skip:!['180','186'].includes(REVISION)}, async()=>{
+test('bounded preparation captures only a capped station surrogate once', {skip:!['180','186','187'].includes(REVISION)}, async()=>{
  const THREE=await import('three/webgpu');
  const {createStationReflectionStudy}=await import('./webgpu-station-reflections.mjs');
  const {STATION_PROXY_LIMITS}=await import('./station-reflection-proxy.mjs');
@@ -49,7 +61,7 @@ test('bounded preparation captures only a capped station surrogate once', {skip:
  let stages=0,compiled=0,captures=0,releases=0,currentTarget=worldTarget,compiledTarget=null;
  const submitted=new Set();
  geometry.addEventListener('dispose',()=>releases++);
- const renderer={xr:{enabled:true},autoClear:true,getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,
+ const renderer={xr:{enabled:true},autoClear:true,getMRT:()=>null,getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,
   getActiveMipmapLevel:()=>0,getClearColor:v=>v,getClearAlpha:()=>1,setClearColor(){},setRenderTarget(target){currentTarget=target;},
   compileAsync(proxy){
    compiled++;assert.notEqual(proxy,scene);assert.ok(proxy.children.length<=4);
@@ -59,7 +71,14 @@ test('bounded preparation captures only a capped station surrogate once', {skip:
   }};
  const original=THREE.PMREMGenerator.prototype.fromScene;
  THREE.PMREMGenerator.prototype.fromScene=function(proxy,sigma,near,far,{renderTarget,position}){
-  captures++;assert.notEqual(proxy,scene);assert.equal(renderTarget,compiledTarget);assert.equal(proxy.children.length,STATION_PROXY_LIMITS.meshes);
+  captures++;assert.notEqual(proxy,scene);
+  if(REVISION==='187'){
+   assert.equal(compiledTarget,this._getSourceTarget(true),'prewarm the native scene capture attachment');
+   assert.notEqual(renderTarget,compiledTarget,'prefiltered output has a separate native cube attachment');
+   assert.equal(compiledTarget.depthBuffer,true);assert.equal(compiledTarget.texture.generateMipmaps,true);
+   assert.equal(renderTarget.depthBuffer,false);assert.equal(renderTarget.texture.generateMipmaps,false);
+  }else assert.equal(renderTarget,compiledTarget);
+  assert.equal(proxy.children.length,STATION_PROXY_LIMITS.meshes);
   assert.deepEqual(position.toArray(),[8,4,9]);
   assert.equal(proxy.children[0].geometry,geometry);assert.equal(proxy.children[0].matrix.elements[12],5);
   assert.ok(proxy.children.every(m=>m.material.isMeshBasicMaterial&&!m.material.envMap));return renderTarget;

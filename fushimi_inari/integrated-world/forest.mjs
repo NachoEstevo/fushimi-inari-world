@@ -9,6 +9,22 @@ import {understoryGeometry,createUnderstoryPlacement,understoryGround,understory
 // A mixed, irregular canopy
 // follows path corridors; positions are illustrative, not surveyed tree points.
 export function extendForest(root,legacy,features,anchors,ground,pathDistance,colliders){
+  const work=forestWork(root,legacy,features,anchors,ground,pathDistance,colliders);let next=work.next();
+  while(!next.done)next=work.next();return next.value;
+}
+export async function extendForestAsync(root,legacy,features,anchors,ground,pathDistance,colliders,{yieldWork,now=()=>performance.now(),budgetMs=32}={}){
+  if(typeof yieldWork!=='function')throw new TypeError('Forest preparation requires yieldWork');
+  if(!(budgetMs>0&&budgetMs<=32))throw new RangeError('Forest preparation budget must be between 0 and 32 ms');
+  const work=forestWork(root,legacy,features,anchors,ground,pathDistance,colliders);let start=now(),next=work.next();
+  while(!next.done){
+    if(now()-start>=budgetMs){await yieldWork();start=now();}
+    next=work.next();
+  }
+  return next.value;
+}
+// Preserve the random sequence and ownership order while the async caller
+// checks its budget between candidates and completed tree/bucket work.
+function* forestWork(root,legacy,features,anchors,ground,pathDistance,colliders){
   const bamboo=refineBamboo(legacy);
   let seed=routeSpec.forest.seed;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -21,6 +37,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
   }
   const buckets=new Map(),spacing=routeSpec.forest.nearSpacing;
   for(let x=110;x<1430;x+=spacing)for(let z=-580;z<330;z+=spacing){
+    yield;
     const px=x+(random()-.5)*spacing*.85,pz=z+(random()-.5)*spacing*.85,y=ground(px,pz);
     if(y<53||anchors.some(a=>a.radius&&Math.hypot(px-a.target[0],pz-a.target[2])<a.radius+2))continue;
     if((forbidden.get(`${Math.floor(px/cell)},${Math.floor(pz/cell)}`)??[]).some(b=>px>b.minX&&px<b.maxX&&pz>b.minZ&&pz<b.maxZ))continue;
@@ -34,6 +51,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
     if(!buckets.has(key))buckets.set(key,[]);
     buckets.get(key).push(tree);
   }
+  yield;
   const crownMat=legacy.foliage[1].material.clone();crownMat.color.set('#879e70');crownMat.roughness=.9;
   const understoryMaterial=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.95});
   const understoryNear=understoryGeometry(),understoryFar=understoryGeometry('far');
@@ -44,6 +62,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
   const branchGeo=new THREE.CylinderGeometry(.035,.12,1,6);branchGeo.translate(0,.5,0);
   let total=0,understory=0,broadleaf=0;
   for(const trees of buckets.values()){
+    yield;
     const matrices=[[],[],[],[],[]],dummy=new THREE.Object3D();
     const put=(bucket,x,y,z,sx,sy,sz,yaw)=>{dummy.position.set(x,y,z);dummy.rotation.set(0,yaw,0);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();matrices[bucket].push(dummy.matrix.clone());};
     for(const tree of trees){
@@ -75,6 +94,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
         put(3,ux,height-.012,uz,sx,sy,sz,yaw);understory++;
       }
       colliders.push({type:'cylinder',args:[x,z,.40*scale,y,y+9*scale,'forest_tree']});
+      yield;
     }
     const assets=[[legacy.foliage[0].geometry,legacy.foliage[0].material],[legacy.foliage[1].geometry,crownMat],[evergreen.geometry,evergreen.material],[understoryNear,understoryMaterial],[branchGeo,legacy.foliage[0].material]];
     matrices.forEach((list,index)=>{
@@ -110,6 +130,7 @@ export function extendForest(root,legacy,features,anchors,ground,pathDistance,co
       }else {mesh.userData.nearForest=true;root.add(mesh);}
     });
     total+=trees.length;
+    yield;
   }
   return {trees:total,broadleaf,understory,bamboo,seed:routeSpec.forest.seed,provenance:routeSpec.forest.provenance};
 }

@@ -11,7 +11,7 @@ export async function buildLegacy(renderer, callbacks={}) {
   let scope=null;
   const rawAdd=scene.add.bind(scene);
   scene.add=(...objects)=>{for(const object of objects) if(!object.userData.zone)object.userData.zone=scope; return rawAdd(...objects);};
-  function capture(name,fn){const old=scope;scope=name;fn();scope=old;}
+  async function capture(name,fn){const old=scope;scope=name;try{fn();}finally{scope=old;}await callbacks.yieldWork?.();}
   const collisionWorld={
     addCylinder(...args){colliders.push({type:'cylinder',args,zone:scope});},
     addBox(...args){colliders.push({type:'box',args,zone:scope});}
@@ -583,7 +583,7 @@ export async function buildLegacy(renderer, callbacks={}) {
         scene.add(ramp);
       }
     }
-    capture('okumiya', buildConvergenceAprons);
+    await capture('okumiya', buildConvergenceAprons);
 
     // =========================================================================
     // 6. ORGANIC TORII DISTRIBUTION (Generous 2.4m+ Clear Walkable Span!)
@@ -1154,7 +1154,7 @@ export async function buildLegacy(renderer, callbacks={}) {
         () => playWaterSplashSound()
       );
     }
-    capture('temizuya', buildTemizuya);
+    await capture('temizuya', buildTemizuya);
 
     // 7B. KAGURA-DEN (x = +15.8, z = -12.5) & JUYOSHO (x = -15.8, z = -12.5)
     function buildCourtyardFlankHalls() {
@@ -1217,7 +1217,7 @@ export async function buildLegacy(renderer, callbacks={}) {
         'Aquí los peregrinos adquieren amuletos Omamori y las famosas tablillas blancas con forma de rostro de zorro (Kitsune Ema) antes de subir por la escalinata lateral hacia Senbon Torii.'
       );
     }
-    capture('gehaiden', buildCourtyardFlankHalls);
+    await capture('gehaiden', buildCourtyardFlankHalls);
 
       // 7C. OMOTESANDO OUTER TOWNSCAPE, TSUIJIBEI WALLS & KYOTO BASIN PANORAMA
     //     Enriches the outer approach (z = +26 to +4) and the vast surrounding Kyoto valley & mountains
@@ -1661,7 +1661,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(g);
     }
-    capture('entrance', buildOmotesandoAndSurroundings);
+    await capture('entrance', buildOmotesandoAndSurroundings);
 
     // 7C-1B. MAIN TEMPLE ENHANCEMENTS & REAL CONNECTION TO SENBON TORII BIFURCATION
     //        Replicates the exact real-world precinct map (境内案内図) & Wikimedia Commons photos:
@@ -2083,7 +2083,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(g);
     }
-    capture('precinct', buildMainTempleAndOkumiyaConnection);
+    await capture('precinct', buildMainTempleAndOkumiyaConnection);
 
     // 7C-2. OKUSHA HOHAISHO (Inner Shrine), KITSUNE EMA RACKS & OMOKARU-ISHI (z = -85)
     //       Upgraded to match real photos 04_okusha_hohaisho.jpg, 05_kitsune_ema.jpg & 06_omokaru_ishi.jpg:
@@ -2201,7 +2201,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(g);
     }
-    capture('okusha', buildOkushaZone);
+    await capture('okusha', buildOkushaZone);
 
     // 7D. KUMATAKA-SHA SHRINE & SHIN-IKE SACRED POND (z = -142, x = 22.0)
     //     Upgraded from real photos 05_shrine_precinct.jpg, 07_kumatakasha_shrine.jpg & 08_shin_ike_pond.jpg:
@@ -2307,7 +2307,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(g);
     }
-    capture('kumataka', buildKumatakashaAndPond);
+    await capture('kumataka', buildKumatakashaAndPond);
 
     // 7E. YOTSUTSUJI CROSSROADS, CHAYA TEA HOUSES & EXPANDED KYOTO BASIN PANORAMA (z = -205, x = -18.0)
     //     Matches real photo 09_yotsutsuji_kyoto_view.jpg with Nishiyama mountains, Kamo River & Kyoto Tower!
@@ -2453,7 +2453,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       g.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(g);
     }
-    capture('yotsu', buildYotsutsujiCrossroads);
+    await capture('yotsu', buildYotsutsujiCrossroads);
 
     // 7F. WAYSIDE TRAIL SANCTUARIES, OTSUKA VALLEYS (お塚群), GOZEN-DANI & MOUNTAIN CHAYA
     //     Populates the rest of the mountain trail ("el resto del camino y los alrededores")
@@ -3127,6 +3127,7 @@ export async function buildLegacy(renderer, callbacks={}) {
     // Place Sugi & Momiji trees ONLY where minClearanceFromWalkableNetwork(tx, tz) >= 4.2m!
     // This guarantees ZERO tree trunks and ZERO tree crowns ever enter any path, tunnel, or plaza!
     for (let i = 0; i < SUGI_COUNT + MOMIJI_COUNT; i++) {
+      if(i%32===0)await callbacks.yieldWork?.();
       let tx = 0, tz = 0;
       let valid = false;
       for (let attempt = 0; attempt < 60; attempt++) {
@@ -3220,6 +3221,7 @@ export async function buildLegacy(renderer, callbacks={}) {
     instBambooCulms.castShadow = true; instBambooCulms.receiveShadow = true;
 
     for (let i = 0; i < BAMBOO_COUNT; i++) {
+      if(i%64===0)await callbacks.yieldWork?.();
       let bx = 0, bz = 0;
       for (let attempt = 0; attempt < 40; attempt++) {
         const u = 0.13 + rand() * 0.82;
@@ -3252,6 +3254,7 @@ export async function buildLegacy(renderer, callbacks={}) {
 
     // Shady Forest Floor Understory (Yatsude, Aoki & Sword Ferns) — Strictly outside all paths & twin tunnels!
     for (let i = 0; i < UNDERSTORY_COUNT; i++) {
+      if(i%64===0)await callbacks.yieldWork?.();
       let fx = 0, fz = 0;
       for (let attempt = 0; attempt < 40; attempt++) {
         const u = 0.12 + rand() * 0.86;

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {compileAddedGroup} from './scoped-compilation.mjs';
+import {restorePrecompileTarget} from './renderer-precompile-state.mjs';
 import {texture,uniform,vec4,mix} from 'three/tsl';
 
 export const CITY_HORIZON_FAR=6000;
@@ -115,9 +116,9 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
     // Bind the real target only for synchronous pipeline submission. Never
     // retain global renderer state while yielding or awaiting GPU compilation.
     const compiler={compileAsync(scope,compileCamera,targetScene){
-      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel()};
+      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
       try{renderer.setRenderTarget(target);return renderer.compileAsync(scope,compileCamera,targetScene);}
-      finally{renderer.setRenderTarget(previous.target,previous.face,previous.mip);}
+      finally{restorePrecompileTarget(renderer,previous);renderer.setRenderTarget(previous.target,previous.face,previous.mip);}
     }};
     await compileAddedGroup(compiler,horizonScene,root,view,{includeHiddenRoot:true,batchSize:4,report(value){stats.preparation=value;}});
     stats.prepareStatus='ready';

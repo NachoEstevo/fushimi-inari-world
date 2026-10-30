@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {staticParts,stonePalette} from './mountain-landmarks-geometry.mjs';
-import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
+import {clipMitsuTerrain,clipMitsuTerrainAsync} from './mitsu-frontage-aprons.mjs';
 export const MIKOSHIKO_ID='way/1287564336';
 export function mikoshikoLayout(features){
  const f=features.buildings?.find(b=>b.id===MIKOSHIKO_ID),p=f?.points;
@@ -45,5 +45,5 @@ export function buildMikoshikoPrecinct(root,materials,features,surfaces,collider
  colliders.push({type:'box',args:[x,z,w/2,d/2,yaw,floor,floor+wallTop,'mikoshiko']});
  const fc=world(fenceX,0);colliders.push({type:'box',args:[fc[0],fc[1],.05,d/2,yaw,floor,floor+1.2,'mikoshiko-pickets']});
  const ring=features.buildings.find(b=>b.id===MIKOSHIKO_ID).points.slice(0,-1).map(q=>[q[0],q[2]]),faces=THREE.ShapeUtils.triangulateShape(ring.map(q=>new THREE.Vector2(...q)),[]);
- g.userData={clipTerrain:positions=>{if(positions.length%9||!positions.every(Number.isFinite))throw Error('Mikoshiko terrain requires finite triangle positions');return clipMitsuTerrain(positions,faces.map(f=>f.map(i=>ring[i])));},built:true,...plan,floor,foundationBottom:bottom,builtIds:[MIKOSHIKO_ID],courtBoundsLocal:[-w/2-1.05,-w/2,-d/2,d/2],...stats};return g.userData;
+ g.userData={clipTerrainAsync:async(positions,options)=>{if(positions.length%9||!positions.every(Number.isFinite))throw Error('Mikoshiko terrain requires finite triangle positions');return clipMitsuTerrainAsync(positions,faces.map(f=>f.map(i=>ring[i])),options);},clipTerrain:positions=>{if(positions.length%9||!positions.every(Number.isFinite))throw Error('Mikoshiko terrain requires finite triangle positions');return clipMitsuTerrain(positions,faces.map(f=>f.map(i=>ring[i])));},built:true,...plan,floor,foundationBottom:bottom,builtIds:[MIKOSHIKO_ID],courtBoundsLocal:[-w/2-1.05,-w/2,-d/2,d/2],...stats};return g.userData;
 }

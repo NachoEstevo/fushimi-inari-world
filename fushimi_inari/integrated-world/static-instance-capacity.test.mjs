@@ -91,3 +91,14 @@ test('onEligible reports every exact static owner once after padding, including 
  padStaticInstanceMatrices([f.root,f.meshes[0]],{revision:180,onEligible:mesh=>owners.push({mesh,capacity:mesh.instanceMatrix.count})});
  assert.equal(owners.length,2);assert.equal(owners[0].mesh===f.meshes[0],true);assert.equal(owners[1].mesh===f.meshes[1],true);assert.deepEqual(owners.map(owner=>owner.capacity),[32,32]);f.dispose();
 });
+
+
+test('native r187 retains authored matrix capacities without allocation or eligibility callbacks',
+ {skip:THREE.REVISION!=='187'},()=>{
+  const f=fixture([1,17,26,31,33,43,63,999,1001]),attributes=f.meshes.map(mesh=>mesh.instanceMatrix),counts=f.meshes.map(mesh=>mesh.count);
+  try{
+   const stats=padStaticInstanceMatrices([f.root],{onEligible:()=>assert.fail('r187 needs no legacy static ownership registration')});
+   assert.equal(stats.padded,0);assert.equal(stats.eligible,0);assert.equal(stats.extraBytes,0);
+   f.meshes.forEach((mesh,index)=>{assert.equal(mesh.instanceMatrix,attributes[index]);assert.equal(mesh.instanceMatrix.count,counts[index]);assert.equal(mesh.count,counts[index]);});
+  }finally{f.dispose();}
+ });

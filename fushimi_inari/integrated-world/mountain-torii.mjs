@@ -30,12 +30,25 @@ export function mountainToriiFootSupports(matrix,thickness,surfaces,renderedTerr
 // Index only terrain cells touched by post footprints. The shared sampler's
 // two-metre bins otherwise retain the entire mountain for these narrow feet.
 export function mountainToriiSupportTriangles(positions,posts){
-  const cells=new Set(),size=2,local=[];
-  for(const p of posts)for(let x=Math.floor((p.x-p.radius-.02)/size);x<=Math.floor((p.x+p.radius+.02)/size);x++)for(let z=Math.floor((p.z-p.radius-.02)/size);z<=Math.floor((p.z+p.radius+.02)/size);z++)cells.add(`${x},${z}`);
+  const cells=new Map(),size=2,local=[];
+  let firstX=Infinity,lastX=-Infinity,firstZ=Infinity,lastZ=-Infinity;
+  for(const p of posts)for(let x=Math.floor((p.x-p.radius-.02)/size);x<=Math.floor((p.x+p.radius+.02)/size);x++){
+    if(!cells.has(x))cells.set(x,new Set());const column=cells.get(x);
+    for(let z=Math.floor((p.z-p.radius-.02)/size);z<=Math.floor((p.z+p.radius+.02)/size);z++){
+      column.add(z);firstX=Math.min(firstX,x);lastX=Math.max(lastX,x);firstZ=Math.min(firstZ,z);lastZ=Math.max(lastZ,z);
+    }
+  }
+  if(!cells.size)return local;
   for(let i=0;i<positions.length;i+=9){
     const minX=Math.floor(Math.min(positions[i],positions[i+3],positions[i+6])/size),maxX=Math.floor(Math.max(positions[i],positions[i+3],positions[i+6])/size),minZ=Math.floor(Math.min(positions[i+2],positions[i+5],positions[i+8])/size),maxZ=Math.floor(Math.max(positions[i+2],positions[i+5],positions[i+8])/size);
+    if(minX>lastX||maxX<firstX||minZ>lastZ||maxZ<firstZ)continue;
     let needed=false;
-    for(let x=minX;x<=maxX&&!needed;x++)for(let z=minZ;z<=maxZ;z++)if(cells.has(`${x},${z}`)){needed=true;break;}
+    // Keep the same inclusive two-metre bin ownership. Numeric columns avoid
+    // allocating a string for every remote terrain bin on every triangle.
+    for(let x=minX;x<=maxX&&!needed;x++){
+      const column=cells.get(x);if(!column)continue;
+      for(let z=minZ;z<=maxZ;z++)if(column.has(z)){needed=true;break;}
+    }
     if(needed)for(let j=0;j<9;j++)local.push(positions[i+j]);
   }
   return local;

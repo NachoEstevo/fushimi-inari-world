@@ -23,10 +23,12 @@ function productionDigest(scene){
 }
 // Reproduced from unchanged HEAD f448b9f builders under each runtime. r186's
 // SphereGeometry math changes floral fitting/carving position and normal bytes.
+// r187 independently reproduced from unchanged HEAD 6d23cc4 builders; bytes match r186.
 const originalDigests={
  '164':'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2',
  '180':'4b1b32a8dcb6f740bf71f168c7bccf69c5f7f7928cc7a964e403dc97c4c8c3b2',
- '186':'b5e42a7cd3b51aad40529726be6e5bce0519424cb554caa63c654e4dfd1e7975'
+ '186':'b5e42a7cd3b51aad40529726be6e5bce0519424cb554caa63c654e4dfd1e7975',
+ '187':'b5e42a7cd3b51aad40529726be6e5bce0519424cb554caa63c654e4dfd1e7975'
 };
 
 test('cooperative stages preserve the original GLB buffers and commit only after completing',()=>{

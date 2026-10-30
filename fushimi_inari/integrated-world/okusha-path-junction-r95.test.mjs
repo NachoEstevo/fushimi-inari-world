@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import {partitionOkushaPathTrianglesR95} from './okusha-path-junction-r95.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
@@ -41,4 +42,24 @@ test('actual junction curb cap pair keeps its raised lip union once',()=>{
   const overlap=Math.abs(polygonArea(clipConvex(triangles(first)[0],triangles(second)[0])));assert.ok(overlap>.004);
   const output=partitionOkushaPathTrianglesR95([...first,...second]);assert.ok(Math.abs(area(output)-(area(first)+area(second)-overlap))<1e-8);
   const t=triangles(output);for(let i=0;i<t.length;i++)for(let j=0;j<i;j++)assert.ok(Math.abs(polygonArea(clipConvex(t[i],t[j])))<1e-8);
+});
+
+test('bounded path partition preserves original complete vertex and interpolated UV bytes',()=>{
+ const a=[250,62.5,60,250,62.5,64,254,62.5,60],b=[251,62.5,61,251,62.5,65,255,62.5,61];
+ const input=[...a,...b,...a.map((v,i)=>i%3===1?v+.3:v),...a.map((v,i)=>i%3===0?v-100:v),237,60,54,237,60,55,238,60,54,281,60,83,282,60,84,282,60,83,250,60,60,250,60.000011,62,252,60,60,250,60,60,251,60,61,252,60,62];
+ const uv=[];for(let i=0;i<input.length;i+=3)uv.push(input[i]/2,input[i+2]/3);
+ const hash=values=>createHash('sha256').update(Buffer.from(new Float64Array(values).buffer)).digest('hex');
+ const plain=partitionOkushaPathTrianglesR95(input),mapped=partitionOkushaPathTrianglesR95(new Float64Array(input),new Float64Array(uv));
+ // Golden complete arrays captured before replacing the allocating broad phase.
+ assert.equal(hash(plain),'dcbd534380bd736ed41f63fc676e32de812aed8fa43dfb4bb1893f6fbe6649a1');
+ assert.equal(hash(mapped.vertices),hash(plain));assert.equal(hash(mapped.uv),'4f3f30f839066b85ad3872ace948183335571e35bad323ca8cc7bc9e8bb7e30c');
+});
+
+test('remote and sloped path triangles bypass vertex and UV slice allocation',()=>{
+ const vertices=new Float64Array([0,1,0,1,1,0,0,1,1,250,60,60,250,60.000011,62,252,60,60,236,60,60,238,60,62,238,60,60]);
+ const uv=new Float64Array(vertices.length/3*2);for(let i=0;i<uv.length;i++)uv[i]=i/3;
+ const expectedVertices=Array.from(vertices),expectedUV=Array.from(uv);
+ vertices.slice=()=>{throw Error('broad phase allocated triangle');};uv.slice=()=>{throw Error('broad phase allocated UV slice');};
+ assert.deepEqual(partitionOkushaPathTrianglesR95(vertices),expectedVertices);
+ assert.deepEqual(partitionOkushaPathTrianglesR95(vertices,uv),{vertices:expectedVertices,uv:expectedUV});
 });

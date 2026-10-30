@@ -20,7 +20,7 @@ test('WebGL and unsupported backends are never modified',()=>{
 });
 
 
-test('r186 retains its native draw boundary without a redundant backend patch',()=>{
+for(const revision of [186,187])test(`r${revision} retains its native draw boundary without a redundant backend patch`,()=>{
  const original=()=>{},backend={isWebGPUBackend:true,get(){},draw:original};
- const handle=guard.installPendingPipelineGuard(backend,{revision:186});assert.equal(backend.draw,original);handle.dispose();
+ const handle=guard.installPendingPipelineGuard(backend,{revision});assert.equal(backend.draw,original);handle.dispose();
 });

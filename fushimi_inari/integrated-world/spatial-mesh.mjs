@@ -3,26 +3,53 @@ import * as THREE from 'three';
 // Partition complete triangles, retaining UVs/normals and the exact surface.
 // Bounds include whole triangles across cell boundaries: no clipping or holes.
 export function spatialMeshes(geometry,material,size=160,materialAt=null){
+  const work=spatialMeshWork(geometry,material,size,materialAt);let next=work.next();
+  while(!next.done)next=work.next();return next.value;
+}
+export async function spatialMeshesAsync(geometry,material,size=160,materialAt=null,{yieldWork,now=()=>performance.now(),budgetMs=32}={}){
+  if(typeof yieldWork!=='function')throw new TypeError('Spatial mesh preparation requires yieldWork');
+  if(!(budgetMs>0&&budgetMs<=32))throw new RangeError('Spatial mesh preparation budget must be between 0 and 32 ms');
+  const work=spatialMeshWork(geometry,material,size,materialAt);let start=now(),next=work.next();
+  while(!next.done){
+    if(now()-start>=budgetMs){await yieldWork();start=now();}
+    next=work.next();
+  }
+  return next.value;
+}
+// Path construction can delegate this ordered work to its own paced driver.
+// Consecutive triangles share one copy run, preserving every attribute byte
+// without allocating a typed-array view for each vertex and attribute.
+export function* spatialMeshWork(geometry,material,size=160,materialAt=null){
   const source=geometry.index?geometry.toNonIndexed():geometry;
   const position=source.attributes.position,buckets=new Map();
   for(let i=0;i<position.count;i+=3){
+    if(i%768===0)yield;
     const x=(position.getX(i)+position.getX(i+1)+position.getX(i+2))/3;
     const z=(position.getZ(i)+position.getZ(i+1)+position.getZ(i+2))/3;
     const surface=materialAt?.(x,z)??material;
     const key=`${Math.floor(x/size)},${Math.floor(z/size)},${surface.uuid}`;
-    if(!buckets.has(key))buckets.set(key,{indices:[],surface});
-    buckets.get(key).indices.push(i,i+1,i+2);
+    if(!buckets.has(key))buckets.set(key,{runs:[],count:0,surface});
+    const bucket=buckets.get(key),previous=bucket.runs.at(-1);
+    if(previous&&previous.start+previous.count===i)previous.count+=3;
+    else bucket.runs.push({start:i,count:3});
+    bucket.count+=3;
   }
+  yield;
   const group=new THREE.Group();
-  for(const {indices,surface} of buckets.values()){
+  for(const {runs,count,surface} of buckets.values()){
     const geo=new THREE.BufferGeometry();
     for(const [name,attr] of Object.entries(source.attributes)){
-      const values=new attr.array.constructor(indices.length*attr.itemSize);
-      indices.forEach((index,j)=>values.set(attr.array.subarray(index*attr.itemSize,(index+1)*attr.itemSize),j*attr.itemSize));
+      const values=new attr.array.constructor(count*attr.itemSize);let offset=0;
+      for(const run of runs)for(let part=0;part<run.count;part+=3072){
+        const length=Math.min(3072,run.count-part)*attr.itemSize,start=(run.start+part)*attr.itemSize;
+        values.set(attr.array.subarray(start,start+length),offset);offset+=length;
+        yield;
+      }
       geo.setAttribute(name,new THREE.BufferAttribute(values,attr.itemSize,attr.normalized));
     }
     geo.computeBoundingSphere();
     const mesh=new THREE.Mesh(geo,surface);mesh.receiveShadow=true;group.add(mesh);
+    yield;
   }
   if(source!==geometry)source.dispose();
   return group;

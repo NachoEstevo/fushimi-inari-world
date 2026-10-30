@@ -1,18 +1,22 @@
 import * as THREE from 'three/webgpu';
 
-// Bounded cached probe. r180 captures the six scene views directly into CubeUV.
-export function captureShinikeEnvironment({scene,renderer,center,forestChunks,overlays,resources=null}){
- const size=128,generator=resources?.generator??new THREE.PMREMGenerator(renderer);
- let target=resources?.targets.find(candidate=>candidate!==resources.current);
- if(!target){
-  target=new THREE.RenderTarget(3*size,4*size,{type:THREE.HalfFloatType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:false,colorSpace:THREE.LinearSRGBColorSpace,depthBuffer:true});
-  target.texture.mapping=THREE.CubeUVReflectionMapping;target.texture.isPMREMTexture=true;
-  resources?.targets.push(target);
- }
- target.scissorTest=true;
+
+// Preserve exactly the same reflection scenery while compiling or capturing.
+// The caller may await compilation only under the welcome sheet.
+function beginShinikeCaptureState({scene,renderer,center,forestChunks,overlays,resources}){
  const visibility=new Map(),shadows=new Map(),lodLevels=new Map(),remember=(object,visible)=>{if(!object)return;if(!visibility.has(object))visibility.set(object,object.visible);object.visible=visible;};
- const previous={environment:scene.environment,background:scene.background,matrixAuto:scene.matrixWorldAutoUpdate,target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),autoClear:renderer.autoClear,xr:renderer.xr.enabled,clearColor:renderer.getClearColor(new THREE.Color()),clearAlpha:renderer.getClearAlpha(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),shadowAuto:renderer.shadowMap.autoUpdate,shadowNeeds:renderer.shadowMap.needsUpdate};
- let completed=false;
+ const previous={environment:scene.environment,background:scene.background,matrixAuto:scene.matrixWorldAutoUpdate,target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),autoClear:renderer.autoClear,autoClearColor:renderer.autoClearColor,autoClearDepth:renderer.autoClearDepth,autoClearStencil:renderer.autoClearStencil,xr:renderer.xr.enabled,clearColor:renderer.getClearColor(new THREE.Color()),clearAlpha:renderer.getClearAlpha(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),shadowAuto:renderer.shadowMap.autoUpdate,shadowNeeds:renderer.shadowMap.needsUpdate};
+ function restore(){
+  for(const [object,visible] of visibility)object.visible=visible;
+  // Pinned r180 stores hysteresis state separately from level visibility.
+  for(const [object,level]of lodLevels)object._currentLevel=level;
+  for(const [shadow,state]of shadows){shadow.autoUpdate=state.autoUpdate;shadow.needsUpdate=state.needsUpdate;}
+  scene.environment=previous.environment;scene.background=previous.background;scene.matrixWorldAutoUpdate=previous.matrixAuto;
+  renderer.xr.enabled=previous.xr;renderer.autoClear=previous.autoClear;renderer.autoClearColor=previous.autoClearColor;renderer.autoClearDepth=previous.autoClearDepth;renderer.autoClearStencil=previous.autoClearStencil;
+  renderer.shadowMap.autoUpdate=previous.shadowAuto;renderer.shadowMap.needsUpdate=previous.shadowNeeds;
+  renderer.setClearColor(previous.clearColor,previous.clearAlpha);renderer.setRenderTarget(previous.target,previous.face,previous.mip);
+  renderer.setViewport(previous.viewport);renderer.setScissor(previous.scissor);renderer.setScissorTest(previous.scissorTest);
+ }
  try{
   scene.traverse(object=>{
    // r180's ShadowNode reads the light's flags, not renderer.shadowMap's.
@@ -33,27 +37,37 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
   // Only the probe camera changes between the six faces; reuse the same world
   // transforms without taking ownership from a caller that already froze them.
   if(previous.matrixAuto===true)scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;
+  return restore;
+ }catch(error){restore();throw error;}
+}
+
+// Bounded cached r187 cube PMREM, retaining two native prefiltered outputs.
+export function captureShinikeEnvironment({scene,renderer,center,forestChunks,overlays,resources=null}){
+ const size=256,generator=resources?.generator??new THREE.PMREMGenerator(renderer);
+ let target=resources?.targets.find(candidate=>candidate!==resources.current);
+ if(!target){
+  target=new THREE.CubeRenderTarget(size,{type:THREE.HalfFloatType,minFilter:THREE.LinearMipmapLinearFilter,generateMipmaps:false,colorSpace:THREE.LinearSRGBColorSpace,depthBuffer:false});
+  for(let mip=size;mip>=8;mip/=2)target.texture.mipmaps.push({width:mip,height:mip});
+  target.texture.isPMREMTexture=true;
+  resources?.targets.push(target);
+ }
+
+ const restore=beginShinikeCaptureState({scene,renderer,center,forestChunks,overlays,resources});
+ let completed=false;
+ try{
   generator.fromScene(scene,0,.1,12000,{size,position:center,renderTarget:target});
   completed=true;
   if(resources){resources.current=target;return {texture:target.texture,dispose(){}};}
   return target;
  }finally{
-  for(const [object,visible] of visibility)object.visible=visible;
-  // Pinned r180 stores hysteresis state separately from level visibility.
-  for(const [object,level]of lodLevels)object._currentLevel=level;
-  for(const [shadow,state]of shadows){shadow.autoUpdate=state.autoUpdate;shadow.needsUpdate=state.needsUpdate;}
-  scene.environment=previous.environment;scene.background=previous.background;scene.matrixWorldAutoUpdate=previous.matrixAuto;
-  renderer.xr.enabled=previous.xr;renderer.autoClear=previous.autoClear;
-  renderer.shadowMap.autoUpdate=previous.shadowAuto;renderer.shadowMap.needsUpdate=previous.shadowNeeds;
-  renderer.setClearColor(previous.clearColor,previous.clearAlpha);renderer.setRenderTarget(previous.target,previous.face,previous.mip);
-  renderer.setViewport(previous.viewport);renderer.setScissor(previous.scissor);renderer.setScissorTest(previous.scissorTest);
+  restore();
   if(!completed){target.dispose();if(resources)resources.targets.splice(resources.targets.indexOf(target),1);}
   if(!resources)generator.dispose();
  }
 }
 
 export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[],now=()=>performance.now(),clock=()=>performance.now()},capture=null){
-  const stats={captures:0,resolution:128,facesPerCapture:6,error:null,captureCpuMs:null,maxCaptureCpuMs:0,captureStartedAt:null};
+  const stats={captures:0,resolution:256,facesPerCapture:6,error:null,captureCpuMs:null,maxCaptureCpuMs:0,captureStartedAt:null};
   if(!water?.isMesh||water.material?.userData.waterAppearance?.kind!=='shinike')return {stats,position:null,async prepare(){return {prepared:false,captures:0,error:null};},update(){},dispose(){}};
   // Keep both the capture graph and its two textures alive while renderer node
   // bindings can still reference them. Only installation disposal releases them.
@@ -71,7 +85,14 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
       try{next=captureEnvironment({scene,renderer,center,forestChunks,overlays});}
       finally{stats.captureCpuMs=Math.max(0,clock()-started);stats.maxCaptureCpuMs=Math.max(stats.maxCaptureCpuMs,stats.captureCpuMs);}
       if(!next?.texture)throw Error('Shin-ike environment capture returned no texture');
-      const previous=current;current=next;material.envMap=next.texture;material.envMapIntensity=1.15;material.needsUpdate=true;
+      const previous=current,currentMap=material.envMap;
+      // r187 resolves changed native cube PMREMs in EnvironmentNode per object.
+      // The first custom map changes the graph; equivalent cached cube swaps do
+      // not. Older runtimes retain their explicit invalidation contract.
+      const sameProbeType=currentMap?.isPMREMTexture===true&&next.texture.isPMREMTexture===true&&
+        currentMap.isCubeTexture===true&&next.texture.isCubeTexture===true;
+      current=next;material.envMap=next.texture;material.envMapIntensity=1.15;
+      if(THREE.REVISION!=='187'||!sameProbeType)material.needsUpdate=true;
       previous?.dispose();stats.captures++;stats.error=null;return true;
     }catch(error){stats.error=String(error.message??error);return false;}
   }

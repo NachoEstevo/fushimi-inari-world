@@ -21,7 +21,7 @@ function fixture(fail=false,matrixAutoUpdate=true){
  walkingCamera.position.set(20,0,0);walkingCamera.updateMatrixWorld();probeCamera.updateMatrixWorld();lod.update(walkingCamera);assert.equal(lod.getCurrentLevel(),1);
  const originalTarget={name:'walking frame'},viewport=new THREE.Vector4(1,2,800,600),scissor=new THREE.Vector4(3,4,400,300),clearColor=new THREE.Color('#123456');
  let target=originalTarget,face=2,mip=1,scissorTest=true,clearAlpha=.7,captures=0;
- const renderer={xr:{enabled:true},shadowMap:{autoUpdate:true,needsUpdate:true},autoClear:false,
+ const renderer={xr:{enabled:true},shadowMap:{autoUpdate:true,needsUpdate:true},autoClear:false,autoClearColor:false,autoClearDepth:true,autoClearStencil:false,
   getRenderTarget:()=>target,getActiveCubeFace:()=>face,getActiveMipmapLevel:()=>mip,getClearColor:v=>v.copy(clearColor),getClearAlpha:()=>clearAlpha,
   getViewport:v=>v.copy(viewport),getScissor:v=>v.copy(scissor),getScissorTest:()=>scissorTest,
   setClearColor(color,alpha){clearColor.copy(color);clearAlpha=alpha;},setRenderTarget(value,nextFace,nextMip){target=value;face=nextFace;mip=nextMip;},
@@ -34,13 +34,14 @@ function fixture(fail=false,matrixAutoUpdate=true){
   // only when the scene owns automatic updates. Probe cameras update separately.
   for(let face=0;face<6;face++)if(scene.matrixWorldAutoUpdate)scene.updateMatrixWorld();
   lod.update(probeCamera);assert.equal(lod.getCurrentLevel(),0,'the actual LOD update switches to the probe view');
-  if(fail)throw Error('PMREM capture failed');
+  if(fail){renderer.autoClearColor=true;renderer.autoClearDepth=true;renderer.autoClearStencil=true;throw Error('PMREM capture failed');}
  }}};
  const restored=()=>{
   lights.forEach((light,i)=>{assert.equal(light.shadow.autoUpdate,states[i].autoUpdate);assert.equal(light.shadow.needsUpdate,states[i].needsUpdate);});
   assert.equal(mote.visible,true);assert.equal(dormantMote.visible,false);assert.equal(ordinarySprite.visible,true);assert.equal(water.visible,true);assert.equal(hidden.visible,false);assert.equal(scene.environment,environment);
   assert.equal(scene.matrixWorldAutoUpdate,matrixAutoUpdate);
   assert.equal(renderer.shadowMap.autoUpdate,true);assert.equal(renderer.shadowMap.needsUpdate,true);assert.equal(renderer.xr.enabled,true);assert.equal(renderer.autoClear,false);
+  assert.deepEqual([renderer.autoClearColor,renderer.autoClearDepth,renderer.autoClearStencil],[false,true,false]);
   assert.equal(target,originalTarget);assert.equal(face,2);assert.equal(mip,1);assert.equal(scissorTest,true);assert.equal(clearAlpha,.7);assert.equal(clearColor.getHex(),0x123456);
   assert.deepEqual(sun.position.toArray(),[-60,10,32]);assert.deepEqual(sun.target.position.toArray(),[5,2,-3]);
   assert.equal(lod.getCurrentLevel(),1,'probe rendering must restore the walking LOD hysteresis state');assert.equal(nearLevel.visible,false);assert.equal(farLevel.visible,true);
@@ -188,4 +189,39 @@ test('transient creative sprites stay out of probe captures and recover exact vi
   if(fail)assert.throws(capture,/PMREM capture failed/);else capture();
   f.restored();assert.equal(f.matrixUpdates,1);if(!fail)f.output.dispose();
  }
+});
+
+
+test('r187 native cube probe swaps retain the warmed material graph after its first custom environment',{skip:THREE.REVISION!=='187'},()=>{
+ const water=new THREE.Mesh(new THREE.PlaneGeometry(5,5),new THREE.MeshStandardMaterial());water.material.userData.waterAppearance={kind:'shinike'};
+ const targets=Array.from({length:2},()=>{const t=new THREE.CubeRenderTarget(256);t.texture.isPMREMTexture=true;return t;});
+ let time=0,captures=0;const maps=[];
+ const reflection=installShinikeReflections({water,now:()=>time},()=>{const t=targets[captures++%2];maps.push(t.texture);return {texture:t.texture,dispose(){}};});
+ const position=new THREE.Vector3(),sourceVersion=water.material.version;
+ try{
+  reflection.update(position,'day');time=1000;reflection.update(position,'day');
+  assert.equal(captures,1);assert.equal(water.material.version,sourceVersion+1,'first probe enables the custom material environment');
+  const warmedVersion=water.material.version;
+  for(const key of ['gold','aozora','autumn']){
+   time+=1000;reflection.update(position,key);time+=1000;reflection.update(position,key);
+   assert.equal(water.material.version,warmedVersion,'native cube-to-cube swaps reuse the material graph');assert.equal(water.material.envMap,maps.at(-1));
+  }
+  assert.equal(captures,4);assert.equal(new Set(maps).size,2);assert.equal(water.material.envMapIntensity,1.15);
+ }finally{reflection.dispose();assert.equal(water.material.envMap,null);for(const t of targets)t.dispose();water.geometry.dispose();water.material.dispose();}
+});
+
+test('native r187 environment nodes follow retained cube swaps without a graph rebuild or PMREM recapture',{skip:THREE.REVISION!=='187'},async()=>{
+ const [{default:EnvironmentNode},{default:MaterialReferenceNode},{default:PMREMNode}]=await Promise.all([
+  import('three/src/nodes/lighting/EnvironmentNode.js'),import('three/src/nodes/accessors/MaterialReferenceNode.js'),import('three/src/nodes/pmrem/PMREMNode.js')]);
+ const generator=new THREE.PMREMGenerator({});generator._setSize(256);const targets=[generator._allocateTarget(),generator._allocateTarget()];
+ const material=new THREE.MeshStandardMaterial({envMap:targets[0].texture}),frame={material,renderer:{}},environment=new EnvironmentNode(new MaterialReferenceNode('envMap','texture'));
+ const pmrem=new PMREMNode(targets[0].texture);environment._pmremNode=pmrem;pmrem.updateBefore(frame);
+ const version=material.version;
+ try{
+  for(const target of [targets[1],targets[0],targets[1]]){
+   material.envMap=target.texture;environment.updateBefore(frame);
+   assert.equal(environment._pmremNode,pmrem);assert.equal(pmrem._texture.value,target.texture);
+   assert.equal(pmrem._generator,null,'native prefiltered cubes never trigger another PMREM capture');assert.equal(material.version,version);
+  }
+ }finally{for(const target of targets)target.dispose();generator.dispose();material.dispose();pmrem.dispose();}
 });

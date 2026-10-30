@@ -1,8 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildMitsuFrontageAprons,clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
+import {buildMitsuFrontageAprons,clipMitsuTerrain,clipMitsuTerrainAsync} from './mitsu-frontage-aprons.mjs';
 import {buildPathMeshes} from './path-meshes.mjs';
+import {createHash} from 'node:crypto';
+import {terrainTriangles} from './terrain-triangles.mjs';
+
+const clippingFixture=()=>({
+  positions:terrainTriangles({cols:5,rows:5,xmin:-.13,zmin:.07,step:2.3},(c,r)=>(c+r)%3===0,(x,z)=>2+x*.13-z*.07),
+  masks:[[[1,1],[4,1],[4,4],[1,4]],[[3,2],[5,2],[5,5],[3,5]],[[7,7],[7.1,7],[7.1,7.1],[7,7.1]],[[30,30],[31,30],[31,31],[30,31]]]
+});
+
+test('terrain clipping preserves exact mixed-detail geometry for overlapping and distant cuts',()=>{
+  const {positions,masks}=clippingFixture();
+  for(const input of [positions,new Float32Array(positions)]){
+    const output=clipMitsuTerrain(input,masks),bytes=new Uint8Array(new Float64Array(output).buffer);
+    // Captured from the allocating implementation before its broad-phase change.
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),Array.isArray(input)?'b89c7bc2608dbc9ab3b2f6bd1474503a8862b799eaad8f8541027bb3006c4f8d':'1f44756801edcec9dad0ac4d67eac9c283649154e1b04ad165dbb423f3e3060f');
+    assert.deepEqual(clipMitsuTerrain(input,[]),Array.from(input));
+  }
+});
+
+test('distant terrain copies raw triangles without allocating input slices',()=>{
+  const positions=[0,1,0,1,2,0,0,3,1,-2,4,-2,-1,5,-2,-2,6,-1],expected=[...positions];
+  positions.slice=()=>{throw new Error('Distant triangles must not allocate slices');};
+  assert.deepEqual(clipMitsuTerrain(positions,[[[100,100],[101,100],[101,101],[100,101]]]),expected);
+  assert.deepEqual(clipMitsuTerrain(positions,[[[-100,-100],[-99,-100],[-99,-99],[-100,-99]],[[100,100],[101,100],[101,101],[100,101]]]),expected,'gaps between masks also bypass polygon allocation');
+});
+
+test('terrain broad-phase copying preserves nonfinite coordinates and incomplete trailing input',()=>{
+  const masks=[[[100,100],[101,100],[101,101],[100,101]]];
+  for(const positions of [[NaN,2,0,1,3,0,0,4,1],[Infinity,2,0,Infinity,3,0,Infinity,4,1],[0,1,0,1]]){
+    assert.deepEqual(clipMitsuTerrain(positions,masks),positions);
+  }
+});
 const setup=(features={paths:[],buildings:[],water:[]})=>{
   const root=new THREE.Group(),segment={id:'way/1372838160',a:[560,2,-332],b:[561,2,-332],ya:2.14,yb:2.14,width:2,stair:true,rise:.16};
   const surfaces={segments:[segment],terrainHeight:()=>2,height:()=>2.14},materials={stoneMat:new THREE.MeshStandardMaterial()};
@@ -57,4 +88,14 @@ test('shared path builder transfers only selected north earth shoulders, preserv
     assert.deepEqual(vertices(after,false),vertices(baseline,false));
     for(let i=2;i<afterEarth.length;i+=3)assert.ok(afterEarth[i]>-332,'south shoulder retained');
   }finally{globalThis.document=previousDocument;}
+});
+
+test('paced terrain cuts preserve byte-exact sync output and yield before completion',async()=>{
+ const {positions,masks}=clippingFixture();let time=0,yields=0;
+ const expected=clipMitsuTerrain(positions,masks);
+ const actual=await clipMitsuTerrainAsync(positions,masks,{clock:()=>time+=33,yieldWork:async()=>{yields++;}});
+ assert.deepEqual(actual,expected);assert.ok(yields>1);
+ assert.deepEqual(positions,clippingFixture().positions,'input remains immutable');
+ const failure=Error('cancelled preparation');
+ await assert.rejects(clipMitsuTerrainAsync(positions,masks,{clock:()=>time+=33,yieldWork:()=>Promise.reject(failure)}),error=>error===failure);
 });

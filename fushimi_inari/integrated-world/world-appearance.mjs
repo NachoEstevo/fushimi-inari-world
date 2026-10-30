@@ -203,7 +203,7 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
   const baseline={hemi:hemi.color.clone(),floor:hemi.groundColor.clone(),ambient:hemi.intensity,sun:sun.color.clone(),intensity:sun.intensity};
   const looks={
     sakura:{hemi:'#dddef5',floor:'#787784',sun:'#ffe3bd',ambient:.92,intensity:1.06,environment:.33},
-    aozora:{hemi:'#94cafa',floor:'#698776',sun:'#fff0cf',ambient:.94,intensity:1.08,environment:.32},
+    aozora:{hemi:'#83c7ff',floor:'#4d726c',sun:'#fff1c9',ambient:.92,intensity:1.08,environment:.3},
     'soft-light':{hemi:'#f0eadf',floor:'#68735f',sun:'#fff2cf',ambient:.98,intensity:1.04,environment:.34}
   };
   let look='natural',high=false;
@@ -222,7 +222,12 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
     // Slightly less uniform skylight gives sunlit paving and timber separation
     // in High. Keep night readable and never compound the saved day presets.
     const daylightLook=high&&baseline.intensity>1;
-    if(daylightLook){hemi.intensity*=.88;sun.intensity*=1.04;}
+    if(daylightLook){
+      // Aozora keeps cool canopy shade and warm, readable sun patches instead
+      // of filling the forest uniformly. Existing lights and shadow maps only.
+      const painted=look==='aozora';
+      hemi.intensity*=painted?.77:.88;sun.intensity*=painted?1.07:1.04;
+    }
     // The studio probe must follow daylight energy rather than lighting night as day.
     const daylight=LIGHT_PRESETS.day.sun+LIGHT_PRESETS.day.fill;
     const energy=THREE.MathUtils.clamp((baseline.intensity+baseline.ambient)/daylight,0,1);

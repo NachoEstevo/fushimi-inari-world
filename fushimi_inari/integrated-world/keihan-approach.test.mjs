@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {heightAt} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
@@ -65,4 +66,51 @@ test('static approach stays bounded, idempotent and fails closed without mapped 
  const {root,result:r,colliders}=make();assert.equal(r.drawBatches,8);assert.ok(r.triangles<6000);assert.ok(r.collidersAdded<20);let lights=0;root.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)for(const n of o.geometry.attributes.position.array)assert.ok(Number.isFinite(n));});assert.equal(lights,0);
  const again=buildKeihanApproach(root,features,surfaces,{},colliders);assert.equal(again.group,r.group);assert.equal(root.children.length,1);assert.equal(colliders.length,r.collidersAdded);
  const empty=new THREE.Group(),failed=buildKeihanApproach(empty,{...features,paths:features.paths.filter(p=>p.id!=='way/105449702')},surfaces);assert.equal(failed.built,false);assert.equal(empty.children.length,0);
+});
+
+const canalTerrainFixture=()=>[-250,41,-170,-190,47,-170,-190,60,-20,-250,41,-170,-190,60,-20,-250,54,-20,0,0,0,1,0,0,0,0,1,-234,31,-100,-233,31,-100,-234,31,-99];
+const bytesHash=array=>createHash('sha256').update(Buffer.from(array.buffer,array.byteOffset,array.byteLength)).digest('hex');
+function assertOriginalCanal(result,output){
+ const geometry=result.group.getObjectByName('Keihan approach concrete').geometry;
+ // Captured from the complete synchronous implementation before startup changes.
+ assert.equal(bytesHash(new Float64Array(output)),'10e82d4e9cd265dff9a534c5d68bcf25277559946c27ff4f5d9acdb897a643c7');
+ assert.equal(bytesHash(geometry.attributes.position.array),'26190da2203d9c4f3add7238c59acef6d9cb983968de30cd55047e8764cedd3c');
+ assert.equal(bytesHash(geometry.attributes.normal.array),'baa38af32865b4ffb120135919f77fec03fe9223acebe4fba1b1e1731807828d');
+ assert.equal(result.group.userData.bankRimVertexStart,114);assert.equal(result.group.userData.triangles,4858);
+}
+
+test('canal startup clipping retains original terrain bytes and complete rendered bank geometry',()=>{
+ const {result}=make();assertOriginalCanal(result,result.clipTerrain(canalTerrainFixture()));
+});
+
+test('outside canal terrain avoids triangle slices and whole-input iterator copies',()=>{
+ const {result}=make(),values=[0,0,0,1,0,0,0,0,1,-240,3,-100,-239,4,-100,-240,3,-99,-220,4,-200,-219,4,-200,-220,4,-199,-220,3,-20,-219,4,-20,-220,3,-19];
+ const positions=new Float64Array(values);
+ positions[Symbol.iterator]=()=>{throw Error('whole terrain copied through iterator');};
+ positions.slice=()=>{throw Error('outside terrain allocated triangle');};
+ const before=result.group.getObjectByName('Keihan approach concrete').geometry;
+ assert.deepEqual(result.clipTerrain(positions),values);
+ assert.equal(result.group.getObjectByName('Keihan approach concrete').geometry,before);
+ assert.notEqual(result.group.userData.bankRimFromRenderedTerrain,true);
+});
+
+test('canal clipping rejects sparse and nonfinite triangles without replacing bank geometry',async()=>{
+ const {result}=make(),geometry=result.group.getObjectByName('Keihan approach concrete').geometry;
+ for(const input of [Array(9),[0,0,0,1,Infinity,0,0,0,1],new Float64Array([0,0,0,1,0,0,0,NaN,1])]){
+  assert.throws(()=>result.clipTerrain(input),/finite triangle/);
+  await assert.rejects(result.clipTerrainAsync(input),/finite triangle/);
+ }
+ assert.equal(result.group.getObjectByName('Keihan approach concrete').geometry,geometry);
+});
+
+test('asynchronous canal clipping yields during the full scan and retains exact terrain and bank bytes',async t=>{
+ const {result}=make(),far=Array.from({length:1100},()=>[0,0,0,1,0,0,0,0,1]).flat(),positions=[...far,...canalTerrainFixture()];
+ let elapsed=0;t.mock.method(performance,'now',()=>elapsed+=33);
+ let yields=0,scanYields=0;
+ const output=await result.clipTerrainAsync(positions,{yieldWork:async()=>{yields++;if(!result.group.userData.bankRimFromRenderedTerrain)scanYields++;}});
+ assert.ok(scanYields>=2,'a full terrain scan releases the main thread before publishing its bank');assert.ok(yields>scanYields,'the final terrain cutter also releases the main thread');
+ assert.deepEqual(output.slice(0,far.length),far);assertOriginalCanal(result,output.slice(far.length));
+ const complete=result.group.getObjectByName('Keihan approach concrete').geometry;
+ await result.clipTerrainAsync(far,{yieldWork:async()=>{}});
+ assert.equal(result.group.getObjectByName('Keihan approach concrete').geometry,complete,'partial terrain must retain the completed bank');
 });

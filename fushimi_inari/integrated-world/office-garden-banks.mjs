@@ -35,7 +35,7 @@ export function buildOfficeGardenBanks(root,features,network){
   }
   allPolygons.push(...polygons);records.push({id:pond.id,plannedArea:polygons.reduce((n,p)=>n+Math.abs(polygonArea(p)),0)});
  }
- const mesh=surface(allPolygons,network,moss,'Office pond planted margins',{maxSlope:.45});
+ const mesh=surface(allPolygons,network,moss,'Office pond planted margins',{maxSlope:.45,cacheHeights:true});
  if(!mesh){moss.dispose();stone.dispose();return {ponds:[],area:0,stones:0};}
  const p=mesh.geometry.attributes.position,colors=[],stones=[];let area=0;
  for(let i=0;i<p.count;i++){

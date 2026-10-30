@@ -3,7 +3,8 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createKeihanStationSpec} from './keihan-station-spec.mjs';
 import {pathOffset} from './path-frame.mjs';
 import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
-import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
+import {clipMitsuTerrain,clipMitsuTerrainAsync} from './mitsu-frontage-aprons.mjs';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 
 // Live OSM way310960824, clipped to Z[-155,-40]. This is a bounded canal
 // addition, not a replacement for the world's separately owned water meshes.
@@ -107,14 +108,19 @@ export function buildKeihanApproach(root,features,surfaces,materials={},collider
  for(const [key,parts]of batches){const geometry=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,mats[key]);mesh.name='Keihan approach '+key;mesh.castShadow=['vermilion','dark','yellow'].includes(key);mesh.receiveShadow=true;group.add(mesh);}
  const cells=new Map(),size=4;for(const t of topTriangles){const xs=t.map(p=>p[0]),zs=t.map(p=>p[2]);for(let x=Math.floor(Math.min(...xs)/size);x<=Math.floor(Math.max(...xs)/size);x++)for(let z=Math.floor(Math.min(...zs)/size);z<=Math.floor(Math.max(...zs)/size);z++){const key=x+','+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);}}
  const surfaceHeight=(x,z)=>{for(const [a,b,c]of cells.get(Math.floor(x/size)+','+Math.floor(z/size))??[]){const den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-10)continue;const u=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den,v=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den,w=1-u-v;if(Math.min(u,v,w)>=-1e-8)return u*a[1]+v*b[1]+w*c[1];}return null;};
- const clipTerrain=positions=>{
-  if(positions.length%9||Array.from(positions).some(v=>!Number.isFinite(v)))throw Error('Keihan canal clip requires finite triangle positions');
+ function* prepareCanalBank(positions){
+  let checked=0;
+  if(positions.length%9||!positions.every(value=>{checked++;return Number.isFinite(value);})||checked!==positions.length)throw Error('Keihan canal clip requires finite triangle positions');
   // The rendered terrain is a coarse triangle plane, not the DEM sampler.
   // Intersect each bank edge with those actual planes once, so both sides
   // of the cut share the same rim, including previous terrain-owner cuts.
   const bankPositions=[],coverage=canal.ring.map(()=>0);
-  for(let k=0;k<positions.length;k+=9){const triangle=[0,3,6].map(o=>positions.slice(k+o,k+o+3)),flat=ccw(triangle.map(p=>[p[0],p[2]])),[ta,tb,tc]=triangle,den=(tb[2]-tc[2])*(ta[0]-tc[0])+(tc[0]-tb[0])*(ta[2]-tc[2]);if(Math.abs(den)<1e-10)continue;
-   if(flat.every(p=>p[0]<-233)||flat.every(p=>p[0]>-209)||flat.every(p=>p[1]<-155)||flat.every(p=>p[1]>-40))continue;
+  for(let k=0;k<positions.length;k+=9){
+   if(k>0&&k%4608===0)yield;
+   // Reject distant world triangles before allocating their vertex/polygon arrays.
+   // Keep the original inclusive canal bounds and intersection math unchanged.
+   if(Math.max(positions[k],positions[k+3],positions[k+6])< -233||Math.min(positions[k],positions[k+3],positions[k+6])> -209||Math.max(positions[k+2],positions[k+5],positions[k+8])< -155||Math.min(positions[k+2],positions[k+5],positions[k+8])> -40)continue;
+   const triangle=[0,3,6].map(o=>positions.slice(k+o,k+o+3)),flat=ccw(triangle.map(p=>[p[0],p[2]])),[ta,tb,tc]=triangle,den=(tb[2]-tc[2])*(ta[0]-tc[0])+(tc[0]-tb[0])*(ta[2]-tc[2]);if(Math.abs(den)<1e-10)continue;
    const height=(x,z)=>{const u=((tb[2]-tc[2])*(x-tc[0])+(tc[0]-tb[0])*(z-tc[2]))/den,v=((tc[2]-ta[2])*(x-tc[0])+(ta[0]-tc[0])*(z-tc[2]))/den;return u*ta[1]+v*tb[1]+(1-u-v)*tc[1];};
    for(let edge=0;edge<canal.ring.length;edge++){const a=canal.ring[edge],b=canal.ring[(edge+1)%canal.ring.length];let lo=0,hi=1;
     for(let i=0;i<3;i++){const p=flat[i],q=flat[(i+1)%3],side=v=>(q[0]-p[0])*(v[1]-p[1])-(q[1]-p[1])*(v[0]-p[0]),v0=side(a),v1=side(b),delta=v1-v0;if(Math.abs(delta)<1e-12){if(v0< -1e-9){hi=-1;break;}}else if(delta>0)lo=Math.max(lo,-v0/delta);else hi=Math.min(hi,-v0/delta);}
@@ -124,9 +130,14 @@ export function buildKeihanApproach(root,features,surfaces,materials={},collider
   // Partial terrain chunks do not replace a complete bank. Normal world
   // integration supplies the full triangle set and reaches every edge.
   if(coverage.every(v=>v>.99999)){const bank=new THREE.BufferGeometry();bank.setAttribute('position',new THREE.Float32BufferAttribute(bankPositions,3));bank.computeVertexNormals();const concreteMesh=group.getObjectByName('Keihan approach concrete'),geometry=mergeGeometries([concreteBase,bank],false);bank.dispose();concreteMesh.geometry.dispose();concreteMesh.geometry=geometry;group.userData.bankRimFromRenderedTerrain=true;group.userData.bankRimVertexStart=concreteBase.attributes.position.count;group.userData.triangles=group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0);}
-  return clipMitsuTerrain(positions,[canal.ring]);
+ }
+ const clipTerrain=positions=>{for(const _ of prepareCanalBank(positions)){}return clipMitsuTerrain(positions,[canal.ring]);};
+ const clipTerrainAsync=async(positions,{yieldWork=yieldStartupTask}={})=>{
+  const checkpoint=createStartupCheckpoint({yieldWork});
+  for(const _ of prepareCanalBank(positions)){const pause=checkpoint();if(pause)await pause;}
+  return clipMitsuTerrainAsync(positions,[canal.ring],{yieldWork});
  };
  const routePoints=layout.routePoints.map(([x,y,z])=>[x,surfaceHeight(x,z)??y,z]),checkpoint=(id,p,target)=>({id,position:[p[0],(surfaceHeight(p[0],p[1])??surfaces.height(p[0],p[1]))+1.7,p[1]],lookAt:[target[0],surfaces.height(target[0],target[1])+1.7,target[1]]});
- group.userData={built:true,builtIds:[],sourceIds:KEIHAN_APPROACH_IDS,surfaceHeight,clipTerrain,routePoints,topTriangles,portions:layout.portions.map(p=>({id:p.id,polygon:p.polygon})),canal,bridge:{west:bridge.west,east:bridge.east,length:bridge.length},checkpoints:[checkpoint('keihan_gate',[-301.277,-124.745],[-291.042,-114.169]),checkpoint('inari_bridge',bridge.local(3,0),[-199.024,-84.948]),checkpoint('urasando',[-151.505,-87.319],[-124.95,-84.325])],drawBatches:group.children.length,collidersAdded:pending.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),provenance:'OSM roads/bridges and canal310960824; user October2024 StreetView panoramas jdt_0bBLBQcMoedhCMDVJA, mVT8dPF3mdWEKySYwkIvHQ, vCTQFSUYZhnjIYqJrVIRZw. Keihan to Inari-shinmichi, Inari bridge, mapped JR crossing, Hommachi, Urasando; not the JR Omotesando route.',inferred:'Deck width/thickness, water level, railings, device dimensions and offsets are photo estimates. Canal bounded to Z[-155,-40]. Existing street heights remain canonical; no surveyed claim.',limits:'No live crossing animation; native walking/visual acceptance remains root-owned. New canal must be wired into final terrain clipping.'};
+ group.userData={built:true,builtIds:[],sourceIds:KEIHAN_APPROACH_IDS,surfaceHeight,clipTerrain,clipTerrainAsync,routePoints,topTriangles,portions:layout.portions.map(p=>({id:p.id,polygon:p.polygon})),canal,bridge:{west:bridge.west,east:bridge.east,length:bridge.length},checkpoints:[checkpoint('keihan_gate',[-301.277,-124.745],[-291.042,-114.169]),checkpoint('inari_bridge',bridge.local(3,0),[-199.024,-84.948]),checkpoint('urasando',[-151.505,-87.319],[-124.95,-84.325])],drawBatches:group.children.length,collidersAdded:pending.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),provenance:'OSM roads/bridges and canal310960824; user October2024 StreetView panoramas jdt_0bBLBQcMoedhCMDVJA, mVT8dPF3mdWEKySYwkIvHQ, vCTQFSUYZhnjIYqJrVIRZw. Keihan to Inari-shinmichi, Inari bridge, mapped JR crossing, Hommachi, Urasando; not the JR Omotesando route.',inferred:'Deck width/thickness, water level, railings, device dimensions and offsets are photo estimates. Canal bounded to Z[-155,-40]. Existing street heights remain canonical; no surveyed claim.',limits:'No live crossing animation; native walking/visual acceptance remains root-owned. New canal must be wired into final terrain clipping.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

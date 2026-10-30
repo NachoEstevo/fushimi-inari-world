@@ -1,5 +1,7 @@
+import {createStartupCheckpoint,yieldStartupTask,startStartupYieldAudit} from './startup-work.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
 import {installShadowMaterialSource} from './shadow-material-source.mjs';
+import {installPrecompileStateRestoration} from './renderer-precompile-state.mjs';
 import {installStaticInstanceBufferNames} from './static-instance-buffer-names.mjs';
 import {padStaticInstanceMatrices} from './static-instance-capacity.mjs';
 import {createWalkingPreparationYield} from './walking-preparation-yield.mjs';
@@ -55,17 +57,17 @@ import {protectOrbit} from './orbit-clearance.mjs';
 import {installSky} from './sky.mjs?v=ambience-4';
 import {installFlashlight} from './flashlight.mjs?v=welcome-hud-1';
 import {installVisitors} from './visitors.mjs?v=immersion-20261025c';
-import {spatialMeshes} from './spatial-mesh.mjs';
+import {spatialMeshesAsync} from './spatial-mesh.mjs';
 import {createSunShadowSchedule} from './sun-shadow-schedule.mjs';
 import {renderStats} from './render-stats.mjs?v=usability-9';
 import {installCandleFlameInstances} from './candle-flame-instances.mjs';
 import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground-nodes.mjs';
-import {blendEntranceGround} from './entrance-ground-nodes.mjs';
+import {blendEntranceGroundAsync} from './entrance-ground-nodes.mjs';
 import {blendKeihanStreetGround} from './keihan-street-ground-nodes.mjs';
 import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=welcome-hud-1';
-import {buildPathMeshes} from './path-meshes.mjs?v=usability-9';
+import {buildPathMeshesAsync} from './path-meshes.mjs?v=usability-9';
 import {installExplorationHUD} from './exploration-hud.mjs?v=welcome-hud-1';
 import {integrate} from './integration.mjs?v=station-polish-20261025b';
 import {installWalking} from './walking.mjs?v=immersion-20261025c';
@@ -83,6 +85,10 @@ const allowDebugCamera=query.get('debugCamera')==='1';
 const allowFastTravel=allowDebugCamera||query.get('audit')==='1'||query.get('textureAudit')==='1';
 const welcome=installWelcomeScreen();
 const loadingStages=[];
+const startupSteps=[];
+const startupYieldAudit=query.get('loadAudit')==='1'?startStartupYieldAudit():null;
+const startupStep=query.get('loadAudit')==='1'?(message,ms=performance.now())=>{startupSteps.push({message,ms});}:undefined;
+const startupCheckpoint=createStartupCheckpoint({onStep:startupStep});
 function loadingStage(message){
   $('loading').textContent=message;
   loadingStages.push({message,ms:Math.round(performance.now())});
@@ -98,12 +104,17 @@ try {
   let assembly=null,leafLight=null,walkingPrewarm=null,renderPreparation=null,showcase=null,shadowRouteAudit=null,shadowCasterCapture=null,shadowCasterPending=false;
   const ground=(x,z)=>assembly?assembly.ground(x,z):heightAt(terrain,x,z);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
+  await startupCheckpoint('createCompilationLightIndex');
   const compilationLights=createCompilationLightIndex(scene);
   const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
   document.body.dataset.bootPhase='graphics device';
   await renderer.init();
+  await startupCheckpoint('installShadowMaterialSource');
   const shadowMaterialSource=installShadowMaterialSource(renderer);
-  addEventListener('pagehide',event=>{if(!event.persisted)shadowMaterialSource.dispose();});
+  await startupCheckpoint('installPrecompileStateRestoration');
+  const precompileState=installPrecompileStateRestoration(renderer);
+  document.body.dataset.precompileStateRestoration=String(precompileState.enabled);
+  addEventListener('pagehide',event=>{if(!event.persisted){shadowMaterialSource.dispose();precompileState.dispose();}});
   document.body.dataset.bootPhase='scene';
   const staticShaderOwners=new WeakSet();
   const instanceCapacityEnabled=query.get('pipelineAudit')!=='1'||query.get('instanceCapacity')!=='0';
@@ -125,6 +136,7 @@ try {
   }
   addEventListener('pagehide',event=>{if(!event.persisted)instanceBufferNames?.dispose();});
   renderer.backend.device?.addEventListener('uncapturederror',event=>{document.body.dataset.gpuError=event.error.message;});
+  await startupCheckpoint('installRendererTextureBindings');
   const textureBindings=installRendererTextureBindings(renderer);
   document.body.dataset.rendererBackend=renderer.backend.isWebGPUBackend?'webgpu':'webgl2';document.body.dataset.threeRevision=THREE.REVISION;
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.setSize(innerWidth,innerHeight);
@@ -134,15 +146,18 @@ try {
   renderer.domElement.tabIndex=0;
   renderer.domElement.setAttribute('aria-label','Explore Inariyama: click to capture mouse, WASD to walk, mouse to look, Escape to release');
   const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.2,12000);
+  await startupCheckpoint('createViewingDistance');
   const viewingDistance=createViewingDistance({scene,camera,debugCamera:allowDebugCamera});
+  await startupCheckpoint('installSky');
   const sky=installSky(scene,camera);
   const controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=3;controls.maxDistance=6000;
   const hemi=new THREE.HemisphereLight(0xe9f1e3,0x61765f,1.6);scene.add(hemi);
   const sun=new THREE.DirectionalLight(0xffebcd,2.3);sun.position.set(-800,1400,-600);scene.add(sun);
+  await startupCheckpoint('createAudio');
   const audio=createAudio();
   loadingStage('Building nearby streets and walking surfaces…');
-  assembly=await integrate(scene,renderer,terrain,features,{cullPathMargins:query.get('pipelineAudit')!=='1'||query.get('marginCull')!=='0',freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
+  assembly=await integrate(scene,renderer,terrain,features,{cullPathMargins:query.get('pipelineAudit')!=='1'||query.get('marginCull')!=='0',freezeStaticInstances:query.get('shadowAudit')==='1'&&query.has('shadowFreeze')?query.get('shadowFreeze')==='1':undefined,forestSubcellSize:query.get('shadowAudit')==='1'?({'legacy':0,'64':64,'48':48,'32':32}[query.get('shadowCells')]??64):undefined,progress:loadingStage,startupStep,bell:audio.bell,water:audio.water,map:()=>document.body.classList.remove('panels-hidden'),buildingAdded:async group=>{
     compilationLights.invalidate();
     appearance.applyTo(group);
     group.traverse(object=>{for(const material of [object.material].flat())if(material?.userData?.precinctLeafReceiver)leafLight?.attach(material);});
@@ -159,6 +174,7 @@ try {
     detailChunks.update(camera,performance.now()/1000,quality.detailScale,true);
     sun.shadow.needsUpdate=true;
   }});
+  loadingStage('Preparing the forest floor…');await yieldStartupTask();
   // Deferred groups join the world after their detached shader preparation.
   for(const type of ['childadded','childremoved'])assembly.root.addEventListener(type,compilationLights.invalidate);
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
@@ -167,14 +183,23 @@ try {
   if(assembly.shadowPartitions.size>0)sun.shadow.camera.layers.enable(1);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
+  await startupCheckpoint('createSunShadowSchedule');
   const sunShadows=createSunShadowSchedule({sun,quality:'balanced'});
+  const prepareTerrainClip=async(owner,input)=>{
+    const clip=owner?.clipTerrainAsync??owner?.clipTerrain;
+    return await clip?.call(owner,input)??input;
+  };
   const terrainGeo=new THREE.BufferGeometry();
-  const pondClipped=assembly.officePonds.clipTerrain(assembly.renderedTerrainPositions);
-  const pathClipped=assembly.mitsuFrontageAprons.clipTerrain?.(pondClipped)??pondClipped;
-  const mikoshikoClipped=assembly.mikoshikoPrecinct.clipTerrain?.(pathClipped)??pathClipped;
-  const shinsenjoClipped=assembly.shinsenjoPrecinct.clipTerrain?.(mikoshikoClipped)??mikoshikoClipped;
-  const shinikeClipped=assembly.shinikeWater.clipTerrain?.(shinsenjoClipped)??shinsenjoClipped;
-  const pos=assembly.keihanApproach?.clipTerrain(shinikeClipped)??shinikeClipped;
+  let pos=assembly.renderedTerrainPositions;
+  for(const [label,owner] of [
+    ['pond',assembly.officePonds],['path',assembly.mitsuFrontageAprons],
+    ['mikoshiko',assembly.mikoshikoPrecinct],['shinsenjo',assembly.shinsenjoPrecinct],
+    ['shinike',assembly.shinikeWater],['keihan',assembly.keihanApproach]
+  ]){
+    startupStep?.(`${label} terrain cut`);
+    pos=await prepareTerrainClip(owner,pos);
+  }
+  await startupCheckpoint('terrain attributes and UVs');
   document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
@@ -182,22 +207,28 @@ try {
   soil.colorSpace=THREE.SRGBColorSpace;soil.wrapS=soil.wrapT=THREE.RepeatWrapping;soil.anisotropy=8;
   const soilNormal=textureStreaming.load('../assets/textures/nanobanana/surface_forest_soil_leaves_normal.png');
   soilNormal.wrapS=soilNormal.wrapT=THREE.RepeatWrapping;
-  const groundUV=[];for(let i=0;i<pos.length;i+=3)groundUV.push(pos[i]/1.5,pos[i+2]/1.5);
+  const groundUV=new Float32Array(pos.length/3*2);for(let i=0;i<pos.length;i+=3){
+    if(i%3072===0){const pause=startupCheckpoint();if(pause)await pause;}
+    groundUV[i/3*2]=pos[i]/1.5;groundUV[i/3*2+1]=pos[i+2]/1.5;
+  }
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
-  const cover=[],precinctGrass=[],coverCache=new Map();
+  loadingStage('Finishing the forest floor…');await yieldStartupTask();
+  const cover=new Float32Array(pos.length/3),precinctGrass=new Float32Array(pos.length/3),coverCache=new Map();
   const groundCover=makePrecinctGroundCover(features,{surfaceAreas:assembly.entranceSurfaces});
   for(let i=0;i<pos.length;i+=3){
+    if(i%192===0){const pause=startupCheckpoint();if(pause)await pause;}
     const x=pos[i],y=pos[i+1],z=pos[i+2],key=`${x},${z}`;
     if(!coverCache.has(key)){
       const slope=Math.hypot(ground(x+1,z)-ground(x-1,z),ground(x,z+1)-ground(x,z-1))/2;
       const distance=assembly.pathDistance(x,z)?.distance??100;
       coverCache.set(key,[groundCover(x,y,z,slope,distance),groundCover.precinct(x,y,z,slope,distance)]);
     }
-    cover.push(coverCache.get(key)[0]);precinctGrass.push(coverCache.get(key)[1]);
+    cover[i/3]=coverCache.get(key)[0];precinctGrass[i/3]=coverCache.get(key)[1];
   }
   terrainGeo.setAttribute('groundCover',new THREE.Float32BufferAttribute(cover,1));
   terrainGeo.setAttribute('precinctGrass',new THREE.Float32BufferAttribute(precinctGrass,1));
   coverCache.clear();
+  loadingStage('Preparing nearby streets…');await yieldStartupTask();
   const terrainMaterial=new THREE.MeshStandardNodeMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
   // Reuse the terrain's streamed earth maps, with matching world-space UVs.
   const pondBank=scene.getObjectByName('Shin-ike bounded inward natural bank collar R97');
@@ -209,10 +240,13 @@ try {
   const courtyard=assembly.legacy.materials.gravelMat;
   const romon=assembly.spatial.byId.romon;
   blendCourtyardGround(terrainMaterial,courtyard,romon);
-  blendEntranceGround(terrainGeo,terrainMaterial,courtyard,romon,features);
+  await startupCheckpoint('blendEntranceGround');
+  await blendEntranceGroundAsync(terrainGeo,terrainMaterial,courtyard,romon,features,{yieldWork:yieldStartupTask});
+  await startupCheckpoint('blendKeihanStreetGround');
   blendKeihanStreetGround(terrainGeo,terrainMaterial,features);
   const cloudShade=attachCloudShade(terrainMaterial);
-  const landscape=spatialMeshes(terrainGeo,terrainMaterial,160);scene.add(landscape);terrainGeo.dispose();
+  await startupCheckpoint('spatialMeshes');
+  const landscape=await spatialMeshesAsync(terrainGeo,terrainMaterial,160,null,{yieldWork:yieldStartupTask});scene.add(landscape);terrainGeo.dispose();
 
   function meshFrom(vertices,material){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.computeVertexNormals();
@@ -228,12 +262,18 @@ try {
       for(const j of [0,1,2,0,2,3])vertices.push(...corners[j]);
     }
   }
-  const pathGroup=buildPathMeshes(assembly.surfaces,assembly.legacy,assembly.ground);scene.add(pathGroup);
+  await startupCheckpoint('buildPathMeshes');
+  const pathGroup=await buildPathMeshesAsync(assembly.surfaces,assembly.legacy,assembly.ground,{yieldWork:yieldStartupTask,onStage:startupStep});scene.add(pathGroup);
+  await startupCheckpoint('buildStationApproachSurfaceFixes');
   const approachFloors=buildStationApproachSurfaceFixes(assembly,pathGroup,features);
   assembly.walkHeight=approachFloors.walkHeight;
+  await startupCheckpoint('installKeihanStreetCommerce');
   const streetCommerce=installKeihanStreetCommerce(assembly);
+  await startupCheckpoint('buildKeihanStreetObservedDetails');
   const observedStreet=buildKeihanStreetObservedDetails(assembly);
+  await startupCheckpoint('buildKeihanStationDetailPolish');
   const stationDetails=buildKeihanStationDetailPolish(assembly);
+  await startupCheckpoint('buildKeihanVideoMerchandise');
   const videoMerchandise=buildKeihanVideoMerchandise(assembly);
   document.body.dataset.videoMerchandise=JSON.stringify(videoMerchandise.stats);
   document.body.dataset.observedStreet=JSON.stringify(observedStreet.stats);
@@ -246,13 +286,16 @@ try {
   const buildings={ordinary:[],sacred:[]};
   let inferredHeightCount=0,omittedShrineProxies=0;
   const includeMappedProxies=query.get('mappedProxies')==='1';
+  await startupCheckpoint('createSuehiroyaSummit');
   const summitShop=createSuehiroyaSummit({buildings:features.buildings,ground,walkHeight:assembly.walkHeight,materials:assembly.legacy.materials});
   buildingGroup.add(summitShop.group);
   document.body.dataset.suehiroyaSummit=JSON.stringify(summitShop.stats);
   addEventListener('pagehide',event=>{if(!event.persisted)summitShop.dispose();});
+  await startupCheckpoint('>summitShop.builtIds.has');
   const omitContext=building=>summitShop.builtIds.has(building.id)||omitUnverifiedPrecinctProxy(building)||(!includeMappedProxies&&omitUnmodeledShrineProxy(building));
   const contextRoutes=[assembly.spatial.main,assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.keihanStation?.routePoints,assembly.keihanApproach?.routePoints,assembly.inariStationRoute?.routePoints].filter(route=>route?.length>1);
   const contextSegments=contextRoutes.flatMap(route=>route.slice(1).map((b,i)=>({a:route[i],b})));
+  await startupCheckpoint('createMappedBuildingFinishes');
   const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext});
   buildingGroup.add(contextFinishes.group);
   inferredHeightCount=contextFinishes.stats.records.filter(record=>record.heightSource!=='height').length;
@@ -288,13 +331,14 @@ try {
       shades.push(shade,shade,shade);
     }
     mesh.geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));material.vertexColors=true;
-    const chunks=spatialMeshes(mesh.geometry,material,256);
+    const chunks=await spatialMeshesAsync(mesh.geometry,material,256,null,{yieldWork:yieldStartupTask});
     for(const child of chunks.children)child.receiveShadow=false;
     buildingGroup.add(chunks);mesh.geometry.dispose();
   }
   buildingGroup.updateWorldMatrix(true,true);
   const mappedBuildingEntries=[];buildingGroup.traverse(object=>{if(object.isMesh)mappedBuildingEntries.push({object,bounds:new THREE.Box3().setFromObject(object)});});
   document.body.dataset.mappedProxyPolicy=JSON.stringify({omittedShrineProxies,includeMappedProxies,provenance:'Unmodeled religious extrusions omitted; source footprints and POIs retained'});
+  await startupCheckpoint('>assembly.excludesBuilding');
   const panorama=installCityPanorama(scene,features,ground,building=>assembly.excludesBuilding(building)||omitContext(building));
   const canopy=distantCanopy(features,ground,assembly.pathDistance,terrain);scene.add(canopy.group);
   document.body.dataset.aerialContext=JSON.stringify({footprints:features.buildings.length,crowns:canopy.group.userData.count,canopyTriangles:canopy.group.userData.count*20,provenance:'OSM footprints; satellite-interpreted woodland; estimated heights'});
@@ -332,7 +376,9 @@ try {
   const markers=new THREE.InstancedMesh(markerGeometry,markerMaterial,landmarks.length),dummy=new THREE.Object3D();
   landmarks.forEach((p,i)=>{dummy.position.set(p.point[0],ground(p.point[0],p.point[2])+12,p.point[2]);dummy.updateMatrix();markers.setMatrixAt(i,dummy.matrix);});
   landmarkGroup.add(markers);landmarkGroup.visible=false;
+  await startupCheckpoint('buildGraph');
   const graph=buildGraph(features.paths,terrain);
+  await startupCheckpoint('buildStationApproachRoutes');
   const stationRoutes=buildStationApproachRoutes(assembly,features,terrain);
   let activeRoute=[],routeLine=null,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
   let arrival=null,arrivalUI=null,zen=null;
@@ -479,10 +525,13 @@ try {
     if(hit&&landmarkGroup.visible){$('itinerary').value='custom';$('destination').value=landmarks[hit.instanceId].id;trace();}
   });
   $('summary').textContent=`${(width/1000).toFixed(2)} × ${(depth/1000).toFixed(2)} km study area · ${features.paths.length.toLocaleString('es')} mapped segments · ${landmarks.length} identified landmarks`;
+  await startupCheckpoint('installKeihanFareGates');
   const fareGates=installKeihanFareGates(assembly.keihanStation);
+  await startupCheckpoint('createPublicWalkDomain');
   const publicWalkDomain=createPublicWalkDomain(assembly);
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
   let journal=null,sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
+  await startupCheckpoint();
   const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:(object,event)=>{journal?.recordInteraction(object);if(event?.type==='drink.collected')zen?.collectDrink(event);},onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
@@ -521,6 +570,7 @@ try {
     $('position').textContent=`${a.label} · ${a.target[1].toFixed(1)} m ASL`;
   }
   $('visit').onclick=()=>{if(allowFastTravel)visit();};$('place').value='romon';visit();
+  await startupCheckpoint();
   const hud=installExplorationHUD({camera,features,assembly,getRoute:()=>activeRoute,teleport:id=>{
     if(!allowFastTravel)return;
     const anchor=assembly.spatial.byId[id],node=nearestNode(graph,anchor.target,80)?.node;
@@ -537,6 +587,7 @@ try {
     if(arrival?.active){interruptArrival();walker.start();}else toggleWalking();
   };
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
+  await startupCheckpoint('>path.at');
   const routeLighting=installRouteLighting(scene,assembly.spatial.main,assembly.ground,{extraRoutes:[assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point))],extraEmitters:assembly.keihanFrontages.lightPositions??[],existingLights:assembly.legacy.lanternPointLights});
   document.body.dataset.routeLighting=JSON.stringify(routeLighting.stats);
   const sunOffset=new THREE.Vector3();
@@ -551,6 +602,7 @@ try {
     for(const water of waterControllers)water.setMode(mode);
   };$('light').onchange();
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
+  await startupCheckpoint('createRenderQuality');
   const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
   let auditCompileDepth=0;
   if(renderBuildAudit){
@@ -587,14 +639,18 @@ try {
   document.body.dataset.precinctLeafLight=JSON.stringify({...leafLight.stats,skippedAggregateRoofs:leafRoofs.skippedAggregate,skippedOversizedRoofs:leafRoofs.skippedOversized});
   const shaftRoutes=[...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.spatial.main,assembly.spatial.returning];
   const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
+  await startupCheckpoint();
   const sunShafts=createLocalSunShafts({scene,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);appearance.setTimeOfDay($('light').value);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
+  await startupCheckpoint();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,includeImage:true,isCameraOwned:()=>!!zen?.active||!!arrival?.active,getCaptureContext:()=>({mode:zen?.returning.cameraOwned||arrival?.active?'train':walker.mode,fov:camera.fov,weather:zen?.journey.snapshot().weather??'clear',light:$('light').value}),onCaptured:async details=>{journal?.recordPhoto(details);return await zen?.recordPhoto(details)??'';},render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
+  await startupCheckpoint('installCandleFlameInstances');
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
   document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
   let detailDistance='near';
+  await startupCheckpoint('JSON.stringify');
   const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
   for(const {object,bounds} of assembly.staticBatches.residencyEntries)detailChunks.add(object,{bounds});
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
@@ -604,6 +660,7 @@ try {
   for(const group of streetCommerce.detailGroups??[])detailChunks.add(group,{radius:80,margin:20});
   for(const group of assembly.keihanRail?.detailGroups??[])detailChunks.add(group);
   renderPreparation=createRenderPreparationQueue({onBusy:busy=>{if(busy)walkingPrewarm?.setBlocked(true);}});
+  await startupCheckpoint('installExplorationMenu');
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>!!zen?.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0),
     onRenderQuality:async value=>{
@@ -732,7 +789,7 @@ try {
   const lookLabel=document.createElement('label');lookLabel.htmlFor='creative-look';lookLabel.textContent='Visual atmosphere';
   const lookSelect=document.createElement('select');lookSelect.id='creative-look';lookSelect.innerHTML='<option value="natural">Natural</option><option value="sakura">Sakura · pink sunset</option><option value="soft-light">Soft light</option><option value="aozora">Aozora</option>';
   $('scene-settings').append(lookLabel,lookSelect);
-  lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);};
+  lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);sunShafts.setLook(lookSelect.value);};
   // Stable matrix-buffer capacities share r180 shaders across static cells.
   const instanceCapacity=instanceBufferNames?.enabled?padStaticInstanceMatrices([...assembly.staticBatches.meshes,...assembly.instancePrewarmEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),...assembly.staticBoundaryRoots],{onEligible:object=>staticShaderOwners.add(object)}):null;
   document.body.dataset.instanceCapacity=JSON.stringify(instanceCapacity);
@@ -748,6 +805,7 @@ try {
   renderBuildAudit?.noteRegistered([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})));
   const walkingCompileHistory=renderBuildAudit?[]:null;
   const reportWalkingNeighborhood=stats=>{document.body.dataset.walkingNeighborhood=JSON.stringify(stats);};
+  await startupCheckpoint();
   const walkingPreparationYield=createWalkingPreparationYield(),framePacedWalkingPreparation=query.get('prewarmFrameYield')!=='0';
   walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
     compile:async(object,{isCurrent})=>{
@@ -869,6 +927,8 @@ try {
     camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
   }
   document.body.dataset.arrivalRenderPrepared=String(arrivalPrepared);
+  if(startupStep)document.body.dataset.startupSteps=JSON.stringify(startupSteps);
+  if(startupYieldAudit)document.body.dataset.startupYieldAudit=JSON.stringify(startupYieldAudit);
   document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
   applyZenIntention(zen.journey.snapshot().intention);
   function startAtOmotesando(){
@@ -1056,7 +1116,7 @@ try {
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),musicPaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
     if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs));
 
   }

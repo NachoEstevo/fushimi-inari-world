@@ -30,12 +30,12 @@ test('scene pass compiles in the actual nested render context and restores befor
   return pending;
  };
  try{
-  const work=compileScenePass(renderer,scenePass,scope,camera,targetScene);assert.equal(work,pending);
+  const work=compileScenePass(renderer,scenePass,scope,camera,targetScene,{revision:186});assert.equal(work,pending);
   f.restored();assert.equal(contexts.get,original);assert.equal(Object.hasOwn(contexts,'get'),false);
   assert.equal(compiledContext,contexts.get(scenePass.renderTarget,scenePass.getMRT(),1));
   assert.notEqual(compiledContext,contexts.get(scenePass.renderTarget,scenePass.getMRT(),0),'native default context differs from the visible pass');
   // Another compile while the first GPU work is pending owns only its own synchronous scope.
-  assert.equal(compileScenePass(renderer,scenePass,scope,camera,targetScene),pending);f.restored();assert.equal(contexts.get,original);
+  assert.equal(compileScenePass(renderer,scenePass,scope,camera,targetScene,{revision:186}),pending);f.restored();assert.equal(contexts.get,original);
   resolve('compiled');assert.equal(await work,'compiled');f.restored();
  }finally{f.dispose();}
 });
@@ -55,7 +55,7 @@ test('redirect touches only the pass target and MRT at omitted or zero depth',()
   const other=new RenderContexts(renderer);assert.equal(contexts.get.call(other,target,mrt),original.call(other,target,mrt,0));
   return 'native result';
  };
- try{assert.equal(compileScenePass(renderer,scenePass,scene,camera),'native result');f.restored();assert.equal(contexts.get,original);}
+ try{assert.equal(compileScenePass(renderer,scenePass,scene,camera,scene,{revision:186}),'native result');f.restored();assert.equal(contexts.get,original);}
  finally{otherTarget.dispose();f.dispose();}
 });
 
@@ -85,7 +85,7 @@ test('uninitialized renderers are rejected before pass setup or native compilati
  }
 });
 
-test('unsupported revisions keep their native context selector and target setup',()=>{
+test('revisions without the depth workaround keep their native context selector and target setup',()=>{
  for(const revision of ['180','183','187']){
   const f=fixture(),{renderer,scenePass,scene,camera}=f,contexts=renderer._renderContexts,original=contexts.get;
   renderer.compileAsync=()=>{assert.equal(contexts.get,original);assert.equal(renderer.getRenderTarget(),scenePass.renderTarget);return contexts.get(scenePass.renderTarget,scenePass.getMRT());};
@@ -104,9 +104,26 @@ test('owned selectors restore their descriptor and later wrappers retain an iner
    return Promise.resolve();
   };
   try{
-   compileScenePass(renderer,scenePass,scene,camera);f.restored();
+   compileScenePass(renderer,scenePass,scene,camera,scene,{revision:186});f.restored();
    if(replace){assert.equal(contexts.get,later);assert.equal(contexts.get(scenePass.renderTarget,scenePass.getMRT()),original.call(contexts,scenePass.renderTarget,scenePass.getMRT(),0));}
    else assert.deepEqual(Object.getOwnPropertyDescriptor(contexts,'get'),descriptor);
   }finally{f.dispose();}
  }
 });
+
+test('native r187 keeps nested binding contexts separate while sharing compatible build state',
+ {skip:THREE.REVISION!=='187'},()=>{
+  const f=fixture(),{renderer,scenePass,scene,camera}=f,contexts=renderer._renderContexts,original=contexts.get;
+  const mrt={id:4004},otherMRT={id:4005};scenePass.setMRT(mrt);
+  renderer.compileAsync=()=>{
+   assert.equal(contexts.get,original,'native r187 needs no call-depth interception');
+   const prepared=contexts.get(scenePass.renderTarget,mrt,0,camera),visible=contexts.get(scenePass.renderTarget,mrt,1,camera);
+   assert.notEqual(prepared,visible,'nested draws retain independent binding state');
+   assert.equal(prepared.stateKey,visible.stateKey,'call depth does not create a shader-build variant');
+   assert.notEqual(prepared.stateKey,contexts.get(scenePass.renderTarget,otherMRT,1,camera).stateKey);
+   assert.notEqual(prepared.stateKey,contexts.get(scenePass.renderTarget,mrt,1,new THREE.OrthographicCamera()).stateKey);
+   return Promise.resolve();
+  };
+  try{compileScenePass(renderer,scenePass,scene,camera);f.restored();assert.equal(contexts.get,original);}
+  finally{f.dispose();}
+ });

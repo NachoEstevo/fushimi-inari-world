@@ -127,3 +127,19 @@ test('mode, quality and invalid-camera transitions invalidate the stationary sha
  const restoredVersion=effect.mesh.instanceMatrix.version;effect.update(camera);assert.equal(effect.mesh.instanceMatrix.version,restoredVersion);
  effect.dispose();
 });
+
+
+test('Aozora softens existing haze with uniform changes and no new draw, shadow or instance upload',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const effect=createLocalSunShafts({scene,sites:[{point:[0,0,0],topY:18,width:2}]});effect.setQuality('high');effect.update(camera);
+ const version=effect.mesh.instanceMatrix.version,material=effect.mesh.material,shader=material.opacityNode,day=effect.stats.strength;
+ try{
+  for(let i=0;i<20;i++){effect.setLook('aozora');effect.update(camera);}
+  assert.ok(effect.stats.strength<day);assert.equal(effect.mesh.material,material);assert.equal(material.opacityNode,shader);
+  assert.equal(effect.mesh.instanceMatrix.version,version);assert.equal(effect.stats.draws,1);assert.equal(effect.stats.extraLights,0);assert.equal(effect.stats.textures,0);
+  effect.setMode('gold');const gold=effect.stats.strength;effect.setLook('natural');assert.ok(effect.stats.strength>gold);
+  effect.setMode('day');assert.equal(effect.stats.strength,day);
+  effect.setLook('aozora');effect.setQuality('balanced');effect.update(camera);assert.equal(effect.stats.draws,0);
+  effect.setQuality('high');effect.setMode('night');effect.update(camera);assert.equal(effect.stats.draws,0);
+ }finally{effect.dispose();}
+});

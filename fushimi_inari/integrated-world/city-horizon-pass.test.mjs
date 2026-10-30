@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 
-test('isolated horizon stays within its pixel budget at common aspect ratios',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
+test('isolated horizon stays within its pixel budget at common aspect ratios',{skip:!['180','186','187'].includes(THREE.REVISION)},async()=>{
  const {cityHorizonSize,CITY_HORIZON_MAX_PIXELS}=await import('./city-horizon-pass.mjs');
  for(const [width,height]of [[1920,1080],[3840,2160],[5120,1440],[390,844],[1,1]]){
   const [w,h]=cityHorizonSize(width,height);
@@ -11,7 +11,7 @@ test('isolated horizon stays within its pixel budget at common aspect ratios',{s
  }
 });
 
-test('horizon renders only its city root and restores renderer and ownership',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
+test('horizon renders only its city root and restores renderer and ownership',{skip:!['180','186','187'].includes(THREE.REVISION)},async()=>{
  const {createCityHorizonPass}=await import('./city-horizon-pass.mjs');
  const {vec4,float}=await import('three/tsl');
  const worldScene=new THREE.Scene(),root=new THREE.Group(),nearWorld=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
@@ -22,7 +22,7 @@ test('horizon renders only its city root and restores renderer and ownership',{s
  camera.coordinateSystem=THREE.WebGPUCoordinateSystem;camera.updateProjectionMatrix();city.position.set(805,164,-600);
  const target={},clearColor=new THREE.Color('#123456');let activeTarget=target,renders=0,fail=false,width=1920,height=1080;
  const renderer={autoClear:false,
-  getDrawingBufferSize:v=>v.set(width,height),getRenderTarget:()=>activeTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
+  getDrawingBufferSize:v=>v.set(width,height),getMRT:()=>null,getRenderTarget:()=>activeTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
   getClearColor:v=>v.copy(clearColor),getClearAlpha:()=>.75,getViewport:v=>v.set(1,2,3,4),getScissor:v=>v.set(5,6,7,8),getScissorTest:()=>true,
   setRenderTarget(value){activeTarget=value;},setClearColor(){},setViewport(){},setScissor(){},setScissorTest(){},
   clear(){},render(scene,view){
@@ -75,7 +75,7 @@ test('horizon renders only its city root and restores renderer and ownership',{s
 });
 
 
-test('fully fogged terrain admits the horizon before clear depth while nearby silhouettes occlude',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
+test('fully fogged terrain admits the horizon before clear depth while nearby silhouettes occlude',{skip:!['180','186','187'].includes(THREE.REVISION)},async()=>{
  const {cityHorizonDepthGate}=await import('./city-horizon-pass.mjs');
  for(const coordinateSystem of [THREE.WebGLCoordinateSystem,THREE.WebGPUCoordinateSystem]){
   const camera=new THREE.PerspectiveCamera(70,1.6,.1,100);camera.coordinateSystem=coordinateSystem;camera.updateProjectionMatrix();
@@ -91,14 +91,14 @@ test('fully fogged terrain admits the horizon before clear depth while nearby si
   const noFog=cityHorizonDepthGate(camera,null);assert.ok(Math.abs(noFog.threshold-1)<1e-12);
  }
 });
-test('hidden horizon prewarm compiles actual Basic materials and target without activating a viewport',{skip:!['180','186'].includes(THREE.REVISION)},async()=>{
+test('hidden horizon prewarm compiles actual Basic materials and target without activating a viewport',{skip:!['180','186','187'].includes(THREE.REVISION)},async()=>{
  const {createCityHorizonPass}=await import('./city-horizon-pass.mjs');
  const worldScene=new THREE.Scene(),root=new THREE.Group(),camera=new THREE.PerspectiveCamera(70,1,.1,100);
  const geometry=new THREE.BoxGeometry(),source=new THREE.MeshLambertMaterial();
  root.add(new THREE.Mesh(geometry,source),new THREE.Mesh(geometry,source));root.visible=false;worldScene.add(root);
  const originalTarget={},override=camera.clone();override.position.set(700,150,-200);override.far=150;override.updateProjectionMatrix();
  let currentTarget=originalTarget,release,fail=false,compiles=0,renders=0;
- const renderer={getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
+ const renderer={getMRT:()=>null,getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
   setRenderTarget(value){currentTarget=value;},render(){renders++;},compileAsync(scope,view,targetScene){
    compiles++;assert.equal(currentTarget.texture.type,THREE.HalfFloatType);
    assert.equal(targetScene.name,'Isolated mapped city horizon');assert.equal(scope.fog.far,6000);

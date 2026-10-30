@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {courtCuts,surface} from './precinct-shrine-courts.mjs';
 import {subtractConvex} from './entrance-area-surfaces-layout.mjs';
 import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
@@ -20,6 +21,13 @@ const intersects=(a,b)=>{
 // World coordinates: X east, Z south. No relocation of Honden or its own fence.
 // Endpoints/dimensions are conservative estimates, not a surveyed barrier way.
 export function buildHondenRearBoundary(root,features,surfaces,materials={},colliders=[],options={}){
+ const work=buildHondenRearBoundaryWork(root,features,surfaces,materials,colliders,options);let step=work.next();while(!step.done)step=work.next();return step.value;
+}
+export async function buildHondenRearBoundaryAsync(root,features,surfaces,materials={},colliders=[],options={}){
+ const checkpoint=createStartupCheckpoint({yieldWork:options.yieldWork??yieldStartupTask,clock:options.clock}),work=buildHondenRearBoundaryWork(root,features,surfaces,materials,colliders,options);let step=work.next();
+ while(!step.done){const pause=checkpoint();if(pause)await pause;step=work.next();}return step.value;
+}
+function* buildHondenRearBoundaryWork(root,features,surfaces,materials,colliders,options){
   const previous=root.getObjectByName(NAME);if(previous)return previous.userData;
   if(!features.buildings?.some(b=>b.id==='way/1287564336')||!features.buildings.some(b=>b.id==='way/899425893'))return {built:false,reason:'Mapped Honden/Mikoshiko anchors unavailable'};
   const p=hondenRearBoundaryPlan,[cx,cz]=p.center,hx=p.length/2+.15,hz=p.depth/2;
@@ -39,6 +47,7 @@ export function buildHondenRearBoundary(root,features,surfaces,materials={},coll
   // crease vertices, not merely the corners of a coarsely sampled height field.
   const terrain=options.terrainPositions,nearby=[],terrainLevels=[];
   if(terrain)for(let i=0;i<terrain.length;i+=9){
+    if(i%2304===0)yield;
     if(Math.max(terrain[i],terrain[i+3],terrain[i+6])<73||Math.min(terrain[i],terrain[i+3],terrain[i+6])>82||Math.max(terrain[i+2],terrain[i+5],terrain[i+8])< -5||Math.min(terrain[i+2],terrain[i+5],terrain[i+8])>1)continue;
     nearby.push(...terrain.slice(i,i+9));
     let poly=[0,1,2].map(j=>Array.from(terrain.slice(i+j*3,i+j*3+3)));
@@ -101,7 +110,7 @@ export function buildHondenRearBoundary(root,features,surfaces,materials={},coll
     trees.forEach((t,i)=>{for(let j=0;j<3;j++){dummy.position.set(t.x+(j-1)*.32,t.y+2.8+j*.5,t.z);dummy.scale.set(1.05,1.15,.95);dummy.updateMatrix();crowns.setMatrixAt(i*3+j,dummy.matrix);}});crowns.castShadow=crowns.receiveShadow=true;group.add(crowns);
   }
   // Grade-following mineral strip with all mapped cuts, never a new walk route.
-  if(materials.gravelMat){const stripCuts=courtCuts(features,surfaces,[74.1,81.1,.1,.65]);const polys=stripCuts.reduce((ps,c)=>ps.flatMap(q=>subtractConvex(q,c)),[p.mineral]);const gravel=surface(polys,{...surfaces,height},materials.gravelMat,'Rear votive boundary mineral strip',{maxSlope:.35});if(gravel)group.add(gravel);}
+  if(materials.gravelMat){const stripCuts=courtCuts(features,surfaces,[74.1,81.1,.1,.65]);const polys=stripCuts.reduce((ps,c)=>ps.flatMap(q=>subtractConvex(q,c)),[p.mineral]);const gravel=surface(polys,{...surfaces,height},materials.gravelMat,'Rear votive boundary mineral strip',{maxSlope:.35,cacheHeights:true});if(gravel)group.add(gravel);}
   colliders.push({type:'box',args:[cx,cz,hx,hz,0,bottom,base+2.3,'honden_rear_votive_boundary']});
   for(const t of trees)colliders.push({type:'cylinder',args:[t.x,t.z,.13,t.y,t.y+3.1,'honden_rear_boundary_tree']});
   group.userData={built:true,base,foundationBottom:bottom,relief,support:terrain?'clipped rendered triangle extrema':'flat surface samples',trees:trees.length,source:p.source,placement:'Estimated short run X74.4..80.8 Z−.45, north of mapped Mikoshiko; not a surveyed endpoint',limits:'No sacred identity or lettering assigned; photo 2016 appearance; plant positions inferred',walkingUnchanged:true};

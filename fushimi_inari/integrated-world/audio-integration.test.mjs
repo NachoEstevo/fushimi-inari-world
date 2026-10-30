@@ -24,7 +24,7 @@ function fixture({lateMusic=false}={}){
   async resume(){this.state='running';}async suspend(){this.state='suspended';}async close(){this.state='closed';}
  }
  class Media{
-  constructor(){this.duration=132;this.currentTime=0;this.plays=0;media.push(this);}load(){if(this.src)this.oncanplay?.();}play(){this.plays++;return Promise.resolve();}pause(){}removeAttribute(name){delete this[name];}
+  constructor(){this.duration=132;this.currentTime=0;this.plays=0;this.pauses=0;media.push(this);}load(){if(this.src)this.oncanplay?.();}play(){this.plays++;return Promise.resolve();}pause(){this.pauses++;}removeAttribute(name){delete this[name];}
  }
  Object.assign(globalThis,{document:doc,window:{AudioContext:Context},Audio:Media,fetch:async url=>{requests.push(url);return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};},
   requestIdleCallback:work=>{const id=++serial;idle.set(id,work);return id;},cancelIdleCallback:id=>idle.delete(id)});
@@ -47,5 +47,36 @@ test('the shared sound gesture owns one context, streams music and disposes ever
   assert.equal(JSON.parse(f.doc.body.dataset.walkingMusic).active,1);
   f.doc.hidden=true;f.listeners.get('visibilitychange')();assert.equal(f.contexts[0].state,'suspended');
   f.audio.dispose();assert.equal(f.contexts[0].state,'closed');assert.equal(f.listeners.size,0);assert.equal(f.controls.get('ambient-music').handlers.size,0);assert.equal(f.media[0].src,undefined);
+ }finally{await f.cleanup();}
+});
+
+
+test('bench seating and NPC interactions keep the current piece while movement is paused',async()=>{
+ const f=fixture();try{
+  f.audio.setEnabled(true);f.walk(23);await f.runIdle();f.walk(.2);await flush();assert.equal(f.media[0].plays,1);
+  f.media[0].currentTime=37;const pauses=f.media[0].pauses;
+  for(const activity of ['bench','npc']){
+   f.world.paused=true;f.world.musicPaused=false;f.world.activity=activity;f.walk(2);await flush();
+   assert.equal(f.media[0].pauses,pauses,`${activity} does not pause music`);assert.equal(f.media[0].plays,1);assert.equal(f.media[0].currentTime,37);
+  }
+  f.world.musicPaused=true;f.walk(.2);assert.equal(JSON.parse(f.doc.body.dataset.walkingMusic).phase,'paused');
+  f.world.musicPaused=false;f.walk(.2);await flush();assert.equal(f.media[0].plays,2);assert.equal(f.media[0].currentTime,37);
+ }finally{await f.cleanup();}
+});
+
+test('world.paused remains the fallback and an active arrival still takes precedence over musicPaused',async()=>{
+ const f=fixture();try{
+  f.audio.setEnabled(true);f.walk(23);await f.runIdle();f.walk(.2);await flush();assert.equal(f.media[0].plays,1);
+  f.world.paused=true;f.walk(.2);assert.equal(JSON.parse(f.doc.body.dataset.walkingMusic).phase,'paused');
+  f.world.musicPaused=false;f.world.arrival.phase='arriving';f.walk(1);await flush();assert.equal(f.media[0].plays,1);
+  f.world.arrival.phase='complete';f.walk(.2);await flush();assert.equal(f.media[0].plays,2);
+ }finally{await f.cleanup();}
+});
+
+
+test('enabling audio while already hidden cannot wake music or resume the shared context',async()=>{
+ const f=fixture();try{
+  f.doc.hidden=true;f.audio.setEnabled(true);assert.equal(f.contexts[0].state,'suspended');f.walk(100);await f.runIdle();assert.equal(f.media[0].plays,0);
+  f.doc.hidden=false;f.listeners.get('visibilitychange')();f.walk(23);await f.runIdle();f.walk(.2);await flush();assert.equal(f.media[0].plays,1);
  }finally{await f.cleanup();}
 });

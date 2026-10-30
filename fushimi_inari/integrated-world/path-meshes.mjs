@@ -2,7 +2,7 @@ import {partitionWalkingTopsR96} from './path-top-ownership-r96.mjs';
 import {partitionStationStreetTops} from './station-street-path-ownership.mjs';
 import * as THREE from 'three';
 import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
-import {spatialMeshes} from './spatial-mesh.mjs';
+import {spatialMeshWork} from './spatial-mesh.mjs';
 import {pathOffset} from './path-frame.mjs?v=10';
 import {fineGranite,senbonPaving} from './surface-materials.mjs';
 import {omotesandoPaving} from './omotesando-paving.mjs';
@@ -15,14 +15,22 @@ import {subtractConvex} from './entrance-area-surfaces-layout.mjs';
 // Only the Omotesando ribbon yields to its mapped Hommachi road. Preserve
 // vertex height and UV interpolation; walking remains owned by the network.
 export function clipOmotesandoRoadRibbon(quad,segments){
-  let pieces=[[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]];
+  return clipOmotesandoRibbon(quad,omotesandoRoadCuts(segments));
+}
+function omotesandoRoadCuts(segments){
   const roads=segments.filter(s=>s.id==='way/79699850'&&!s.stair);
-  for(let i=0;i<roads.length&&pieces.length;i++){
-    const s=roads[i],prev=roads[i-1],next=roads[i+1];
+  return roads.map((s,i)=>{
+    const prev=roads[i-1],next=roads[i+1];
     const connected=(other,end,p)=>other&&Math.hypot(other[end][0]-p[0],other[end][2]-p[2])<.001?other:null;
     const na=pathOffset(s.a,s.b,connected(prev,'b',s.a)),nb=pathOffset(s.a,s.b,connected(next,'a',s.b),true);
     const at=(p,n,side)=>[p[0]+n[0]*side*s.width/2,p[2]+n[1]*side*s.width/2];
-    const mask=[at(s.a,na,-1),at(s.b,nb,-1),at(s.b,nb,1),at(s.a,na,1)];
+    return [at(s.a,na,-1),at(s.b,nb,-1),at(s.b,nb,1),at(s.a,na,1)];
+  });
+}
+function clipOmotesandoRibbon(quad,masks){
+  let pieces=[[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]];
+  for(const mask of masks){
+    if(!pieces.length)break;
     pieces=pieces.flatMap(tri=>{
       if(Math.min(...tri.map(p=>p[0]))>=Math.max(...mask.map(p=>p[0]))||Math.max(...tri.map(p=>p[0]))<=Math.min(...mask.map(p=>p[0]))||Math.min(...tri.map(p=>p[2]))>=Math.max(...mask.map(p=>p[1]))||Math.max(...tri.map(p=>p[2]))<=Math.min(...mask.map(p=>p[1])))return [tri];
       const [a,b,c]=tri,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
@@ -39,16 +47,36 @@ export function clipOmotesandoRoadRibbon(quad,segments){
 }
 
 export function buildPathMeshes(network,legacy,ground){
+  const work=pathMeshWork(network,legacy,ground);let next=work.next();
+  while(!next.done)next=work.next();return next.value;
+}
+export async function buildPathMeshesAsync(network,legacy,ground,{yieldWork,now=()=>performance.now(),budgetMs=32,onStage=()=>{}}={}){
+  if(typeof yieldWork!=='function')throw new TypeError('Path preparation requires yieldWork');
+  if(!(budgetMs>0&&budgetMs<=32))throw new RangeError('Path preparation budget must be between 0 and 32 ms');
+  const work=pathMeshWork(network,legacy,ground);let start=now(),next=work.next();
+  while(!next.done){
+    if(next.value)onStage(next.value);
+    if(now()-start>=budgetMs){await yieldWork();start=now();}
+    next=work.next();
+  }
+  return next.value;
+}
+// Keep material ownership, interpolation and sampling identical. The async
+// caller yields between strips and the existing atomic partition stages.
+function* pathMeshWork(network,legacy,ground){
+  yield 'path ribbons and curbs';
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRiser:[],mountainRetaining:[]};
   const uvBuckets={stone:[],precinct:[],senbon:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRetaining:[]};
   const uvByVertices=new Map(Object.entries(uvBuckets).map(([key,uv])=>[buckets[key],uv]));
   const detail={segments:0,treads:0,groundedShoulders:0,retainingFaces:0,scope:'Mountain stone paths east of x=255 m; entrance and Senbon unchanged'};
+  let roadCuts=null;
   const quad=(out,...corners)=>{
     for(const polygon of outsideArrival(corners))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
       out.push(...p.slice(0,3));const uv=uvByVertices.get(out);if(uv)uv.push(p[3]??p[0]/2,p[4]??p[2]/2);
     }
   };
   for(const [index,s] of network.segments.entries()){
+    yield;
     const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],len=Math.hypot(dx,dz);
     const adjacent=(candidate,end)=>candidate?.id===s.id&&Math.hypot(candidate[end][0]-(end==='b'?s.a:s.b)[0],candidate[end][2]-(end==='b'?s.a:s.b)[2])<.001?candidate:null;
     const startNormal=pathOffset(s.a,s.b,adjacent(network.segments[index-1],'b'));
@@ -74,7 +102,8 @@ export function buildPathMeshes(network,legacy,ground){
       // Source width8m describes the public corridor. Only its middle4.8m
       // uses long slabs; the shoulder owner fills2.4..4m with fine cobbles.
       const ribbon=[[...point(s.a,s.ya,-visualWidth/2),0,va],[...point(s.b,s.yb,-visualWidth/2),0,vb],[...point(s.b,s.yb,visualWidth/2),u,vb],[...point(s.a,s.ya,visualWidth/2),u,va]];
-      for(const triangle of clipOmotesandoRoadRibbon(ribbon,network.segments))quad(buckets.omotesando,...triangle);
+      roadCuts??=omotesandoRoadCuts(network.segments);
+      for(const triangle of clipOmotesandoRibbon(ribbon,roadCuts))quad(buckets.omotesando,...triangle);
     }else if(['way/297888106','way/105449676'].includes(s.id)&&!s.stair){
       // One paving pattern follows the mapped corridor, including its bends.
       // Retain the existing material, full width, grade and mitered corners.
@@ -98,6 +127,7 @@ export function buildPathMeshes(network,legacy,ground){
         const cuts=Math.max(1,Math.ceil(len/(mountain ? .9 : .45)));
         const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
         for(let part=0;part<cuts;part++){
+          yield;
           const a=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),part/cuts);
           const b=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),(part+1)/cuts);
           const oa=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),part/cuts);
@@ -175,6 +205,7 @@ export function buildPathMeshes(network,legacy,ground){
       }
     }
   }
+  yield 'path materials';
   const earth=legacy.materials.gravelMat.clone();earth.color.set('#71644d');
   // Fine granite without paving joints continuing vertically across risers.
   const stairFace=fineGranite();
@@ -185,12 +216,13 @@ export function buildPathMeshes(network,legacy,ground){
     rail:new THREE.MeshStandardMaterial({color:0x5b6667,metalness:.7,roughness:.4}),...mountainPathMaterials(legacy)};
   // Junction curb caps can overlap each other at their common +.025 lip too.
   // Their metric UVs/colors are generated below after this bounded partition.
-  buckets.edge=partitionOkushaPathTrianglesR95(buckets.edge);
-  buckets.earth=partitionOkushaPathTrianglesR95(buckets.earth);
-  group.userData.stationStreetTopOwnership=partitionStationStreetTops(buckets,uvBuckets);
-  group.userData.walkingTopOwnershipR96=partitionWalkingTopsR96(buckets,uvBuckets);
+  yield 'Okusha curb ownership';buckets.edge=partitionOkushaPathTrianglesR95(buckets.edge);
+  yield 'Okusha shoulder ownership';buckets.earth=partitionOkushaPathTrianglesR95(buckets.earth);
+  yield 'station street ownership';group.userData.stationStreetTopOwnership=partitionStationStreetTops(buckets,uvBuckets);
+  yield 'walking top ownership';group.userData.walkingTopOwnershipR96=partitionWalkingTopsR96(buckets,uvBuckets);
   const riserTint=new THREE.Color('#b9b8af').toArray();
   for(const [key,bucket] of Object.entries(buckets)){
+    yield 'path geometry '+key;
     if(key==='mountainPaving'||key==='mountainRiser')continue;
     // Share the existing material/cell batches. UVs retain the mountain
     // alignment, and a vertex tint darkens only the new mountain risers.
@@ -206,17 +238,18 @@ export function buildPathMeshes(network,legacy,ground){
       const end=offset+buckets[source].length;
       if(uvBuckets[source])for(const value of uvBuckets[source])uv.push(value);
       else for(let i=offset;i<end;i+=3){
+        if(i%768===0)yield;
         const n=i/3,normal=geo.attributes.normal;
         if(Math.abs(normal.getY(n))>.5)uv.push(vertices[i]/2,vertices[i+2]/2);
         else uv.push((Math.abs(normal.getX(n))>.5?vertices[i+2]:vertices[i])/2,vertices[i+1]/2);
       }
-      if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3)colors.push(...tint);}
+      if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3){if(i%768===0)yield;colors.push(...tint);}}
       offset=end;
     }
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     const material=materials[key].clone();material.side=THREE.DoubleSide;
     if(colors){geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));material.vertexColors=true;}
-    const cells=spatialMeshes(geo,material);if(key==='omotesando'){cells.name='Omotesando central slab ribbon';cells.userData={sourcePath:omotesandoContextSpecR95.path,visualWidth:omotesandoContextSpecR95.centralSlabWidth,publicWidth:omotesandoContextSpecR95.totalMappedWidth};}group.add(cells);geo.dispose();
+    const cells=yield* spatialMeshWork(geo,material);if(key==='omotesando'){cells.name='Omotesando central slab ribbon';cells.userData={sourcePath:omotesandoContextSpecR95.path,visualWidth:omotesandoContextSpecR95.centralSlabWidth,publicWidth:omotesandoContextSpecR95.totalMappedWidth};}group.add(cells);geo.dispose();
   }
   group.userData.mountainPaths=detail;
   if(network.accessJunctions)group.userData.accessJunctions=network.accessJunctions;

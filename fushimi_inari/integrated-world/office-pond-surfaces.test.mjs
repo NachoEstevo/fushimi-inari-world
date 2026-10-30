@@ -13,3 +13,22 @@ test('repeated clipping and builder calls are stable without duplicate meshes or
 test('actual mapped office ponds have horizontal planes, bounded terrain cuts and finite seated shoreline geometry',()=>{const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))),root=new THREE.Group(),network={terrainHeight:(x,z)=>45+.03*x+.02*z},r=buildOfficePondSurfaces(root,features,network);assert.deepEqual(r.builtIds,officePondSurfaceIds);const input=terrain(69,86,-112,-62,(x,z)=>network.terrainHeight(x,z)-.06),out=r.clipTerrain(input);assert.ok(out.length>0);assert.ok(r.shorelineSegments>100);for(const mesh of root.children[0].children)for(const v of mesh.geometry.attributes.position.array)assert.ok(Number.isFinite(v));const water=root.getObjectByName('Office pond level water').geometry.attributes.position,levels=new Set(Array.from({length:water.count},(_,i)=>water.getY(i).toFixed(4)));assert.equal(levels.size,2);});
 test('missing or invalid pond context creates no substitute and invalid terrain does not mutate existing geometry',()=>{const f=fixture();assert.deepEqual(buildOfficePondSurfaces(f.root,{water:[]},f.network).builtIds,[]);assert.equal(f.root.children.length,0);const r=buildOfficePondSurfaces(f.root,f.features,f.network),before=r.ponds[0].waterLevel;assert.throws(()=>r.clipTerrain([NaN,0,0]),/finite triangle/);assert.equal(r.ponds[0].waterLevel,before);});
 test('stone liner clones existing material and provides metre-scale wall UVs without disposing shared texture',()=>{const f=fixture(),map=new THREE.Texture(),source=new THREE.MeshStandardMaterial({map}),sourceState=source.side;let disposals=0;map.addEventListener('dispose',()=>disposals++);const r=buildOfficePondSurfaces(f.root,f.features,f.network,{stoneMat:source}),mesh=f.root.getObjectByName('Office pond basin and shoreline liner');assert.notEqual(mesh.material,source);assert.equal(mesh.material.map,map);r.clipTerrain(terrain(0,6,0,6,f.network.terrainHeight));const p=mesh.geometry.attributes.position,uv=mesh.geometry.attributes.uv;assert.equal(uv.count,p.count);assert.ok(Array.from(uv.array).every(Number.isFinite));const i=p.count-6;assert.ok(Math.abs(Math.hypot(p.getX(i+2)-p.getX(i),p.getZ(i+2)-p.getZ(i))-(uv.getX(i+2)-uv.getX(i)))<1e-5);assert.ok(Math.abs((p.getY(i)-p.getY(i+1))-(uv.getY(i)-uv.getY(i+1)))<1e-5);r.clipTerrain(terrain(0,6,0,6,f.network.terrainHeight));assert.equal(source.side,sourceState);assert.equal(disposals,0);});
+
+test('paced pond clipping preserves exact output, shore metadata and every native geometry attribute',async()=>{
+ for(const typed of [false,true]){
+  const sync=fixture(),paced=fixture(),a=buildOfficePondSurfaces(sync.root,sync.features,sync.network),b=buildOfficePondSurfaces(paced.root,paced.features,paced.network);
+  const positions=terrain(0,6,0,6,sync.network.terrainHeight),input=typed?new Float32Array(positions):positions;
+  const before=paced.root.getObjectByName('Office pond basin and shoreline liner').geometry;let time=0,yields=0;
+  const output=await b.clipTerrainAsync(input,{clock:()=>time+=33,yieldWork:async()=>{yields++;assert.equal(paced.root.getObjectByName('Office pond basin and shoreline liner').geometry,before);assert.equal(b.shorelineSegments,0);await new Promise(setImmediate);}});
+  assert.ok(yields>0);assert.deepEqual(output,a.clipTerrain(input));assert.equal(JSON.stringify(b),JSON.stringify(a));
+  for(const name of ['Office pond level water','Office pond basin and shoreline liner']){
+   const old=sync.root.getObjectByName(name).geometry,next=paced.root.getObjectByName(name).geometry;
+   for(const key of Object.keys(old.attributes))assert.deepEqual(next.attributes[key].array,old.attributes[key].array);
+  }
+ }
+});
+test('paced pond clipping scheduling failure leaves the original shore and its geometry intact',async()=>{
+ const f=fixture(),record=buildOfficePondSurfaces(f.root,f.features,f.network),mesh=f.root.getObjectByName('Office pond basin and shoreline liner'),original=mesh.geometry,metadata=JSON.stringify(record),failure=Error('cancelled preparation');let time=0;
+ await assert.rejects(record.clipTerrainAsync(terrain(0,6,0,6,f.network.terrainHeight),{clock:()=>time+=33,yieldWork:()=>Promise.reject(failure)}),error=>error===failure);
+ assert.equal(mesh.geometry,original);assert.equal(JSON.stringify(record),metadata);
+});

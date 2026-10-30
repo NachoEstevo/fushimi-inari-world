@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {leafClusterMaterial} from './leaf-cluster.mjs';
@@ -7,6 +8,13 @@ const NAME='Gonden bounded rear service landscape R93';
 // IMG_6572 confirms a mineral service gap and wooded retaining edge. These
 // offsets/heights are conservative photographic estimates, not surveyed data.
 export function buildGondenRearLandscape(root,features,surfaces,materials,colliders,options={}){
+ const work=buildGondenRearLandscapeWork(root,features,surfaces,materials,colliders,options);let step=work.next();while(!step.done)step=work.next();return step.value;
+}
+export async function buildGondenRearLandscapeAsync(root,features,surfaces,materials,colliders,options={}){
+ const checkpoint=createStartupCheckpoint({yieldWork:options.yieldWork??yieldStartupTask,clock:options.clock}),work=buildGondenRearLandscapeWork(root,features,surfaces,materials,colliders,options);let step=work.next();
+ while(!step.done){const pause=checkpoint();if(pause)await pause;step=work.next();}return step.value;
+}
+function* buildGondenRearLandscapeWork(root,features,surfaces,materials,colliders,options){
  const old=root.getObjectByName(NAME);if(old)return old.userData;
  let shrine;root.traverse(o=>{if(o.isGroup&&o.userData.zone==='gonden')shrine=o;});
  if(!shrine)return {built:false,reason:'Gonden owner unavailable'};
@@ -16,9 +24,10 @@ export function buildGondenRearLandscape(root,features,surfaces,materials,collid
  const world=(x,z)=>new THREE.Vector3(x,0,z).applyMatrix4(m);
  const e=m.elements;if(Math.abs(e[1])+Math.abs(e[4])+Math.abs(e[6])+Math.abs(e[9])>1e-6||m.determinant()<=0)throw Error('Gonden rear requires upright positive transform');
  const limits=[world(-3,-5),world(-3,-3),world(3,-5),world(3,-3)],xs=limits.map(p=>p.x),zs=limits.map(p=>p.z),nearby=[];
- const source=options.terrainPositions;
+ const source=options.terrainPositions,minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
  for(let i=0;i<source.length;i+=9){
-  if(Math.max(source[i],source[i+3],source[i+6])<Math.min(...xs)||Math.min(source[i],source[i+3],source[i+6])>Math.max(...xs)||Math.max(source[i+2],source[i+5],source[i+8])<Math.min(...zs)||Math.min(source[i+2],source[i+5],source[i+8])>Math.max(...zs))continue;
+  if(i%2304===0)yield;
+  if(Math.max(source[i],source[i+3],source[i+6])<minX||Math.min(source[i],source[i+3],source[i+6])>maxX||Math.max(source[i+2],source[i+5],source[i+8])<minZ||Math.min(source[i+2],source[i+5],source[i+8])>maxZ)continue;
   for(let j=0;j<9;j++)nearby.push(source[i+j]);
  }
  const sample=makeShoulderTriangleHeight(nearby);

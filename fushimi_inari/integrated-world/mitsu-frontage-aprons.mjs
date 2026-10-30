@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {pathWidth} from '../geography/geo-core.mjs';
 import {subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
@@ -6,15 +7,34 @@ import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
 export const mitsuApronSourceIds=Object.freeze(['way/1372838160','way/1372838161']);
 
 export function clipMitsuTerrain(positions,masks){
+  const work=clipTerrainWork(positions,masks);let next=work.next();
+  while(!next.done)next=work.next();return next.value;
+}
+export async function clipMitsuTerrainAsync(positions,masks,{yieldWork=yieldStartupTask,clock}={}){
+  const checkpoint=createStartupCheckpoint({yieldWork,clock}),work=clipTerrainWork(positions,masks);let next=work.next();
+  while(!next.done){const pause=checkpoint();if(pause)await pause;next=work.next();}
+  return next.value;
+}
+function* clipTerrainWork(positions,masks){
   if(!masks.length)return Array.from(positions);
   const bounds=p=>[Math.min(...p.map(v=>v[0])),Math.max(...p.map(v=>v[0])),Math.min(...p.map(v=>v[1])),Math.max(...p.map(v=>v[1]))];
-  const overlaps=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2],indexed=masks.map(p=>({p,b:bounds(p)})),out=[];
+  const indexed=masks.map(p=>({p,b:bounds(p)})),out=[];
   const extent=[Math.min(...indexed.map(c=>c.b[0])),Math.max(...indexed.map(c=>c.b[1])),Math.min(...indexed.map(c=>c.b[2])),Math.max(...indexed.map(c=>c.b[3]))];
   for(let i=0;i<positions.length;i+=9){
-    const tri=[0,3,6].map(k=>positions.slice(i+k,i+k+3)),flat=tri.map(p=>[p[0],p[2]]),bnd=bounds(flat);
-    if(!overlaps(bnd,extent)){out.push(...positions.slice(i,i+9));continue;}
-    const cuts=indexed.filter(c=>overlaps(bnd,c.b));
-    if(!cuts.length){out.push(...positions.slice(i,i+9));continue;}
+    if(i%4608===0)yield;
+    // Almost every world triangle is far from these small cuts. Reject using
+    // raw coordinates before allocating triangle/polygon arrays for clipping.
+    if(i+8>=positions.length){out.push(...positions.slice(i,i+9));continue;}
+    const minX=Math.min(positions[i],positions[i+3],positions[i+6]),maxX=Math.max(positions[i],positions[i+3],positions[i+6]);
+    const minZ=Math.min(positions[i+2],positions[i+5],positions[i+8]),maxZ=Math.max(positions[i+2],positions[i+5],positions[i+8]);
+    let cuts=null;
+    if(minX<=extent[1]&&maxX>=extent[0]&&minZ<=extent[3]&&maxZ>=extent[2]){
+      for(const cut of indexed)if(minX<=cut.b[1]&&maxX>=cut.b[0]&&minZ<=cut.b[3]&&maxZ>=cut.b[2]){
+        (cuts??=[]).push(cut);
+      }
+    }
+    if(!cuts){out.push(positions[i],positions[i+1],positions[i+2],positions[i+3],positions[i+4],positions[i+5],positions[i+6],positions[i+7],positions[i+8]);continue;}
+    const tri=[0,3,6].map(k=>positions.slice(i+k,i+k+3)),flat=tri.map(p=>[p[0],p[2]]);
     let pieces=[flat];for(const cut of cuts){pieces=pieces.flatMap(p=>subtractConvex(p,cut.p));if(!pieces.length)break;}
     const [a,b,c]=tri,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-12)continue;
     for(let p of pieces){if(polygonArea(p)>0)p=[...p].reverse();for(let j=1;j<p.length-1;j++){
@@ -97,5 +117,6 @@ export function buildMitsuFrontageAprons(root,features,surfaces,materials){
     limits:'No terrain edit, broad grading, new stairs, altered tread count, new collider or shop floor claim. Appearance and .42m mineral collar width inferred.'};
   for(let i=0;i<positions.length;i+=9)terrainMasks.push([[positions[i],positions[i+2]],[positions[i+3],positions[i+5]],[positions[i+6],positions[i+8]]]);
   mesh.userData.clipTerrain=input=>clipMitsuTerrain(input,terrainMasks);
+  mesh.userData.clipTerrainAsync=(input,options)=>clipMitsuTerrainAsync(input,terrainMasks,options);
   root.add(mesh);return mesh.userData;
 }

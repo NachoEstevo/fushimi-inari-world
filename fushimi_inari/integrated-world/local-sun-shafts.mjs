@@ -64,10 +64,15 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  const matrix=new THREE.Matrix4(),hit=new THREE.Vector3(),ray=new THREE.Ray(),expanded=new THREE.Box3();
  const entries=sites.slice(0,64).map(s=>({...s,end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false}));
  const nearest=new Int16Array(cap),distances=new Float64Array(cap);
- let mode='day',quality='balanced',active=0,disposed=false,dirty=true,lastX,lastY,lastZ;
+ let mode='day',look='natural',quality='balanced',active=0,disposed=false,dirty=true,lastX,lastY,lastZ;
+ function shade(){
+  const painted=look==='aozora';
+  tint.value.set(mode==='gold'?'#ffc18e':painted?'#fff8df':'#fff1cf');
+  strength.value=mode==='gold'?(painted?.1:.12):(painted?.14:.19);
+ }
  function setMode(next){
   if(disposed)return;dirty=true;mode=Object.hasOwn(SUN_DIRECTIONS,next)?next:'day';axis.fromArray(SUN_DIRECTIONS[mode]).normalize();
-  tint.value.set(mode==='gold'?'#ffc18e':'#fff1cf');strength.value=mode==='gold'?.12:.19;
+  shade();
   for(const entry of entries){
    // Clip the ray from its canopy origin. Starting at the floor would turn
    // capped low-sun rays into eye-level streaks with no source above them.
@@ -104,8 +109,8 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
   }
   mesh.count=active;mesh.visible=active>0;if(active)mesh.instanceMatrix.needsUpdate=true;
  }
- return {mesh,setMode,setQuality(value){if(disposed)return;const next=value==='high'||value==='ultra'?'high':'balanced';if(next!==quality){quality=next;dirty=true;}},update,
-  get stats(){return {quality,mode,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked}))}:{}),active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:0,renderTargets:0,triangles:active*2,artistic:true};},
+ return {mesh,setMode,setLook(value){if(disposed)return;look=value==='aozora'?'aozora':'natural';shade();},setQuality(value){if(disposed)return;const next=value==='high'||value==='ultra'?'high':'balanced';if(next!==quality){quality=next;dirty=true;}},update,
+  get stats(){return {quality,mode,look,strength:strength.value,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked}))}:{}),active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:0,renderTargets:0,triangles:active*2,artistic:true};},
   dispose(){if(disposed)return;disposed=true;active=0;mesh.visible=false;scene.remove(mesh);geometry.dispose();material.dispose();mesh.dispose();}
  };
 }

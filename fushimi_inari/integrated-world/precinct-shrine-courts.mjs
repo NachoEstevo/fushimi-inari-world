@@ -5,7 +5,7 @@ import {pathOffset} from './path-frame.mjs';
 // Photo-inferred, deliberately narrow collars. Podium dimensions come from the
 // retained pavilion geometry; photographs do not establish surveyed court limits.
 const profiles={gonden:{half:[3.6,2.7],roofFootprint:'way/305214371',reference:'outputs/r76/gonden-side.jpg'},okumiya:{half:[3.4,2.5],roofFootprint:'way/301527733',reference:'outputs/r76/okumiya-rear.jpg'}};
-const bounds=p=>[Math.min(...p.map(v=>v[0])),Math.max(...p.map(v=>v[0])),Math.min(...p.map(v=>v[1])),Math.max(...p.map(v=>v[1]))];
+const bounds=p=>{let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const v of p){minX=Math.min(minX,v[0]);maxX=Math.max(maxX,v[0]);minZ=Math.min(minZ,v[1]);maxZ=Math.max(maxZ,v[1]);}return [minX,maxX,minZ,maxZ];};
 const overlap=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2];
 const subtract=(polygons,cuts)=>cuts.reduce((ps,c)=>ps.flatMap(p=>subtractConvex(p,c)),polygons);
 
@@ -27,31 +27,41 @@ export function courtCuts(features,network,region,zone){
     // shrineCourtPlan; cutting its own roof would erase photographed gravel
     // under the eaves. All neighbouring building and water outlines stay cut.
     if(f.id===profiles[zone]?.roofFootprint)continue;
+    if(f.points.length<3)continue;
+    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(const p of f.points){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);}
+    if(!overlap([minX,maxX,minZ,maxZ],region))continue;
     const ring=f.points.map(p=>new THREE.Vector2(p[0],p[2]));
-    if(ring.length<3||!overlap(bounds(ring.map(p=>[p.x,p.y])),region))continue;
     if(ring[0].equals(ring.at(-1)))ring.pop();
     for(const t of THREE.ShapeUtils.triangulateShape(ring,[]))cuts.push(t.map(i=>[ring[i].x,ring[i].y]));
   }
   for(const [i,s] of (network.segments??[]).entries()){
     if(Math.hypot(s.b[0]-s.a[0],s.b[2]-s.a[2])<1e-6)continue;
-    const w=s.width/2+.15;
-    const neighbor=(candidate,end)=>candidate?.id===s.id&&Math.hypot(candidate[end][0]-(end==='b'?s.a:s.b)[0],candidate[end][2]-(end==='b'?s.a:s.b)[2])<.001?candidate:null;
-    const a=pathOffset(s.a,s.b,neighbor(network.segments[i-1],'b')),b=pathOffset(s.a,s.b,neighbor(network.segments[i+1],'a'),true);
-    const cut=[[s.a[0]+a[0]*w,s.a[2]+a[1]*w],[s.b[0]+b[0]*w,s.b[2]+b[1]*w],[s.b[0]-b[0]*w,s.b[2]-b[1]*w],[s.a[0]-a[0]*w,s.a[2]-a[1]*w]];
-    if(overlap(bounds(cut),region))cuts.push(cut);
+    const w=s.width/2+.15,pad=Math.abs(w)*3;
+    // pathOffset bounds its bisector to length2; this conservative interval
+    // skips remote ribbons without cutting a long miter off a connected turn.
+    if(Math.min(s.a[0],s.b[0])-pad<=region[1]&&Math.max(s.a[0],s.b[0])+pad>=region[0]&&Math.min(s.a[2],s.b[2])-pad<=region[3]&&Math.max(s.a[2],s.b[2])+pad>=region[2]){
+      const neighbor=(candidate,end)=>candidate?.id===s.id&&Math.hypot(candidate[end][0]-(end==='b'?s.a:s.b)[0],candidate[end][2]-(end==='b'?s.a:s.b)[2])<.001?candidate:null;
+      const a=pathOffset(s.a,s.b,neighbor(network.segments[i-1],'b')),b=pathOffset(s.a,s.b,neighbor(network.segments[i+1],'a'),true);
+      const cut=[[s.a[0]+a[0]*w,s.a[2]+a[1]*w],[s.b[0]+b[0]*w,s.b[2]+b[1]*w],[s.b[0]-b[0]*w,s.b[2]-b[1]*w],[s.a[0]-a[0]*w,s.a[2]-a[1]*w]];
+      if(overlap(bounds(cut),region))cuts.push(cut);
+    }
     const p=s.accessJunctionTriangles??[];
     for(let j=0;j<p.length;j+=9){const t=[[p[j],p[j+2]],[p[j+3],p[j+5]],[p[j+6],p[j+8]]];if(overlap(bounds(t),region))cuts.push(t);}
   }
   return cuts;
 }
 
-export function surface(polygons,network,source,name,{maxSlope=Infinity}={}){
-  const positions=[],uv=[],grid=.25;
+export function surface(polygons,network,source,name,{maxSlope=Infinity,cacheHeights=false}={}){
+  const positions=[],uv=[],grid=.25,heights=cacheHeights?new Map():null;
+  // Opt in only when the builder owns an immutable terrain sampler. Exact
+  // numeric coordinate keys share repeated grid/cut vertices for this surface.
+  const sample=heights?(x,z)=>{let column=heights.get(x);if(!column){column=new Map();heights.set(x,column);}if(!column.has(z))column.set(z,network.terrainHeight(x,z));return column.get(z);}:network.terrainHeight.bind(network);
   for(const polygon of polygons){
     const b=bounds(polygon);
     for(let x=Math.floor(b[0]/grid)*grid;x<b[1];x+=grid)for(let z=Math.floor(b[2]/grid)*grid;z<b[3];z+=grid){
       if(Number.isFinite(maxSlope)){
-        const samples=[[x,z],[x+grid,z],[x+grid,z+grid],[x,z+grid],[x+grid/2,z+grid/2]].map(([px,pz])=>[px,network.terrainHeight(px,pz),pz]);
+        const samples=[[x,z],[x+grid,z],[x+grid,z+grid],[x,z+grid],[x+grid/2,z+grid/2]].map(([px,pz])=>[px,sample(px,pz),pz]);
         let steep=false;
         for(let a=0;a<samples.length;a++)for(let b=a+1;b<samples.length;b++)if(Math.abs(samples[a][1]-samples[b][1])/Math.hypot(samples[a][0]-samples[b][0],samples[a][2]-samples[b][2])>maxSlope)steep=true;
         if(steep)continue;
@@ -60,7 +70,7 @@ export function surface(polygons,network,source,name,{maxSlope=Infinity}={}){
       if(polygonArea(p)<0)p=p.toReversed();
       for(let i=1;i<p.length-1;i++){
         const tri=[p[0],p[i+1],p[i]];if(Math.abs(polygonArea(tri))<1e-9)continue;
-        const xyz=tri.map(([px,pz])=>[px,network.terrainHeight(px,pz)+.012,pz]);
+        const xyz=tri.map(([px,pz])=>[px,sample(px,pz)+.012,pz]);
         if(xyz.some(p=>!p.every(Number.isFinite)))throw Error('Nonfinite shrine court height');
         const a=xyz[0],b=xyz[1],c=xyz[2],dx=b[0]-a[0],dz=b[2]-a[2],ex=c[0]-a[0],ez=c[2]-a[2],det=dx*ez-ex*dz;
         const gradient=Math.hypot(((b[1]-a[1])*ez-(c[1]-a[1])*dz)/det,(dx*(c[1]-a[1])-ex*(b[1]-a[1]))/det);

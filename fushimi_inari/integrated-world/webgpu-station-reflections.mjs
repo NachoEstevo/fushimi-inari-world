@@ -1,16 +1,16 @@
 import {
- Color, CubeUVReflectionMapping, HalfFloatType, LinearFilter,
- LinearSRGBColorSpace, PerspectiveCamera, PMREMGenerator, RenderTarget, Vector3
+ Color, CubeRenderTarget, HalfFloatType, LinearMipmapLinearFilter,
+ LinearSRGBColorSpace, PerspectiveCamera, PMREMGenerator, Vector3
 } from 'three/webgpu';
 import {createStationReflectionProxy} from './station-reflection-proxy.mjs';
 import {compileAddedGroup} from './scoped-compilation.mjs';
+import {restorePrecompileTarget} from './renderer-precompile-state.mjs';
 
-const SIZE=128;
+const SIZE=256;
 
-// r180's common PMREMGenerator captures six scene views directly into CubeUV.
-// fromSceneAsync only waits for renderer.init(); after init, fromScene is atomic.
-// https://github.com/mrdoob/three.js/blob/r180/src/renderers/common/extras/PMREMGenerator.js
-// This is a cached local environment probe, not screen-space/planar reflection.
+// r187 captures into its internal cube, then prefilters a separate cube mip chain.
+// 256 is its native minimum face size. Both bounded outputs are retained and
+// reused; this is a cached local environment, not a per-frame reflection pass.
 export async function createStationReflectionStudy({renderer,scene,station}){
  if(!renderer||!scene?.isScene||!station?.group)throw new Error('Station reflections require renderer, scene and station.group');
  // Caller initializes its one renderer; r180 rejects a second init().
@@ -21,11 +21,12 @@ export async function createStationReflectionStudy({renderer,scene,station}){
  const stats={method:'local scene PMREM',faceSize:SIZE,captures:0,failures:0,enabled:false,excludedMeshes:0,lastCaptureMs:0,position:[]};
 
  function makeTarget(){
-  const target=new RenderTarget(3*SIZE,4*SIZE,{
-   type:HalfFloatType,minFilter:LinearFilter,magFilter:LinearFilter,
-   generateMipmaps:false,colorSpace:LinearSRGBColorSpace,depthBuffer:true
+  const target=new CubeRenderTarget(SIZE,{
+   type:HalfFloatType,minFilter:LinearMipmapLinearFilter,
+   generateMipmaps:false,colorSpace:LinearSRGBColorSpace,depthBuffer:false
   });
-  target.texture.mapping=CubeUVReflectionMapping;
+  // Match native r187 PMREM: prefiltered levels down to its 8px rough mip.
+  for(let size=SIZE;size>=8;size/=2)target.texture.mipmaps.push({width:size,height:size});
   target.texture.isPMREMTexture=true;
   target.texture.name='Station local reflection study';
   targets.push(target);
@@ -95,13 +96,16 @@ export async function createStationReflectionStudy({renderer,scene,station}){
     proxy.scene.updateMatrixWorld(true);
     const target=targets.find(candidate=>candidate!==current)||makeTarget();
     if(typeof renderer.compileAsync==='function'){
-     // Pipeline selection includes the render target. Bind the eventual PMREM
-     // target only while each compile is submitted, never across an await.
+     // Native r187 captures geometry into a source cube with depth; the output
+     // cube has no depth and only receives filtering. Warm the actual source
+     // descriptor, restoring the walking target before awaiting pipelines.
+     generator._setSize(SIZE);
+     const sourceTarget=generator._getSourceTarget(true);
      const compiler={compileAsync(...args){
       if(disposed)throw new Error('Station reflection study is disposed');
-      const previous=renderer.getRenderTarget(),face=renderer.getActiveCubeFace(),mip=renderer.getActiveMipmapLevel();
-      try{renderer.setRenderTarget(target);return renderer.compileAsync(...args);}
-      finally{renderer.setRenderTarget(previous,face,mip);}
+      const previous={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),mrt:renderer.getMRT()};
+      try{renderer.setRenderTarget(sourceTarget);return renderer.compileAsync(...args);}
+      finally{restorePrecompileTarget(renderer,previous);renderer.setRenderTarget(previous.target,previous.face,previous.mip);}
      }};
      const compileOptions={batchSize:4};
      if(options.yieldStage)compileOptions.yieldWork=options.yieldStage;
@@ -110,19 +114,19 @@ export async function createStationReflectionStudy({renderer,scene,station}){
     if(disposed)throw new Error('Station reflection study is disposed');
     if(capturing)throw new Error('Station reflection capture is already active');
     capturing=true;
-    const started=performance.now(),previous={autoClear:renderer.autoClear,target:renderer.getRenderTarget(),
+    const started=performance.now(),previous={autoClear:renderer.autoClear,autoClearColor:renderer.autoClearColor,autoClearDepth:renderer.autoClearDepth,autoClearStencil:renderer.autoClearStencil,target:renderer.getRenderTarget(),
      face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),
      clearColor:renderer.getClearColor(new Color()),clearAlpha:renderer.getClearAlpha(),xr:renderer.xr.enabled};
     try{
      renderer.xr.enabled=false;
-     target.scissorTest=true;
+
      generator.fromScene(proxy.scene,0,.1,300,{size:SIZE,position,renderTarget:target});
      current=target;preparedBounded=true;
      if(enabled)applyProbe();
      Object.assign(stats,{method:'bounded station geometry PMREM',proxy:{...proxy.stats},captures:stats.captures+1,
       position:position.toArray(),lastCaptureMs:performance.now()-started});
     }finally{
-     renderer.autoClear=previous.autoClear;renderer.setClearColor(previous.clearColor,previous.clearAlpha);
+     renderer.autoClear=previous.autoClear;renderer.autoClearColor=previous.autoClearColor;renderer.autoClearDepth=previous.autoClearDepth;renderer.autoClearStencil=previous.autoClearStencil;renderer.setClearColor(previous.clearColor,previous.clearAlpha);
      renderer.xr.enabled=previous.xr;renderer.setRenderTarget(previous.target,previous.face,previous.mip);capturing=false;
     }
     return stats;
@@ -138,7 +142,7 @@ export async function createStationReflectionStudy({renderer,scene,station}){
   if(capturing)throw new Error('Station reflection capture is already active');
   capturing=true;
   const started=performance.now(),hidden=[];
-  const previous={environment:scene.environment,background:scene.background,autoClear:renderer.autoClear,
+  const previous={environment:scene.environment,background:scene.background,autoClear:renderer.autoClear,autoClearColor:renderer.autoClearColor,autoClearDepth:renderer.autoClearDepth,autoClearStencil:renderer.autoClearStencil,
    target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),
    clearColor:renderer.getClearColor(new Color()),clearAlpha:renderer.getClearAlpha(),xr:renderer.xr.enabled};
   try{
@@ -149,9 +153,7 @@ export async function createStationReflectionStudy({renderer,scene,station}){
    renderer.xr.enabled=false;
    const position=probePosition();
    const target=targets.find(candidate=>candidate!==current)||makeTarget();
-   // The generator's own allocator enables this; its cleanup disables it.
-   // Re-enable on every reused target so clearing one face preserves the rest.
-   target.scissorTest=true;
+
    generator.fromScene(scene,0,.1,300,{size:SIZE,position,renderTarget:target});
    current=target;
    if(enabled)applyProbe();
@@ -165,7 +167,7 @@ export async function createStationReflectionStudy({renderer,scene,station}){
    for(const [object,visible]of hidden)object.visible=visible;
    scene.background=previous.background;
    scene.environment=previous.environment;
-   renderer.autoClear=previous.autoClear;
+   renderer.autoClear=previous.autoClear;renderer.autoClearColor=previous.autoClearColor;renderer.autoClearDepth=previous.autoClearDepth;renderer.autoClearStencil=previous.autoClearStencil;
    renderer.setClearColor(previous.clearColor,previous.clearAlpha);
    renderer.xr.enabled=previous.xr;
    renderer.setRenderTarget(previous.target,previous.face,previous.mip);

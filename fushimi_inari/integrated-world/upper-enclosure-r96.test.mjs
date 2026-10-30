@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {upperEnclosureR96Runs,buildUpperEnclosureR96} from './upper-enclosure-r96.mjs';
+import {upperEnclosureR96Runs,buildUpperEnclosureR96,buildUpperEnclosureR96Async} from './upper-enclosure-r96.mjs';
 import {pathWidth} from '../geography/geo-core.mjs';
 import {subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url)));
@@ -13,3 +14,27 @@ test('every complete boundary section excludes actual mapped public route and ro
 test('rendered support and existing solid ownership withhold unsupported or duplicate sections',()=>{const f=fixture();f.options={};assert.equal(build(f).built,false);assert.equal(f.colliders.length,0);const g=fixture();g.colliders.push({type:'box',args:[123,-26,20,20,0,0,100,'prior_owner']});assert.equal(build(g).built,false);assert.equal(g.colliders.length,1);const h=fixture();h.options.terrainPositions=[115,50,-33,115,50,-32,116,50,-33];assert.equal(build(h).built,false);});
 test('resolved junction triangles override source route widths without barrier slivers',()=>{const f=fixture();f.network.segments=[{a:[90,0,0],b:[91,0,0],width:1,accessJunctionTriangles:[110,50,-40,110,50,-10,140,50,-40,140,50,-40,110,50,-10,140,50,-10]}];assert.equal(build(f).built,false);assert.equal(f.colliders.length,0);});
 test('run endpoints derive from mapped Byakkosha bounds and unavailable owner creates nothing',()=>{assert.deepEqual(upperEnclosureR96Runs({buildings:[]}),[]);const runs=upperEnclosureR96Runs(features);assert.equal(runs[0].a[0],117.42099999999999);assert.ok(runs.every(r=>r.a[0]<130&&r.b[0]<130));});
+
+function enclosureDigest(f,record){
+ const hash=createHash('sha256');f.root.traverse(o=>{if(!o.isMesh)return;hash.update(o.name);for(const key of Object.keys(o.geometry.attributes).sort()){hash.update(key);hash.update(Buffer.from(o.geometry.attributes[key].array.buffer));}if(o.geometry.index)hash.update(Buffer.from(o.geometry.index.array.buffer));});hash.update(JSON.stringify(record));hash.update(JSON.stringify(f.colliders));return hash.digest('hex');
+}
+test('boundary broad phase and paced construction retain complete original native buffers, records and colliders',async()=>{
+ for(const typed of [false,true])for(const paced of [false,true]){
+  const f=fixture();if(typed)f.options.terrainPositions=new Float32Array(f.options.terrainPositions);let time=0,yields=0;
+  const options={...f.options,clock:()=>time+=33,yieldWork:async()=>{yields++;assert.equal(f.root.children.length,0);assert.equal(f.colliders.length,0);await new Promise(setImmediate);}};
+  const record=await (paced?buildUpperEnclosureR96Async:buildUpperEnclosureR96)(f.root,f.features,f.network,f.materials,f.colliders,options);
+  // Whole output captured before bounds rejection and cooperative construction.
+  assert.equal(enclosureDigest(f,record),typed?'1d94e2fe709ac86f93e3eb28150e542b6b65546bda479ad278ab1396802ee508':'f0430ae5870e2314a99b1a195f5828511b590c27ce73f6e4543faf38ccb6ddbd');if(paced)assert.ok(yields>2);
+ }
+});
+test('remote resolved paths are ignored while their independently overlapping junction cut is retained',()=>{
+ const f=fixture();f.network.segments=Array.from({length:1000},(_,i)=>({a:[1000+i*2,0,1000],b:[1001+i*2,0,1001],width:1}));
+ const clear=build(f);assert.ok(clear.sections.length>30);
+ const blocked=fixture();blocked.network.segments=[...f.network.segments,{a:[900,0,900],b:[901,0,900],width:1,accessJunctionTriangles:[110,50,-40,110,50,-10,140,50,-40,140,50,-40,110,50,-10,140,50,-10]}];
+ assert.equal(build(blocked).built,false);assert.equal(blocked.colliders.length,0);
+});
+test('interrupted boundary preparation does not publish partial scenery or solids',async()=>{
+ const f=fixture(),error=Error('cancelled preparation');let time=0;
+ await assert.rejects(buildUpperEnclosureR96Async(f.root,f.features,f.network,f.materials,f.colliders,{...f.options,clock:()=>time+=33,yieldWork:()=>Promise.reject(error)}),value=>value===error);
+ assert.equal(f.root.children.length,0);assert.equal(f.colliders.length,0);
+});

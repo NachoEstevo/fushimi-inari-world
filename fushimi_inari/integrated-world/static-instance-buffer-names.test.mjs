@@ -74,3 +74,53 @@ test(`real r${THREE.REVISION} explicit buffer declarations reserve their .value 
  assert.equal(builder.bindings.vertex.object[0].buffer===foreign,true);assert.equal(builder.bindings.vertex.object[1].buffer===object.instanceMatrix.array,true);
  handle.dispose();object.dispose();geometry.dispose();material.dispose();
 });
+
+test('native r187 shares one prepared build and pipeline across unpadded cells and render depths',
+ {skip:THREE.REVISION!=='187'},async()=>{
+  // Use source exports throughout this graph: mixing bundled and source TSL
+  // would create two current-stack singletons and invalidate a build test.
+  const [T,{default:NodeManager},{default:Bindings},{default:Pipelines},{default:RenderContexts},{default:RenderObject}]=await Promise.all([
+   import('three/src/Three.WebGPU.js'),import('three/src/renderers/common/nodes/NodeManager.js'),
+   import('three/src/renderers/common/Bindings.js'),import('three/src/renderers/common/Pipelines.js'),
+   import('three/src/renderers/common/RenderContexts.js'),import('three/src/renderers/common/RenderObject.js')]);
+  const renderer=new T.WebGPURenderer({canvas:{width:8,height:8,style:{},addEventListener(){},removeEventListener(){}}}),backend=renderer.backend;
+  // Stub GPU submission only; WGSL generation, render-object keys, node build
+  // sharing and pipeline/program caches are the actual native implementations.
+  backend.renderer=renderer;backend.device={limits:{maxUniformBufferBindingSize:65536},features:new Set()};backend.hasFeature=()=>false;
+  backend.needsRenderUpdate=()=>false;backend.getRenderCacheKey=()=> 'same-attachments-and-state';
+  let builds=0,creates=0,programs=0;backend.createProgram=()=>programs++;
+  backend.createRenderPipeline=object=>{creates++;backend.get(object.pipeline).pipeline={ready:true};};
+  renderer.lighting.enabled=false;renderer.debug.onNodeBuilderCreated=()=>builds++;
+  const nodes=renderer._nodes=new NodeManager(renderer,backend),pipelines=new Pipelines(backend,nodes,renderer.info);
+  renderer._bindings=new Bindings(backend,nodes,null,null,pipelines);
+  const contexts=new RenderContexts(renderer),scene=new T.Scene(),camera=new T.PerspectiveCamera(),target=new T.RenderTarget(8,8);
+  const geometry=new T.BoxGeometry(),material=new T.MeshBasicNodeMaterial(),lights=new T.EventDispatcher();
+  const counts=[17,26,31,33,43,63,999],objects=counts.map(count=>new T.InstancedMesh(geometry,material,count));
+  const attributes=objects.map(object=>object.instanceMatrix),factory=backend.createNodeBuilder;
+  const handle=installStaticInstanceBufferNames(backend,{objects:new WeakSet(objects)});
+  assert.equal(handle.enabled,false);assert.equal(backend.createNodeBuilder,factory);
+  const prepared=objects.map(object=>new RenderObject(nodes,{},renderer,object,material,scene,camera,lights,contexts.get(target,null,0,camera),null));
+  const visible=objects.map(object=>new RenderObject(nodes,{},renderer,object,material,scene,camera,lights,contexts.get(target,null,1,camera),null));
+  try{
+   const states=[];
+   for(const object of prepared)states.push(await nodes.getForRenderAsync(object,()=>Promise.resolve()));
+   for(const object of visible)states.push(nodes.getForRender(object));
+   assert.equal(builds,1);assert.equal(new Set(states).size,1);
+   assert.equal(new Set([...prepared,...visible].map(object=>pipelines.getForRender(object))).size,1);
+   assert.equal(creates,1);assert.equal(programs,2);assert.equal(builds,1,'visible draws reuse the completed precompile');
+   assert.match(states[0].vertexShader,/@vertex/);assert.doesNotMatch(states[0].vertexShader,/fushimiStaticInstanceMatrices|NodeBuffer_/);
+   const columns=states[0].nodeAttributes.filter(attribute=>attribute.node?.isReferenceBufferAttributeNode);
+   assert.equal(columns.length,4);
+   objects.forEach((object,index)=>{
+    assert.equal(object.count,counts[index]);assert.equal(object.instanceMatrix,attributes[index]);assert.equal(object.instanceMatrix.count,counts[index]);
+    for(const column of columns)assert.equal(column.node.getObjectAttribute(object).data,attributes[index],'a shared program still binds each cell matrix');
+    for(const draw of [prepared[index],visible[index]]){
+     const buffers=draw.getVertexBuffers();assert.ok(buffers.includes(attributes[index]));
+     assert.equal(buffers.filter(buffer=>attributes.includes(buffer)).length,1,'draw binds only its own matrix buffer');
+    }
+   });
+  }finally{
+   handle.dispose();for(const object of [...prepared,...visible])object.onDispose=()=>{};
+   for(const object of objects)object.dispose();geometry.dispose();material.dispose();target.dispose();
+  }
+ });

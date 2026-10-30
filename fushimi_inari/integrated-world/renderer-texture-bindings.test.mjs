@@ -70,7 +70,7 @@ test('actual r180 cached sampled and sampler clones initialize after synchroniza
 });
 
 
-test('r186 native cloned bindings initialize, replace textures and release shared groups',{skip:REVISION!=='186'},async()=>{
+test('native cloned bindings initialize, replace textures and release shared groups',{skip:!['186','187'].includes(REVISION)},async()=>{
   const [{NodeSampledTexture},{default:NodeSampler},{default:Bindings},{Texture}]=await Promise.all([
     import('three/src/renderers/common/nodes/NodeSampledTexture.js'),import('three/src/renderers/common/nodes/NodeSampler.js'),
     import('three/src/renderers/common/Bindings.js'),import('three')]);
@@ -79,7 +79,7 @@ test('r186 native cloned bindings initialize, replace textures and release share
   const textureData=new WeakMap(),backendData=new WeakMap(),uploads=[],samplers=[],rebindings=[];
   let creates=0,deletes=0,destroyedSamplers=0;
   const textures={get(texture){assert.ok(texture?.isTexture);if(!textureData.has(texture))textureData.set(texture,{generation:texture.id,bindGroups:new Set()});return textureData.get(texture);},
-    updateTexture(texture){uploads.push(texture);this.get(texture);},updateSampler(binding){assert.ok(binding.texture?.isTexture);samplers.push(binding.texture);return String(binding.texture.id);}};
+    updateTexture(texture){uploads.push(texture);return this.get(texture).generation;},updateSampler(binding){assert.ok(binding.texture?.isTexture);samplers.push(binding.texture);return String(binding.texture.id);}};
   const backend={get(value){if(!backendData.has(value))backendData.set(value,{});return backendData.get(value);},
     createBindings(value){assert.equal(value,group);assert.equal(sampled.texture,first);assert.equal(sampler.texture,first);creates++;},
     updateBindings(value){assert.equal(value,group);rebindings.push([sampled.texture,sampler.texture]);},
@@ -90,13 +90,14 @@ test('r186 native cloned bindings initialize, replace textures and release share
     assert.equal(handle.stats.enabled,false);assert.equal(manager._createBindings,originalCreate);assert.equal(manager._update,originalUpdate);
     assert.equal(manager.getForRender(a),groups);assert.equal(manager.getForRender(b),groups);assert.equal(creates,1);
     assert.deepEqual(uploads,[first]);assert.deepEqual(samplers,[first]);
-    manager.updateForRender(a);assert.deepEqual(rebindings,[[first,first]]);assert.ok(textures.get(first).bindGroups.has(group));
-    manager.updateForRender(a);assert.equal(rebindings.length,1,'stable frames retain the native bind group');
+    const initialRebindings=REVISION==='187'?0:1;
+    manager.updateForRender(a);assert.deepEqual(rebindings,initialRebindings?[[first,first]]:[]);assert.ok(textures.get(first).bindGroups.has(group));
+    manager.updateForRender(a);assert.equal(rebindings.length,initialRebindings,'stable frames retain the native bind group');
     node.value=second;manager.updateForRender(a);
     assert.equal(sampled.texture,second);assert.equal(sampler.texture,second);assert.deepEqual(rebindings.at(-1),[second,second]);
-    assert.ok(textures.get(second).bindGroups.has(group));assert.equal(rebindings.length,2);
-    manager.updateForRender(b);assert.equal(rebindings.length,2,'another owner retains the updated bind group');
-    manager.updateForRender(b);assert.equal(rebindings.length,2);
+    assert.ok(textures.get(second).bindGroups.has(group));assert.equal(rebindings.length,initialRebindings+1);
+    manager.updateForRender(b);assert.equal(rebindings.length,initialRebindings+1,'another owner retains the updated bind group');
+    manager.updateForRender(b);assert.equal(rebindings.length,initialRebindings+1);
     manager.deleteForRender(a);assert.equal(deletes,0);assert.equal(sampled.texture,second);
     manager.deleteForRender(b);assert.equal(deletes,1);assert.equal(destroyedSamplers,1);
     assert.equal(sampled.texture,null);assert.equal(sampler.texture,null);assert.equal(textures.get(second).bindGroups.has(group),false);

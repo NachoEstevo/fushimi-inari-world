@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {staticParts,stonePalette} from './mountain-landmarks-geometry.mjs';
-import {clipMitsuTerrain} from './mitsu-frontage-aprons.mjs';
+import {clipMitsuTerrain,clipMitsuTerrainAsync} from './mitsu-frontage-aprons.mjs';
 import {polygonArea} from './entrance-area-surfaces-layout.mjs';
 
 export const SHINSENJO_ID='way/305214596';
@@ -64,6 +64,10 @@ export function buildShinsenjoPrecinct(root,materials,features,surfaces,collider
   const stats=parts.flush();root.add(g);g.userData={built:true,...plan,floor,foundationBottom:bottom,...stats,builtIds:[SHINSENJO_ID],
     // The building floor owns only its mapped interior. Retained terrain stays
     // on its original triangle planes; no flattening, collar or public grading.
+    clipTerrainAsync:async(positions,options)=>{
+      if(positions.length%9||!positions.every(Number.isFinite))throw Error('Shinsenjo terrain requires finite triangle positions');
+      return clipMitsuTerrainAsync(positions,faces.map(f=>f.map(i=>plan.ring[i])),options);
+    },
     clipTerrain:positions=>{
       if(positions.length%9||!positions.every(Number.isFinite))throw Error('Shinsenjo terrain requires finite triangle positions');
       return clipMitsuTerrain(positions,faces.map(f=>f.map(i=>plan.ring[i])));

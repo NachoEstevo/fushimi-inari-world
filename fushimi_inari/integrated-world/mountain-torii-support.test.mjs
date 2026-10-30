@@ -7,8 +7,23 @@ import {makeShoulderTriangleHeight} from './omotesando-shoulders-layout.mjs';
 import {integratedTerrainTriangles} from './terrain-triangles.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {heightAt} from '../geography/geo-core.mjs';
+import {createHash} from 'node:crypto';
 
 const transform=(x,y,z,yaw=0)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(1.2,1.1,1.1));
+
+test('empty post support skips terrain scanning entirely',()=>{
+ const terrain=new Proxy([],{get:()=>{throw new Error('No posts require no terrain reads');}});
+ assert.deepEqual(mountainToriiSupportTriangles(terrain,[]),[]);
+});
+
+test('support selection preserves original bytes at signed bin edges and wide spanning triangles',()=>{
+ const positions=integratedTerrainTriangles({cols:5,rows:5,xmin:-12.3,zmin:-8.1,step:10},[],()=>({distance:0}),(x,z)=>x*.07-z*.11);
+ const posts=[{x:-2.01,z:-.01,radius:.2},{x:0,z:0,radius:.01},{x:13.9,z:17.95,radius:.25},{x:1000,z:-1000,radius:1}];
+ for(const input of [positions,new Float32Array(positions)]){
+  const local=mountainToriiSupportTriangles(input,posts),hash=createHash('sha256').update(new Uint8Array(new Float64Array(local).buffer)).digest('hex');
+  assert.equal(hash,Array.isArray(input)?'8f1aa5e87a95193b2b852cdbf936c9816745d0d3c8d9d6483db0c6cdd08d0e8a':'adbcdf5521dc6d853676ab6b4c2fa6d7dc94d6fb1c9b8b6e8a104fb9f748298d');
+ }
+});
 
 test('support index retains triangles spanning a foot and excludes unrelated terrain',()=>{
  const near=[-3,4,-3,3,7,-3,0,6,3],far=[100,50,100,110,50,100,100,50,110],local=mountainToriiSupportTriangles([...near,...far],[{x:0,z:0,radius:.2}]);

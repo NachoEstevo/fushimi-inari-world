@@ -36,7 +36,7 @@ scopes = {
     "buildYotsutsujiCrossroads": "yotsu",
 }
 for function, zone in scopes.items():
-    body = body.replace(f"    {function}();", f"    capture('{zone}', {function});")
+    body = body.replace(f"    {function}();", f"    await capture('{zone}', {function});")
 # The original distant vista is illustrative, replaced by OSM/GSI surroundings.
 body = body.replace("g.add(vistaGroup);", "report.replacedVista = true;")
 for variable,zone in [("gg","gonden"),("tg","tamayama"),("okGroup","okumiya"),("byGroup","byakko"),("bGroup","senbon")]:
@@ -72,7 +72,7 @@ export async function buildLegacy(renderer, callbacks={}) {
   let scope=null;
   const rawAdd=scene.add.bind(scene);
   scene.add=(...objects)=>{for(const object of objects) if(!object.userData.zone)object.userData.zone=scope; return rawAdd(...objects);};
-  function capture(name,fn){const old=scope;scope=name;fn();scope=old;}
+  async function capture(name,fn){const old=scope;scope=name;try{fn();}finally{scope=old;}await callbacks.yieldWork?.();}
   const collisionWorld={
     addCylinder(...args){colliders.push({type:'cylinder',args,zone:scope});},
     addBox(...args){colliders.push({type:'box',args,zone:scope});}
@@ -95,6 +95,10 @@ footer = """
 }
 """
 body = body.replace("const t = texLoader.load(url);", "const t = callbacks.loadTexture ? callbacks.loadTexture(url) : texLoader.load(url);")
+for count in ["TREE_COUNT", "SUGI_COUNT", "SUGI_COUNT + MOMIJI_COUNT", "BAMBOO_COUNT", "UNDERSTORY_COUNT"]:
+    marker = f"    for (let i = 0; i < {count}; i++) {{"
+    cadence = 32 if count == "SUGI_COUNT + MOMIJI_COUNT" else 64
+    body = body.replace(marker, marker+f"\n      if(i%{cadence}===0)await callbacks.yieldWork?.();")
 out = root / "integrated-world"
 out.mkdir(exist_ok=True)
 (out / "legacy-builders.mjs").write_text(header + body + footer, encoding="utf-8")

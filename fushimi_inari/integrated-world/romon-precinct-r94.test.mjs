@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {buildRomonPrecinctR94,romonDripApronR94 as spec} from './romon-precinct-r94.mjs';
+import * as romonBuilders from './romon-precinct-r94.mjs';
 import {rigidPoint} from './spatial.mjs';
 const anchor={source:[0,1.6,0],target:[12,43,-5],yaw:-1.51};
 const world=(x,z)=>{const p=rigidPoint([x,0,z],anchor.source,anchor.target,anchor.yaw);return [p[0],p[2]];};
@@ -31,4 +33,39 @@ test('mapped crossing clears the entire ribbon and neighboring footprint cuts th
 test('missing or corrupt terrain never inserts unsupported geometry',()=>{
  const f=fixture();delete f.options.terrainPositions;assert.equal(build(f).built,false);assert.equal(f.root.children.length,0);
  f.options.terrainPositions=[NaN,0,0];assert.throws(()=>build(f),/Invalid/);assert.equal(f.root.children.length,0);
+});
+
+test('remote Romon terrain bypasses triangle allocations and whole-input iterator copies',()=>{
+ const f=fixture(),vertices=new Float64Array([1000,40,1000,1001,40,1000,1000,40,1001]);
+ vertices[Symbol.iterator]=()=>{throw Error('whole terrain iterator copied');};
+ vertices.slice=()=>{throw Error('remote triangle allocated');};
+ f.options.terrainPositions=vertices;assert.equal(build(f).built,false);assert.equal(f.root.children.length,0);
+});
+
+test('Romon terrain validation retains rejection of sparse and nonfinite triangles',()=>{
+ for(const terrainPositions of [Array(9),[0,0,0,1,Infinity,0,0,0,1],new Float64Array([0,0,0,1,0,0,0,NaN,1])]){
+  const f=fixture();f.options.terrainPositions=terrainPositions;assert.throws(()=>build(f),/Invalid/);assert.equal(f.root.children.length,0);
+ }
+});
+
+function apronHash(f){
+ const mesh=f.root.children[0],hash=createHash('sha256');
+ for(const [name,attribute]of Object.entries(mesh.geometry.attributes).sort(([a],[b])=>a.localeCompare(b))){hash.update(name);hash.update(Buffer.from(attribute.array.buffer));}
+ hash.update(JSON.stringify(mesh.userData));return hash.digest('hex');
+}
+const originalApronHash='946077baadd8c3a4da6e53811d3eeb8da6ac16ea1f37a423d8872db32c6c6a78';
+test('Romon apron preserves complete original positions, normals, UVs and metadata',()=>{
+ const f=fixture();build(f);assert.equal(apronHash(f),originalApronHash);
+});
+test('paced Romon apron releases the terrain scan before publishing exact original geometry',async()=>{
+ const f=fixture(),far=Array.from({length:1100},()=>[1000,40,1000,1001,40,1000,1000,40,1001]).flat();
+ let elapsed=0,yields=0;
+ const record=await romonBuilders.buildRomonPrecinctR94Async(f.root,anchor,f.features,f.network,f.materials,{terrainPositions:[...far,...f.options.terrainPositions],clock:()=>elapsed+=33,yieldWork:async()=>{yields++;assert.equal(f.root.children.length,0);}});
+ assert.ok(yields>=4);assert.equal(record.built,true);assert.equal(apronHash(f),originalApronHash);
+ assert.equal(await romonBuilders.buildRomonPrecinctR94Async(f.root,anchor,f.features,f.network,f.materials),record);assert.equal(f.root.children.length,1);
+});
+test('failed Romon preparation yields do not attach incomplete geometry',async()=>{
+ const f=fixture();let elapsed=0;
+ await assert.rejects(romonBuilders.buildRomonPrecinctR94Async(f.root,anchor,f.features,f.network,f.materials,{...f.options,clock:()=>elapsed+=33,yieldWork:async()=>{throw Error('preparation interrupted');}}),/preparation interrupted/);
+ assert.equal(f.root.children.length,0);
 });

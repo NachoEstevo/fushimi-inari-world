@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {rigidPoint} from './spatial.mjs';
 import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {courtCuts} from './precinct-shrine-courts.mjs';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 
 // IMG_6491_20210317: pale stone between the north gallery plinth and the
 // grated court junction. The R72 drain's inner frame ends at z=-2.955;
@@ -14,9 +15,18 @@ const overlaps=(a,b)=>a[0]<=b[1]&&a[1]>=b[0]&&a[2]<=b[3]&&a[3]>=b[2];
 // Call after the shared rendered terrain has been finalized. No fallback to
 // raw DEM/analytic height: every emitted vertex lies on an actual source face.
 export function buildRomonPrecinctR94(root,romon,features,network,materials,{terrainPositions}={}){
+ const work=romonPrecinctWork(root,romon,features,network,materials,terrainPositions);let step=work.next();
+ while(!step.done)step=work.next();return step.value;
+}
+export async function buildRomonPrecinctR94Async(root,romon,features,network,materials,{terrainPositions,yieldWork=yieldStartupTask,clock}={}){
+ const checkpoint=createStartupCheckpoint({yieldWork,clock}),work=romonPrecinctWork(root,romon,features,network,materials,terrainPositions);let step=work.next();
+ while(!step.done){const pause=checkpoint();if(pause)await pause;step=work.next();}return step.value;
+}
+function* romonPrecinctWork(root,romon,features,network,materials,terrainPositions){
  const old=root.getObjectByName(name);if(old)return old.userData;
  if(!terrainPositions?.length||!(materials.entryStoneMat??materials.stoneMat))return {built:false,reason:'Rendered terrain triangles and stone material required'};
- if(terrainPositions.length%9||Array.from(terrainPositions).some(v=>!Number.isFinite(v)))throw Error('Invalid Romon terrain triangles');
+ let checked=0;
+ if(terrainPositions.length%9||!terrainPositions.every(value=>{checked++;return Number.isFinite(value);})||checked!==terrainPositions.length)throw Error('Invalid Romon terrain triangles');
  const s=romonDripApronR94,world=(x,z)=>{const p=rigidPoint([x,0,z],romon.source,romon.target,romon.yaw);return [p[0],p[2]];};
  const outline=[world(s.x0,s.z0),world(s.x1,s.z0),world(s.x1,s.z1),world(s.x0,s.z1)],region=bounds(outline);
  // The own mapped roof overhang is not a ground obstruction. Its physical
@@ -30,6 +40,10 @@ export function buildRomonPrecinctR94(root,romon,features,network,materials,{ter
  }
  const positions=[],uv=[];let area=0;
  for(let i=0;i<terrainPositions.length;i+=9){
+  if(i%2304===0)yield;
+  // This narrow apron covers very few world triangles. Preserve the inclusive
+  // original bounds while rejecting remote faces before allocating polygons.
+  if(Math.min(terrainPositions[i],terrainPositions[i+3],terrainPositions[i+6])>region[1]||Math.max(terrainPositions[i],terrainPositions[i+3],terrainPositions[i+6])<region[0]||Math.min(terrainPositions[i+2],terrainPositions[i+5],terrainPositions[i+8])>region[3]||Math.max(terrainPositions[i+2],terrainPositions[i+5],terrainPositions[i+8])<region[2])continue;
   const tri=[0,3,6].map(k=>Array.from(terrainPositions.slice(i+k,i+k+3))),flat=tri.map(p=>[p[0],p[2]]);
   if(!overlaps(bounds(flat),region))continue;
   const [a,b,c]=tri,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-10)continue;

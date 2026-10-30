@@ -1,5 +1,6 @@
 import {createWaterAppearance} from './water-appearance.mjs';
 import * as THREE from 'three';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {clipConvex,subtractConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
 export const officePondSurfaceIds=Object.freeze(['way/626313848','way/626313851']);
@@ -38,12 +39,13 @@ export function buildOfficePondSurfaces(root,features,network,materials={}){
   for(const edge of shoreline){const bed=record.ponds.find(p=>p.id===edge.id).bedLevel,a=edge.a,b=edge.b,length=Math.hypot(b[0]-a[0],b[2]-a[2]),ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length,u=a[0]*ux+a[2]*uz;for(const p of [a,[a[0],bed,a[2]],b,b,[a[0],bed,a[2]],[b[0],bed,b[2]]])basinPositions.push(...p);basinUV.push(u,a[1]-bed,u,0,u+length,b[1]-bed,u+length,b[1]-bed,u,0,u+length,0);}
   water.geometry.dispose();water.geometry=geometry(waterPositions,waterUV);basin.geometry.dispose();basin.geometry=geometry(basinPositions,basinUV);
  }
- record.clipTerrain=vertices=>{
+ function* clipTerrainWork(vertices){
   if(vertices.length%9||!vertices.every(Number.isFinite))throw Error('Office pond terrain requires finite triangle positions');
   if(!plans.length)return Array.from(vertices);
   const output=[],edges=new Map();
   const whole=[Math.min(...plans.map(p=>p.bounds[0])),Math.max(...plans.map(p=>p.bounds[1])),Math.min(...plans.map(p=>p.bounds[2])),Math.max(...plans.map(p=>p.bounds[3]))];
   for(let i=0;i<vertices.length;i+=9){
+   if(i%2304===0)yield;
    const region=[Math.min(vertices[i],vertices[i+3],vertices[i+6]),Math.max(vertices[i],vertices[i+3],vertices[i+6]),Math.min(vertices[i+2],vertices[i+5],vertices[i+8]),Math.max(vertices[i+2],vertices[i+5],vertices[i+8])];
    if(!overlaps(region,whole)){for(let j=0;j<9;j++)output.push(vertices[i+j]);continue;}
    const near=plans.filter(p=>overlaps(region,p.bounds));if(!near.length){for(let j=0;j<9;j++)output.push(vertices[i+j]);continue;}
@@ -65,6 +67,13 @@ export function buildOfficePondSurfaces(root,features,network,materials={}){
   shoreline=[...edges.values()];record.shorelineSegments=shoreline.length;
   for(const p of record.ponds){const levels=shoreline.filter(e=>e.id===p.id).flatMap(e=>[e.a[1],e.b[1]]);if(levels.length){p.waterLevel=Math.min(p.waterLevel,Math.min(...levels)-.04);p.minRenderedRim=Math.min(...levels);p.maxRenderedRim=Math.max(...levels);p.maxExposedLinerHeight=p.maxRenderedRim-p.waterLevel;}p.bedLevel=p.waterLevel-.35;}
   rebuild();return output;
+ }
+ record.clipTerrain=vertices=>{
+  const work=clipTerrainWork(vertices);let step=work.next();while(!step.done)step=work.next();return step.value;
+ };
+ record.clipTerrainAsync=async(vertices,{yieldWork=yieldStartupTask,clock}={})=>{
+  const checkpoint=createStartupCheckpoint({yieldWork,clock}),work=clipTerrainWork(vertices);let step=work.next();
+  while(!step.done){const pause=checkpoint();if(pause)await pause;step=work.next();}return step.value;
  };
  rebuild();group.userData=record;if(plans.length)root.add(group);else{water.geometry.dispose();basin.geometry.dispose();waterMaterial.dispose();basinMaterial.dispose();}return record;
 }

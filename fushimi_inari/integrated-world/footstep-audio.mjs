@@ -1,5 +1,5 @@
 // Fantozzi recordings, CC0; sliced by qubodup. See assets/audio/footsteps/CREDITS.md.
-export const FOOTSTEP_GAIN=.08;
+export const FOOTSTEP_GAIN=.06;
 export function createFootstepAudio(ctx,{fetcher=fetch,onStats=()=>{}}={}){
  const buffers=new Map(),active=new Set(),gains=new Set();let loading=null,index=0,last=-Infinity,failed=0,volume=.55;
  const report=()=>onStats({loaded:buffers.size,failed,plays:index,active:active.size,volume,effectiveGain:FOOTSTEP_GAIN*volume,mode:'recorded stone / sand footsteps'});

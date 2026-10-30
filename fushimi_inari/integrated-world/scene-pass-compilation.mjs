@@ -1,4 +1,5 @@
 import {REVISION} from 'three';
+import {restorePrecompileTarget} from './renderer-precompile-state.mjs';
 
 // r186 compiles at depth 0, but RenderPipeline reads its scene pass at depth 1.
 // See https://github.com/mrdoob/three.js/issues/34681. Keep the workaround scoped
@@ -24,6 +25,7 @@ export function compileScenePass(renderer,scenePass,scope,view,targetScene,{revi
   // first await. Preserve its native promise and synchronous error behavior.
   return renderer.compileAsync(scope,view,targetScene);
  }finally{
+  restorePrecompileTarget(renderer,previous,{revision});
   active=false;
   if(contexts?.get===selectContext){
    if(descriptor)Object.defineProperty(contexts,'get',descriptor);else delete contexts.get;

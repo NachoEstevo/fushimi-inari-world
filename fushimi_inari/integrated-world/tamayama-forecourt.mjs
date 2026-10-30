@@ -1,11 +1,19 @@
 import * as THREE from 'three';
+import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {tamayamaForecourtPlan,tamayamaContinuationCourtPlan} from './tamayama-forecourt-layout.mjs?v=90';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 import {pathOffset} from './path-frame.mjs';
 
 // Material overlay only. Existing apron, paths, transitions and colliders keep
 // their heights/ownership; this does not create a raised forecourt platform.
-export function buildTamayamaForecourt(root,features,network,materials,{terrainPositions=null}={}){
+export function buildTamayamaForecourt(root,features,network,materials,options={}){
+ const work=buildTamayamaForecourtWork(root,features,network,materials,options);let step=work.next();while(!step.done)step=work.next();return step.value;
+}
+export async function buildTamayamaForecourtAsync(root,features,network,materials,options={}){
+ const checkpoint=createStartupCheckpoint({yieldWork:options.yieldWork??yieldStartupTask,clock:options.clock}),work=buildTamayamaForecourtWork(root,features,network,materials,options);let step=work.next();
+ while(!step.done){const pause=checkpoint();if(pause)await pause;step=work.next();}return step.value;
+}
+function* buildTamayamaForecourtWork(root,features,network,materials,{terrainPositions=null}){
   if(root.getObjectByName('Tamayama photographed mineral forecourt'))return null;
   let shrine=null;
   root.traverse(o=>{if(o.isGroup&&o.userData.zone==='tamayama'&&o.userData.tamayamaDetail)shrine=o;});
@@ -37,7 +45,11 @@ export function buildTamayamaForecourt(root,features,network,materials,{terrainP
   if(terrainPositions){
     const indexed=polygons.map(p=>({polygon:p,bounds:bounds(p)}));
     for(let i=0;i<terrainPositions.length;i+=9){
-      const tri=[0,3,6].map(k=>terrainPositions.slice(i+k,i+k+3)),flat=tri.map(p=>[p[0],p[2]]),tb=bounds(flat);if(!overlap(tb))continue;
+      if(i%2304===0)yield;
+      const minX=Math.min(terrainPositions[i],terrainPositions[i+3],terrainPositions[i+6]),maxX=Math.max(terrainPositions[i],terrainPositions[i+3],terrainPositions[i+6]);
+      const minZ=Math.min(terrainPositions[i+2],terrainPositions[i+5],terrainPositions[i+8]),maxZ=Math.max(terrainPositions[i+2],terrainPositions[i+5],terrainPositions[i+8]);
+      if(minX>region[1]||maxX<region[0]||minZ>region[3]||maxZ<region[2])continue;
+      const tri=[0,3,6].map(k=>terrainPositions.slice(i+k,i+k+3)),flat=tri.map(p=>[p[0],p[2]]),tb=[minX,maxX,minZ,maxZ];
       const [a,b,c]=tri,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-12)continue;
       for(const entry of indexed){
         const pb=entry.bounds;if(tb[0]>pb[1]||tb[1]<pb[0]||tb[2]>pb[3]||tb[3]<pb[2])continue;

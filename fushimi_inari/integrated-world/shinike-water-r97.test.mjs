@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {buildShinikeWaterR97,shinikeLayoutR97,SHINIKE_ID} from './shinike-water-r97.mjs';
+import {buildShinikeWaterR97,buildShinikeWaterR97Async,shinikeLayoutR97,SHINIKE_ID} from './shinike-water-r97.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 const features=JSON.parse(fs.readFileSync(new URL('../geography/features.json',import.meta.url))),level=65.71652051629592;
 const h=(x,z)=>66.20+.03*(x-530)+.015*(z+150);
@@ -79,3 +80,30 @@ test('ambiguous or displaced log signatures and failed water builds preserve all
 });
 
 test('opaque dark backing covers exactly the mapped pond 0.6m below unchanged water without new collision or grading',()=>{const f=fixture(),input=terrain(),r=buildShinikeWaterR97(f.root,features,{}, {terrainPositions:input}),plan=shinikeLayoutR97(features),bed=f.root.getObjectByName('Shin-ike bounded dark silt visual backing R98'),p=bed.geometry.attributes.position;assert.equal(r.built,true);assert.equal(r.waterLevel,level);assert.equal(r.bedLevel,level-.6);assert.equal(r.backingDepth,.6);assert.equal(r.backingTriangles,18);assert.equal(r.materialBatches,3);assert.equal(r.collidersAdded,0);assert.equal(r.walkingChanged,false);assert.equal(p.count,54);assert.equal(bed.material.opacity,1);assert.equal(bed.material.transparent,false);assert.equal(bed.material.depthWrite,true);assert.equal(bed.material.metalness,0);assert.equal(bed.geometry.attributes.uv.count,p.count);let area=0;for(let i=0;i<p.count;i+=3){const tri=[0,1,2].map(k=>[p.getX(i+k),p.getZ(i+k)]),pieceArea=Math.abs(polygonArea(tri));let covered=0;for(const cut of plan.triangles)covered+=Math.abs(polygonArea(clipConvex(tri,cut)));assert.ok(Math.abs(covered-pieceArea)<.003);area+=pieceArea;for(let k=0;k<3;k++)assert.ok(Math.abs(p.getY(i+k)-(level-.6))<.00001);}assert.ok(Math.abs(area-plan.area)<.01);f.root.updateMatrixWorld(true);const ray=new THREE.Raycaster(new THREE.Vector3(550,90,-110),new THREE.Vector3(0,-1,0)),hits=ray.intersectObject(f.root.getObjectByName('Shin-ike single horizontal water owner R97'),true);assert.equal(hits[0].object.name,'Shin-ike flat olive-gray water R97');assert.equal(hits[1].object,bed);assert.ok(Math.abs(hits[0].point.y-hits[1].point.y-.6)<.00001);});
+
+function waterDigest(root,record,input){
+ const hash=createHash('sha256');root.traverse(o=>{if(!o.isMesh)return;hash.update(o.name);for(const key of Object.keys(o.geometry.attributes).sort()){hash.update(key);hash.update(Buffer.from(o.geometry.attributes[key].array.buffer));}});
+ hash.update(JSON.stringify(record));hash.update(Buffer.from(new Float64Array(record.clipTerrain(input)).buffer));return hash.digest('hex');
+}
+test('pond broad phase preserves all native geometry attributes, shore metadata and clipped terrain byte for byte',()=>{
+ for(const typed of [false,true]){
+  const f=fixture(),positions=terrain();positions.push(-900,20,900,-899,21,900,-900,20,901);const input=typed?new Float32Array(positions):positions;
+  const record=buildShinikeWaterR97(f.root,features,{}, {terrainPositions:input});
+  // Captured before adding the scalar broad phase and cooperative construction.
+  assert.equal(waterDigest(f.root,record,input),typed?'ca15f3dc581bedb1fbc247c8ad151233e9d6c92512c5f04a99b6943325a0f0a2':'4815904a195f8501baf4ba934032f79b421eea6490da684345f2b06cfdaaf4f3');
+ }
+});
+test('cooperative pond construction yields while preserving the previous water until its complete replacement is ready',async()=>{
+ const sync=fixture(),paced=fixture(),input=terrain();let time=0,yields=0;
+ const expected=buildShinikeWaterR97(sync.root,features,{}, {terrainPositions:input});
+ const record=await buildShinikeWaterR97Async(paced.root,features,{}, {terrainPositions:input,clock:()=>time+=33,yieldWork:async()=>{
+  yields++;assert.equal(paced.plane.parent,paced.owner);assert.equal(paced.root.getObjectByName('Shin-ike single horizontal water owner R97'),undefined);await new Promise(setImmediate);
+ }});
+ assert.ok(yields>2);assert.equal(paced.plane.parent,null);assert.equal(waterDigest(paced.root,record,input),waterDigest(sync.root,expected,input));
+ assert.deepEqual(await record.clipTerrainAsync(input,{yieldWork:async()=>{await new Promise(setImmediate);}}),expected.clipTerrain(input));
+});
+test('cooperative pond construction propagates a scheduling failure without publishing a partial replacement',async()=>{
+ const f=fixture(),failure=Error('cancelled preparation');let time=0;
+ await assert.rejects(buildShinikeWaterR97Async(f.root,features,{}, {terrainPositions:terrain(),clock:()=>time+=33,yieldWork:()=>Promise.reject(failure)}),error=>error===failure);
+ assert.equal(f.plane.parent,f.owner);assert.equal(f.root.getObjectByName('Shin-ike single horizontal water owner R97'),undefined);
+});

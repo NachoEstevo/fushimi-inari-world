@@ -1,10 +1,11 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import fs from 'node:fs';
 import {makeSpatial} from './spatial.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
-import {buildPrecinctShrineCourts,shrineCourtPlan} from './precinct-shrine-courts.mjs';
+import {buildPrecinctShrineCourts,shrineCourtPlan,courtCuts,surface} from './precinct-shrine-courts.mjs';
 import {clipConvex,polygonArea} from './entrance-area-surfaces-layout.mjs';
 
 test('actual mapped shrines and neighbourhood retain bounded nonempty mineral collars',()=>{
@@ -56,4 +57,22 @@ test('rendered overlays follow nonlinear terrain, preserve source state and cut 
  }
  assert.equal(network.height,height);assert.equal(network.terrainHeight,terrain);assert.equal(JSON.stringify(network.segments),before);
  assert.equal(buildPrecinctShrineCourts(root,features,network,materials),result);assert.equal(root.children.length,2);
+});
+
+test('court broad phases preserve exact cut order, capped acute miters and independent remote junction triangles',()=>{
+ const features={buildings:[{id:'close',points:[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,0,-1]]},{id:'way/305214371',points:[[8,0,8],[9,0,8],[9,0,9],[8,0,9],[8,0,8]]},{id:'remote',points:[[100,0,100],[101,0,100],[101,0,101],[100,0,101],[100,0,100]]}],water:[{points:[[2,0,2],[4,0,2],[4,0,4],[2,0,4],[2,0,2]]}]};
+ const point=(x,z)=>[x,0,z],network={segments:[{id:'bend',a:point(-3,3),b:point(0,3),width:1},{id:'bend',a:point(0,3),b:point(-2,3.1),width:1},{id:'bend',a:point(-2,3.1),b:point(-1,5),width:1},{id:'remote',a:point(100,100),b:point(101,101),width:2,accessJunctionTriangles:[-.2,0,2.5,.2,0,2.5,0,0,3]},{id:'zero',a:point(0,0),b:point(0,0),width:2}]};
+ const cuts=[[-4,5,-2,6],[-1.5,1.5,3,4],[8,10,8,10],[100,102,100,102]].map(r=>courtCuts(features,network,r,'gonden'));
+ // Captured from the original allocating courtCuts implementation.
+ assert.equal(createHash('sha256').update(JSON.stringify(cuts)).digest('hex'),'0320087e519c17b6bb6ac0e2519ff7fbb2ab271cd1ff631d1829a1fc4eac2800');
+});
+test('opt-in surface height reuse keeps native geometry exact while removing repeated pure sampler queries',()=>{
+ const polygons=[[[0,0],[1.4,0],[1.2,.9],[0,1]],[[.8,.8],[1.8,.8],[1.8,1.6],[.8,1.6]]],material=new THREE.MeshStandardMaterial();
+ for(const maxSlope of [Infinity,.45]){
+  let directCalls=0,cachedCalls=0;const h=(x,z)=>8+.03*x*x+.02*z;
+  const direct=surface(polygons,{terrainHeight:(x,z)=>{directCalls++;return h(x,z);}},material,'direct',{maxSlope});
+  const cached=surface(polygons,{terrainHeight:(x,z)=>{cachedCalls++;return h(x,z);}},material,'cached',{maxSlope,cacheHeights:true});
+  for(const key of Object.keys(direct.geometry.attributes))assert.deepEqual(cached.geometry.attributes[key].array,direct.geometry.attributes[key].array);
+  assert.ok(cachedCalls<directCalls*.55,`${cachedCalls} unique queries replace ${directCalls} total queries`);
+ }
 });
