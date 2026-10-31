@@ -139,6 +139,14 @@ export function installKeihanStreetCommerce(assembly){
   instruction.translate(-.075,.605,.375);b.put(instruction,'print');
   b.box(.63,.22,.035,-.075,.40,.372,'dark');b.box(.66,.025,.14,-.075,.285,.41,'metal');
   b.box(.64,.025,.035,-.075,.517,.402,'white');b.box(.68,.17,.025,-.075,.13,.367,'color',spec.color);
+  if(spec.color==='#bd3d31'){
+   // The 2024 street reference shows a red cabinet with a pale fascia and a
+   // diagonal pale lower panel. This is a cabinet-family treatment, not a
+   // claim that this interpreted bay is the photographed machine's parcel.
+   b.box(.10,.98,.018,-.485,1.29,.376,'white');
+   const panel=new THREE.Shape();panel.moveTo(-.48,.27);panel.lineTo(-.32,.27);panel.lineTo(-.39,.52);panel.lineTo(-.48,.52);panel.closePath();
+   b.put(new THREE.ShapeGeometry(panel).translate(0,0,.395),'white');
+  }
   for(let i=0;i<6;i++)b.put(new THREE.BoxGeometry(.57,.011,.023).rotateX(-.30).translate(-.075,.073+i*.022,.383),'dark');
   b.box(.017,1.72,.025,.50,.99,.365,'metal');b.box(.09,.016,.025,.43,1.66,.389,'metal');
   if(spec.existingCollider)for(const side of [-1,1])for(const y of [.42,.95,1.48])b.put(atlasRegion(new THREE.PlaneGeometry(.46,.46),0,352,160,160).rotateY(side*Math.PI/2).translate(side*.5206,y,0),'print');
@@ -170,7 +178,9 @@ export function installKeihanStreetCommerce(assembly){
    box(.56,.025,.015,u,onCounter+.08,frontShelf?-.25:-.58,'color','#b79a65');
    box(.12,.13,.025,u,onCounter+.1,-.19,'white');
   }
-  // Trays, cup dispenser, condiment bottles, chopstick pot and serving tongs.
+  // Cooking equipment and the grill menu belong only to the food counter,
+  // not the named senbei or tofu/soft-serve merchants.
+  if(s.kind==='grill'){
   const side=.27;
   b.cylinder(.066,.055,.15,side,onCounter+.075,.36,'color','#533d2b');
   for(let i=0;i<7;i++)box(.009,.24,.009,side-.04+i*.012,onCounter+.18,-.36,'color','#cfb98e');
@@ -180,6 +190,10 @@ export function installKeihanStreetCommerce(assembly){
   // Printed menu hangs above head clearance, facing the public street.
   const menu=new THREE.PlaneGeometry(.50,.66);const uv=menu.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,.5+uv.getX(i)*.5,.5+uv.getY(i)*.5);menu.rotateY(Math.PI);menu.translate(.45,s.kind==='grill'?1.62:1.80,-.025);b.put(menu,'print');
   for(const u of [s.width*.25,s.width*.5,s.width*.75]){box(.035,.38,.035,u,2.55,.11,'color','#714b30');const g=new THREE.SphereGeometry(.12,10,6);g.scale(1,1.32,1);g.translate(u,2.36,-.11);b.put(g,'color','#b94730');for(const y of [2.18,2.53])b.cylinder(.08,.08,.03,u,y,-.11,'dark',undefined,8);}
+  }else if(s.kind==='senbei'){
+   // Merchant-association photo: slim ceiling strips, no red lantern row.
+   for(const u of [s.width*.26,s.width*.5,s.width*.74])box(.025,.025,.75,u,2.53,-.70,'white');
+  }
   // Small visible shutter-box, drainpipe and service fittings add depth to
   // the upper store without replacing its registered architecture.
   box(.08,3.0,.08,s.width-.10,3.60,.09,'metal');box(.68,.38,.23,s.width-.55,3.33,.13,'white');

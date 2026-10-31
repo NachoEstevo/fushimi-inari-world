@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installSeasons} from './seasons-nodes.mjs';
-import {subdivideShadowInstanceLeaves} from './spatial-mesh.mjs';
+import {subdivideShadowInstanceLeaves,partitionInstances} from './spatial-mesh.mjs';
+import {preservedForestLOD} from './forest-lod.mjs';
 
 function dom(){
  let select;const pane={prepend(_label,s){select=s;}};
@@ -28,7 +29,7 @@ test('split canopy preserves exact instance colors in spring and autumn',()=>{
 test('ordinary untagged meshes retain traversal and local index palette',()=>{
  const root=new THREE.Group(),material=new THREE.MeshStandardMaterial(),geometry=new THREE.BoxGeometry(),source=new THREE.InstancedMesh(geometry,material,1);
  root.add(new THREE.InstancedMesh(geometry,material,2),new THREE.InstancedMesh(geometry,material,2));const d=dom();installSeasons({root,legacy:{foliage:[null,null,source]}},{setSeason(){}});
- for(let j=0;j<2;j++)for(let i=0;i<2;i++){const n=Math.abs((Math.sin(i*12.9898+j*31.1)*43758.5453)%1),expected=new THREE.Color().setHSL(.23+n*.07,.48,.43+n*.15),actual=new THREE.Color();root.children[j].getColorAt(i,actual);assert.deepEqual(actual.toArray(),expected.toArray().map(Math.fround));}
+ for(let j=0;j<2;j++)for(let i=0;i<2;i++){const n=Math.abs((Math.sin(i*12.9898+j*31.1)*43758.5453)%1),expected=new THREE.Color().setHSL(.23+n*.07,.48,.43+n*.15,THREE.SRGBColorSpace),actual=new THREE.Color();root.children[j].getColorAt(i,actual);assert.deepEqual(actual.toArray(),expected.toArray().map(Math.fround));}
  d.cleanup();
 });
 test('real shadow-only subcells share the seasonal material and exact source colors',()=>{
@@ -48,10 +49,57 @@ test('real shadow-only subcells share the seasonal material and exact source col
    for(let i=0;i<proxy.count;i++){
     const index=proxy.userData.seasonSourceIndices[i],actual=new THREE.Color(),expected=new THREE.Color();
     proxy.getColorAt(i,actual);source.getColorAt(index,expected);assert.deepEqual(actual.toArray(),expected.toArray());
-    const n=Math.abs((Math.sin(index*12.9898+7*31.1)*43758.5453)%1),palette=new THREE.Color().setHSL(season==='spring'?.23+n*.07:.025+n*.105,season==='spring'?.48:.78,.43+n*.15);
+    const n=Math.abs((Math.sin(index*12.9898+7*31.1)*43758.5453)%1),palette=new THREE.Color().setHSL(season==='spring'?.23+n*.07:.025+n*.105,season==='spring'?.48:.78,.43+n*.15,THREE.SRGBColorSpace);
     assert.deepEqual(actual.toArray(),palette.toArray().map(Math.fround));
    }
   }
  };
  verify('spring');d.select.value='autumn';d.select.onchange();verify('autumn');d.cleanup();
+});
+
+test('perceptual HSL converts to linear GPU tint and repeated changes reuse geometry',()=>{
+ const f=fixture(false),mesh=f.root.children[0],geometry=mesh.geometry,attribute=mesh.instanceColor;
+ const verify=(season)=>{
+  for(let i=0;i<mesh.count;i++){
+   const n=Math.abs((Math.sin(i*12.9898)*43758.5453)%1);
+   const expected=new THREE.Color().setHSL(season==='spring'?.23+n*.07:.025+n*.105,season==='spring'?.48:.78,.43+n*.15).convertSRGBToLinear();
+   const actual=new THREE.Color();mesh.getColorAt(i,actual);
+   assert.deepEqual(actual.toArray(),expected.toArray().map(Math.fround));
+  }
+  assert.equal(mesh.geometry,geometry);assert.equal(mesh.instanceColor,attribute);
+ };
+ verify('spring');for(const season of ['autumn','spring','autumn','spring']){f.d.select.value=season;f.d.select.onchange();verify(season);}
+ f.d.cleanup();
+});
+
+test('real partition and far LOD keep the same maple tint across seasons and cell sizes',()=>{
+ const build=size=>{
+  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshStandardMaterial(),source=new THREE.InstancedMesh(geometry,material,6);
+  source.castShadow=true;for(let i=0;i<6;i++)source.setMatrixAt(i,new THREE.Matrix4().makeTranslation([0,30,3,33,6,36][i],0,0));
+  const root=partitionInstances(source,size);preservedForestLOD(root,true);
+  // Production registration shares the logical original maple family seed.
+  root.traverse(o=>{if(o.isInstancedMesh&&(o.material===material||o.userData.seasonalMaple)){
+   o.userData.seasonSourceGroup??=0;
+   if(o.userData.partitionSourceIndices)o.userData.seasonSourceIndices??=Object.freeze([...o.userData.partitionSourceIndices]);
+  }});
+  subdivideShadowInstanceLeaves(root,2);
+  const d=dom();installSeasons({root,legacy:{foliage:[null,null,source]}},{setSeason(){}});return {root,d};
+ };
+ const sample=(f,season)=>{
+  f.d.select.value=season;f.d.select.onchange();const colors=[];
+  for(const lod of f.root.children){const near=lod.levels[0].object,far=lod.levels[1].object;
+   for(let i=0;i<near.count;i++){
+    const a=new THREE.Color(),b=new THREE.Color();near.getColorAt(i,a);far.getColorAt(i,b);
+    assert.deepEqual(a.toArray(),b.toArray(),'near and far tint differ');
+    colors[near.userData.partitionSourceIndices[i]]=a.toArray();
+    near.traverse(p=>{if(!p.userData.shadowOnly||!p.isInstancedMesh)return;
+     for(let j=0;j<p.count;j++)if(p.userData.seasonSourceIndices[j]===near.userData.partitionSourceIndices[i]){
+      const shadow=new THREE.Color();p.getColorAt(j,shadow);assert.deepEqual(shadow.toArray(),a.toArray());
+     }
+    });
+   }
+  }return colors;
+ };
+ const a=build(20),spring=sample(a,'spring'),autumn=sample(a,'autumn');a.d.cleanup();
+ const b=build(50);assert.deepEqual(sample(b,'spring'),spring);assert.deepEqual(sample(b,'autumn'),autumn);b.d.cleanup();
 });

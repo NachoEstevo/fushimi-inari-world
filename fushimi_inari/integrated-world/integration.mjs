@@ -1,3 +1,4 @@
+import {buildKandakaraShrine} from './kandakara-shrine.mjs';
 import {buildTakeyaKeepsakes} from './takeya-keepsakes.mjs';
 import {buildLateralWaymarkers} from './lateral-waymarkers.mjs';
 import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
@@ -877,6 +878,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.keihanStation=JSON.stringify(keihanStation?{built:true,stats:keihanStation.stats,revision:keihanStation.spec.revision}:{built:false,reason:keihanError});
   document.body.dataset.keihanApproach=JSON.stringify(keihanApproach?{built:true,triangles:keihanApproach.triangles,drawBatches:keihanApproach.drawBatches}:{built:false});
   document.body.dataset.keihanFrontages=JSON.stringify({built:keihanFrontages.built,builtIds:keihanFrontages.builtIds,triangles:keihanFrontages.triangles});
+  await checkpoint('buildKandakaraShrine');
+  const kandakaraShrine=buildKandakaraShrine(root,features,surfaces,legacy.materials);
+  document.body.dataset.kandakaraShrine=JSON.stringify(kandakaraShrine);
   await checkpoint('buildLateralWaymarkers');
   document.body.dataset.lateralWaymarkers=JSON.stringify(buildLateralWaymarkers(root,features,surfaces,legacy.materials,colliders));
   // Batch static detail by material after placement. Interactive objects and
@@ -920,10 +924,14 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   // Preserve the pre-subdivision palette identity, including both LOD levels.
   // Season tints must not change just because the draw cells became smaller.
-  let seasonSourceGroup=0;const precinctVerandaFloors=[];
+  const precinctVerandaFloors=[];
   root.traverse(object=>{
     if(object.userData.precinctVerandaFinish)precinctVerandaFloors.push(object);
-    if(object.isInstancedMesh&&(object.material===legacy.foliage[2].material||object.userData.seasonalMaple))object.userData.seasonSourceGroup=seasonSourceGroup++;
+    if(object.isInstancedMesh&&(object.material===legacy.foliage[2].material||object.userData.seasonalMaple)){
+      object.userData.seasonSourceGroup??=0;
+      // Shadow subcells inherit the original tree index, not the cell offset.
+      if(object.userData.partitionSourceIndices)object.userData.seasonSourceIndices??=Object.freeze([...object.userData.partitionSourceIndices]);
+    }
   });
   // Logical LOD/residency and colour batches stay intact; only shadow leaves split.
   if(forestSubcellSize)for(const chunks of [...legacyPartitionRoots,...extendedForestRoots]){
@@ -981,5 +989,5 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   await checkpoint('registeredZenShelters');
   const zenShelters=registeredZenShelters({features,colliders,mitsurugi:mappedRoofCanopies,okusha:okushaMappedSheltersR102,yotsutsuji:yotsutsujiContextR95});
   return {root,zenShelters,deferredBuildings,staticBatches,instancePrewarmEntries,staticBoundaryRoots:[mappedBoundaries.group,...(callbacks.cullPathMargins?pathMarginRoots:[])],shadowPartitions:forestSubcells,staticInstanceTransforms:staticInstances,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,isPublicWalkSupport,
-    excludesBuilding:b=>yakurikiTrail.builtIds.includes(b.id)||mitsurugiCafe.builtIds.includes(b.id)||mappedRoofCanopies.builtIds.includes(b.id)||(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
+    excludesBuilding:b=>kandakaraShrine.builtIds.includes(b.id)||yakurikiTrail.builtIds.includes(b.id)||mitsurugiCafe.builtIds.includes(b.id)||mappedRoofCanopies.builtIds.includes(b.id)||(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

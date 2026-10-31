@@ -10,6 +10,7 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
  section.id='movement-frame-audit';section.style&&(section.style.cssText='position:fixed;left:12px;bottom:12px;z-index:10000;display:flex;gap:8px;align-items:center;padding:8px;background:#18201fe8;color:white;font:12px system-ui;max-width:90vw');
  button.type='button';button.textContent=`Record movement ${duration/1000}s`;section.append(button);section.append(output);doc.body.append(section);
  let phase='idle',result=null,error=null,disposed=false,startTime=null,lastTime=null,firstPose=null,lastPose=null,contextStart=null;
+ let priorSubmitMs=null,priorUpdateMs=null,priorEntryLagMs=null;
  let gaps=[],slowFrames=[],slowCpuFrames=[],count=0,updateSum=0,updateMax=0,submitSum=0,submitMax=0,worst=0,distanceWalked=0,angularCumulativeRadians=0;
  function emit(){
   doc.body.dataset.movementFrameAudit=JSON.stringify({phase,result,error});
@@ -21,18 +22,20 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
  function run(){
   if(disposed||phase==='recording')return;
   phase='recording';result=null;error=null;startTime=null;lastTime=null;firstPose=null;lastPose=null;contextStart=null;
+  priorSubmitMs=null;priorUpdateMs=null;priorEntryLagMs=null;
   gaps=[];slowFrames=[];slowCpuFrames=[];count=0;updateSum=0;updateMax=0;submitSum=0;submitMax=0;worst=0;distanceWalked=0;angularCumulativeRadians=0;
   if(doc.hidden){finish('error','Movement recording requires a visible document');return;}
   try{onStart();}catch(reason){finish('error',String(reason.message??reason));return;}emit();
  }
- function afterRender(time,submitMs,updateMs=0){
+ function afterRender(time,submitMs,updateMs=0,callbackEntryMs=null){
   if(disposed||phase!=='recording')return;
   if(doc.hidden){finish('aborted','Movement recording requires a visible document');return;}
   try{
-   if(!Number.isFinite(time)||!Number.isFinite(submitMs)||submitMs<0||!Number.isFinite(updateMs)||updateMs<0||(lastTime!==null&&time<=lastTime))throw new Error('Movement recording received invalid CPU timing');
+   if(!Number.isFinite(time)||!Number.isFinite(submitMs)||submitMs<0||!Number.isFinite(updateMs)||updateMs<0||(callbackEntryMs!==null&&!Number.isFinite(callbackEntryMs))||(lastTime!==null&&time<=lastTime))throw new Error('Movement recording received invalid CPU timing');
    const {x,y,z}=camera.position,q=camera.quaternion;
    if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z)||!Number.isFinite(q.x)||!Number.isFinite(q.y)||!Number.isFinite(q.z)||!Number.isFinite(q.w)||Math.hypot(q.x,q.y,q.z,q.w)===0)throw new Error('Movement recording received invalid camera pose');
-   if(startTime===null){startTime=time;lastTime=time;firstPose=pose();lastPose=pose();contextStart=context();return;}
+   const entryLagMs=callbackEntryMs===null?null:callbackEntryMs-time;
+   if(startTime===null){startTime=time;lastTime=time;firstPose=pose();lastPose=pose();contextStart=context();priorSubmitMs=submitMs;priorUpdateMs=updateMs;priorEntryLagMs=entryLagMs;return;}
    const p=lastPose.position,r=lastPose.rotation,gap=time-lastTime,elapsedMs=time-startTime;
    distanceWalked+=Math.hypot(x-p[0],y-p[1],z-p[2]);
    const dot=Math.abs(r[0]*q.x+r[1]*q.y+r[2]*q.z+r[3]*q.w)/(Math.hypot(...r)*Math.hypot(q.x,q.y,q.z,q.w));
@@ -40,8 +43,9 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
    p[0]=x;p[1]=y;p[2]=z;r[0]=q.x;r[1]=q.y;r[2]=q.z;r[3]=q.w;
    lastTime=time;count++;updateSum+=updateMs;updateMax=Math.max(updateMax,updateMs);submitSum+=submitMs;submitMax=Math.max(submitMax,submitMs);worst=Math.max(worst,gap);
    if(gaps.length<maxSamples)gaps.push(gap);
-   if(slowFrames.length<MAX_SLOW_FRAMES||gap>slowFrames.at(-1).gap){slowFrames.push({elapsedMs,gap,submitMs,updateMs});slowFrames.sort((a,b)=>b.gap-a.gap);if(slowFrames.length>MAX_SLOW_FRAMES)slowFrames.length=MAX_SLOW_FRAMES;}
-   if(slowCpuFrames.length<MAX_SLOW_FRAMES||submitMs+updateMs>slowCpuFrames.at(-1).submitMs+slowCpuFrames.at(-1).updateMs){slowCpuFrames.push({elapsedMs,gap,submitMs,updateMs});slowCpuFrames.sort((a,b)=>(b.submitMs+b.updateMs)-(a.submitMs+a.updateMs));if(slowCpuFrames.length>MAX_SLOW_FRAMES)slowCpuFrames.length=MAX_SLOW_FRAMES;}
+   if(slowFrames.length<MAX_SLOW_FRAMES||gap>slowFrames.at(-1).gap){slowFrames.push({elapsedMs,gap,submitMs,updateMs,priorSubmitMs,priorUpdateMs,priorEntryLagMs,entryLagMs});slowFrames.sort((a,b)=>b.gap-a.gap);if(slowFrames.length>MAX_SLOW_FRAMES)slowFrames.length=MAX_SLOW_FRAMES;}
+   if(slowCpuFrames.length<MAX_SLOW_FRAMES||submitMs+updateMs>slowCpuFrames.at(-1).submitMs+slowCpuFrames.at(-1).updateMs){slowCpuFrames.push({elapsedMs,gap,submitMs,updateMs,entryLagMs});slowCpuFrames.sort((a,b)=>(b.submitMs+b.updateMs)-(a.submitMs+a.updateMs));if(slowCpuFrames.length>MAX_SLOW_FRAMES)slowCpuFrames.length=MAX_SLOW_FRAMES;}
+   priorSubmitMs=submitMs;priorUpdateMs=updateMs;priorEntryLagMs=entryLagMs;
    if(elapsedMs>=duration){
     result={duration:duration/1000,startTimeMs:startTime,elapsedMs,frameCount:count,sampleCount:gaps.length,samplesTruncated:count>gaps.length,
      fps:count*1000/elapsedMs,p50:percentile(gaps,.5),p95:percentile(gaps,.95),p99:percentile(gaps,.99),worst,

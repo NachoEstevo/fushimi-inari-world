@@ -4,8 +4,8 @@ import * as THREE from 'three';
 
 test('painted foliage keeps alpha, instance/season ownership, maps and stable graphs across selections',{skip:Number(THREE.REVISION)<180},async()=>{
   const {createAozoraFoliage}=await import('./aozora-foliage.mjs');
-  const geometry=new THREE.SphereGeometry(1),map=new THREE.Texture();
-  const original=new THREE.MeshStandardMaterial({map,alphaTest:.28,side:THREE.DoubleSide});
+  const geometry=new THREE.SphereGeometry(1),map=new THREE.Texture(),normalMap=new THREE.Texture();
+  const original=new THREE.MeshStandardMaterial({map,normalMap,normalScale:new THREE.Vector2(.8,.4),roughness:.5,alphaTest:.28,side:THREE.DoubleSide});
   const a=new THREE.InstancedMesh(geometry,original,2),b=new THREE.InstancedMesh(geometry,original,1);
   a.setColorAt(0,new THREE.Color('#ff9900'));const tint=a.instanceColor;
   const rock=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial({color:'gray'})),rockMaterial=rock.material;
@@ -13,6 +13,9 @@ test('painted foliage keeps alpha, instance/season ownership, maps and stable gr
   const foliage=createAozoraFoliage({foliage:[null,{geometry}]});foliage.applyTo(root);
   assert.equal(a.material,b.material);assert.notEqual(a.material,original);assert.equal(a.material.map,map);
   assert.equal(a.material.alphaTest,.28);assert.equal(a.material.side,THREE.DoubleSide);assert.equal(a.instanceColor,tint);
+  assert.equal(a.material.normalMap,normalMap);assert.ok(Math.abs(a.material.normalScale.x-.24)<1e-12);assert.ok(Math.abs(a.material.normalScale.y-.12)<1e-12);
+  assert.equal(a.material.roughness,.86);assert.equal(a.material.metalness,0);
+  assert.equal(original.roughness,.5);assert.deepEqual(original.normalScale.toArray(),[.8,.4]);
   assert.equal(rock.material,rockMaterial,'unrelated stone retains its original finish');
   const node=a.material.colorNode,version=a.material.version;
   for(let i=0;i<10;i++){foliage.setLook('aozora');foliage.setSeason('autumn');foliage.setTimeOfDay('gold');}

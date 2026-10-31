@@ -3,6 +3,8 @@
         this.cellSize = cellSize;
         this.grid = new Map();
         this.boxes = [];
+        this.boxGrid = new Map();
+        this.largeBoxes = [];
       }
       _key(cx, cz) { return `${cx},${cz}`; }
       addCylinder(x, z, r, yMin = -100, yMax = 500, tag = 'col') {
@@ -20,12 +22,35 @@
         }
       }
       addBox(cx, cz, halfW, halfD, yaw = 0, yMin = -100, yMax = 500, tag = 'box') {
-        this.boxes.push({
-          cx, cz, halfW, halfD,
-          cos: Math.cos(yaw), sin: Math.sin(yaw),
-          cosF: Math.cos(-yaw), sinF: Math.sin(-yaw),
-          yMin, yMax, tag
-        });
+        const cos = Math.cos(yaw), sin = Math.sin(yaw);
+        const index = this.boxes.length;
+        this.boxes.push({cx, cz, halfW, halfD, cos, sin,
+          cosF: Math.cos(-yaw), sinF: Math.sin(-yaw), yMin, yMax, tag});
+        // The exact rotated AABB makes the broadphase conservative. Very
+        // large objects stay in a small fallback list instead of filling cells.
+        const extentX = Math.abs(cos * halfW) + Math.abs(sin * halfD);
+        const extentZ = Math.abs(sin * halfW) + Math.abs(cos * halfD);
+        const x0 = Math.floor((cx - extentX) / this.cellSize), x1 = Math.floor((cx + extentX) / this.cellSize);
+        const z0 = Math.floor((cz - extentZ) / this.cellSize), z1 = Math.floor((cz + extentZ) / this.cellSize);
+        if (!Number.isFinite(x0+x1+z0+z1) || (x1-x0+1)*(z1-z0+1)>4096) {
+          this.largeBoxes.push(index); return;
+        }
+        for (let x=x0; x<=x1; x++) for (let z=z0; z<=z1; z++) {
+          const key=this._key(x,z);
+          if (!this.boxGrid.has(key)) this.boxGrid.set(key,[]);
+          this.boxGrid.get(key).push(index);
+        }
+      }
+      _boxCandidates(x,z,radius,start) {
+        const r=Math.abs(radius),size=this.cellSize;
+        const x0=Math.floor((x-r)/size),x1=Math.floor((x+r)/size);
+        const z0=Math.floor((z-r)/size),z1=Math.floor((z+r)/size);
+        if (!Number.isFinite(x0+x1+z0+z1) || (x1-x0+1)*(z1-z0+1)>256)
+          return this.boxes.map((_,i)=>i).slice(start);
+        const found=new Set(this.largeBoxes.filter(i=>i>=start));
+        for(let cx=x0;cx<=x1;cx++)for(let cz=z0;cz<=z1;cz++)
+          for(const i of this.boxGrid.get(this._key(cx,cz))??[])if(i>=start)found.add(i);
+        return [...found].sort((a,b)=>a-b);
       }
       resolvePlayer(px, py, pz, playerRadius = 0.28) {
         let x = px, z = pz;
@@ -56,8 +81,11 @@
             }
           }
 
-          for (let i = 0; i < this.boxes.length; i++) {
-            const b = this.boxes[i];
+          // After a push, later boxes must be queried at the new position, but
+          // earlier boxes must not be revisited until the next outer iteration.
+          let cursor=0, candidates=this._boxCandidates(x,z,playerRadius,cursor);
+          for (let n=0; n<candidates.length; n++) {
+            const i=candidates[n], b=this.boxes[i];
             if (headY < b.yMin || footY > b.yMax) continue;
             const relX = x - b.cx;
             const relZ = z - b.cz;
@@ -88,6 +116,8 @@
               }
               x = b.cx + nLx * b.cosF - nLz * b.sinF;
               z = b.cz + nLx * b.sinF + nLz * b.cosF;
+              cursor=i+1;
+              candidates=this._boxCandidates(x,z,playerRadius,cursor);n=-1;
             }
           }
         }

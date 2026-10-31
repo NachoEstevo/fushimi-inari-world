@@ -41,8 +41,8 @@ test('High daylight contrast is reversible, noncompounding and preserves readabl
  const {scene,hemi,sun,day,lighting}=await fixture();
  const base=[hemi.intensity,sun.intensity,scene.environmentIntensity];
  for(let i=0;i<10;i++)lighting.setQuality('high');
- assert.equal(hemi.intensity,base[0]*.88);assert.equal(sun.intensity,base[1]*1.04);
- lighting.updateBaseLighting(()=>day('gold'));assert.equal(hemi.intensity,LIGHT_PRESETS.gold.fill*.88);
+ assert.equal(hemi.intensity,base[0]*.82);assert.equal(sun.intensity,base[1]*1.06);
+ lighting.updateBaseLighting(()=>day('gold'));assert.equal(hemi.intensity,LIGHT_PRESETS.gold.fill*.82);
  lighting.updateBaseLighting(()=>day('night'));assert.equal(hemi.intensity,LIGHT_PRESETS.night.fill);assert.equal(sun.intensity,LIGHT_PRESETS.night.sun);
  lighting.updateBaseLighting(()=>day('day'));lighting.setQuality('balanced');
  assert.deepEqual([hemi.intensity,sun.intensity,scene.environmentIntensity],base);

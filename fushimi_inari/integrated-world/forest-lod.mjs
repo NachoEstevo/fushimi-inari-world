@@ -8,7 +8,10 @@ export function preservedForestLOD(chunks,maple=false){
     const offset=new THREE.Matrix4().makeTranslation(...center.toArray()).multiply(new THREE.Matrix4().makeScale(...scale.toArray()));
     const far=new THREE.InstancedMesh(geo,mat,near.count),matrix=new THREE.Matrix4();
     for(let i=0;i<near.count;i++){near.getMatrixAt(i,matrix);far.setMatrixAt(i,matrix.multiply(offset));}
-    far.userData.seasonalMaple=maple;far.userData.precinctCanopy=true;far.computeBoundingSphere();
+    far.userData.seasonalMaple=maple;far.userData.precinctCanopy=true;
+    // Both LODs describe the same source trees, regardless of cell partition.
+    if(maple){far.userData.seasonSourceIndices=Object.freeze([...(near.userData.seasonSourceIndices??near.userData.partitionSourceIndices??Array.from({length:near.count},(_,i)=>i))]);if(near.userData.seasonSourceGroup!==undefined)far.userData.seasonSourceGroup=near.userData.seasonSourceGroup;}
+    far.computeBoundingSphere();
     const position=near.boundingSphere.center.clone(),lod=new THREE.LOD();lod.position.copy(position);
     near.position.copy(position).negate();far.position.copy(near.position);
     // LOD measures distance to the cell center, not its closest crown. Include

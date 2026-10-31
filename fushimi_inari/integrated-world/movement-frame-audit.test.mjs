@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {installMovementFrameAudit} from './movement-frame-audit.mjs';
 
+test('slow gaps report preceding CPU work and optional callback entry lag',()=>{
+ const f=fixture();try{
+  f.audit.run();f.audit.afterRender(100,7,3,102);f.audit.afterRender(200,2,1,205);f.audit.afterRender(16100,4,6);
+  const frames=f.state().result.slowFrames;
+  const first=frames.find(frame=>frame.elapsedMs===100),last=frames.find(frame=>frame.elapsedMs===16000);
+  assert.equal(first.priorSubmitMs,7);assert.equal(first.priorUpdateMs,3);assert.equal(first.priorEntryLagMs,2);assert.equal(first.entryLagMs,5);
+  assert.equal(last.priorSubmitMs,2);assert.equal(last.priorUpdateMs,1);assert.equal(last.priorEntryLagMs,5);assert.equal(last.entryLagMs,null);
+  assert.equal(f.state().result.slowCpuFrames.find(frame=>frame.elapsedMs===100).entryLagMs,5);
+  f.audit.run();f.audit.afterRender(20000,1,2);f.audit.afterRender(36000,3,4,36001);
+  assert.equal(f.state().result.slowFrames[0].priorEntryLagMs,null);
+ }finally{f.cleanup();}
+});
+
 function documentStub(){
  const listeners=new Map(),body={dataset:{},children:[],append(child){this.children.push(child);}};
  return {body,hidden:false,listeners,addEventListener(type,fn){listeners.set(type,fn);},removeEventListener(type,fn){if(listeners.get(type)===fn)listeners.delete(type);},dispatch(type){listeners.get(type)?.();},createElement(){return {children:[],handlers:new Map(),append(child){this.children.push(child);},addEventListener(type,fn){this.handlers.set(type,fn);},remove(){this.removed=true;}};}};
@@ -62,7 +75,7 @@ test('keeps the twenty largest frame gaps and their measured CPU costs',()=>{
   f.audit.run();let time=0;f.audit.afterRender(time,0);
   for(let gap=1;gap<=30;gap++){time+=gap;f.audit.afterRender(time,gap*2,gap*3);}
   f.audit.afterRender(16000,4,5);const r=f.state().result;
-  assert.equal(r.slowFrames.length,20);assert.equal(r.slowFrames[0].gap,16000-time);assert.deepEqual(r.slowFrames[1],{elapsedMs:time,gap:30,submitMs:60,updateMs:90});assert.equal(r.worst,16000-time);
+  assert.equal(r.slowFrames.length,20);assert.equal(r.slowFrames[0].gap,16000-time);assert.deepEqual(r.slowFrames[1],{elapsedMs:time,gap:30,submitMs:60,updateMs:90,priorSubmitMs:58,priorUpdateMs:87,priorEntryLagMs:null,entryLagMs:null});assert.equal(r.worst,16000-time);
  }finally{f.cleanup();}
 });
 
@@ -70,7 +83,7 @@ test('keeps the twenty most CPU-intensive frames even when their preceding gaps 
  const f=fixture();try{
   f.audit.run();f.audit.afterRender(0,0);for(let i=1;i<=30;i++)f.audit.afterRender(i*8,i===1?60:i,i===1?10:0);
   f.audit.afterRender(16000,0,0);const r=f.state().result;
-  assert.equal(r.slowCpuFrames.length,20);assert.deepEqual(r.slowCpuFrames[0],{elapsedMs:8,gap:8,submitMs:60,updateMs:10});
+  assert.equal(r.slowCpuFrames.length,20);assert.deepEqual(r.slowCpuFrames[0],{elapsedMs:8,gap:8,submitMs:60,updateMs:10,entryLagMs:null});
   assert.equal(r.slowCpuFrames.at(-1).submitMs,12);assert.equal(r.slowFrames[0].gap,15760);
  }finally{f.cleanup();}
 });

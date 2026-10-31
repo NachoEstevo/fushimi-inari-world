@@ -226,7 +226,8 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
       // Aozora keeps cool canopy shade and warm, readable sun patches instead
       // of filling the forest uniformly. Existing lights and shadow maps only.
       const painted=look==='aozora';
-      hemi.intensity*=painted?.77:.88;sun.intensity*=painted?1.07:1.04;
+      const natural=look==='natural';
+      hemi.intensity*=painted?.77:natural?.82:.88;sun.intensity*=painted?1.07:natural?1.06:1.04;
     }
     // The studio probe must follow daylight energy rather than lighting night as day.
     const daylight=LIGHT_PRESETS.day.sun+LIGHT_PRESETS.day.fill;

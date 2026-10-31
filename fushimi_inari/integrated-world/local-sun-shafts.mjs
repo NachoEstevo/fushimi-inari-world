@@ -42,7 +42,7 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  // A slight widening away from the canopy is less rigid than a flat rectangle.
  for(let i=0;i<positions.count;i++)if(positions.getY(i)>0)positions.setX(i,positions.getX(i)*.45);
  positions.needsUpdate=true;geometry.computeBoundingSphere();
- const tint=uniform(new THREE.Color('#fff1cf')),strength=uniform(.19),q=uv();
+ const tint=uniform(new THREE.Color('#fff1cf')),strength=uniform(.16),q=uv();
  const cross=q.x.sub(.5),distance=positionWorld.sub(cameraPosition).length();
  // Several uneven openings share one feathered ribbon and one draw. Avoid
  // evenly striped grain, which reads as a luminous sheet instead of haze.
@@ -51,7 +51,7 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  const lobe=(center,falloff,weight)=>{const delta=u.sub(center);return exp(delta.mul(delta).mul(falloff)).mul(weight);};
  const profile=lobe(-.23,-240,.48).add(lobe(.02,-85,.76)).add(lobe(.28,-380,.4))
   .mul(float(1).sub(smoothstep(.32,.5,cross.abs())));
- const ends=smoothstep(0,.23,q.y).mul(float(1).sub(smoothstep(.68,1,q.y)));
+ const ends=smoothstep(0,.23,q.y).mul(float(1).sub(smoothstep(.48,.86,q.y)));
  const grain=sin(q.y.mul(9).add(q.x.mul(17))).mul(.1).add(.9);
  const fade=smoothstep(1.5,4,distance).mul(float(1).sub(smoothstep(28,48,distance)));
  const material=new THREE.MeshBasicNodeMaterial({transparent:true,depthWrite:false,depthTest:true,
@@ -68,7 +68,7 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  function shade(){
   const painted=look==='aozora';
   tint.value.set(mode==='gold'?'#ffc18e':painted?'#fff8df':'#fff1cf');
-  strength.value=mode==='gold'?(painted?.1:.12):(painted?.14:.19);
+  strength.value=mode==='gold'?(painted?.1:.12):(painted?.12:.16);
  }
  function setMode(next){
   if(disposed)return;dirty=true;mode=Object.hasOwn(SUN_DIRECTIONS,next)?next:'day';axis.fromArray(SUN_DIRECTIONS[mode]).normalize();

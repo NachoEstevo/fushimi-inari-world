@@ -38,8 +38,8 @@ export function toriiMaterials(legacy,{separateInk=false}={}){
   };
   // Inari-nuri reads as a coat of vermilion paint. A small amount of the
   // original timber map survives beneath it rather than becoming dark ribs.
-  if(separateInk)paint(fresh,[.68,.080,.018],.12);
-  paint(weathered,[.60,.075,.018],.20);paint(beam,[.68,.075,.012],.10);
+  if(separateInk)paint(fresh,[.68,.080,.018],.18);
+  paint(weathered,[.60,.075,.018],.26);paint(beam,[.68,.075,.012],.14);
   // Three's node material applies vertex/instance colour after colorNode. Keep
   // the paint graph multiplicative and let that owner apply instance tint once.
   for(const material of [fresh,weathered,beam])material.userData={...material.userData,precinctLeafReceiver:true};

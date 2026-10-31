@@ -216,12 +216,25 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   for(const [u,bw]of caseData){
    fb(bw,.68,.68,u,.34,-.43,kind==='senbei'?palette.timber:palette.plaster);blocker(bw,.68,u,-.43,0,1.25,'keihan_store_display_case');
    fb(bw,.065,.74,u,.73,-.43,palette.dark);fb(bw,.06,.62,u,1.20,-.42,palette.plaster);
-   fb(bw-.09,.40,.035,u,.98,-.085,palette.glass);
+   if(kind==='senbei'){
+    // Association photograph: the two separate timber cases have angled
+    // glazed display lids, with multiple narrow framed panes.
+    const lid=new THREE.BoxGeometry(bw-.09,.48,.025);lid.rotateX(-.38);shaped(lid,u,.99,-.16,palette.glass);
+    for(let pane=0;pane<5;pane++){
+     const frame=new THREE.BoxGeometry(.025,.50,.035);frame.rotateX(-.38);
+     shaped(frame,u-(bw-.09)/2+pane*(bw-.09)/4,.99,-.14,palette.timber);
+    }
+   }else fb(bw-.09,.40,.035,u,.98,-.085,palette.glass);
    for(const du of [-bw/2+.025,bw/2-.025])fb(.05,.47,.63,u+du,.98,-.42,palette.timber);
    for(let row=0;row<2;row++)for(let col=0;col<5;col++){
     const x=u-bw*.39+col*bw*.195,y=.81+row*.20;
     if(kind==='senbei'){
      const cracker=new THREE.CylinderGeometry(.071,.071,.025,10);cracker.rotateX(Math.PI/2);shaped(cracker,x,y,-.20-row*.16,palette.food);
+     // The shop identifies fox and bell senbei; simplified silhouettes are
+     // original geometry, not copies of packaging or claims of current stock.
+     if(col%2===0){
+      for(const dx of [-.044,.044]){const ear=new THREE.ConeGeometry(.029,.065,3);ear.rotateZ(dx<0?.22:-.22);shaped(ear,x+dx,y+.058,-.20-row*.16,palette.food);}
+     }else fb(.045,.025,.025,x,y-.068,-.20-row*.16,palette.food);
      for(const dx of [-.023,.023])fb(.017,.026,.008,x+dx,y-.006,-.182-row*.16,palette.timber);
      fb(.17,.025,.11,x,y-.063,-.20-row*.16,palette.red);
     }else{
@@ -238,6 +251,11 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    fb(w+.22,.10,.63,w/2,3.14,.17,palette.stone);
    for(let i=0;i<19;i++){const tile=new THREE.CylinderGeometry(.055,.055,.64,6,1,true);tile.rotateX(Math.PI/2);shaped(tile,w*i/18,3.20,.17,palette.dark);}
    for(let i=0;i<16;i++)fb(.035,2.30,.025,.30+i*(w-.60)/15,1.30,-1.345,palette.timber);
+   // Timber shop entrance surround and the dark recessed workshop visible in
+   // the merchant-association photograph. Dimensions remain approximate.
+   for(const u of [.24,w-.24])fb(.11,2.40,.12,u,1.30,-1.27,palette.timber);
+   fb(w-.42,.13,.13,w/2,2.53,-1.27,palette.timber);
+   for(const u of [.35,w-.35])fb(.08,.19,.28,u,2.76,.12,palette.dark);
    // Source-visible framed lower counter shelf and central door opening.
    for(const u of [.35,w-.35])fb(.20,.40,.05,u,1.98,-.04,palette.food);
   }else if(kind==='soft-serve'){
@@ -312,5 +330,6 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
  };
  group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,lightPositions,openServiceBays:4,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://www.youtube.com/watch?v=K0UC5GkHbaU&t=35s','https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Four open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions. Cloth seams, sloped canopies and piped soft-serve/product forms use the user video as typological reference; its edited sequence does not establish these exact parcel details.'};
  group.userData.productDetails={source:'https://inari-kyoto.com/kyozuan',categories:['tofu-soft-serve','matcha-tofu-soft-serve'],boards:2,inferred:'Original product-category typography, colors and board placement; not a current menu or stock claim.'};
+ group.userData.hogyokudoDetails={source:'https://inari-kyoto.com/hogyokudo',photo:'https://inari-kyoto.com/wp/wp-content/uploads/2021/12/hogyokudo_main.jpg',features:['paired angled glazed timber cases','recessed timber surround','fox and bell senbei silhouettes'],inferred:'Case dimensions, framing, workshop depth and product placement are approximate; no current stock claim.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

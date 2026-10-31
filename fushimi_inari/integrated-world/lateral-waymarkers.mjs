@@ -70,6 +70,21 @@ export function buildLateralWaymarkers(root,features,surfaces,materials,collider
  return result;
 }
 
+const MAP_DESTINATIONS=[
+ {id:'way/301527741',name:'熊鷹社'},
+ {id:'way/301554315',name:'御膳谷奉拝所'},
+ {id:'way/626313728',name:'一ノ峰'},
+ {id:'way/626313751',name:'三ノ峰'}
+];
+// Names and locations come from mapped POIs; the official shrine map confirms
+// the destination names. Projection is geographic, not a claimed route guide.
+export function yotsutsujiMapDestinations(features){
+ return MAP_DESTINATIONS.flatMap(spec=>{
+  const poi=features.pois.find(p=>p.id===spec.id);
+  return poi?.point?[{...spec,point:poi.point.slice()}]:[];
+ });
+}
+
 function addJunctionMap(group,marker,features,surfaces,stone,yaw,colliders){
  const [x,,z]=marker.point,y=surfaces.height(x,z),frame=new THREE.Group();
  frame.position.set(x,y,z);frame.rotation.y=yaw;group.add(frame);
@@ -86,14 +101,22 @@ function addJunctionMap(group,marker,features,surfaces,stone,yaw,colliders){
    // An original schematic derived from the existing metric network. Lines
    // outside the local diagram are clipped, never attached to invented nodes.
    ctx.save();ctx.beginPath();ctx.rect(24,65,720,420);ctx.clip();
-   const project=p=>[384+(p[0]-x)*2.6,275+(p[2]-z)*2.6];
+   const project=p=>[384+(p[0]-x)*.68,275+(p[2]-z)*.68];
    ctx.strokeStyle='#786550';ctx.lineWidth=5;
    for(const path of features.paths){
-    if(!path.points.some(p=>Math.abs(p[0]-x)<140&&Math.abs(p[2]-z)<100))continue;
+    if(!path.points.some(p=>Math.abs(p[0]-x)<530&&Math.abs(p[2]-z)<300))continue;
     ctx.beginPath();path.points.forEach((p,i)=>{const q=project(p);if(i)ctx.lineTo(...q);else ctx.moveTo(...q);});ctx.stroke();
    }
    ctx.fillStyle='#a32f26';ctx.beginPath();ctx.arc(384,275,8,0,Math.PI*2);ctx.fill();
-   ctx.font='22px serif';ctx.fillText('現在地',384,306);ctx.restore();
+   ctx.font='20px serif';ctx.fillText('現在地',384,304);
+   ctx.textAlign='left';ctx.font='bold 19px serif';
+   for(const destination of yotsutsujiMapDestinations(features)){
+    const [px,py]=project(destination.point);
+    if(px<35||px>725||py<80||py>460)continue;
+    ctx.fillStyle='#8e332a';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#26332b';ctx.textAlign=px>570?'right':'left';ctx.fillText(destination.name,px+(px>570?-9:9),py-6);
+   }
+   ctx.fillStyle='#26332b';ctx.font='20px serif';ctx.textAlign='left';ctx.fillText('北 ↑',40,95);ctx.restore();
    const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
    const panel=new THREE.Mesh(new THREE.PlaneGeometry(1.53,1.02),new THREE.MeshStandardMaterial({map,roughness:1}));
    panel.position.set(0,1.45,.051);frame.add(panel);

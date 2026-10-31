@@ -28,6 +28,15 @@ export function createAozoraFoliage(legacy={}){
     }else if(original?.isMeshLambertMaterial){
       material=new THREE.MeshLambertNodeMaterial();THREE.MeshLambertMaterial.prototype.copy.call(material,original);
     }else return original;
+    // Leaf cards keep their authored normal texture, but strong PBR normals
+    // and low roughness make sunlit foliage read as glossy plastic in Natural.
+    // Change only this shared clone; Lambert foliage and source assets remain.
+    if(material.isMeshStandardNodeMaterial){
+      const scale=material.normalScale,max=Math.max(Math.abs(scale.x),Math.abs(scale.y));
+      if(max>.24)scale.multiplyScalar(.24/max);
+      material.roughness=Math.max(material.roughness,.86);
+      material.metalness=0;
+    }
     // Node-material clones in r186 omit the numeric cutout threshold.
     material.alphaTest=original.alphaTest;
     const base=vec4(material.colorNode??materialColor);

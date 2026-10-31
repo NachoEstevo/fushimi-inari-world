@@ -42,7 +42,7 @@ function fixture(){
 test('all twenty real late detail owners are admitted even when dormant, without changing their scene ownership',()=>{
  const f=fixture();assert.deepEqual(f.families.map(v=>v.detailGroups.length),[7,8,1,4]);
  let meshes=0;for(const owner of f.owners)owner.traverse(o=>{if(o.isMesh)meshes++;});
- assert.equal(meshes,78);assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
+ assert.equal(meshes,76,'named senbei and tofu shops no longer own generic grill-menu meshes');assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
  const existing=f.root.children[0],originalBounds=new THREE.Sphere(new THREE.Vector3(9000,0,0),1);
  const bounds=new Map([[existing,originalBounds]]);f.owners[0].visible=false;
  const before=f.owners.map(o=>({object:o,parent:o.parent,visible:o.visible,position:o.position.toArray(),rotation:o.quaternion.toArray(),scale:o.scale.toArray()}));
@@ -67,7 +67,7 @@ test('walking preparation compiles dormant late groups before their first activa
  for(let time=0;time<10&&compiledOwners.size<f.owners.length;time++){
   service.update(camera.position,time*100,{direction:new THREE.Vector3(1,0,0)});while(tasks.length)await tasks.shift()();
  }
- assert.equal(compiledOwners.size,20);assert.equal(compiledMeshes.size,74,'four initially hidden collection-tray cans remain covered by zen.prepare instead');
+ assert.equal(compiledOwners.size,20);assert.equal(compiledMeshes.size,72,'four initially hidden collection-tray cans remain covered by zen.prepare instead');
  for(const owner of f.owners)assert.equal(owner.visible,false);for(const [o,parent]of parents)assert.equal(o.parent,parent);
  assert.equal(service.stats.failed,0);service.dispose();
 });

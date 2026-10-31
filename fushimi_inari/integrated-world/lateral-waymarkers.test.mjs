@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {readFileSync} from 'node:fs';
-import {buildLateralWaymarkers} from './lateral-waymarkers.mjs';
+import {buildLateralWaymarkers,yotsutsujiMapDestinations} from './lateral-waymarkers.mjs';
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url)));
 const materials={stoneMat:new THREE.MeshStandardMaterial()};
 test('Kiyotaki marker retains its surveyed OSM owner and leaves mapped route clear',()=>{
@@ -33,4 +33,14 @@ test('source-owned Kandakara and Yotsutsuji landmarks accompany three continuous
   const paths=c.pathIds.map(id=>features.paths.find(p=>p.id===id));assert.ok(paths.every(Boolean));
   for(let i=1;i<paths.length;i++)assert.ok(paths[i].nodeIds.some(n=>paths[i-1].nodeIds.includes(n)),c.id);
  }
+});
+
+test('junction map destinations refer to existing named mapped locations',()=>{
+ const destinations=yotsutsujiMapDestinations(features);
+ assert.deepEqual(destinations.map(d=>d.name),['熊鷹社','御膳谷奉拝所','一ノ峰','三ノ峰']);
+ for(const d of destinations){
+  const source=features.pois.find(p=>p.id===d.id);
+  assert.equal(source.tags.name,d.name);assert.deepEqual(source.point,d.point);
+ }
+ assert.deepEqual(yotsutsujiMapDestinations({...features,pois:[]}),[]);
 });

@@ -547,7 +547,9 @@ try {
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
       ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45],
       ['audit_takeya','Review · Takeya keepsakes',540.706,-135.836,538.304,-137.276],
-      ['audit_north_court','Review · North court frontage',-7,-25,-7,-30]
+      ['audit_north_court','Review · North court frontage',-7,-25,-7,-30],
+      ['audit_hogyokudo','Review · Hogyokudo',-287.92,-112.15,-289.148,-109.087],
+      ['audit_kandakara','Review · Kandakara shrine',376.8,67.3,386.88,66.8]
     ];
     const reviewTargets=contextFinishes.stats.records.filter(r=>r.upperCafe).map(record=>{
       const building=features.buildings.find(b=>b.id===record.id),i=record.upperCafe.edge,a=building.points[i],b=building.points[i+1];
@@ -662,7 +664,7 @@ try {
   const leafCrowns=collectPrecinctLeafBounds(crownObjects,{region:leafRegion,maxInstances:8192});
   const leafRoofs={...forestRoofs,bounds:forestRoofs.bounds.filter(b=>b.intersectsBox(leafRegion))};
   leafLight=installPrecinctLeafLight({canopies:leafCrowns.bounds,roofs:leafRoofs.bounds,materials:[...leafMaterials]},
-    {strength:.28,enabled:quality.mode!=='balanced'&&query.get('leafLight')!=='0',mode:$('light').value});
+    {strength:.34,enabled:quality.mode!=='balanced'&&query.get('leafLight')!=='0',mode:$('light').value});
   document.body.dataset.precinctLeafLight=JSON.stringify({...leafLight.stats,skippedAggregateRoofs:leafRoofs.skippedAggregate,skippedOversizedRoofs:leafRoofs.skippedOversized});
   const shaftRoutes=[...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.spatial.main,assembly.spatial.returning];
   const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
@@ -1057,6 +1059,7 @@ try {
   let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
   const prewarmFrameBudget=query.get('prewarmHeadroom')==='1'?createPrewarmFrameBudget():null;
   function animate(time){
+    const callbackEntryMs=movementFrameAudit?.active?performance.now():null;
     frameSchedulingAudit?.noteFrame(time);
     if(rendererHealth.failed){walkingPrewarm?.setBlocked(true);return;}
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
@@ -1147,7 +1150,7 @@ try {
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
     menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),musicPaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
-    if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs));
+    if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs),callbackEntryMs);
 
   }
   requestAnimationFrame(animate);
