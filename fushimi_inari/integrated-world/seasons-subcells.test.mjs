@@ -74,7 +74,7 @@ test('perceptual HSL converts to linear GPU tint and repeated changes reuse geom
 
 test('real partition and far LOD keep the same maple tint across seasons and cell sizes',()=>{
  const build=size=>{
-  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshStandardMaterial(),source=new THREE.InstancedMesh(geometry,material,6);
+  const geometry=new THREE.PlaneGeometry(1,1,3,3),material=new THREE.MeshStandardMaterial(),source=new THREE.InstancedMesh(geometry,material,6);
   source.castShadow=true;for(let i=0;i<6;i++)source.setMatrixAt(i,new THREE.Matrix4().makeTranslation([0,30,3,33,6,36][i],0,0));
   const root=partitionInstances(source,size);preservedForestLOD(root,true);
   // Production registration shares the logical original maple family seed.
@@ -87,10 +87,10 @@ test('real partition and far LOD keep the same maple tint across seasons and cel
  };
  const sample=(f,season)=>{
   f.d.select.value=season;f.d.select.onchange();const colors=[];
-  for(const lod of f.root.children){const near=lod.levels[0].object,far=lod.levels[1].object;
+  for(const lod of f.root.children){const near=lod.levels[0].object;assert.equal(lod.levels.length,3);
    for(let i=0;i<near.count;i++){
-    const a=new THREE.Color(),b=new THREE.Color();near.getColorAt(i,a);far.getColorAt(i,b);
-    assert.deepEqual(a.toArray(),b.toArray(),'near and far tint differ');
+    const a=new THREE.Color();near.getColorAt(i,a);
+    for(const {object}of lod.levels.slice(1)){const b=new THREE.Color();object.getColorAt(i,b);assert.deepEqual(a.toArray(),b.toArray(),'near, middle and far tint differ');}
     colors[near.userData.partitionSourceIndices[i]]=a.toArray();
     near.traverse(p=>{if(!p.userData.shadowOnly||!p.isInstancedMesh)return;
      for(let j=0;j<p.count;j++)if(p.userData.seasonSourceIndices[j]===near.userData.partitionSourceIndices[i]){
