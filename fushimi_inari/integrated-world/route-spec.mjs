@@ -1,8 +1,11 @@
 // Meters. OSM dimensions/counts are dated survey claims; other dimensions remain
 // inferred from photographs and comparable wooden Inari torii, not a laser survey.
 export const routeSpec = {
-  revision: 7,
+  revision: 8,
   senbon: {
+    // First three gates: photographic estimates, not measured 5-go dimensions.
+    entrancePillarDiameters: [.21,.195,.18],
+    entranceSource:'Basile Morin, 2019-06-10, Double torii path at Fushimi Inari Taisha Shrine (Commons); diameters inferred relative to inner gates',
     pillarDiameter: .15, pillarCenters: 1.82, height: 2.55,
     crossbarUnderside: 1.98, beamWidth: 2.95, blackBaseHeight: .46,
     spacing:{spacing:.57,minimum:.43,margin:.65},
