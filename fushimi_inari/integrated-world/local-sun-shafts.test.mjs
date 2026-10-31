@@ -119,7 +119,7 @@ test('mode, quality and invalid-camera transitions invalidate the stationary sha
  effect.setMode('gold');effect.update(camera);
  assert.equal(effect.mesh.instanceMatrix.version,version+1);assert.notDeepEqual(Array.from(effect.mesh.instanceMatrix.array),day);
  effect.setQuality('balanced');effect.update(camera);assert.equal(effect.mesh.visible,false);assert.equal(effect.mesh.count,0);
- effect.setQuality('ultra');effect.update(camera);assert.equal(effect.mesh.visible,true);assert.equal(effect.mesh.instanceMatrix.version,version+2);
+ effect.setQuality('ultra');effect.update(camera);assert.equal(effect.mesh.visible,true);assert.equal(effect.mesh.instanceMatrix.version,version+1,'re-enabling unchanged world geometry reuses its buffers');
  effect.setMode('night');effect.update(camera);assert.equal(effect.mesh.visible,false);
  effect.setMode('day');effect.update(camera);assert.deepEqual(Array.from(effect.mesh.instanceMatrix.array),day);
  camera.position.x=NaN;effect.update(camera);assert.equal(effect.mesh.visible,false);
@@ -142,4 +142,65 @@ test('Aozora softens existing haze with uniform changes and no new draw, shadow 
   effect.setLook('aozora');effect.setQuality('balanced');effect.update(camera);assert.equal(effect.stats.draws,0);
   effect.setQuality('high');effect.setMode('night');effect.update(camera);assert.equal(effect.stats.draws,0);
  }finally{effect.dispose();}
+});
+
+test('leaf-filtered light advances with a stationary camera without geometry, matrix or phase uploads',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const effect=createLocalSunShafts({scene,sites:[{point:[0,0,0],topY:18,width:2}],audit:true});effect.setQuality('high');effect.update(camera,0);
+ const matrixVersion=effect.mesh.instanceMatrix.version,phase=effect.mesh.geometry.getAttribute('shaftPhase');
+ assert.ok(phase?.isInstancedBufferAttribute);const phaseVersion=phase.version,material=effect.mesh.material,shader=material.opacityNode,materialVersion=material.version;
+ for(let i=1;i<=120;i++)effect.update(camera,i/60);
+ assert.ok(effect.stats.animationSeconds>1.99&&effect.stats.animationSeconds<2.01);
+ assert.equal(effect.mesh.instanceMatrix.version,matrixVersion);assert.equal(phase.version,phaseVersion);
+ assert.equal(effect.mesh.material,material);assert.equal(material.opacityNode,shader);assert.equal(material.version,materialVersion);
+ assert.equal(effect.stats.draws,1);assert.equal(effect.stats.textures,0);assert.equal(effect.stats.renderTargets,0);assert.equal(effect.stats.triangles,4);
+ effect.dispose();
+});
+
+test('each canopy keeps its own phase when camera distance reorders the fixed instance slots',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const sites=[{point:[0,0,0],topY:18,width:2},{point:[16,0,0],topY:18,width:2}];
+ const effect=createLocalSunShafts({scene,sites,maxActive:2,audit:true});effect.setQuality('high');effect.update(camera,0);
+ const attribute=effect.mesh.geometry.getAttribute('shaftPhase');assert.ok(attribute);
+ const sample=()=>{const matrix=new THREE.Matrix4(),pairs=[];for(let i=0;i<effect.mesh.count;i++){effect.mesh.getMatrixAt(i,matrix);pairs.push([matrix.elements[12].toFixed(4),attribute.getX(i)]);}return pairs;};
+ const before=sample(),phaseVersion=attribute.version;camera.position.x=30;effect.update(camera,1);const after=sample();
+ assert.notDeepEqual(before,after,'nearest-first slots really change');assert.deepEqual([...before].sort(),[...after].sort(),'the light pattern belongs to its canopy, not the instance slot');
+ assert.ok(attribute.version>phaseVersion);assert.notEqual(before[0][1],before[1][1]);
+ const stableVersion=attribute.version;camera.position.x=30.001;effect.update(camera,1.01);assert.equal(attribute.version,stableVersion,'movement with unchanged selection does not re-upload phases');
+ effect.dispose();
+});
+
+test('reduced motion freezes filtered light, resumes continuously and ignores invalid or long-gap clocks',()=>{
+ const effect=createLocalSunShafts({scene:new THREE.Scene(),sites:[{point:[0,0,0],topY:18,width:2}],audit:true}),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ effect.setQuality('high');effect.update(camera,0);effect.update(camera,.016);const start=effect.stats.animationSeconds;
+ effect.setReducedMotion(true);effect.update(camera,30);effect.update(camera,31);assert.equal(effect.stats.animationSeconds,start);assert.equal(effect.stats.reducedMotion,true);
+ effect.setReducedMotion(false);effect.update(camera,31.016);assert.ok(Math.abs(effect.stats.animationSeconds-start-.016)<1e-8);
+ const beforeGap=effect.stats.animationSeconds;effect.update(camera,600);assert.ok(effect.stats.animationSeconds-beforeGap<=.100001,'returning from a hidden tab cannot jump the light pattern');
+ const beforeInvalid=effect.stats.animationSeconds;for(const value of [NaN,Infinity,-1])effect.update(camera,value);assert.equal(effect.stats.animationSeconds,beforeInvalid);
+ effect.setQuality('balanced');effect.update(camera,601);effect.update(camera,602);assert.equal(effect.stats.animationSeconds,beforeInvalid);assert.equal(effect.stats.draws,0);
+ effect.dispose();effect.update(camera,603);assert.equal(effect.stats.animationSeconds,beforeInvalid);
+});
+
+test('walking around a shaft changes its perspective without rotating its world geometry toward the camera',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const effect=createLocalSunShafts({scene,sites:[{point:[0,0,0],topY:18,width:2}],audit:true});effect.setQuality('high');effect.update(camera,0);
+ const first=Array.from(effect.mesh.instanceMatrix.array),version=effect.mesh.instanceMatrix.version;
+ for(const point of [[-6,2,5],[8,2,-4],[2,2,-10]]){
+  camera.position.fromArray(point);effect.update(camera,1);
+  assert.deepEqual(Array.from(effect.mesh.instanceMatrix.array),first,'the light belongs to the forest, not a billboard facing the visitor');
+  assert.equal(effect.mesh.instanceMatrix.version,version);
+ }
+ assert.equal(effect.mesh.geometry.index.count/3,4,'two crossed soft ribbons provide depth within the same draw');
+ assert.equal(effect.stats.draws,1);assert.equal(effect.stats.triangles,4);effect.dispose();
+});
+
+test('solar transforms refresh every restored slot after a hidden or partially visible selection',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const sites=[0,40,80].map(x=>({point:[x,0,0],topY:18,width:2}));
+ const effect=createLocalSunShafts({scene,sites,maxActive:2});effect.setQuality('high');effect.update(camera);
+ camera.position.x=1000;effect.update(camera);effect.setMode('gold');effect.update(camera);
+ camera.position.x=120;effect.update(camera);assert.equal(effect.mesh.count,1);
+ camera.position.x=0;effect.update(camera);assert.equal(effect.mesh.count,2);
+ const reference=createLocalSunShafts({scene,sites,maxActive:2});reference.setQuality('high');reference.setMode('gold');reference.update(camera);
+ assert.deepEqual(Array.from(effect.mesh.instanceMatrix.array),Array.from(reference.mesh.instanceMatrix.array));effect.dispose();reference.dispose();
 });

@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
-import {uv,float,uniform,exp,sin,smoothstep,positionWorld,cameraPosition} from 'three/tsl';
+import {uv,float,uniform,exp,sin,smoothstep,positionWorld,cameraPosition,normalWorldGeometry,instancedBufferAttribute,varying} from 'three/tsl';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SUN_DIRECTIONS} from './atmosphere-profile.mjs';
 
 // Art-directed local haze, not raymarched volumetric light. Known roof boxes
@@ -38,10 +39,14 @@ export function chooseShaftSites({routes=[],canopies=[],ground,maxSites=64}={}){
 
 export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=false}={}){
  const cap=Math.min(8,Math.max(1,Math.floor(maxActive)||8));
- const geometry=new THREE.PlaneGeometry(1,1),positions=geometry.attributes.position;
+ const ribbon=new THREE.PlaneGeometry(1,1),positions=ribbon.attributes.position;
  // A slight widening away from the canopy is less rigid than a flat rectangle.
  for(let i=0;i<positions.count;i++)if(positions.getY(i)>0)positions.setX(i,positions.getX(i)*.45);
- positions.needsUpdate=true;geometry.computeBoundingSphere();
+ positions.needsUpdate=true;
+ const crossed=ribbon.clone().rotateY(Math.PI/2),geometry=mergeGeometries([ribbon,crossed]);
+ ribbon.dispose();crossed.dispose();geometry.computeBoundingSphere();
+ const phases=new THREE.InstancedBufferAttribute(new Float32Array(cap),1);phases.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute('shaftPhase',phases);
+ const phase=varying(instancedBufferAttribute(phases)),time=uniform(0),sunAxis=uniform(new THREE.Vector3());
  const tint=uniform(new THREE.Color('#fff1cf')),strength=uniform(.16),q=uv();
  const cross=q.x.sub(.5),distance=positionWorld.sub(cameraPosition).length();
  // Several uneven openings share one feathered ribbon and one draw. Avoid
@@ -52,26 +57,39 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  const profile=lobe(-.23,-240,.48).add(lobe(.02,-85,.76)).add(lobe(.28,-380,.4))
   .mul(float(1).sub(smoothstep(.32,.5,cross.abs())));
  const ends=smoothstep(0,.23,q.y).mul(float(1).sub(smoothstep(.48,.86,q.y)));
- const grain=sin(q.y.mul(9).add(q.x.mul(17))).mul(.1).add(.9);
+ // Slowly advected leaf openings change opacity, never the sun direction or
+ // ribbon position. Broad overlapping bands keep the whole ray from pulsing
+ // in unison; a stable canopy phase prevents patterns jumping between slots.
+ const leafShade=sin(q.x.mul(17).add(q.y.mul(3.1)).add(phase).add(time.mul(.23)))
+  .mul(sin(q.y.mul(6.7).sub(q.x.mul(9.3)).add(phase.mul(1.61)).sub(time.mul(.17)))).mul(.11).add(.89);
+ const opening=sin(time.mul(.13).add(phase.mul(1.29)).add(q.y.mul(2.1))).mul(.08).add(.92);
+ // Fixed crossed sheets have actual parallax. Their squared facing weights
+ // sum to one around the sun axis, avoiding a bright cross when walking past.
+ const viewDirection=cameraPosition.sub(positionWorld).div(distance.max(.001)),facing=normalWorldGeometry.dot(viewDirection),axial=sunAxis.dot(viewDirection);
+ const angular=facing.mul(facing).div(float(1).sub(axial.mul(axial)).max(.15)).clamp(0,1);
  const fade=smoothstep(1.5,4,distance).mul(float(1).sub(smoothstep(28,48,distance)));
  const material=new THREE.MeshBasicNodeMaterial({transparent:true,depthWrite:false,depthTest:true,
   side:THREE.DoubleSide,forceSinglePass:true,blending:THREE.AdditiveBlending,fog:true});
- material.colorNode=tint;material.opacityNode=profile.mul(ends).mul(grain).mul(fade).mul(strength);
+ material.colorNode=tint;material.opacityNode=profile.mul(ends).mul(leafShade).mul(opening).mul(fade).mul(angular).mul(strength);
  const mesh=new THREE.InstancedMesh(geometry,material,cap);mesh.name='Local soft sun shafts · High';
  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.visible=false;
  mesh.castShadow=false;mesh.receiveShadow=false;mesh.renderOrder=2;mesh.count=0;scene.add(mesh);
- const axis=new THREE.Vector3(),view=new THREE.Vector3(),right=new THREE.Vector3(),normal=new THREE.Vector3(),fallback=new THREE.Vector3(0,0,1),scale=new THREE.Vector3();
- const matrix=new THREE.Matrix4(),hit=new THREE.Vector3(),ray=new THREE.Ray(),expanded=new THREE.Box3();
- const entries=sites.slice(0,64).map(s=>({...s,end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false}));
- const nearest=new Int16Array(cap),distances=new Float64Array(cap);
- let mode='day',look='natural',quality='balanced',active=0,disposed=false,dirty=true,lastX,lastY,lastZ;
+ const axis=sunAxis.value,right=new THREE.Vector3(),normal=new THREE.Vector3(),fallback=new THREE.Vector3(0,0,1),scale=new THREE.Vector3();
+ const hit=new THREE.Vector3(),ray=new THREE.Ray(),expanded=new THREE.Box3();
+ const entries=sites.slice(0,64).map(s=>{
+  const seed=Math.sin(s.point[0]*.127+s.point[2]*.311+s.topY*.071)*43758.5453;
+  return {...s,phase:Math.fround((seed-Math.floor(seed))*Math.PI*2),matrix:new THREE.Matrix4(),end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false};
+ });
+ const nearest=new Int16Array(cap),previousSites=new Int16Array(cap).fill(-1),slotVersions=new Int32Array(cap).fill(-1),distances=new Float64Array(cap);
+ let mode='day',look='natural',quality='balanced',active=0,disposed=false,dirty=true,modeVersion=0,reducedMotion=false,lastSeconds=null,lastX,lastY,lastZ;
  function shade(){
   const painted=look==='aozora';
   tint.value.set(mode==='gold'?'#ffc18e':painted?'#fff8df':'#fff1cf');
   strength.value=mode==='gold'?(painted?.1:.12):(painted?.12:.16);
  }
  function setMode(next){
-  if(disposed)return;dirty=true;mode=Object.hasOwn(SUN_DIRECTIONS,next)?next:'day';axis.fromArray(SUN_DIRECTIONS[mode]).normalize();
+  if(disposed)return;dirty=true;modeVersion++;mode=Object.hasOwn(SUN_DIRECTIONS,next)?next:'day';axis.fromArray(SUN_DIRECTIONS[mode]).normalize();
+  right.crossVectors(axis,fallback);if(right.lengthSq()<1e-8)right.crossVectors(axis,new THREE.Vector3(1,0,0));right.normalize();normal.crossVectors(right,axis).normalize();
   shade();
   for(const entry of entries){
    // Clip the ray from its canopy origin. Starting at the floor would turn
@@ -79,6 +97,7 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
    entry.length=Math.max(0,Math.min(24,(entry.topY-entry.point[1])/Math.max(.04,axis.y)));
    entry.end.copy(entry.source).addScaledVector(axis,-entry.length);
    entry.center.copy(entry.end).addScaledVector(axis,entry.length/2);entry.blocked=entry.length<3;
+   scale.set(entry.width,entry.length,entry.width);entry.matrix.makeBasis(right,axis,normal).scale(scale).setPosition(entry.center);
    ray.set(entry.end,axis);
    for(const roof of roofs){
     expanded.copy(roof).expandByScalar(entry.width/2);
@@ -87,10 +106,16 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
   }
  }
  setMode(mode);
- function update(camera){
+ function update(camera,seconds=null){
   if(disposed)return;
-  // Selection and billboard bases depend only on position; looking around at
-  // a fixed point cannot change them. Mode/quality changes invalidate the pose.
+  if(Number.isFinite(seconds)&&seconds>=0){
+   const delta=lastSeconds===null?0:Math.min(.1,Math.max(0,seconds-lastSeconds));lastSeconds=seconds;
+   // Track the clock even while disabled. A hidden tab or a quality change
+   // resumes from the last visible pattern instead of jumping by minutes.
+   if(mesh.visible&&quality==='high'&&mode!=='night'&&!reducedMotion&&delta>0)time.value+=delta;
+  }
+  // Only nearby-site selection depends on the visitor. Geometry remains in
+  // its world frame; looking or walking around it cannot turn it into a decal.
   const {x,y,z}=camera.position;
   if(!dirty&&x===lastX&&y===lastY&&z===lastZ)return;
   lastX=x;lastY=y;lastZ=z;dirty=false;
@@ -101,16 +126,17 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
    const entry=entries[i],d=entry.center.distanceToSquared(camera.position);if(entry.blocked||d>(48+entry.length/2+entry.width)**2)continue;
    for(let j=0;j<cap;j++)if(d<distances[j]){for(let k=cap-1;k>j;k--){distances[k]=distances[k-1];nearest[k]=nearest[k-1];}distances[j]=d;nearest[j]=i;break;}
   }
+  let phaseChanged=false,matrixChanged=false;
   for(const index of nearest){
-   if(index<0)break;const entry=entries[index];view.subVectors(camera.position,entry.center);
-   right.crossVectors(axis,view);if(right.lengthSq()<1e-8)right.crossVectors(axis,fallback);right.normalize();
-   normal.crossVectors(right,axis).normalize();scale.set(entry.width,entry.length,1);
-   matrix.makeBasis(right,axis,normal).scale(scale).setPosition(entry.center);mesh.setMatrixAt(active++,matrix);
+   if(index<0)break;const entry=entries[index];
+   if(slotVersions[active]!==modeVersion||previousSites[active]!==index){mesh.setMatrixAt(active,entry.matrix);previousSites[active]=index;slotVersions[active]=modeVersion;matrixChanged=true;}
+   if(phases.getX(active)!==entry.phase){phases.setX(active,entry.phase);phaseChanged=true;}active++;
   }
-  mesh.count=active;mesh.visible=active>0;if(active)mesh.instanceMatrix.needsUpdate=true;
+  if(phaseChanged)phases.needsUpdate=true;
+  mesh.count=active;mesh.visible=active>0;if(matrixChanged)mesh.instanceMatrix.needsUpdate=true;
  }
- return {mesh,setMode,setLook(value){if(disposed)return;look=value==='aozora'?'aozora':'natural';shade();},setQuality(value){if(disposed)return;const next=value==='high'||value==='ultra'?'high':'balanced';if(next!==quality){quality=next;dirty=true;}},update,
-  get stats(){return {quality,mode,look,strength:strength.value,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked}))}:{}),active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:0,renderTargets:0,triangles:active*2,artistic:true};},
+ return {mesh,setMode,setLook(value){if(disposed)return;look=value==='aozora'?'aozora':'natural';shade();},setReducedMotion(value){if(!disposed)reducedMotion=!!value;},setQuality(value){if(disposed)return;const next=value==='high'||value==='ultra'?'high':'balanced';if(next!==quality){quality=next;dirty=true;}},update,
+  get stats(){return {quality,mode,look,strength:strength.value,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{animationSeconds:time.value,phaseBytes:phases.array.byteLength,matrixVersion:mesh.instanceMatrix.version,phaseVersion:phases.version,materialVersion:material.version,placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked}))}:{}),reducedMotion,gpuAnimated:mesh.visible&&!reducedMotion&&lastSeconds!==null,active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:0,renderTargets:0,triangles:active*4,artistic:true};},
   dispose(){if(disposed)return;disposed=true;active=0;mesh.visible=false;scene.remove(mesh);geometry.dispose();material.dispose();mesh.dispose();}
  };
 }

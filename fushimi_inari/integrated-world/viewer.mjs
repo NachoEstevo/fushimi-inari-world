@@ -669,6 +669,7 @@ try {
   const shaftRoutes=[...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.spatial.main,assembly.spatial.returning];
   const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
   await startupCheckpoint();
+  const shaftReducedMotion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const sunShafts=createLocalSunShafts({scene,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
@@ -1109,7 +1110,7 @@ try {
     for(const water of waterControllers)water.update(time/1000);
     fareGates?.update(camera.position.toArray(),time/1000,document.hidden||zen.active||menu.active||photo.active||journal.active);
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
-    sunShafts.update(camera);sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    sunShafts.setReducedMotion(arrivalUI?.reducedMotion??shaftReducedMotion?.matches??false);sunShafts.update(camera,time/1000);sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);
