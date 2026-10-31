@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {installCityPanorama,CITY_PANORAMA_MAX_TRIANGLES} from './city-panorama.mjs';
+import {installCityPanorama,CITY_PANORAMA_MAX_TRIANGLES,createPanoramaYield} from './city-panorama.mjs';
 
 test('panorama skips missing terrain and keeps fallback heights above the real footprint',async()=>{
  const previous=globalThis.document;
@@ -86,4 +86,18 @@ test('automatic entry failure does not restart work every frame',async()=>{
   for(let i=0;i<10;i++)panorama.update(camera,true);
   assert.equal(starts,1);assert.equal(panorama.group.visible,false);assert.equal(panorama.stats.status,'failed');
  }finally{globalThis.document=previous;}
+});
+
+
+test('panorama preparation waits for a render before exceeding its frame budget',async()=>{
+ let clock=0;const frames=[],tasks=[];
+ const yieldWork=createPanoramaYield({now:()=>clock,requestFrame:fn=>frames.push(fn),schedule:fn=>tasks.push(fn)});
+ let finished=false;const first=yieldWork().then(()=>{finished=true;});
+ await Promise.resolve();assert.equal(finished,false);assert.equal(frames.length,1);
+ frames.shift()();await Promise.resolve();assert.equal(finished,false,'resume only after render callbacks');
+ tasks.shift()();await first;
+ clock=1;await yieldWork();assert.equal(frames.length,0,'work within budget may continue');
+ clock=2.1;finished=false;const next=yieldWork().then(()=>{finished=true;});
+ await Promise.resolve();assert.equal(finished,false);assert.equal(frames.length,1);
+ frames.shift()();tasks.shift()();await next;assert.equal(finished,true);
 });

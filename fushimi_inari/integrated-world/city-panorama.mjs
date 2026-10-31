@@ -3,10 +3,26 @@ import {panoramaVisible,panoramaBuildingCandidates,outlooks} from './panorama-po
 
 export const CITY_PANORAMA_MAX_TRIANGLES=24000;
 
+// Yield through a render before beginning and whenever this frame's work quota
+// is spent. Short checkpoints share the quota instead of starving animation.
+export function createPanoramaYield({now=()=>performance.now(),requestFrame=globalThis.requestAnimationFrame?.bind(globalThis),
+  schedule=callback=>setTimeout(callback,0),budgetMs=2}={}){
+  let sliceStart=null;
+  return async()=>{
+    if(sliceStart!==null&&now()-sliceStart<budgetMs)return;
+    await new Promise(resolve=>{
+      if(!requestFrame||globalThis.document?.hidden){schedule(resolve);return;}
+      requestFrame(()=>schedule(resolve));
+    });
+    sliceStart=now();
+  };
+}
+
 // OSM outlines stay authoritative. Window rhythm and facade colour are inferred.
 // Build once on first arrival; retain GPU buffers, but submit no draws outside
 // the outlook zones. One texture/material and spatial chunks, no extra shadows.
-export function installCityPanorama(scene,features,ground,excludes,{yieldWork=()=>globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)),now=()=>performance.now()}={}){
+export function installCityPanorama(scene,features,ground,excludes,{yieldWork,now=()=>performance.now()}={}){
+  yieldWork??=createPanoramaYield({now});
   const root=new THREE.Group();root.name='Lookout city facades';root.visible=false;scene.add(root);
   let built=false,count=0,triangles=0,pending=null,automaticAttempted=false,wanted=false;
   const stats={status:'idle',built:false,buildings:0,triangles:0,cpuMs:0,maxSliceMs:0,yields:0,error:null,stage:'idle',cpuByStage:{},maxSliceByStage:{}};

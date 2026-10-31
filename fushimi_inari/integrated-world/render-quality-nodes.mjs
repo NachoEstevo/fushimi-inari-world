@@ -5,6 +5,7 @@ import {installPendingPipelineGuard} from './pending-pipeline-guard.mjs';
 import {normalizeVisualLook,LOOK_BLOOM,LOOK_GRADE} from './visual-look.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
 import {compileScenePass} from './scene-pass-compilation.mjs';
+import {createShaftVolumePass} from './shaft-volume-pass.mjs';
 
 const presets={balanced:{maxPixels:2000000,maxRatio:1.25,shadowSize:2048},high:{maxPixels:4000000,maxRatio:2,shadowSize:2048}};
 export function qualityPixelRatio(mode,dpr,width,height){
@@ -16,14 +17,16 @@ export function qualityPixelRatio(mode,dpr,width,height){
 }
 
 // One scene pass feeds bloom and the output transform. There is no duplicate scene render.
-export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
+export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene}){
   let mode='balanced',look='natural',disposed=false,transitioning=false;
   let pending=0,compiling=0,queue=Promise.resolve(),resolution;
   const pipelineGuard=installPendingPipelineGuard(renderer.backend);
   const originalTextures=new Map();
   const post=new THREE.RenderPipeline(renderer);
   const scenePass=pass(scene,camera),foreground=scenePass.getTextureNode('output');
-  const color=cityHorizon?cityHorizon.compose(foreground,scenePass.getTextureNode('depth')):foreground;
+  const baseColor=cityHorizon?cityHorizon.compose(foreground,scenePass.getTextureNode('depth')):foreground;
+  const shaftPass=shaftScene?createShaftVolumePass({renderer,scene:shaftScene,camera,scenePass}):null;
+  const color=shaftPass?vec4(baseColor.rgb.add(shaftPass.node),baseColor.a):baseColor;
   const glow=bloom(color,.12,.35,1.2);
   const saturation=uniform(1),tint=uniform(new THREE.Vector3(1,1,1));
   const luminance=color.rgb.dot(vec3(.2126,.7152,.0722));
@@ -108,5 +111,5 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon}){
   }
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,compileAsync,refreshTextures:textures,get compiling(){return compiling>0;},get pipelineStats(){return pipelineGuard.stats;},get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;pipelineGuard.dispose();cityHorizon?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
+  return {setMode,setLook,resize,render,compileAsync,get shaftDepth(){return shaftPass?.depth;},prepareShafts:()=>shaftPass?.prepare(),get shaftVolumeStats(){return shaftPass?.stats;},refreshTextures:textures,get compiling(){return compiling>0;},get pipelineStats(){return pipelineGuard.stats;},get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},dispose(){if(disposed)return;disposed=true;pipelineGuard.dispose();cityHorizon?.dispose();shaftPass?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();}};
 }

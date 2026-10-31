@@ -632,7 +632,8 @@ try {
   };$('light').onchange();
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
   await startupCheckpoint('createRenderQuality');
-  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon});
+  const shaftVolumeScene=query.get('shaftVolumes')!=='0'&&renderer.backend.isWebGPUBackend?new THREE.Scene():null;
+  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene:shaftVolumeScene});
   let auditCompileDepth=0;
   if(renderBuildAudit){
     const compile=quality.compileAsync;
@@ -670,7 +671,7 @@ try {
   const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
   await startupCheckpoint();
   const shaftReducedMotion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const sunShafts=createLocalSunShafts({scene,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
+  const sunShafts=createLocalSunShafts({scene:shaftVolumeScene??scene,depthTexture:quality.shaftDepth,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);appearance.setTimeOfDay($('light').value);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
@@ -705,7 +706,7 @@ try {
       walkingPrewarm?.setRadius(Math.min(prewarmViewRadius(camera)+24,300));
       leafLight.setEnabled(quality.mode!=='balanced'&&query.get('leafLight')!=='0');document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);
       sunShafts.setQuality(quality.mode);sunShafts.update(camera);
-      if(quality.mode==='high')await compileAddedGroup(quality,scene,sunShafts.mesh,camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoot:true,getLights:compilationLights.getLights});
+      if(quality.mode==='high'){if(quality.shaftDepth)await quality.prepareShafts();else await compileAddedGroup(quality,scene,sunShafts.mesh,camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoot:true,getLights:compilationLights.getLights});}
       await appearance.prepare();
       await zen?.prepare(compileZen);
       if(assembly.keihanStation?.group)await compileAddedGroup(quality,scene,assembly.keihanStation.group,camera,{batchSize:4,reuseRenderScene:true});
@@ -1145,7 +1146,7 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

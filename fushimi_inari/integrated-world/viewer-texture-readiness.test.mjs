@@ -80,3 +80,13 @@ test('startup awaits the platform neighborhood with the real camera before it ca
   ready.resolve();await work;assert.equal(finished,true);assert.deepEqual(camera.position.toArray(),[20,2,30]);
  }
 });
+
+test('High waits for volume preparation before releasing the transition or compiling other content',async()=>{
+ const gate=deferred(),f=fixture({stream:{setMode(){},prepareAt:async()=>{}}});
+ f.quality.shaftDepth={};f.quality.prepareShafts=async()=>{f.events.push('volume');await gate.promise;};
+ const work=f.changeQuality('high');await tick();
+ assert.equal(f.pending,1);assert.ok(f.events.includes('volume'));assert.ok(!f.events.includes('appearance'));
+ gate.resolve();await work;assert.equal(f.pending,0);
+ assert.ok(f.events.indexOf('quality')<f.events.indexOf('volume'));
+ assert.ok(f.events.indexOf('volume')<f.events.indexOf('appearance'));
+});

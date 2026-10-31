@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {texture} from 'three/tsl';
 import {chooseShaftSites,createLocalSunShafts} from './local-sun-shafts.mjs';
 const crown=(x=0)=>new THREE.Box3(new THREE.Vector3(x-6,5,-6),new THREE.Vector3(x+6,18,6));
 
@@ -203,4 +204,27 @@ test('solar transforms refresh every restored slot after a hidden or partially v
  camera.position.x=0;effect.update(camera);assert.equal(effect.mesh.count,2);
  const reference=createLocalSunShafts({scene,sites,maxActive:2});reference.setQuality('high');reference.setMode('gold');reference.update(camera);
  assert.deepEqual(Array.from(effect.mesh.instanceMatrix.array),Array.from(reference.mesh.instanceMatrix.array));effect.dispose();reference.dispose();
+});
+
+test('volumetric slots keep world bounds and canopy phases aligned with instance transforms',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
+ const depth=new THREE.DepthTexture(1,1),effect=createLocalSunShafts({scene,depthTexture:texture(depth),sites:[{point:[0,0,0],topY:18,width:3},{point:[12,0,0],topY:16,width:2}],audit:true});
+ effect.setQuality('high');effect.update(camera,0);
+ const centers=effect.mesh.geometry.getAttribute('shaftCenterRadius'),meta=effect.mesh.geometry.getAttribute('shaftLengthPhase');
+ const matrix=new THREE.Matrix4(),axis=new THREE.Vector3();
+ for(const position of [[0,2,5],[18,3,5],[0,2,5]])for(const mode of ['day','gold']){
+  camera.position.fromArray(position);effect.setMode(mode);effect.update(camera,1);
+  for(let slot=0;slot<effect.mesh.count;slot++){
+   effect.mesh.getMatrixAt(slot,matrix);axis.setFromMatrixColumn(matrix,1);
+   for(let i=0;i<3;i++)assert.ok(Math.abs(centers.array[slot*4+i]-matrix.elements[12+i])<1e-5);
+   assert.ok(Math.abs(meta.getX(slot)*2-axis.length())<1e-5);
+   assert.equal(meta.getY(slot),effect.mesh.geometry.getAttribute('shaftPhase').getX(slot));
+   assert.ok(centers.getW(slot)>0);
+  }
+ }
+ assert.equal(effect.mesh.material.depthTest,false);assert.equal(effect.mesh.material.side,THREE.BackSide);
+ assert.equal(effect.stats.triangles,effect.mesh.count*48);assert.equal(effect.stats.volumetric,true);
+ const v=centers.version;effect.update(camera,1.1);assert.equal(centers.version,v,'clock-only updates reuse volume bounds');
+ effect.setQuality('balanced');effect.update(camera);assert.equal(effect.stats.draws,0);
+ effect.dispose();depth.dispose();
 });
