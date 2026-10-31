@@ -48,6 +48,11 @@ test('Ichiban refinement preserves mapped placement, the two colliders and exist
  assert.equal(report.aligned,true);assert.equal(report.authoredHeightRetained,true);assert.equal(f.colliders.length,2);
  const aligned=root.getObjectByName('Ichiban torii aligned to mapped Omotesando');assert.equal(aligned.children.length,10);assert.equal(aligned.scale.x,report.scaleX);
  for(const side of [-1,1])assert.equal(aligned.children.filter(mesh=>mesh.position.x===side*4.4).length,3);
+ for(const side of [-1,1]){
+  const column=aligned.children.find(mesh=>mesh.position.x===side*4.4&&mesh.position.y===5);
+  column.geometry.computeBoundingBox();assert.ok(column.geometry.boundingBox.max.x>.56,'red collar projects beyond the shaft');
+  assert.ok(column.geometry.index.count/3<=180,'collar remains part of the existing column draw');
+ }
 });
 
 test('legacy Ichiban paint never enters the node-only leaf-light receiver contract',()=>{

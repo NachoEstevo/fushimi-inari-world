@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {northCourtLowFrontEdges,northCourtTimberTexture} from './north-court-low-front.mjs';
 
 export const northCourtBuildingIds=['way/305214375','way/305214356','way/305214355'];
 // June 2012 north-close/north-buildings: timber row, pale upper glazing,
@@ -8,9 +9,11 @@ export const northCourtBuildingIds=['way/305214375','way/305214356','way/3052143
 // inferred from those images; no functional name or readable sign is asserted.
 export function buildNorthCourtBuildings(root,features,surfaces,materials,colliders){
   const wood=new THREE.MeshStandardMaterial({color:'#77624b',roughness:.94});
+  wood.map=northCourtTimberTexture();
   const dark=new THREE.MeshStandardMaterial({color:'#403d33',roughness:.96});
   const pale=new THREE.MeshStandardMaterial({color:'#c8cec1',roughness:.42,metalness:.06});
   const cream=new THREE.MeshStandardMaterial({color:'#d5cfb9',roughness:.95,side:THREE.DoubleSide});
+  const awningGreen=new THREE.MeshStandardMaterial({color:'#28634c',roughness:.95});
   const glazing=new THREE.MeshStandardMaterial({color:'#93a39d',roughness:.38,metalness:.10});
   // The observed roof is grey ceramic tile. Do not inherit the shrine's
   // brown bark/shingle map. A shared small tile map supplies round courses.
@@ -60,7 +63,20 @@ export function buildNorthCourtBuildings(root,features,surfaces,materials,collid
     }
     const front=points.map(p=>({p,uv:local(p)})).filter(q=>q.uv[1]<1.9);
     const u0=Math.min(...front.map(q=>q.uv[0])),u1=Math.max(...front.map(q=>q.uv[0]));
-    if(!lower){
+    if(lower){
+      // Treat the two stepped facade edges separately: the 2012 photo shows a
+      // low boarded frontage and green awning, not a wall across the setback.
+      const edges=northCourtLowFrontEdges(points,local);
+      group.userData.lowFrontEdges=edges;
+      for(const {u0,u1,v} of edges){
+        const span=u1-u0;
+        for(let u=u0+.12;u<u1-.08;u+=.24)facadeBox(.008,2.06,.035,u,1.16,v-.025,wood);
+        for(const y of [.16,2.18])facadeBox(span,.06,.05,(u0+u1)/2,y,v-.03,wood);
+        const p=world((u0+u1)/2,v-.275),awning=new THREE.BoxGeometry(span,.055,.55);
+        awning.rotateX(-.12);awning.rotateY(Math.atan2(-uz,ux));awning.translate(p[0],2.39,p[1]);part(awning,awningGreen);
+        facadeBox(span,.14,.045,(u0+u1)/2,2.30,v-.55,awningGreen);
+      }
+    }else{
       const bays=Math.max(2,Math.round((u1-u0)/1.65)),bw=(u1-u0)/bays;
       for(let i=0;i<bays;i++){
         const u=u0+(i+.5)*bw;

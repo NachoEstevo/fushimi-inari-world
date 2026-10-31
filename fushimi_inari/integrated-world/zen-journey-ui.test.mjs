@@ -100,3 +100,16 @@ test('an explicit photo stays selected until its asset disappears, then falls ba
   records=[];f.find('Photos').click();await settledPhotos();assert.equal(postcardPreview(f).className,'zen-postcard-drawing');
  }finally{f.cleanup();}
 });
+
+test('composition clues open their own photo prompt without awarding a discovery',()=>{
+ const opened=[],f=fixture({onPhoto:id=>opened.push(id)});
+ try{
+  const clues=[['Water and both banks','canal-light'],['One gate inside another','gate-rhythm'],['Face west: rooftops, then hills','kyoto-view'],['Stone in front, trees behind','mountain-pause']];
+  for(const [hint,id]of clues){
+   const clue=f.find(hint);assert.ok(clue,`missing composition clue: ${hint}`);
+   f.book.open=true;clue.parent.children.find(n=>n.tag==='button').click();
+   assert.equal(f.book.open,false);assert.equal(opened.at(-1),id);
+   assert.deepEqual(f.journey.snapshot().photoPrompts,{});
+  }
+ }finally{f.cleanup();}
+});

@@ -24,8 +24,8 @@ export function planZenStorySites(assembly){
 }
 
 const CONVERSATIONS={
- station:{title:'Aki',intro:'“I’m heading to Yotsutsuji. I want a photo of Kyoto for this postcard.”',choices:[['Which way?','“Through the torii, then uphill. I’ll stop for tea on the way back.”'],['A good photo spot?','“Yotsutsuji looks over the city. I’m hoping it stays clear.”']],farewell:'See you there.'},
- view:{title:'Aki',intro:'“Kyoto’s rooftops, then the hills. I’ll stop for tea at Suehiro-ya before heading back.”',choices:[['Take a wide photo.','“Wide enough for the rooftops and hills. Yes.”'],['Try a closer frame.','“Just the rooftops, then. I like that.”']],farewell:'See you on the way down.'},
+ station:{title:'Aki',intro:'“I’m heading to Yotsutsuji. I want a photo of Kyoto for this postcard.”',choices:[['Which way?','“Through the torii, then uphill to Yotsutsuji. Look west for the rooftops.”'],['A good photo spot?','“Try one gate inside another on the way up. At Yotsutsuji, leave room for the hills.”']],farewell:'See you there.'},
+ view:{title:'Aki',intro:'“Kyoto’s rooftops, then the hills. I’ll stop for tea at Suehiro-ya before heading back.”',choices:[['What should I frame?','“Face west. Keep the rooftops low, with the hills above. Leave a little sky.”'],['What if I already took one?','“Keep your favorite. A postcard only needs one view. Tea next?”']],farewell:'See you on the way down.'},
  return:{title:'Aki',intro:'“I’m taking the next train. The photo from Yotsutsuji is on my postcard.”',choices:[['Who is it for?','“My sister. She asked what Kyoto looks like from up there.”'],['Did you stop for tea?','“At Suehiro-ya, near the summit. I needed the rest.”']],farewell:'Have a good trip.'}
 };
 

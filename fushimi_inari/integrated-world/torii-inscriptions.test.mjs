@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildToriiInscriptions,toriiInkTile,toriiInkTiles,toriiInkAtlas,toriiInkUvBounds,toriiInkTileLayout} from './torii-inscriptions.mjs';
+import {buildToriiInscriptions,toriiInkTile,toriiInkTiles,toriiInkAtlas,toriiInkUvBounds,toriiInkTileLayout,toriiInkPlacement} from './torii-inscriptions.mjs';
 import {toriiInscriptionRecords} from './torii-inscription-records.mjs';
 
 const painted=[];
@@ -74,6 +74,20 @@ test('every atlas UV rectangle remains inside its own row and column',()=>{
  }
  assert.throws(()=>toriiInkUvBounds(-1),RangeError);
  assert.throws(()=>toriiInkUvBounds(toriiInkTiles.length),RangeError);
+});
+
+test('repeated source records retain text while placements vary deterministically along a tunnel',()=>{
+ const layouts=[];
+ for(let i=0;i<32;i++){
+  const entry={m:new THREE.Matrix4().makeTranslation(i*.57,0,0),recordIndex:pairedIndex,inkStyle:i%8};
+  const reverse=toriiInkPlacement(entry,-1,false,true),front=toriiInkPlacement(entry,1,true,true);
+  assert.deepEqual(reverse,toriiInkPlacement(entry,-1,false,true));
+  assert.ok(reverse.low>.55&&reverse.high<1.65);assert.ok(front.low>1.35&&front.high<1.8);
+  assert.ok(reverse.size>=.94&&reverse.size<=1.06);
+  assert.equal(toriiInkTiles[toriiInkTile(entry,-1,false)],toriiInscriptionRecords[pairedIndex].donorLines.join('\n'));
+  layouts.push(`${reverse.size}:${reverse.low.toFixed(3)}`);
+ }
+ assert.ok(new Set(layouts).size>20,'identical records do not produce identical painted placement');
 });
 
 test('raycasts from uphill and downhill encounter the correct ink face and atlas cell',()=>{

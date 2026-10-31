@@ -1,3 +1,4 @@
+import {createTrailGuide} from './trail-guide.mjs';
 import {createStartupCheckpoint,yieldStartupTask,startStartupYieldAudit} from './startup-work.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
 import {installShadowMaterialSource} from './shadow-material-source.mjs';
@@ -380,7 +381,7 @@ try {
   const graph=buildGraph(features.paths,terrain);
   await startupCheckpoint('buildStationApproachRoutes');
   const stationRoutes=buildStationApproachRoutes(assembly,features,terrain);
-  let activeRoute=[],routeLine=null,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
+  let activeRoute=[],routeLine=null,routeRequest=0,walking=false,routeProgress=0,travelled=0,lastTime=performance.now();
   let arrival=null,arrivalUI=null,zen=null;
   function interruptArrival(){
     zen?.cancelActivity();
@@ -406,6 +407,7 @@ try {
     ctx.fillStyle='#593a33';ctx.font='20px system-ui';ctx.fillText(`${Math.round(lo)}–${Math.round(hi)} m`,12,20);
   }
   function clearRoute(){
+    routeRequest++;
     const resumeWalking=walking&&!allowDebugCamera;
     walking=false;controls.enabled=allowDebugCamera;activeRoute=[];routeProgress=0;travelled=0;marker.visible=false;
     $('walk').disabled=true;$('stop').disabled=true;$('profile').style.display='none';$('route-stops').textContent='';$('route-gaps').textContent='';
@@ -413,7 +415,7 @@ try {
     // A route replan releases the guided camera back to public walking.
     if(resumeWalking)walker.start();
   }
-  function trace(){
+  async function trace(){
     clearRoute();
     $('custom-fields').hidden=$('itinerary').value!=='custom';
     const stationKey=$('itinerary').value;
@@ -428,7 +430,7 @@ try {
       $('route-info').textContent=`${Math.round(stats.length)} m · Station to Rōmon`;
       $('route-stops').textContent=route.stops.join(' → ');
       $('route-gaps').textContent='Follow the station exit and public streets to the shrine.';
-      showRoute();return;
+      return showRoute();
     }
     let chosen=[$('start').value,...($('via').value?[$('via').value]:[]),$('destination').value].map(id=>landmarks.find(p=>p.id===id));
     if($('itinerary').value!=='custom'){
@@ -456,14 +458,18 @@ try {
     $('route-info').textContent=`${(stats.length/1000).toFixed(2)} km · ↑ ${Math.round(stats.ascent)} m · ↓ ${Math.round(stats.descent)} m. Elevation estimated from DEM.`;
     $('route-stops').textContent=[...((completeKeihan||viewsOnly)?stationRoutes.keihan_omotesando.stops.slice(0,-1):[]),...chosen.map(displayName)].join(' → ');
     $('route-gaps').textContent=`Maximum landmark-to-path distance: ${Math.max(...gaps)} m. Routes reach mapped trail nodes, without invented links to buildings.`;
-    showRoute();
+    return showRoute();
   }
-  function showRoute(){
-    const lift=['keihan','keihan_omotesando','keihan_loop','zen_views','jr'].includes($('itinerary').value)?.08:1;
-    routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(activeRoute.map(p=>new THREE.Vector3(p[0],p[1]+lift,p[2]))),
-      new THREE.LineBasicMaterial({color:0xff7146,depthTest:true}));
-    routeLine.renderOrder=20;scene.add(routeLine);profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
-    marker.position.set(activeRoute[0][0],activeRoute[0][1]+5,activeRoute[0][2]);marker.visible=true;drawMap();
+  async function showRoute(){
+    const request=routeRequest;
+    const line=await createTrailGuide({points:activeRoute,walkHeight:assembly.walkHeight,yieldWork:yieldStartupTask,isCancelled:()=>request!==routeRequest});
+    if(request!==routeRequest){line?.geometry.dispose();line?.material.dispose();return;}
+    if(line){
+      routeLine=line;routeLine.visible=$('trail-guide')?.checked??true;routeLine.renderOrder=20;scene.add(routeLine);
+      document.body.dataset.trailGuide=JSON.stringify({enabled:routeLine.visible,...line.userData.routeGuide});
+    }else{document.body.dataset.trailGuide=JSON.stringify({enabled:false,reason:'guide-unavailable'});$('route-info').textContent+=' Trail guide unavailable.';}
+    profile(activeRoute);$('walk').disabled=false;$('walk').textContent='Follow route';
+    marker.position.set(activeRoute[0][0],activeRoute[0][1]+5,activeRoute[0][2]);marker.visible=!!routeLine?.visible;drawMap();
   }
   $('route').onclick=trace;
   $('itinerary').onchange=trace;$('branch').onchange=trace;
@@ -535,12 +541,33 @@ try {
   const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:(object,event)=>{journal?.recordInteraction(object);if(event?.type==='drink.collected')zen?.collectDrink(event);},onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
-    for(const [id,label,x,z,tx,tz] of [
+    const reviewPoints=[
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
       ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1145,-184],
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
-      ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45]
-    ]){
+      ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45],
+      ['audit_takeya','Review · Takeya keepsakes',540.706,-135.836,538.304,-137.276],
+      ['audit_north_court','Review · North court frontage',-7,-25,-7,-30]
+    ];
+    const reviewTargets=contextFinishes.stats.records.filter(r=>r.upperCafe).map(record=>{
+      const building=features.buildings.find(b=>b.id===record.id),i=record.upperCafe.edge,a=building.points[i],b=building.points[i+1];
+      return {id:record.id,label:record.upperCafe.kind==='tsujitei'?'Tsujitei':'Okamoto',point:[(a[0]+b[0])/2,(a[2]+b[2])/2]};
+    });
+    for(const marker of assembly.root.getObjectByName('Mapped lateral route landmarks')?.userData.markers??[])reviewTargets.push({id:marker.id,label:marker.inscription??'Yotsutsuji route map',point:[marker.point[0],marker.point[2]]});
+    for(const {id,label,point:[tx,tz]}of reviewTargets){
+      let nearest=null;
+      for(const segment of assembly.surfaces.segments){
+        if(segment.kind==='restricted')continue;const {a,b}=segment,dx=b[0]-a[0],dz=b[2]-a[2],t=THREE.MathUtils.clamp(((tx-a[0])*dx+(tz-a[2])*dz)/(dx*dx+dz*dz||1),0,1),x=a[0]+dx*t,z=a[2]+dz*t,d=Math.hypot(x-tx,z-tz);
+        if(!nearest||d<nearest.d)nearest={x,z,d,pathId:segment.id};
+      }
+      if(nearest?.d<3.5){
+        const pathId=nearest.pathId;let wider=null;
+        for(const segment of assembly.surfaces.segments){if(segment.id!==pathId)continue;for(const p of [segment.a,segment.b]){const d=Math.hypot(p[0]-tx,p[2]-tz);if(d>=3.5&&d<6&&(!wider||d<wider.d))wider={x:p[0],z:p[2],d};}}
+        if(wider)nearest=wider;
+      }
+      if(nearest)reviewPoints.push(['audit_'+id,'Review · '+label,nearest.x,nearest.z,tx,tz]);
+    }
+    for(const [id,label,x,z,tx,tz]of reviewPoints){
       const y=assembly.surfaces.height(x,z),target=[tx,y+1.5,tz];
       const anchor={id,label,target,source:[...target],checkpoint:[x,y,z],lookAt:target};
       assembly.spatial.anchors.push(anchor);assembly.spatial.byId[id]=anchor;
@@ -854,10 +881,12 @@ try {
   const compileZen=roots=>compileSelectedVisuals(quality,scene,roots,camera,{batchSize:2,reuseRenderScene:true,includeHiddenRoots:true,getLights:compilationLights.getLights});
   const zenViews=document.createElement('option');zenViews.value='zen_views';zenViews.textContent='Station → Kyoto views';$('itinerary').append(zenViews);
   function applyZenIntention(id){
-    if(id==='wander'){clearRoute();$('route-info').textContent='Follow your curiosity. A route is optional.';drawMap();return;}
-    $('itinerary').value=id==='views'?'zen_views':'keihan_loop';trace();
+    $('itinerary').value=id==='views'?'zen_views':'keihan_loop';
+    return trace();
   }
-  zen=installZenExperience({scene,camera,walker,controls,assembly,shop:summitShop,visitors,streetCommerce,audio,audit:query.has('audit')||query.get('gpuAudit')==='1',
+  $('pane-1').insertAdjacentHTML('afterbegin','<label class="switch"><input id="trail-guide" type="checkbox" checked> Trail guide</label>');
+  $('trail-guide').onchange=()=>{if(routeLine){routeLine.visible=$('trail-guide').checked;marker.visible=routeLine.visible&&activeRoute.length>1;document.body.dataset.trailGuide=JSON.stringify({enabled:routeLine.visible,...routeLine.userData.routeGuide});}};
+  zen=installZenExperience({scene,camera,cameraElement:renderer.domElement,walker,controls,assembly,shop:summitShop,visitors,streetCommerce,audio,audit:query.has('audit')||query.get('gpuAudit')==='1',
     getTimeOfDay:()=>$('light').value,getQuality:()=>quality.mode,
     getBlocked:()=>photo.active||menu.active||journal.active||!!arrival?.active||renderPreparation.busy||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open'),
     openJournal:()=>journal.open(),onTimeOfDay:mode=>{$('light').value=mode;$('light').onchange();},
@@ -930,7 +959,8 @@ try {
   if(startupStep)document.body.dataset.startupSteps=JSON.stringify(startupSteps);
   if(startupYieldAudit)document.body.dataset.startupYieldAudit=JSON.stringify(startupYieldAudit);
   document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
-  applyZenIntention(zen.journey.snapshot().intention);
+  await applyZenIntention(zen.journey.snapshot().intention);
+  if(routeLine)await compileZen([routeLine]);
   function startAtOmotesando(){
     if(!assembly.omotesandoArrival?.built)return false;
     const {position:[x,z],lookAt:[tx,tz]}=assembly.omotesandoArrival.spawn;

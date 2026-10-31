@@ -63,6 +63,19 @@ export function toriiInkTileLayout(tile){
   return {front,role:front?'dedication':tile%2?'date':'donor',styleIndex,style,scaleY,glyphs};
 }
 
+// Stable, subtle hand-painting differences on the actual post. The content
+// remains a whole observed record; no donor is paired with an invented date.
+export function toriiInkPlacement(entry,side,front,small){
+  const e=entry.m?.elements,px=Math.round((e?.[12]??0)*10),pz=Math.round((e?.[14]??0)*10);
+  let n=Math.imul(px^Math.imul(pz,31)^Math.imul(recordIndex(entry)+1,8191)^Math.imul((entry.inkStyle??0)+1,131)^side,1597334677);
+  n=(n^(n>>>16))>>>0;
+  const size=.94+(n%13)*.01,shift=(((n>>>8)%9)-4)*(front?.007:.014);
+  const nominalLow=front?(small?1.42:1.97):(small?.63:.86);
+  const nominalHigh=front?nominalLow+(small?.30:.40):(small?1.55:2.12);
+  const center=(nominalLow+nominalHigh)/2+shift,half=(nominalHigh-nominalLow)*size/2;
+  return {low:center-half,high:center+half,size};
+}
+
 function inkMaterial(){
   if(material)return material;
   const canvas=document.createElement('canvas');canvas.width=toriiInkAtlas.width;canvas.height=toriiInkAtlas.height;
@@ -88,10 +101,9 @@ export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRa
   const geometries=[];
   function patch(entry,side,front,tile){
     if(tile<0)return;
-    const low=front?(small?1.42:1.97):(small?.63:.86);
-    const high=front?low+(small?.30:.40):(small?1.55:2.12);
+    const {low,high,size}=toriiInkPlacement(entry,side,front,small);
     // A thicker post should not stretch the same painted character sideways.
-    const angle=(front?1.8:1.05)/Math.max(1,entry.thickness??1);
+    const angle=(front?1.8:1.05)*size/Math.max(1,entry.thickness??1);
     // A six-segment curved patch's chord must remain outside the post, too:
     // moving just its vertices 2mm out lets thicker posts occlude the ink.
     const radius=y=>((bottomRadius+(topRadius-bottomRadius)*(y-bottomY)/(topY-bottomY))*(entry.thickness??1))/Math.cos(angle/12)+.001;

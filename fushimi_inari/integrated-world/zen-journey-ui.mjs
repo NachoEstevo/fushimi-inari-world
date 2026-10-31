@@ -3,7 +3,7 @@ import {ZEN_SKETCH_ART as SKETCH_INK} from './zen-sketch-art.mjs';
 
 const AKI=[
  'Aki is on the station platform.',
- 'Aki wants a photo of Kyoto from Yotsutsuji.',
+ 'Find Kyoto beyond the gates. Photograph the rooftops and hills at Yotsutsuji.',
  'Aki suggested tea at Suehiro-ya.',
  'Meet Aki again at the station.',
  'Back at the station with Aki.'
@@ -78,13 +78,7 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
  const storyCopy=element('p','zen-story-copy');
  const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(storyCopy,returnButton);
  const photoGrid=element('div','zen-photo-grid'),albumStatus=element('p','zen-fine'),photoIdeas=element('details','zen-photo-ideas');photoIdeas.append(element('summary','','Photo ideas'));
- const photoLabels={
-  'canal-light':['Canal','Canal bridge'],
-  'gate-rhythm':['Senbon Torii','Along the passage'],
-  'kyoto-view':['Yotsutsuji','Face west'],
-  'mountain-pause':['Ichinomine','Level view']
- };
- const promptNodes=new Map();for(const prompt of ZEN_PHOTO_PROMPTS){const card=element('div','zen-prompt'),[label,hint]=photoLabels[prompt.id],heading=element('span','',label),action=button('Photo',()=>{book.close();onPhoto(prompt.id);});action.setAttribute('aria-label',`Photograph ${label}`);card.append(heading,element('small','',hint),action);photoIdeas.append(card);promptNodes.set(prompt.id,{heading,label});}
+ const promptNodes=new Map();for(const prompt of ZEN_PHOTO_PROMPTS){const card=element('div','zen-prompt'),{label,hint}=prompt,heading=element('span','',label),action=button('Photo',()=>{book.close();onPhoto(prompt.id);});action.setAttribute('aria-label',`Photograph ${label}`);card.append(heading,element('small','',hint),action);photoIdeas.append(card);promptNodes.set(prompt.id,{heading,label});}
  panes.photos.append(button('Take photo',()=>{book.close();onPhoto(null);},'zen-primary'),albumStatus,photoGrid,photoIdeas);
  const sketchLabels={
   'sketch-canal':['Canal','Canal bridge · face the water'],

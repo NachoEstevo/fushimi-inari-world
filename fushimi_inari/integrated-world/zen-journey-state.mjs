@@ -5,10 +5,10 @@ export const ZEN_INTENTIONS=Object.freeze([
  {id:'summit',title:'Walk the mountain circuit',note:'Take the long way, with room to pause.'}
 ]);
 export const ZEN_PHOTO_PROMPTS=Object.freeze([
- {id:'canal-light',place:'canal',title:'A pause by the canal',hint:'Near the canal, frame a quiet view with a field of view of 35–75°.'},
- {id:'gate-rhythm',place:'senbon',title:'A rhythm of gates',hint:'Near Senbon Torii, look along the passage with a field of view of 30–70°.'},
- {id:'kyoto-view',place:'yotsu',title:'Kyoto below',hint:'At Yotsutsuji, look west toward Kyoto with a field of view of 35–80°.'},
- {id:'mountain-pause',place:'summit',title:'A mountain pause',hint:'Near Ichinomine, frame a level view with a field of view of 35–80°.'}
+ {id:'canal-light',place:'canal',title:'A pause by the canal',label:'Canal',hint:'Water and both banks'},
+ {id:'gate-rhythm',place:'senbon',title:'A rhythm of gates',label:'Senbon Torii',hint:'One gate inside another'},
+ {id:'kyoto-view',place:'yotsu',title:'Kyoto below',label:'Yotsutsuji',hint:'Face west: rooftops, then hills'},
+ {id:'mountain-pause',place:'summit',title:'A mountain pause',label:'Ichinomine',hint:'Stone in front, trees behind'}
 ]);
 export const ZEN_SKETCHES=Object.freeze([
  {id:'sketch-canal',place:'canal',title:'Two banks, one ribbon',hint:'Find the canal and look across its quiet edges.',note:'A line of water, held between two banks.'},

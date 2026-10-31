@@ -6,13 +6,14 @@ import {createZenWorldMoments} from './zen-world-moments.mjs';
 import {createZenWeather} from './zen-weather.mjs';
 import {createZenReturnTrain} from './zen-return-train.mjs';
 import {createZenSeatedCamera} from './zen-seated-camera.mjs';
+import {installZenSeatedLook} from './zen-seated-look.mjs';
 import {createZenHeldDrink} from './zen-held-drink.mjs';
 
 import {zenJourneyLocations} from './zen-locations.mjs';
 
 // Connect optional activities through explicit completions. Existing walking,
 // journal and route owners retain their responsibilities and their data.
-export function installZenExperience({scene,camera,walker,controls,assembly,shop,visitors,streetCommerce,audio,onPhoto,openJournal,onIntention,onTimeOfDay,getTimeOfDay,getQuality,audit=false,getBlocked=()=>false}){
+export function installZenExperience({scene,camera,cameraElement,walker,controls,assembly,shop,visitors,streetCommerce,audio,onPhoto,openJournal,onIntention,onTimeOfDay,getTimeOfDay,getQuality,audit=false,getBlocked=()=>false}){
  const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./zen-experience.css',import.meta.url).href;document.head.append(style);
  let storage=null;try{storage=localStorage;}catch{}
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -49,6 +50,8 @@ export function installZenExperience({scene,camera,walker,controls,assembly,shop
   if(payload.leave){seat.stand();world.setSeated(false);return;}
   const accepted=!returning.cameraOwned&&!getBlocked()&&seat.sit({...payload,onLeave(){world?.setSeated(false);payload.onLeave?.();}});world.setSeated(!!accepted);
  },onReturn:startReturn});
+ let inputBlocked=false;
+ const seatedLook=installZenSeatedLook({element:cameraElement,document,seat,enabled:()=>seat.active&&!inputBlocked&&!getBlocked()&&!world.active&&!returning.cameraOwned});
  ui=installZenJourneyUI({journey,album,onPhoto,onReturn:startReturn,onContinueWalking:()=>returning.continueWalking(),getContext:context,onOpen:openJournal,onIntention:id=>onIntention(id),onWeather:mode=>weather.setMode(mode)});
  weather.setMode(journeyState.weather);
  const unsubscribe=journey.subscribe(state=>{journeyState=state;weather.setMode(state.weather);});
@@ -85,8 +88,8 @@ export function installZenExperience({scene,camera,walker,controls,assembly,shop
   cancelActivity(){seat.stand();world.setSeated(false);returning.cancel();},
   update(dt,time,{blocked=false}={}){
    if(disposed)return;
-   const external=blocked||document.hidden;
-   returnState.paused=external;seatState.paused=external||world.active||returning.cameraOwned;returning.update(dt,returnState);seat.update(dt,seatState);
+   const external=blocked||document.hidden;inputBlocked=external;
+   returnState.paused=external;seatState.paused=external||world.active||returning.cameraOwned;returning.update(dt,returnState);seatedLook.update(dt);seat.update(dt,seatState);
    worldState.blocked=external||returning.cameraOwned;worldState.mode=walker.mode;worldState.weather=journeyState.weather;world.update(dt,time/1000,worldState);
    if(world.active!==worldWasActive){worldWasActive=world.active;walker.pause(world.active||external||seat.active||returning.cameraOwned);if(world.active)controls.enabled=false;}
 
@@ -97,7 +100,7 @@ export function installZenExperience({scene,camera,walker,controls,assembly,shop
     if(audit)document.body.dataset.zenExperience=JSON.stringify({activity:{seated:seat.active,modal:world.active,returning:returning.active,trainSeated:returning.stats.seated},weather:weather.stats,returnTrain:returning.stats,world:world.stats,carriedDrink:drink.stats,story:journeyState.story});
    }
    if(!notice.hidden&&time>noticeUntil)notice.hidden=true;
-  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
+  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
    const i=roots.indexOf(returning.interactionRoot);if(i>=0)roots.splice(i,1);extras.remove();notice.remove();departure.remove();interactButton.remove();style.remove();document.removeEventListener('pointerdown',unlock);document.removeEventListener('keydown',unlock);document.removeEventListener('keydown',onKey,true);
   }};
  return runtime;

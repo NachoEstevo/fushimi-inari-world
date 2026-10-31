@@ -1,3 +1,5 @@
+import {buildTakeyaKeepsakes} from './takeya-keepsakes.mjs';
+import {buildLateralWaymarkers} from './lateral-waymarkers.mjs';
 import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {findVotiveWaxToRetain} from './candle-flame-instances.mjs';
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
@@ -706,6 +708,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.mitsuFrontageAprons=JSON.stringify(mitsuFrontageAprons);
   await checkpoint('buildKumatakaTakeyaFrontage');
   const takeyaFrontage=buildKumatakaTakeyaFrontage(root,features,surfaces,legacy.materials,colliders);
+  await checkpoint('buildTakeyaKeepsakes');
+  const takeyaKeepsakes=buildTakeyaKeepsakes(root,takeyaFrontage,legacy.materials,legacy.interactables);
+  document.body.dataset.takeyaKeepsakes=JSON.stringify(takeyaKeepsakes);
   document.body.dataset.takeyaFrontage=JSON.stringify(takeyaFrontage);
   document.body.dataset.yotsutsujiRetaining=JSON.stringify(yotsutsuji.retainingEdge??null);
   // Experimental only: the fixed-route A/B did not justify extra draw calls.
@@ -872,6 +877,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   document.body.dataset.keihanStation=JSON.stringify(keihanStation?{built:true,stats:keihanStation.stats,revision:keihanStation.spec.revision}:{built:false,reason:keihanError});
   document.body.dataset.keihanApproach=JSON.stringify(keihanApproach?{built:true,triangles:keihanApproach.triangles,drawBatches:keihanApproach.drawBatches}:{built:false});
   document.body.dataset.keihanFrontages=JSON.stringify({built:keihanFrontages.built,builtIds:keihanFrontages.builtIds,triangles:keihanFrontages.triangles});
+  await checkpoint('buildLateralWaymarkers');
+  document.body.dataset.lateralWaymarkers=JSON.stringify(buildLateralWaymarkers(root,features,surfaces,legacy.materials,colliders));
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);

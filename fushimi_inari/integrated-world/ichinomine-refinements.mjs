@@ -136,6 +136,30 @@ function stoneSideReturns(group,source){
  }};
 }
 
+// Short granite paving panels on the existing side terrace, outside the
+// worship canopy. The photographed stone approach establishes the material;
+// side paving joints and panel sizes are an interpretation, not surveyed.
+function sideCourtPaving(group,canopy,source){
+ const compound=canopy.parent;
+ const terrace=compound?.children.find(mesh=>{
+  const p=mesh.geometry?.parameters;
+  return mesh.isMesh&&mesh.geometry.type==='BoxGeometry'&&near(p.width,13.6)&&near(p.height,1.02)&&near(p.depth,11.5)&&near(mesh.position.y,.51)&&near(mesh.position.z,-5.5);
+ });
+ // Match the authored terrace and canopy transform before placing any stone.
+ if(!terrace||!source?.clone||!near(canopy.position.x,0)||!near(canopy.position.y,1.02)||!near(canopy.position.z,-1.35)||canopy.rotation.x||canopy.rotation.y||canopy.rotation.z||!near(canopy.scale.x,1)||!near(canopy.scale.y,1)||!near(canopy.scale.z,1))return null;
+ const stone=source.clone();stone.name='Ichinomine side court granite paving';stone.color.set('#aaa9a0');stone.roughness=1;stone.metalness=0;
+ const parts=[];
+ for(const side of [-1,1])for(let col=0;col<3;col++)for(let row=0;row<4;row++){
+  const w=.59,d=.75,x=side*(3.38+(col+.5)*.60),z=-1.95+(row+.5)*.76;
+  const original=new THREE.BoxGeometry(w,.018,d),tile=metricStepGeometry(original);original.dispose();tile.translate(x,.009,z);parts.push(tile);
+ }
+ const mesh=batch(group,parts,stone,'Ichinomine side terrace paving');
+ // Pavement lies directly on the pre-existing terrace; it does not need a
+ // second walking surface or any obstruction collider.
+ mesh.castShadow=false;
+ return {panels:24,draws:1,newColliders:0};
+}
+
 function removeUnsourcedSummitTrim(canopy){
   const removed=[],stats={plaque:0,goldBands:0};
   // Neither the 2018 frontal photograph nor jinjafan 105 has this legacy
@@ -184,9 +208,10 @@ export function refineIchinomine(object,materials={}, {createCanvas=()=>document
   box(edges,6.65,.055,.08,0,roof.position.y+.76*.28+.08,2.50);batch(group,edges,metal,'Low handrail and roof edge');
   const stone=stoneDetails(object,materials);
   const boundary=stoneSideReturns(group,materials.entryStoneMat);
+  const paving=sideCourtPaving(group,canopy,materials.entryStoneMat);
   const trim=removeUnsourcedSummitTrim(canopy);
   let disposed=false;
-  const result={group,originalGeometry,getColliders:()=>disposed?[]:boundary?.getColliders()??[],stats:{crests:2,tassels:7,extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs,...(boundary?{stoneBoundary:boundary.stats}:{}),...(trim.stats.plaque+trim.stats.goldBands?{referenceCorrections:trim.stats}:{})},dispose(){
+  const result={group,originalGeometry,getColliders:()=>disposed?[]:boundary?.getColliders()??[],stats:{crests:2,tassels:7,extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs,...(boundary?{stoneBoundary:boundary.stats}:{}),...(paving?{sideCourtPaving:paving}:{}),...(trim.stats.plaque+trim.stats.goldBands?{referenceCorrections:trim.stats}:{})},dispose(){
     if(disposed)return;disposed=true;group.removeFromParent();
     for(const mesh of group.children){mesh.geometry.dispose();mesh.material.dispose();}
     if(curtain.geometry===geometry)curtain.geometry=originalGeometry;if(curtain.material===material)curtain.material=originalMaterial;

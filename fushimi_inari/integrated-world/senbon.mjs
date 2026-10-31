@@ -40,8 +40,15 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
       const yaw=i===stations.length-1?exitYaw:heading+variation.yaw;
       const large=index===1&&i<source.largeCount;
       const scale=large?1.12:1;
-      const sx=scale*variation.width,sy=scale*variation.height;
-      const y=surfaceHeight(x,z)-.015;
+      const sx=scale*variation.width;
+      // Seat both posts into sloping ground. Sampling only the path centre can
+      // leave the uphill post visibly floating above the edge of the paving.
+      const halfSpan=s.pillarCenters*.5*sx,cos=Math.cos(yaw),sin=Math.sin(yaw);
+      const groundCenter=surfaceHeight(x,z),groundLeft=surfaceHeight(x-halfSpan*cos,z+halfSpan*sin),groundRight=surfaceHeight(x+halfSpan*cos,z-halfSpan*sin);
+      const y=Math.min(groundCenter,groundLeft,groundRight)-.015;
+      // On cross-slopes, preserve clearance over the higher edge of the path
+      // while keeping the low post seated. Most gates retain their catalog scale.
+      const sy=Math.max(scale*variation.height,(Math.max(groundCenter,groundLeft,groundRight)-y+1.9)/s.crossbarUnderside);
       const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,variation.depth));
       mats.push(m);
       // Side-mounted fittings follow the actual gate's position, rotation and

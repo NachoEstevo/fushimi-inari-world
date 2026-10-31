@@ -1,12 +1,14 @@
 import {pathWidth,isRestricted} from '../geography/geo-core.mjs';
 import {pathSampler} from './spatial.mjs';
 import {stairProfile,inferredTreads,mappedTreads,sampledStairAlignment} from './stair-profile.mjs?v=13';
+import {senbonEntranceGrades} from './senbon-entrance-grade.mjs';
 
 // Reviewed shrine approach, twin tunnels and Okusha court only. Street owners
 // rely on their historical sampling for mouth seals, finish and collision data.
 const sourceCornerPaths=new Set(['way/105449724','way/260121354','way/260121328','way/377968455','way/301527759','way/301527762']);
 
 export function makePathSurfaces(features,ground){
+  const entranceGrade=senbonEntranceGrades(features.paths,ground);
   const junctions=new Map(),pathNodes=new Map();
   for(const path of features.paths){
     pathNodes.set(path.id,new Set(path.nodeIds??[]));
@@ -69,6 +71,8 @@ export function makePathSurfaces(features,ground){
       const tread=resolved?.[i]??mappedSegments[i],a=tread?.a??sampler.at(i/count).point,b=tread?.b??sampler.at((i+1)/count).point;
       const surfaceOffset=lowApproach ? .02 : .14;
       let ya=ground(a[0],a[2])+surfaceOffset,yb=ground(b[0],b[2])+surfaceOffset;
+      const along=tread?.distance??i*length/count,run=Math.hypot(b[0]-a[0],b[2]-a[2]);
+      ya+=entranceGrade(path.id,along);yb+=entranceGrade(path.id,along+run);
       if(stair){
         // A single tread has one level. Endpoint levels remain tied to the DEM;
         // intermediate step geometry is inferred, never labelled measured.

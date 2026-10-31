@@ -114,3 +114,22 @@ test('disposing reference correction restores original sibling order without rel
  const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()});result.dispose();result.dispose();
  assert.deepEqual(f.canopy.children.map(mesh=>mesh.uuid),original.map(mesh=>mesh.uuid));assert.equal(disposals,0);assert.equal(ornaments.plaque.material.map===ornaments.texture,true);
 });
+
+test('side court paving is supported by the matched terrace and remains outside the worship canopy',()=>{
+ const f=fixture();f.materials.entryStoneMat=new THREE.MeshStandardMaterial({map:new THREE.Texture()});
+ const terrace=new THREE.Mesh(new THREE.BoxGeometry(13.6,1.02,11.5),f.materials.entryStoneMat);terrace.position.set(0,.51,-5.5);f.object.add(terrace);
+ const result=refineIchinomine(f.object,f.materials,{createCanvas:()=>canvas()});
+ assert.deepEqual(result.stats.sideCourtPaving,{panels:24,draws:1,newColliders:0});
+ const paving=result.group.getObjectByName('Ichinomine side terrace paving');assert.ok(paving);assert.equal(paving.material.map,f.materials.entryStoneMat.map);
+ f.object.position.set(120,30,-70);f.object.rotation.y=.73;f.object.scale.setScalar(1.4);f.object.updateWorldMatrix(true,true);
+ const vertices=paving.geometry.attributes.position,point=new THREE.Vector3(),inverse=terrace.matrixWorld.clone().invert();
+ for(let i=0;i<vertices.count;i++){
+  point.fromBufferAttribute(vertices,i).applyMatrix4(paving.matrixWorld).applyMatrix4(inverse);
+  assert.ok(Math.abs(point.x)>=3.38-.001&&Math.abs(point.x)<=5.18+.001,'paving enters canopy');
+  assert.ok(point.z>=2.20-.001&&point.z<=5.25+.001,'paving leaves side terrace');
+  assert.ok(point.y>=.51-.0001&&point.y<=.5281,'paving is not supported by terrace top');
+ }
+ assert.equal(result.getColliders().length,4);result.dispose();
+ const invalid=fixture();invalid.materials.entryStoneMat=new THREE.MeshStandardMaterial();const wrong=terrace.clone();wrong.position.y+=.1;invalid.object.add(wrong);
+ const noPaving=refineIchinomine(invalid.object,invalid.materials,{createCanvas:()=>canvas()});assert.equal(noPaving.stats.sideCourtPaving,undefined);noPaving.dispose();
+});

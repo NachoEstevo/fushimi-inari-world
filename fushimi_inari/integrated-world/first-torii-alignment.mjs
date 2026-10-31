@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {mappedFirstToriiPlacement} from './first-torii-alignment-layout.mjs';
 
 // Raw OSM owns midpoint and heading. R58 narrows the prior visual span;
@@ -13,7 +14,19 @@ export function alignFirstOmotesandoTorii(root,features,surfaces,colliders){
  const before=original.localToWorld(new THREE.Vector3(0,0,43.5)),placement=mappedFirstToriiPlacement();
  const [x,z]=placement.center,yaw=placement.yaw,c=Math.cos(yaw),s=Math.sin(yaw),half=placement.span/2,groundLeft=surfaces.height(x-half*c,z+half*s),groundRight=surfaces.height(x+half*c,z-half*s),base=Math.min(groundLeft,groundRight);
  const group=new THREE.Group();group.name='Ichiban torii aligned to mapped Omotesando';group.position.set(x,base,z);group.rotation.y=yaw;group.scale.x=placement.scaleX;
- for(const piece of pieces){piece.removeFromParent();piece.position.z-=43.5;group.add(piece);}
+ for(const piece of pieces){
+  // The first gate's concrete columns terminate in the broad red daiwa
+  // visible beneath its upper beam. Merge each collar into its own column so
+  // the hero gate keeps the same mesh and material ownership.
+  if(Math.abs(piece.position.x)===4.4&&piece.position.y===5){
+   const collar=new THREE.CylinderGeometry(.57,.57,.20,18);
+   collar.translate(0,8.97-piece.position.y,0);
+   const geometry=mergeGeometries([piece.geometry,collar]);
+   collar.dispose();
+   if(geometry){piece.geometry.dispose();piece.geometry=geometry;}
+  }
+  piece.removeFromParent();piece.position.z-=43.5;group.add(piece);
+ }
  root.add(group);
  for(let i=colliders.length-1;i>=0;i--)if(colliders[i].args.at(-1)==='ichiban_torii')colliders.splice(i,1);
  for(const side of [-1,1])colliders.push({type:'cylinder',args:[x+side*half*c,z-side*half*s,.52*placement.scaleX,base,base+10,'ichiban_torii']});
