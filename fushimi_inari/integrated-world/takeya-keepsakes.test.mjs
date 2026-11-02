@@ -26,11 +26,17 @@ test('photo-inspired products occupy the registered shop recess and leave paths 
    const s=(v.x-a[0])*ux+(v.z-a[2])*uz,d=(v.x-a[0])*nx+(v.z-a[2])*nz;
    assert.ok(s>openingCenter-openingWidth/2&&s<openingCenter+openingWidth/2);
    assert.ok(d>.20&&d<1.06,'products stay behind the facade, inside the existing display recess');
-   assert.ok(v.y>=f.frontage.floor-.001&&v.y<f.frontage.floor+1.1);
+   assert.ok(v.y>=f.frontage.floor-.001&&v.y<f.frontage.floor+2);
   }
  });
  assert.equal(buildTakeyaKeepsakes(f.root,f.frontage,f.materials,f.interactables),r);assert.equal(f.interactables.length,1);
  assert.ok(group.userData.interactable.directAction().length<100);
+});
+test('shelf stock has camera-facing printed labels and remains inside the bounded recess',()=>{
+ const previous=globalThis.document;globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
+ try{const f=fixture();buildTakeyaKeepsakes(f.root,f.frontage,f.materials,f.interactables);const labels=[];f.interactables[0].traverse(o=>{if(o.isMesh&&o.material.map?.name==='Takeya shared package lettering')labels.push(o);});
+  assert.equal(labels.length,1);const uv=labels[0].geometry.attributes.uv;assert.ok(uv.count>=35*6,'all shelf packages carry printed faces');
+ }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
 });
 test('missing frontage adds no invented store or interaction',()=>{
  const root=new THREE.Group(),targets=[];assert.equal(buildTakeyaKeepsakes(root,null,{},targets).built,false);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {spatialMeshes} from './spatial-mesh.mjs';
+import {createArchitecturalSurfaceLibrary} from './architectural-surface-library.mjs';
 import {appendUpperCafeFront,isReferencedUpperCafe,upperCafeInferredHeight,upperCafeFront} from './upper-cafe-fronts.mjs';
 
 const pointDistance=(p,a,b)=>{const dx=b[0]-a[0],dz=b[2]-a[2],t=THREE.MathUtils.clamp(((p[0]-a[0])*dx+(p[2]-a[2])*dz)/(dx*dx+dz*dz||1),0,1);return Math.hypot(p[0]-a[0]-dx*t,p[2]-a[2]-dz*t);};
@@ -49,55 +50,12 @@ function selectBuildings(options){
  return selected;
 }
 
-function finishMaps(kind){
- const size=256,color=new Uint8Array(size*size*4),packed=new Uint8Array(size*size*4);
- const hash=(x,y)=>{let n=Math.imul(x+73,374761393)^Math.imul(y+91,668265263);n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967295;};
- const noise=(u,v,cells)=>{
-  const x=u*cells,y=v*cells,ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
-  const sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy),sample=(a,b)=>hash((a+cells)%cells,(b+cells)%cells);
-  return THREE.MathUtils.lerp(THREE.MathUtils.lerp(sample(ix,iy),sample(ix+1,iy),sx),THREE.MathUtils.lerp(sample(ix,iy+1),sample(ix+1,iy+1),sx),sy);
- };
- for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-  const u=x/size,v=y/size,i=(y*size+x)*4,fine=hash(x,y)-.5,cloud=noise(u,v,4)-.5;
-  let rgb=kind==='roof'?[87,91,86]:kind==='timber'?[126,112,94]:kind==='brick'?[179,151,107]:kind==='awning'?[173,110,78]:kind==='cloth'?[62,47,38]:kind==='mineral'?[165,166,158]:[188,185,176];
-  let relief=.5+fine*.045,rough=kind==='roof'?.96:kind==='timber'?.88:.94;
-  const grain=kind==='timber'?Math.sin(x*Math.PI/8+Math.sin(y*Math.PI/128)*.3)*3:0;
-  let variation=fine*5+cloud*13+(noise(u,v,16)-.5)*3+grain;
-  if(kind==='roof'){
-   // Shallow sheet/joint texture only; the inherited roof stays flat.
-   const seam=x%64<2;variation-=seam?5:0;relief-=seam?.05:0;
-  }else{
-   // Slightly different plaster panels, a low opaque plinth and fine joints.
-   // Wear is nondirectional material staining, never a painted light/shadow.
-   const plinth=Math.exp(-v*18),streak=Math.pow(noise(u,.41,32),3)*Math.exp(-v*5);
-   const seam=x<1||x>=255,belt=v>.265&&v<.275;
-   variation-=plinth*14+streak*4+(seam?4:0)+(belt?3:0);
-   relief+=(belt?.045:0)-(seam?.04:0);rough=Math.min(1,rough+plinth*.025);
-  }
-  // Unreferenced context is deliberately opaque: no inferred openings,
-  // storefronts or window/storey rhythm is asserted by this finish atlas.
-  for(let c=0;c<3;c++)color[i+c]=Math.max(0,Math.min(255,Math.round(rgb[c]+variation)));color[i+3]=255;
-  packed[i]=Math.round(relief*255);packed[i+1]=Math.round(rough*255);packed[i+2]=0;packed[i+3]=255;
- }
- const texture=(data,name,space)=>{const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);t.name=name;t.colorSpace=space;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.anisotropy=4;t.needsUpdate=true;return t;};
- let map=texture(color,`Mapped ${kind} contextual finish`,THREE.SRGBColorSpace);
- if(kind==='cloth'&&typeof document!=='undefined'){
-  const canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');
-  if(ctx){
-   const pixels=ctx.createImageData(size,size);pixels.data.set(color);ctx.putImageData(pixels,0,0);
-   ctx.fillStyle='#e8ddc8';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 49px serif';
-   ctx.fillText('辻',128,98);ctx.fillText('亭',128,157);
-   map.dispose();map=new THREE.CanvasTexture(canvas);map.name='Tsujitei noren with observed name';map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.ClampToEdgeWrapping;map.anisotropy=4;
-  }
- }
- return {map,packed:texture(packed,`Mapped ${kind} height / roughness`,THREE.NoColorSpace)};
-}
-
 // The caller omits returned IDs from its cheap distant extrusion pass. Public
-// collision/surfaces are untouched; these are the same sourced render triangles.
-export function createMappedBuildingFinishes({buildings,segments,ground,excludesBuilding=()=>false,omitBuilding=()=>false,maxDistance=24,maxBuildings=64,maxPerCell=8,focusPoints,focusRadius=80}){
+// collision/surfaces stay untouched; only the two sourced cafe fronts open.
+export function createMappedBuildingFinishes({buildings,segments,ground,excludesBuilding=()=>false,omitBuilding=()=>false,maxDistance=24,maxBuildings=64,maxPerCell=8,focusPoints,focusRadius=80,surfaceLibrary}){
  const started=performance.now(),selected=selectBuildings({buildings,segments,maxDistance,maxBuildings,maxPerCell,focusPoints,focusRadius,excludesBuilding,omitBuilding});
  const group=new THREE.Group();group.name='Bounded mapped building facade finishes';
+ const surfaces=surfaceLibrary??createArchitecturalSurfaceLibrary(),ownsSurfaces=!surfaceLibrary;
  const detailedIds=new Set(),records=[],buckets=new Map(),materials=new Map(),maps=new Set(),geometries=[];
  const bucket=kind=>{if(!buckets.has(kind))buckets.set(kind,{vertices:[],uv:[]});return buckets.get(kind);};
  const append=(kind,p,uv)=>{bucket(kind).vertices.push(...p);bucket(kind).uv.push(...uv);};
@@ -112,24 +70,27 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
   // envelope, measure eaves from its public-facing grade rather than the toe.
   const roof=frontFloor!==null&&!Number.isFinite(heightValue)&&!Number.isFinite(levels)?Math.max(frontFloor+height,Math.max(...terrain)+.1):Math.max(...terrain)+height;
   const kind=/wood|timber/i.test(tags['building:material']??'')?'timber':/stone|brick|concrete/i.test(tags['building:material']??'')?'mineral':'plaster';
+  const upperCafe=frontFloor===null?null:appendUpperCafeFront({building,buildings,ring,base:frontFloor,roof,append,front});
+  if(upperCafe)upperCafe.frontFloor=frontFloor;
   const windowFaces=0;
   for(let i=0;i<ring.length;i++){
    const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
-   const u0=0,u1=length/3,vertical=(roof-base)/3;
-   const corners=[[a[0],base,a[2]],[b[0],base,b[2]],[b[0],roof,b[2]],[a[0],roof,a[2]]],uv=[[u0,0],[u1,0],[u1,vertical],[u0,vertical]];
+   // Only a successfully built referenced frontage opens the facing wall.
+   // Its terrain support stays below the high grade; all other walls remain.
+   const wallTop=upperCafe?.edge===i?frontFloor:roof;if(wallTop-base<1e-6)continue;
+   const tile=surfaces.tileMetres(kind),u0=0,u1=length/tile,vertical=(wallTop-base)/tile;
+   const corners=[[a[0],base,a[2]],[b[0],base,b[2]],[b[0],wallTop,b[2]],[a[0],wallTop,a[2]]],uv=[[u0,0],[u1,0],[u1,vertical],[u0,vertical]];
    for(const j of [0,1,2,0,2,3])append(kind,corners[j],uv[j]);
   }
   for(const tri of THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(p[0],p[2])),[]))for(const j of tri)append('roof',[ring[j][0],roof,ring[j][2]],[ring[j][0]/3,ring[j][2]/3]);
-  const upperCafe=frontFloor===null?null:appendUpperCafeFront({building,buildings,ring,base:frontFloor,roof,append,front});
-  if(upperCafe)upperCafe.frontFloor=frontFloor;
   detailedIds.add(building.id);records.push({id:building.id,distance,height,heightSource:Number.isFinite(heightValue)?'height':Number.isFinite(levels)?'levels':'inferred',base,roof,bounds,material:kind,windowFaces,inferredFacade:!!upperCafe,opaqueOnly:true,...(upperCafe?{upperCafe}:{})});
  }
  for(const [kind,{vertices,uv}]of buckets){
-  const textures=finishMaps(kind);for(const t of Object.values(textures))maps.add(t);
-  const material=new THREE.MeshStandardMaterial({name:`Mapped context ${kind}`,map:textures.map,bumpMap:textures.packed,bumpScale:kind==='roof'?.0004:.002,roughnessMap:textures.packed,roughness:1,metalness:0,envMapIntensity:.3,side:THREE.DoubleSide});materials.set(kind,material);
+  const textures=surfaces.getMaps(kind);for(const t of Object.values(textures))maps.add(t);
+  const material=surfaces.get(kind);materials.set(kind,material);
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
   const chunks=spatialMeshes(geometry,material,256);geometry.dispose();for(const mesh of chunks.children){mesh.receiveShadow=false;geometries.push(mesh.geometry);}group.add(chunks);
  }
  const stats={buildings:detailedIds.size,records,maxBuildings,maxPerCell,maxDistance,materials:materials.size,textures:maps.size,textureBytes:[...maps].reduce((n,t)=>n+(t.image.data?.byteLength??t.image.width*t.image.height*4),0),batches:geometries.length,triangles:geometries.reduce((n,g)=>n+g.attributes.position.count/3,0),extraLights:0,perFrameWork:false,buildMs:performance.now()-started,provenance:'OSM footprint and existing extrusion heights; two photographed upper cafes have inferred shallow facade details; all other context remains opaque; no added collisions'};
- let disposed=false;return {group,detailedIds,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();for(const m of materials.values())m.dispose();for(const t of maps)t.dispose();}};
+ let disposed=false;return {group,detailedIds,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();if(ownsSurfaces)surfaces.dispose();}};
 }

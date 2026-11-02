@@ -59,6 +59,10 @@ export function buildKumatakaTakeyaFrontage(root,features,surfaces,materials,col
  const opening=Math.max(2.5,Math.min(length-2.5,(center[0]-a[0])*ux+(center[1]-a[2])*uz)),openingWidth=3.0,left=opening-openingWidth/2,right=opening+openingWidth/2;
  const group=new THREE.Group();group.name=NAME;const parts=staticParts(group);
  const timber=new THREE.MeshStandardMaterial({color:'#554331',roughness:.96}),boards=new THREE.MeshStandardMaterial({color:'#36352c',roughness:.97}),roof=new THREE.MeshStandardMaterial({color:'#49514b',roughness:.94,side:THREE.DoubleSide}),glass=new THREE.MeshStandardMaterial({color:'#64706a',roughness:.48,metalness:.04}),fabric=new THREE.MeshStandardMaterial({color:'#495040',roughness:1,side:THREE.DoubleSide}),shadow=new THREE.MeshStandardMaterial({color:'#20241f',roughness:1});
+ const timberMaps=materials.architecturalSurfaceLibrary?.getMaps('timber');if(timberMaps){Object.assign(timber,timberMaps);timber.color.set('#eee9df');timber.bumpScale=.002;timber.roughness=1;}
+ glass.roughness=.2;glass.metalness=0;glass.userData.architecturalGlazing=true;
+ const infill=new THREE.MeshStandardMaterial({color:'#b6a27e',roughness:.97});
+ shadow.color.set('#4b483d');
  const nameTexture=observedTakeyaNoren();if(nameTexture){fabric.map=nameTexture;fabric.color.set('#ffffff');}
  const stone=(materials.stoneMat??materials.entryStoneMat??new THREE.MeshStandardMaterial({color:'#87877a'})).clone();stone.roughness=1;
  const put=(w,h,d,s,y,inset,m)=>parts.put(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(...at(s,inset,y)),m);
@@ -80,12 +84,16 @@ export function buildKumatakaTakeyaFrontage(root,features,surfaces,materials,col
   const bays=Math.max(1,Math.round((end-start)/1.25)),bay=(end-start)/bays;
   for(let i=0;i<bays;i++){
    const s=start+(i+.5)*bay;
-   put(bay-.08,.62,.10,s,floor+.35,.075,timber);
+   // Pale lower sliding-panel infill and dark timber framing are visible in
+   // the 2019 exterior photograph; the infill sits behind the joinery.
+   put(bay-.12,.62,.045,s,floor+.35,.14,infill);
    // Opaque reflected glazing describes photographed sliding timber/glass
    // without exposing an invented dining-room layout behind every window.
-   put(bay-.12,1.28,.026,s,floor+1.32,.03,glass);
+   put(bay-.12,1.28,.026,s,floor+1.32,.14,glass);
    for(const offset of [-bay/2,0,bay/2])put(.055,1.38,.065,s+offset,floor+1.32,-.005,timber);
+   for(const offset of [-bay/2,0,bay/2])put(.055,.65,.065,s+offset,floor+.35,-.005,timber);
    for(const y of [.65,1.32,1.99])put(bay,.055,.065,s,floor+y,-.005,timber);
+   put(bay,.07,.16,s,floor+.055,.035,timber);
    collider(s,.06,bay/2,.08,floor-.08,eave,'glazing');
   }
  }
@@ -95,16 +103,29 @@ export function buildKumatakaTakeyaFrontage(root,features,surfaces,materials,col
  // Only a bounded 1.1m display recess is represented, never a public interior.
  put(openingWidth,.045,1.10,opening,floor-.0225,.56,stone);
  put(openingWidth,2.15,.08,opening,floor+1.12,1.14,shadow);collider(opening,1.14,openingWidth/2,.04,floor-.08,eave,'recess-stop');
+ // Return walls close the two oblique sightlines to the terrain while keeping
+ // the public face open and the entire enclosure behind its mapped edge.
+ for(const s of [left+.035,right-.035])put(.07,2.15,1.12,s,floor+1.12,.58,boards);
+ // A shallow display backing and stock remain in front of the existing stop;
+ // these are not a traversable extension of the shop interior.
+ for(const h of [.94,1.64]){
+  put(openingWidth-.18,.065,.23,opening,floor+h,.98,timber);
+ }
  put(.72,.83,.52,right-.44,floor+.415,.70,timber);put(.78,.055,.56,right-.44,floor+.86,.70,boards);collider(right-.44,.70,.39,.28,floor,floor+.9,'counter');
  // The observed two-character name shares the existing cloth material/batch.
  for(let i=0;i<4;i++){
   const s=left+(i+.5)*openingWidth/4,w=openingWidth/4-.045,vertices=[],uv=[];
-  for(const [u,v]of [[-1,1],[-1,0],[1,1],[1,1],[-1,0],[1,0]]){const position=s+u*w/2;vertices.push(...at(position,-.012+.018*Math.cos(i),floor+1.95+v*.52));uv.push(1-(position-left)/openingWidth,v);}
+  for(const [u,v]of [[-1,1],[-1,0],[1,1],[1,1],[-1,0],[1,0]]){const position=s+u*w/2;vertices.push(...at(position,-.12+.012*Math.cos(i),floor+1.95+v*.52));uv.push((position-left)/openingWidth,v);}
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));parts.put(geometry,fabric,false);
  }
  // Short overhead eave only: no low post or across-lane canopy is inferred.
  const p0=at(0,.10,floor+2.69),p1=at(length,.10,floor+2.69),p2=at(length,-.28,floor+2.59),p3=at(0,-.28,floor+2.59);
  parts.sheet([...p0,...p3,...p1,...p1,...p3,...p2],roof);
+ // A dark fascia and gutter define the photographed eave without extending
+ // beyond the existing short overhang or placing supports in the lane.
+ put(length,.13,.07,length/2,floor+2.57,-.26,boards);
+ parts.beam(at(0,-.28,floor+2.49),at(length,-.28,floor+2.49),.035,boards,.035,6);
+ parts.beam(at(.09,-.15,floor+.13),at(.09,-.15,floor+2.47),.035,boards,.035,6);
  for(let s=.3;s<length;s+=.43)parts.beam(at(s,.09,floor+2.59),at(s,-.25,floor+2.49),.025,timber,.025,5);
  // Full concave source ring is retained. Unseen rear roof junctions use
  // explicitly inferred shallow hipped massing, rather than invented gables.
@@ -125,6 +146,7 @@ export function buildKumatakaTakeyaFrontage(root,features,surfaces,materials,col
  const smoothSkin=mergeVertices(rawSkin,1e-5);rawSkin.dispose();smoothSkin.computeVertexNormals();roofParts.put(smoothSkin,roof);
  const roofStats=roofParts.flush();roofGroup.children[0].name='Takeya exact concave main roof skin';group.add(roofGroup);
  const stats=parts.flush();
+ if(timberMaps)group.traverse(o=>{if(o.isMesh&&o.material===timber){const uv=o.geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*1.5,uv.getY(i)*1.5);}});
  const legacyConflicts=conflictingLegacyStones(root,ring);
  const record={builtIds:[feature.id],sourceFeature:feature.id,sourceRing:ring.map(p=>[...p]),frontage:{a:[...a],b:[...b],length,inward:[nx,nz],openingCenter:opening,openingWidth,projection:'mapped facing Kumataka roof center'},floor,eave,materialBatches:stats.batches,triangles:stats.triangles+roofStats.triangles,mainRoofTriangles:roofStats.triangles,colliders:pending.length,clearedLegacyStones:legacyConflicts.map(c=>c.record),clearedLegacyColliders:0,observedName:nameTexture?'竹屋':null,threshold:{depth:1.10,maximumRise:floor-Math.min(...samples),publicInterior:false},sources:['https://fushimiinari-guide.com/takeya/',...['P3600730_20190210.jpg','P3600721_20190219.jpg','P3600691_20190219.jpg'].map(n=>sourceBase+n)],limits:'Named mapped shop and east frontage registered; heights/bay counts/opening width and precise counter position inferred. Main roof hipped geometry is conservative unseen massing, not surveyed roof reconstruction. Only observed shop name is lettered; no menu/prices, dining-room inventory, public indoor route, terrace geometry or terrain/path changes. Only exact unsupported legacy repeated-stone/fox meshes overlapping this registered shop footprint are cleared; pavilion and all other stones retained.'};
  for(const conflict of legacyConflicts){conflict.object.removeFromParent();conflict.object.geometry.dispose();}

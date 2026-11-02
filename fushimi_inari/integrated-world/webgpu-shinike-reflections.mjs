@@ -66,7 +66,7 @@ export function captureShinikeEnvironment({scene,renderer,center,forestChunks,ov
  }
 }
 
-export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[],now=()=>performance.now(),clock=()=>performance.now()},capture=null){
+export function installShinikeReflections({scene,renderer,water,forestChunks=[],overlays=()=>[],now=()=>performance.now(),clock=()=>performance.now(),onEnvironment=()=>{}},capture=null){
   const stats={captures:0,resolution:256,facesPerCapture:6,error:null,captureCpuMs:null,maxCaptureCpuMs:0,captureStartedAt:null};
   if(!water?.isMesh||water.material?.userData.waterAppearance?.kind!=='shinike')return {stats,position:null,async prepare(){return {prepared:false,captures:0,error:null};},update(){},dispose(){}};
   // Keep both the capture graph and its two textures alive while renderer node
@@ -93,6 +93,7 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
         currentMap.isCubeTexture===true&&next.texture.isCubeTexture===true;
       current=next;material.envMap=next.texture;material.envMapIntensity=1.15;
       if(THREE.REVISION!=='187'||!sameProbeType)material.needsUpdate=true;
+      try{onEnvironment(next.texture);}catch(error){stats.receiverError=String(error.message??error);}
       previous?.dispose();stats.captures++;stats.error=null;return true;
     }catch(error){stats.error=String(error.message??error);return false;}
   }
@@ -132,6 +133,7 @@ export function installShinikeReflections({scene,renderer,water,forestChunks=[],
     refresh();
   },dispose(){
     if(disposed)return;disposed=true;
+    try{onEnvironment(null);}catch(error){stats.receiverError=String(error.message??error);}
     material.envMap=originalMap;material.envMapIntensity=originalIntensity;material.needsUpdate=true;current?.dispose();current=null;
     if(resources){for(const target of resources.targets)target.dispose();resources.generator.dispose();resources.targets.length=0;}
   }};

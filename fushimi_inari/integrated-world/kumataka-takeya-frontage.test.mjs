@@ -19,7 +19,7 @@ test('main roof preserves exact projected mapped area; all geometry is finite/no
  for(let i=0;i<p.count;i+=3){const a=new THREE.Vector3().fromBufferAttribute(p,i),b=new THREE.Vector3().fromBufferAttribute(p,i+1),c=new THREE.Vector3().fromBufferAttribute(p,i+2),n=b.clone().sub(a).cross(c.clone().sub(a));assert.ok(n.y>1e-10);area+=n.y/2;}
  const ring=feature.points.slice(0,-1);let sourceArea=0;for(let i=0;i<ring.length;i++)sourceArea+=ring[i][0]*ring[(i+1)%ring.length][2]-ring[(i+1)%ring.length][0]*ring[i][2];assert.ok(Math.abs(area-Math.abs(sourceArea)/2)<.001);
  f.root.traverse(o=>{if(!o.isMesh)return;const p=o.geometry.attributes.position;for(const n of p.array)assert.ok(Number.isFinite(n));for(let i=0;i<p.count;i+=3){const a=new THREE.Vector3().fromBufferAttribute(p,i),b=new THREE.Vector3().fromBufferAttribute(p,i+1),c=new THREE.Vector3().fromBufferAttribute(p,i+2);assert.ok(b.sub(a).cross(c.sub(a)).lengthSq()>1e-14);}});
- assert.ok(r.triangles<9000);assert.ok(r.materialBatches<=7);
+ assert.ok(r.triangles<9000);assert.ok(r.materialBatches<=8);
  const normals=roof.geometry.attributes.normal,seen=new Map();for(let i=0;i<p.count;i++){const key=[p.getX(i),p.getY(i),p.getZ(i)].join(','),normal=[normals.getX(i),normals.getY(i),normals.getZ(i)];if(seen.has(key))assert.deepEqual(normal,seen.get(key),'coincident roof vertices share production normals');else seen.set(key,normal);}
 });
 test('mapped public arrival/onward remain clear in both directions; source route grades and callbacks unchanged',()=>{
@@ -35,13 +35,34 @@ test('source-supported broad opening is real geometry with a bounded inner stop,
  f.root.updateMatrixWorld(true);const origin=new THREE.Vector3(a[0]+ux*s-nx*.5,r.floor+1.4,a[2]+uz*s-nz*.5),ray=new THREE.Raycaster(origin,new THREE.Vector3(nx,0,nz),0,3),hits=ray.intersectObject(f.root,true);
  assert.ok(hits.length>0);assert.ok(hits[0].distance>1.4,'front remains open before the inner shadow/restriction plane');assert.ok(hits[0].distance<1.9);
 });
+test('glazed bays have recessed glass and light lower panels behind projecting timber joinery',()=>{
+ const f=fixture(),r=build(f),{a,b,length,inward:[nx,nz],openingCenter,openingWidth}=r.frontage,ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length;
+ const end=openingCenter-openingWidth/2,bays=Math.max(1,Math.round(end/1.25)),s=end/bays*.25;
+ const hit=y=>{const origin=new THREE.Vector3(a[0]+ux*s-nx*.5,r.floor+y,a[2]+uz*s-nz*.5);return new THREE.Raycaster(origin,new THREE.Vector3(nx,0,nz),0,1).intersectObject(f.root,true)[0];};
+ f.root.updateMatrixWorld(true);
+ const glass=hit(1.05),panel=hit(.35);assert.ok(glass.distance>=.59,'glass is recessed from the timber plane');
+ assert.ok(panel.object.material.color.r>.45&&panel.object.material.color.g>.35,'lower panel reads as light infill');
+});
+test('frontage accepts the shared timber surface while preserving its texture ownership',()=>{
+ const f=fixture(),texture=new THREE.Texture();f.materials.architecturalSurfaceLibrary={getMaps:()=>({map:texture,bumpMap:texture,roughnessMap:texture})};
+ build(f);let found=false;f.root.traverse(o=>{if(o.isMesh&&o.material.map===texture){found=true;assert.ok(o.geometry.attributes.uv);}});assert.ok(found);
+});
 test('missing identity, unresolved source datum or conflicting owner produces no partial geometry/blockers/exclusion',()=>{
  for(const mode of ['missing','missing-pavilion','grade','owned']){const f=fixture();if(mode==='missing')f.features.buildings=[];if(mode==='missing-pavilion')f.features.buildings=[feature];if(mode==='grade')f.surfaces.terrainHeight=(x,z)=>z;if(mode==='owned'){const old=new THREE.Group();old.userData.sourceFeature=takeyaFeatureId;f.root.add(old);}const count=f.root.children.length;assert.deepEqual(build(f).builtIds,[]);assert.equal(f.root.children.length,count);assert.equal(f.colliders.length,0);}
 });
 test('observed two-character name uses one shared cloth texture and stays on one panel without a new batch',()=>{
  const previous=globalThis.document,calls=[];globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(...args){calls.push(args);}})})};
- try{const f=fixture(),r=build(f);assert.equal(r.observedName,'竹屋');assert.deepEqual(calls.map(c=>c[0]),['竹','屋']);assert.ok(calls.every(c=>c[1]===640));assert.equal(r.materialBatches,7);let cloth;f.root.traverse(o=>{if(o.isMesh&&o.material.map?.name==='Takeya observed vertical name noren')cloth=o;});assert.ok(cloth);assert.equal(cloth.geometry.attributes.position.count,24);assert.equal(cloth.material.map.image.width,1024);}
+ try{const f=fixture(),r=build(f);assert.equal(r.observedName,'竹屋');assert.deepEqual(calls.map(c=>c[0]),['竹','屋']);assert.ok(calls.every(c=>c[1]===640));assert.equal(r.materialBatches,8);let cloth;f.root.traverse(o=>{if(o.isMesh&&o.material.map?.name==='Takeya observed vertical name noren')cloth=o;});assert.ok(cloth);assert.equal(cloth.geometry.attributes.position.count,24);assert.equal(cloth.material.map.image.width,1024);}
  finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+});
+test('front-facing noren reads left to right and its lettering is not hidden by the lintel',()=>{
+ const previous=globalThis.document;globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
+ try{const f=fixture(),r=build(f),{a,b,length,inward:[nx,nz],openingCenter,openingWidth}=r.frontage,ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length;
+  f.root.updateMatrixWorld(true);const hit=(s,y)=>new THREE.Raycaster(new THREE.Vector3(a[0]+ux*s-nx*.5,r.floor+y,a[2]+uz*s-nz*.5),new THREE.Vector3(nx,0,nz),0,1).intersectObject(f.root,true)[0];
+  const s=openingCenter-openingWidth/2+openingWidth*.62,top=hit(s,2.34),bottom=hit(s,2.08);assert.equal(top.object.material.map?.name,'Takeya observed vertical name noren');assert.equal(bottom.object,top.object);
+  for(let i=0;i<4;i++)assert.equal(hit(openingCenter-openingWidth/2+openingWidth*(i+.5)/4,2.28).object.material.map?.name,'Takeya observed vertical name noren');
+  const left=hit(s-.05,2.34),right=hit(s+.05,2.34);assert.ok(right.uv.x>left.uv.x,'texture follows the camera-facing horizontal direction');
+ }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
 });
 test('actual transformed legacy repeated stones overlapping mapped Takeya are cleared, preserving other owners and colliders',()=>{
  const f=fixture(),legacy=new THREE.Group();legacy.userData.zone='kumataka';legacy.position.set(545.254396455114,65.89652051629592,-129.16842947649747);legacy.rotation.y=-1.162212928391673;f.root.add(legacy);

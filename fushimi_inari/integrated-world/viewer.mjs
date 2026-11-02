@@ -1,3 +1,4 @@
+import {createPondGlazingReflections} from './pond-glazing-reflections.mjs';
 import {createTrailGuide} from './trail-guide.mjs';
 import {createStartupCheckpoint,yieldStartupTask,startStartupYieldAudit} from './startup-work.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
@@ -297,7 +298,7 @@ try {
   const contextRoutes=[assembly.spatial.main,assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point)),assembly.keihanStation?.routePoints,assembly.keihanApproach?.routePoints,assembly.inariStationRoute?.routePoints].filter(route=>route?.length>1);
   const contextSegments=contextRoutes.flatMap(route=>route.slice(1).map((b,i)=>({a:route[i],b})));
   await startupCheckpoint('createMappedBuildingFinishes');
-  const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext});
+  const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext,surfaceLibrary:assembly.architecturalSurfaces});
   buildingGroup.add(contextFinishes.group);
   inferredHeightCount=contextFinishes.stats.records.filter(record=>record.heightSource!=='height').length;
   document.body.dataset.mappedBuildingFinishes=JSON.stringify(contextFinishes.stats);
@@ -543,7 +544,7 @@ try {
   if(new URLSearchParams(location.search).get('audit')==='1'){
     const reviewPoints=[
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
-      ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1145,-184],
+      ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1151.8,-190.8],
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
       ['audit_rear_boundary','Review · Rear votive boundary',77.6,1.714,77.6,-.45],
       ['audit_takeya','Review · Takeya keepsakes',540.706,-135.836,538.304,-137.276],
@@ -916,8 +917,9 @@ try {
   appearance.prepareFoliage();
   appearance.setTimeOfDay($('light').value);
   const shinikeWater=assembly.root.getObjectByName('Shin-ike flat olive-gray water R97');
-  const pondReflections=installShinikeReflections({scene,renderer,water:shinikeWater,
-    forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup]});
+  const pondGlazing=createPondGlazingReflections(assembly.root);
+  const pondReflections=installShinikeReflections({scene,renderer,water:shinikeWater,onEnvironment:pondGlazing.setEnvironment,
+    forestChunks:assembly.forestChunks,overlays:()=>[routeLine,marker,landmarkGroup,...pondGlazing.meshes]});
   const pondPosition=pondReflections.position,pondKeyState={};
   function pondAppearanceKey(){
     const light=$('light').value,look=appearance.stats.look,season=document.body.dataset.season;
@@ -927,7 +929,7 @@ try {
     }
     return pondKeyState.key;
   }
-  addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose?.();zen.dispose();visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();sky.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
+  addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose?.();zen.dispose();visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();sky.dispose();pondReflections.dispose();pondGlazing.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
   document.body.dataset.inventory=JSON.stringify(assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
@@ -940,8 +942,11 @@ try {
   try{
     const prepared=await prepareShinikeForWalking({probe:pondReflections,water:shinikeWater,camera,scene,quality,detailChunks,textureStreaming,
       waitForTextures:false,restoreView:prepareNearby,settle:()=>settleRenderer(renderer),getLights:compilationLights.getLights,getAppearanceKey:pondAppearanceKey});
+    if(!prepared.prepared)pondGlazing.dispose();
+    if(prepared.prepared&&pondGlazing.meshes.length)await compileSelectedVisuals(quality,scene,pondGlazing.meshes,camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoots:true,getLights:compilationLights.getLights});
+    document.body.dataset.pondGlazing=JSON.stringify(pondGlazing.stats);
     document.body.dataset.pondPreparation=JSON.stringify(prepared);
-  }catch(error){document.body.dataset.pondPreparation=JSON.stringify({prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
+  }catch(error){pondGlazing.dispose();document.body.dataset.pondPreparation=JSON.stringify({prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
   loadingStage('Preparing train and platform…');
   const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
     prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
@@ -1052,7 +1057,7 @@ try {
   let movementFrameAudit=null;
   if(query.get('frameAudit')==='1'){
     const {installMovementFrameAudit}=await import('./movement-frame-audit.mjs');
-    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,threeRevision:THREE.REVISION,quality:quality.mode,look:quality.look,mode:walker.mode,prewarm:walkingPrewarm.stats,neighborhood:JSON.parse(document.body.dataset.walkingNeighborhood??'null'),staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats,walkingCompiles:walkingCompileHistory}:{})})});
+    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,threeRevision:THREE.REVISION,quality:quality.mode,look:quality.look,architecture:assembly.architecturalSurfaces?.stats,mode:walker.mode,prewarm:walkingPrewarm.stats,neighborhood:JSON.parse(document.body.dataset.walkingNeighborhood??'null'),staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats,walkingCompiles:walkingCompileHistory}:{})})});
     addEventListener('pagehide',event=>{if(!event.persisted)movementFrameAudit.dispose();});
   }
   let horizonAuditAt=0;
@@ -1146,7 +1151,7 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
+    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.architecturalSurfaces=JSON.stringify(assembly.architecturalSurfaces.stats);document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
     document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;

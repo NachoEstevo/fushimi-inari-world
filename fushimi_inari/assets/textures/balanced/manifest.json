@@ -448,5 +448,17 @@
     "balanced": "balanced/Vermilion_ShuIro/Vermilion_ShuIro_Roughness.webp",
     "bytes": 58362,
     "originalBytes": 69089
+  },
+  {
+    "original": "architectural-r1/cedar-weathered-color.webp",
+    "balanced": "balanced/architectural-r1/cedar-weathered-color.webp",
+    "bytes": 4504,
+    "originalBytes": 152498
+  },
+  {
+    "original": "architectural-r1/lime-plaster-color.webp",
+    "balanced": "balanced/architectural-r1/lime-plaster-color.webp",
+    "bytes": 2416,
+    "originalBytes": 175012
   }
 ]

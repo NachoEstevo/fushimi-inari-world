@@ -9,8 +9,8 @@ export const isReferencedUpperCafe=building=>SHOPS.has(building.id);
 // The exterior photos show low shopfronts; exact dimensions are not surveyed.
 export const upperCafeInferredHeight=building=>SHOPS.get(building.id)?.kind==='tsujitei'?3.1:SHOPS.has(building.id)?3.3:null;
 
-// Append shallow, opaque details to the existing facade buckets. No extra
-// building, floor, collider, texture, or per-frame work is introduced.
+// Static opaque frontage details reuse the existing facade buckets. Dimensions
+// and the depth of the joinery are inferred from the photographs, not surveyed.
 export function upperCafeFront({building,buildings,ring}){
  const spec=SHOPS.get(building.id),shrine=spec&&buildings.find(b=>b.id===spec.shrine);
  if(!shrine||ring.length<3)return null;
@@ -35,24 +35,55 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
  let nx=-uz,nz=ux;
  if(nx*(center[0]-(a[0]+best.b[0])/2)+nz*(center[1]-(a[2]+best.b[2])/2)>0){nx=-nx;nz=-nz;}
  const margin=Math.min(.3,length*.08),width=length-2*margin;
- const rect=(kind,u0,y0,u1,y1,offset)=>{
-  const p=(u,y)=>[a[0]+ux*u+nx*offset,base+y,a[2]+uz*u+nz*offset];
-  const pts=[p(u0,y0),p(u1,y0),p(u1,y1),p(u0,y1)],uw=kind==='cloth'?1:(u1-u0)/3,vh=kind==='cloth'?1:(y1-y0)/3,uv=[[0,0],[uw,0],[uw,vh],[0,vh]];
+ // Existing mapped torii bases overlap this OSM roof edge at Tsujitei. Set the
+ // whole reconstructed frontage back inside it, keeping the route and gates.
+ const setback=spec.kind==='tsujitei'?.90:0;
+ const rect=(kind,u0,y0,u1,y1,offset,clothLabel=true)=>{
+  const p=(u,y)=>[a[0]+ux*u+nx*(offset-setback),base+y,a[2]+uz*u+nz*(offset-setback)];
+  const pts=[p(u0,y0),p(u1,y0),p(u1,y1),p(u0,y1)],uw=kind==='cloth'?1:(u1-u0)/(kind==='timber'||kind==='plaster'?1:3),vh=kind==='cloth'?1:(y1-y0)/(kind==='timber'||kind==='plaster'?1:3),uv=[[0,0],[uw,0],[uw,vh],[0,vh]];
+  // The edge winding can face into the footprint. Reverse the sign's U on
+  // back-facing edges so its lettering reads from the shrine side.
+  if(kind==='cloth'){
+   if(!clothLabel)for(const v of uv){v[0]=0;v[1]=0;}
+   else if(nx* -uz+nz*ux<0)for(const v of uv)v[0]=1-v[0];
+  }
   for(const i of [0,1,2,0,2,3])append(kind,pts[i],uv[i]);
  };
+ // The facing shell wall is opened by mapped-building-finishes. A continuous
+ // inset back and end returns close that opening within the OSM footprint.
+ const point=(u,y,depth)=>[a[0]+ux*u+nx*(depth-setback),base+y,a[2]+uz*u+nz*(depth-setback)];
+ const quad=(kind,points)=>{const tile=kind==='timber'||kind==='plaster'?1:3;const dist=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]))/tile;const uv=[[0,0],[dist(points[0],points[1]),0],[dist(points[0],points[1]),dist(points[1],points[2])],[0,dist(points[1],points[2])]];for(const i of [0,1,2,0,2,3])append(kind,points[i],uv[i]);};
+ const shelf=(u0,u1,y,back,front)=>quad('timber',[point(u0,y,back),point(u1,y,back),point(u1,y,front),point(u0,y,front)]);
+ const side=(u,y0,y1,back,front)=>quad('timber',[point(u,y0,back),point(u,y0,front),point(u,y1,front),point(u,y1,back)]);
+ const inset=-.16;
+ rect('plaster',0,0,length,roof-base,inset);
+ side(0,0,roof-base,inset,0);side(length,0,roof-base,inset,0);
+ // An overhanging eave with an exposed underside and fascia. Its exact slope
+ // is inferred; the source shows the shaded upper edge rather than a survey.
+ const eaveY=Math.min(2.66,roof-base-.12),eaveDepth=.30;
+ quad('roof',[point(margin,eaveY,.01),point(length-margin,eaveY,.01),point(length-margin,eaveY-.08,eaveDepth),point(margin,eaveY-.08,eaveDepth)]);
+ rect('roof',margin,eaveY-.15,length-margin,eaveY-.08,eaveDepth);
+ side(margin,eaveY-.15,eaveY,.01,eaveDepth);side(length-margin,eaveY-.15,eaveY,.01,eaveDepth);
  if(spec.kind==='tsujitei'){
   // Dark hanging cloth over timber-framed offering shelves; simplified goods.
   rect('roof',margin,.18,length-margin,2.52,.018);
   rect('timber',margin,.20,length-margin,1.68,.025);
   for(let i=0;i<=4;i++){const u=margin+width*i/4;rect('roof',u-.035,.20,u+.035,1.72,.035);}
-  for(const y of [.50,.83,1.16,1.49])rect('roof',margin,y,length-margin,y+.045,.038);
+  for(const y of [.50,.83,1.16,1.49]){shelf(margin,length-margin,y,.03,.15);rect('roof',margin,y-.025,length-margin,y+.025,.15);}
   const cols=Math.min(24,Math.max(8,Math.floor(width/.22)));
   for(let row=0;row<3;row++)for(let i=0;i<cols;i++){
    const u=margin+width*(i+.5)/cols,w=Math.min(.055,width/cols*.25),y=.55+row*.33;
    rect(i%3?'plaster':'mineral',u-w,y,u+w,y+.17,.043);
   }
+  // Dark stiles and the low opaque panels frame two separate offering racks.
+  for(const u of [margin,margin+width*.5,length-margin]){
+   side(u,.20,1.72,.025,.17);rect('roof',u-.035,.20,u+.035,1.72,.17);
+  }
+  rect('plaster',margin+.08,.20,margin+width*.5-.06,.42,.075);
+  rect('plaster',margin+width*.5+.06,.20,length-margin-.08,.42,.075);
+  shelf(margin,length-margin,.18,.02,.19);
   // Individual narrow dark-brown noren panels, with small open seams.
-  const panels=Math.ceil(width);for(let i=0;i<panels;i++)rect('cloth',margin+width*i/panels+.015,1.72,margin+width*(i+1)/panels-.015,2.48,.046);
+  const panels=Math.ceil(width);for(let i=0;i<panels;i++)rect('cloth',margin+width*i/panels+.015,1.72,margin+width*(i+1)/panels-.015,2.48,.19,i===Math.floor(panels/2));
  }else{
   // Glazed timber frontage and ochre valance; the pictured brick is a narrow
   // side pier, rather than a brick wall across the entire shop front.
@@ -60,12 +91,16 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
   rect('roof',margin,.12,pier,2.45,.018);
   for(let i=0;i<=5;i++){const u=margin+(pier-margin)*i/5;rect('timber',u-.035,.12,u+.035,2.45,.026);}
   rect('timber',margin,.65,pier,.70,.027);rect('timber',margin,1.93,pier,1.99,.027);
-  rect('awning',margin,2.02,pier,2.48,.032);
+  rect('awning',margin,2.02,pier,2.48,.13);
+  // Set the window panels behind projecting rails and vertical stiles.
+  for(let i=0;i<=5;i++){const u=margin+(pier-margin)*i/5;side(u,.12,2.02,.026,.12);rect('timber',u-.026,.12,u+.026,2.02,.12);}
+  for(const y of [.65,1.93]){shelf(margin,pier,y,.026,.12);rect('timber',margin,y-.025,pier,y+.025,.12);}
+  shelf(margin,pier,.12,.02,.15);
   rect('brick',pier,.12,length-margin,2.45,.018);
   for(let row=0;row<8;row++){
    const y=.12+row*.29;rect('roof',pier,y,length-margin,y+.018,.024);
    for(let u=pier+(row%2?.30:0);u<length-margin;u+=.60)rect('roof',u,y,Math.min(u+.018,length-margin),Math.min(y+.29,2.45),.025);
   }
  }
- return {id:building.id,shrine:spec.shrine,edge,kind:spec.kind,facadeWidth:width,source:'https://livingkyo.com/2699/'};
+ return {id:building.id,shrine:spec.shrine,edge,kind:spec.kind,setback,facadeWidth:width,source:'https://livingkyo.com/2699/'};
 }

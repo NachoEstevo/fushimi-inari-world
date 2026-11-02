@@ -31,3 +31,20 @@ test('missing identity or canonical walking support fails closed without claimin
   const result=createSuehiroyaSummit({...options,ground:()=>229,materials:{}});assert.equal(result.builtIds.size,0);assert.equal(result.group.children.length,0);result.dispose();
  }
 });
+
+test('shared architectural finishes use metre UVs without taking ownership of maps',()=>{
+ const f=fixture(),wood=new THREE.Texture(),plaster=new THREE.Texture(),bump=new THREE.Texture();
+ let textureDisposals=0;for(const map of [wood,plaster,bump])map.addEventListener('dispose',()=>textureDisposals++);
+ f.materials.architecturalSurfaceLibrary={getMaps(kind){return {map:kind==='timber'?wood:plaster,bumpMap:bump,roughnessMap:bump};}};
+ const result=createSuehiroyaSummit({buildings,ground:()=>229,walkHeight:()=>231,materials:f.materials});
+ const frames=result.group.children.find(mesh=>mesh.material.name==='Suehiro-ya natural timber frames');
+ assert.equal(result.stats.sharedArchitecturalSurfaces,true);assert.equal(frames.material.map,wood);assert.equal(frames.material.normalMap,null);
+ const p=frames.geometry.attributes.position,uv=frames.geometry.attributes.uv;
+ for(let i=0;i<p.count;i++){
+  const normal=frames.geometry.attributes.normal,ax=Math.abs(normal.getX(i)),ay=Math.abs(normal.getY(i)),az=Math.abs(normal.getZ(i));
+  const expected=ay>=ax&&ay>=az?[p.getX(i),p.getZ(i)]:ax>=az?[p.getZ(i),p.getY(i)]:[p.getX(i),p.getY(i)];
+  assert.ok(Math.abs(uv.getX(i)-expected[0])<.002&&Math.abs(uv.getY(i)-expected[1])<.002);
+ }
+ result.dispose();assert.equal(textureDisposals,0);
+ for(const map of [wood,plaster,bump,f.texture])map.dispose();for(const material of Object.values(f.materials))material.dispose?.();
+});

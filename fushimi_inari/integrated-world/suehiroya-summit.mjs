@@ -47,18 +47,35 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
   if(source?.roughnessMap)material.roughnessMap=source.roughnessMap;
   owned.add(material);return material;
  };
+ const surfaces=materials.architecturalSurfaceLibrary;
+ const applySurface=(material,kind)=>{
+  if(!surfaces?.getMaps)return;
+  const maps=surfaces.getMaps(kind);material.map=maps.map;material.bumpMap=maps.bumpMap;
+  material.bumpScale=.002;material.roughnessMap=maps.roughnessMap;material.normalMap=null;
+ };
  const plaster=standard('Suehiro-ya gray rough frieze','#aaa99f',materials.plasterMat,.98);
  const timber=standard('Suehiro-ya natural timber frames','#916d48',materials.vermilionMat,.91);
  const dark=standard('Suehiro-ya dark timber kick panels','#4b382c',materials.vermilionMat,.94);
+ applySurface(plaster,'plaster');applySurface(timber,'timber');applySurface(dark,'timber');
+ if(surfaces?.getMaps){plaster.color.set('#e1e0d8');timber.color.set('#f3eee4');}
  const roof=standard('Suehiro-ya weathered gray metal','#8b9390',null,.84);roof.roughnessMap=materials.copperRoofMat?.roughnessMap??materials.roofMat?.roughnessMap??null;roof.metalness=.16;roof.normalMap=materials.copperRoofMat?.normalMap??materials.roofMat?.normalMap??null;roof.normalScale.set(.12,.12);
  const glass=standard('Suehiro-ya inset opaque glass','#566962',null,.19);glass.envMapIntensity=.65;
  const skylight=standard('Suehiro-ya photographed roof skylights','#91b5ba',null,.20);skylight.envMapIntensity=.8;
  const stone=standard('Suehiro-ya retained stone support','#a8a69b',materials.flagstoneMat??materials.stoneMat,.97);stone.map=materials.flagstoneMat?.map??null;stone.normalScale.set(.22,.22);
  const display=standard('Suehiro-ya neutral display goods','#d9cbb0',null,.98);
- const parts=staticParts(group),sheet=(points,mat)=>parts.sheet(points.flat(),mat);
+ const parts=staticParts(group);
+ // staticParts normally maps 1.5 metres per tile. The shared architectural
+ // wood and plaster surfaces are authored at one metre per tile instead.
+ const metric=(geometry,mat)=>{
+  if(surfaces?.getMaps&&(mat===timber||mat===dark||mat===plaster)){
+   const uv=geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*1.5,uv.getY(i)*1.5);
+  }
+  return geometry;
+ };
+ const sheet=(points,mat)=>metric(parts.sheet(points.flat(),mat),mat);
  const quad=(a,b,c,d,mat)=>sheet([a,b,c,a,c,d],mat);
  const yaw=-Math.atan2(t[1],t[0]);
- const box=(w,h,d,u,y,v,mat)=>{const p=at(u,floor+y,v);parts.put(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(...p),mat);};
+ const box=(w,h,d,u,y,v,mat)=>{const p=at(u,floor+y,v);metric(parts.put(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(...p),mat),mat);};
  for(let i=0;i<ring.length;i++){
   const p=ring[i],q=ring[(i+1)%ring.length],lowP=Math.min(terrain[i]-.12,floor-.12),lowQ=Math.min(terrain[(i+1)%ring.length]-.12,floor-.12);
   quad([p[0],lowP,p[2]],[q[0],lowQ,q[2]],[q[0],floor,q[2]],[p[0],floor,p[2]],stone);
@@ -84,6 +101,15 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
  quad([left[0],floor+2,left[2]],[right[0],floor+2,right[2]],
   [right[0],roofY(right[2])-.08,right[2]],[left[0],roofY(left[2])-.08,left[2]],plaster);
  box(span,.085,.15,length/2,2.00,inset,timber);box(span,.07,.13,length/2,.08,inset,dark);
+ // Narrow paired sliding-door tracks and a timber threshold sit within the
+ // existing recessed front; their exact profiles are inferred from the glazing.
+ box(span,.035,.035,length/2,.12,inset-.08,dark);
+ box(span,.035,.035,length/2,.12,inset+.07,dark);
+ box(span,.035,.11,length/2,1.96,inset+.03,dark);
+ // A restrained dark drip edge follows the photographed broad roof front.
+ const eaveA=at(.05,0,.04),eaveB=at(length-.05,0,.04);
+ eaveA[1]=roofY(eaveA[2])-.11;eaveB[1]=roofY(eaveB[2])-.11;
+ parts.beam(eaveA,eaveB,.035,roof,.035,4);
  for(let i=0;i<=bays;i++){const u=.25+i*pitch;box(.055,2.00,.075,u,1.04,inset,timber);box(.020,.78,.06,u,2.40,inset-.03,roof);}
  // Close only the two shallow returns inside the mapped roof edge.
  for(const [corner,u]of [[a,.25],[b,length-.25]])quad([corner[0],floor,corner[2]],at(u,floor,inset),at(u,roofY(at(u,0,inset)[2])-.08,inset),[corner[0],roofY(corner[2])-.08,corner[2]],timber);
@@ -99,14 +125,23 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
  }
  // A small shaded display recess; exact merchandise/interior is not surveyed.
  const u=.25+(openBay+.5)*pitch;
- box(pitch-.10,1.95,.05,u,1.05,1.32,dark);box(pitch-.18,.72,.42,u,.51,.93,timber);
+ box(pitch-.10,1.95,.05,u,1.05,1.32,dark);
+ // Closed side returns keep the shallow display from looking through to the
+ // landscape. The unphotographed interior remains an inferred dark recess.
+ for(const side of [-1,1])box(.055,1.95,.90,u+side*(pitch-.10)/2,1.05,.90,dark);
+ box(pitch-.18,.72,.42,u,.51,.93,timber);
  for(const y of [.88,1.25,1.61]){
   box(pitch-.20,.035,.30,u,y,1.00,timber);
-  for(let j=0;j<4;j++)box(.11,.16,.12,u-.30+j*.20,y+.10,.99,display);
+  for(let j=0;j<4;j++){
+   const w=j%2?.13:.11,h=j%3===0?.19:.15,x=u-.30+j*.20;
+   box(w,h,.12,x,y+.025+h/2,.99,display);
+   // Plain bands suggest wrapping without inventing product names.
+   box(w*.9,.018,.007,x,y+.025+h*.72,.925,j%2?timber:dark);
+  }
  }
  const budget=parts.flush();group.traverse(mesh=>{if(mesh.isMesh&&mesh.material===roof)mesh.name='Suehiro-ya pitched metal roof';});
  builtIds.add(CAFE);Object.assign(stats,budget,{built:true,buildMs:performance.now()-started,floor,roofFrontRun,skylights:3,references:[stats.reference,{author:'Petr Nouza',date:'September 2025',photo:'CIABIhAqKh32_ZCTC5JQqXjkjJou',url:'https://www.google.com/maps/place/Suehiroya/@34.9669704,135.7855404/'}],roofMin:roofY(minZ),roofMax:roofY(maxZ),bays,displayBoxes:12,
-  front:{edge:front.edge,a:[...a],b:[...b],outward:[-n[0],-n[1]],inset},footprint:ring.map(p=>[p[0],p[2]])});
+  sharedArchitecturalSurfaces:!!surfaces?.getMaps,front:{edge:front.edge,a:[...a],b:[...b],outward:[-n[0],-n[1]],inset},footprint:ring.map(p=>[p[0],p[2]])});
  group.userData={sourceFeature:CAFE,builtIds:[CAFE],reference:stats.reference,estimatedDimensions:true};
  return result;
 }

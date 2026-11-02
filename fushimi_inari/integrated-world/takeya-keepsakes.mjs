@@ -55,6 +55,16 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
   parts.put(g.rotateX(-Math.PI/2).rotateY(yaw).translate(...at(s,d,y)),printed,false);
  };
  const packets=[paper,orange,blue];
+ // Small individually wrapped offerings on the two shallow back shelves.
+ // Printed faces reuse the same observed-name atlas as the counter labels.
+ for(const h of [.94,1.64])for(let i=0;i<8;i++){
+  const s=left+.25+i*(openingWidth-.5)/7,w=i%3===0?.16:.20,height=i%3===0?.21:.16;
+  box(w,height,.10,s,h+.0325+height/2,.98,packets[i%3]);
+  box(w,.025,.006,s,h+.0325+height*.72,.927,i%2?red:black);
+  const face=new THREE.PlaneGeometry(w*.73,height*.55),uv=face.attributes.uv,slot=i%3;
+  for(let j=0;j<uv.count;j++)uv.setX(j,(uv.getX(j)+slot)/3);
+  parts.put(face.rotateY(yaw).translate(...at(s,.923,h+.0325+height*.48)),printed,false);
+ }
  for(let tray=0;tray<3;tray++){
   const s=left+.29+tray*.47;
   // Separate rim and crossing strips leave a woven, shallow open basket.
@@ -67,7 +77,7 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
   for(let i=0;i<5;i++){
    const u=s+(i%3-1)*.085,d=.42+Math.floor(i/3)*.075;
    box(.091,.025,.10,u,top+.035+(i%2)*.008,d,packets[tray]);
-   box(.063,.001,.022,u,top+.049+(i%2)*.008,d,paper);
+   stamp(u,d,top+.049+(i%2)*.008,.063,.022,0);
   }
   stamp(s,.58,top+.018,.20,.085,0);
  }
