@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {appendStreetFood,STREET_FOOD_ITEMS} from './keihan-street-food.mjs';
 
 export const STREET_DRINKS=Object.freeze([
  {name:'Green tea',color:'#81a85c'},{name:'Water',color:'#78b7d5'},
@@ -73,22 +74,27 @@ function geometryBatch(group,palette){
 }
 
 export function planKeihanCommerce(assembly){
- const stores=assembly?.keihanFrontages?.storefronts??[],machines=[],vendorStations=[];
+ const stores=assembly?.keihanFrontages?.storefronts??[],machines=[],vendorStations=[],sites=[];
  const platformFloor=assembly?.keihanStation?.spec?.platformFloor;
  if(Number.isFinite(platformFloor))for(const [i,z]of [-169,-170.25].entries())machines.push({id:`keihan-platform-machine-${i+1}`,position:[-299.65,platformFloor,z],yaw:-Math.PI/2,existingCollider:true,color:i?'#24394b':'#20374d'});
  for(const s of stores){
   if(!Number.isFinite(s.floor)||!Number.isFinite(s.width)||!s.points?.[s.edge]||!s.t?.every(Number.isFinite)||!s.n?.every(Number.isFinite))continue;
   const a=s.points[s.edge],at=(u,v)=>[a[0]+s.t[0]*u+s.n[0]*v,s.floor,a[2]+s.t[1]*u+s.n[1]*v];
-  if(['senbei','soft-serve','grill'].includes(s.kind))vendorStations.push({id:s.id,kind:s.kind,position:at(s.width/2,-1.12),yaw:Math.atan2(s.n[0],s.n[1])});
+  if(['senbei','soft-serve','grill'].includes(s.kind)){
+   const vendorPosition=at(s.width/2,-1.12),u=s.kind==='senbei'?.90:s.kind==='soft-serve'?.94:s.width/2;
+   const counterPosition=at(s.kind==='senbei'?.45:u,-.12);counterPosition[1]+=s.kind==='grill'?1.02:1.23;
+   vendorStations.push({id:s.id,kind:s.kind,position:vendorPosition,yaw:Math.atan2(s.n[0],s.n[1])});
+   sites.push({id:s.id,kind:s.kind,name:s.name,position:at(u,.65),counterPosition,vendorPosition});
+  }
   if(s.kind.endsWith('-row')&&s.machineRecess){const p=at(s.kind==='red-awning-row'?s.width-.70:.70,-.43);machines.push({id:`${s.id}-drink-machine`,position:p,yaw:Math.atan2(s.n[0],s.n[1]),existingCollider:false,color:s.kind==='red-awning-row'?'#bd3d31':'#e3ded0'});}
  }
- return {machines,vendorStations};
+ return {machines,vendorStations,sites};
 }
 
 export function installKeihanStreetCommerce(assembly){
  const root=assembly?.root;if(!root||!assembly?.legacy?.interactables||!Array.isArray(assembly.colliders))return {built:false,reason:'Street owners unavailable'};
  const existing=root.getObjectByName('Keihan commerce r104');if(existing)return existing.userData.runtime;
- const plan=planKeihanCommerce(assembly);if(!plan.machines.length)return {built:false,reason:'No supported machine positions'};
+ const plan=planKeihanCommerce(assembly);if(!plan.machines.length&&!plan.sites.length)return {built:false,reason:'No supported commerce positions'};
  const group=new THREE.Group();group.name='Keihan commerce r104';
  const texture=atlasTexture(),palette={
   color:new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.64}),
@@ -168,12 +174,18 @@ export function installKeihanStreetCommerce(assembly){
   const a=s.points[s.edge],owner=new THREE.Group();owner.name=`Counter details ${s.id}`;owner.position.set(a[0],s.floor,a[2]);owner.rotation.y=s.yaw;owner.userData.detailRadius=32;group.add(owner);detailGroups.push(owner);
   const b=geometryBatch(owner,palette),box=(w,h,d,u,y,v,key,color)=>b.box(w,h,d,u,y,-v,key,color);
   const onCounter=s.kind==='grill'?1.04:1.235;
-  for(let j=0;j<2;j++){
-   const u=s.width*(j?.72:.28),frontShelf=s.kind==='senbei';box(.61,.035,frontShelf?.22:.35,u,onCounter,frontShelf?-.16:-.44,'metal');
-   for(let row=0;row<2;row++)for(let col=0;col<4;col++){
-    const x=u-.22+col*.145,z=frontShelf?.11+row*.10:.35+row*.15;
-    if(s.kind==='soft-serve'){b.cylinder(.045,.036,.07,x,onCounter+.055,z,'white',undefined,8);const g=new THREE.SphereGeometry(.045,8,5);g.translate(x,onCounter+.105,z);b.put(g,'color',row?'#85a269':'#f4e7c5');}
-    else{const g=new THREE.SphereGeometry(.045,8,5);g.scale(1,.55,1);g.translate(x,onCounter+.048,z);b.put(g,'color',s.kind==='grill'?'#b0783f':'#dbb271');}
+  if(s.kind==='grill'){
+   // On the two existing grills: three actual bamboo skewers each, with
+   // individually rounded and lightly toasted dango resting on the bars.
+   for(const u of [s.width*.32,s.width*.67])for(let row=0;row<3;row++)
+    appendStreetFood(b,'grill','dango',{position:[u-.115,1.141,.28+row*.12],pose:'horizontal'});
+  }else for(let j=0;j<2;j++){
+   const u=s.width*(j?.72:.28),frontShelf=s.kind==='senbei',trayY=onCounter+.0175;
+   box(.61,.035,frontShelf?.22:.35,u,onCounter,frontShelf?-.16:-.44,'metal');
+   for(let col=0;col<4;col++){
+    const x=u-.21+col*.14;
+    if(frontShelf)appendStreetFood(b,'senbei','fox-senbei',{position:[x,trayY,.23],pose:'flat'});
+    else appendStreetFood(b,'soft-serve',col%2?'matcha':'tofu',{position:[x,trayY,.44]});
    }
    box(.56,.025,.015,u,onCounter+.08,frontShelf?-.25:-.58,'color','#b79a65');
    box(.12,.13,.025,u,onCounter+.1,-.19,'white');
@@ -203,13 +215,24 @@ export function installKeihanStreetCommerce(assembly){
  root.add(group);assembly.colliders.push(...colliders);assembly.legacy.interactables.push(...machines.map(m=>m.group));group.updateMatrixWorld(true);
  const ownedGeometry=new Set(),ownedMaterials=new Set([...Object.values(palette),...Object.values(machinePalette)]);
  let triangles=0,batches=0;group.traverse(o=>{if(o.isMesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;batches++;ownedGeometry.add(o.geometry);ownedMaterials.add(o.material);}});
- const stats={machines:machines.length,foodCounters:detailGroups.length-machines.length,drawBatches:batches,triangles,collidersAdded:colliders.length,textureAtlases:1,pointLights:0};
+ // Templates are prepared once; served/held clones borrow their geometries
+ // and materials. The commerce owner alone releases those resources.
+ const servingTemplates=new Map();let servingTriangles=0;
+ for(const [kind,items] of Object.entries(STREET_FOOD_ITEMS))for(const item of items){
+  const template=new THREE.Group();template.name=`Street serving ${item}`;
+  const batch=geometryBatch(template,palette);appendStreetFood(batch,kind,item,{packaged:true});batch.finish();
+  template.traverse(o=>{if(o.isMesh){ownedGeometry.add(o.geometry);servingTriangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});
+  servingTemplates.set(`${kind}:${item}`,template);
+ }
+ const stats={machines:machines.length,foodCounters:detailGroups.length-machines.length,drawBatches:batches,triangles,servingTriangles,collidersAdded:colliders.length,textureAtlases:1,pointLights:0};
  let disposed=false;
- const runtime={built:true,group,detailGroups,machines,vendorStations:plan.vendorStations,stats,update(camera,time){if(disposed)return;for(const m of machines){if(!m.group.visible||Math.hypot(camera.position.x-m.spec.position[0],camera.position.z-m.spec.position[2])>22)continue;m.lamp.material.color.setHex(m.controller.state.phase==='dispensed'?0xffdb85:0xc7f0a2);if(m.controller.state.phase==='dispensed')m.can.rotation.x=Math.sin(time*2)*.025;}},dispose(){
+ const runtime={built:true,group,detailGroups,machines,vendorStations:plan.vendorStations,sites:plan.sites,stats,
+  createServing(kind,item){return disposed?null:servingTemplates.get(`${kind}:${item}`)?.clone(true)??null;},
+  update(camera,time){if(disposed)return;for(const m of machines){if(!m.group.visible||Math.hypot(camera.position.x-m.spec.position[0],camera.position.z-m.spec.position[2])>22)continue;m.lamp.material.color.setHex(m.controller.state.phase==='dispensed'?0xffdb85:0xc7f0a2);if(m.controller.state.phase==='dispensed')m.can.rotation.x=Math.sin(time*2)*.025;}},dispose(){
   if(disposed)return;disposed=true;group.removeFromParent();
   for(const {group:owner}of machines){const i=assembly.legacy.interactables.indexOf(owner);if(i!==-1)assembly.legacy.interactables.splice(i,1);}
   for(const collider of colliders){const i=assembly.colliders.indexOf(collider);if(i!==-1)assembly.colliders.splice(i,1);}
-  for(const geometry of ownedGeometry)geometry.dispose();for(const material of ownedMaterials)material.dispose();texture?.dispose();
+  for(const geometry of ownedGeometry)geometry.dispose();for(const material of ownedMaterials)material.dispose();texture?.dispose();servingTemplates.clear();
  }};
  group.userData.runtime=runtime;return runtime;
 }

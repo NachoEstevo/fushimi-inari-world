@@ -38,6 +38,9 @@ function verticalGlyphs(text){return [...text.replaceAll('（有）','㈲').repl
 function recordIndex(entry){return modulo(Number.isInteger(entry.recordIndex)?entry.recordIndex:Number.isInteger(entry.inscription)?entry.inscription:0,toriiInscriptionRecords.length);}
 export function toriiInkTile(entry,side,front){
   const record=recordIndex(entry),column=side===1?1:0;
+  // Initial Senbon has complete columns on both visible faces. The same
+  // collective/date tiles serve both sides; no second atlas or overlay mesh.
+  if(front&&entry.initial)return record*2+column;
   if(front){const style=Number.isInteger(entry.inkStyle)?modulo(entry.inkStyle,styles.length):record%styles.length;return frontTileStart+style*2+column;}
   // A date is always taken from this same source record. Legacy independently
   // selected dateInscription values cannot create an invented donor/date pair.
@@ -80,9 +83,10 @@ export function toriiInkPlacement(entry,side,front,small){
   const e=entry.m?.elements,px=Math.round((e?.[12]??0)*10),pz=Math.round((e?.[14]??0)*10);
   let n=Math.imul(px^Math.imul(pz,31)^Math.imul(recordIndex(entry)+1,8191)^Math.imul((entry.inkStyle??0)+1,131)^side,1597334677);
   n=(n^(n>>>16))>>>0;
-  const size=.94+(n%13)*.01,shift=(((n>>>8)%9)-4)*(front?.007:.014);
-  const nominalLow=front?(small?1.42:1.97):(small?.63:.86);
-  const nominalHigh=front?nominalLow+(small?.30:.40):(small?1.55:2.12);
+  const shortFront=front&&!entry.initial;
+  const size=.94+(n%13)*.01,shift=(((n>>>8)%9)-4)*(shortFront?.007:.014);
+  const nominalLow=shortFront?(small?1.42:1.97):(small?.63:.86);
+  const nominalHigh=shortFront?nominalLow+(small?.30:.40):(small?1.55:2.12);
   const center=(nominalLow+nominalHigh)/2+shift,half=(nominalHigh-nominalLow)*size/2;
   return {low:center-half,high:center+half,size};
 }
@@ -114,7 +118,7 @@ export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRa
     if(tile<0)return;
     const {low,high,size}=toriiInkPlacement(entry,side,front,small);
     // A thicker post should not stretch the same painted character sideways.
-    const angle=(front?1.8:1.05)*size/Math.max(1,entry.thickness??1);
+    const angle=(front&&!entry.initial?1.8:1.05)*size/Math.max(1,entry.thickness??1);
     // A six-segment curved patch's chord must remain outside the post, too:
     // moving just its vertices 2mm out lets thicker posts occlude the ink.
     const radius=y=>((bottomRadius+(topRadius-bottomRadius)*(y-bottomY)/(topY-bottomY))*(entry.thickness??1))/Math.cos(angle/12)+.001;

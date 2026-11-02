@@ -156,7 +156,7 @@ test('initial tunnel selects complete varied generic inscriptions without claimi
  const root=new THREE.Group();buildToriiInscriptions(root,entries,{...options,small:true});root.updateMatrixWorld(true);
  assert.equal(triangles(root),entries.length*48);assert.equal(new Set(meshes(root).map(m=>m.material)).size,1);
  for(const [i,entry] of entries.entries())for(const [side,front] of [[-1,false],[1,false],[-1,true],[1,true]]){
-  const z=front?-1:1,y=front?1.57:1.05;
+  const z=front?-1:1,y=1.05;
   const ray=new THREE.Raycaster(new THREE.Vector3(i*.6+side*options.halfSpan,y,z),new THREE.Vector3(0,0,-z),0,2);
   // Entries are spaced below the gate width, so use a standalone transformed
   // gate for unambiguous ray-to-tile and front/back orientation verification.
@@ -165,4 +165,32 @@ test('initial tunnel selects complete varied generic inscriptions without claimi
   assert.ok(hit);assert.ok(hit.uv.x>=bounds.uMin&&hit.uv.x<=bounds.uMax&&hit.uv.y>=bounds.vMin&&hit.uv.y<=bounds.vMax);
   assert.ok(hit.face.normal.z*z>0);
  }
+});
+
+
+test('initial gates have full upright columns on both faces of both posts',()=>{
+ const texts=[new Set(),new Set()];
+ for(let i=0;i<10;i++){
+  const entry={...initialToriiInscriptionProfile(i),m:new THREE.Matrix4()},root=make({small:true},entry);
+  for(const side of [-1,1]){
+   const front=toriiInkTile(entry,side,true),back=toriiInkTile(entry,side,false);
+   assert.equal(front,back,'same fictional collective/date pairing from each face');
+   const layout=toriiInkTileLayout(front);assert.ok(layout.glyphs.length>=4);
+   texts[side===1?1:0].add(toriiInkTiles[front]);
+   for(const isFront of [true,false]){
+    const z=isFront?-1:1,bounds=toriiInkUvBounds(front),placement=toriiInkPlacement(entry,side,isFront,true);
+    const hit=y=>new THREE.Raycaster(new THREE.Vector3(side*options.halfSpan,y,z),new THREE.Vector3(0,0,-z),0,2).intersectObject(root,true)[0];
+    const low=hit(placement.low+(placement.high-placement.low)*.2),high=hit(placement.low+(placement.high-placement.low)*.8);
+    assert.ok(low&&high);assert.ok(high.uv.y>low.uv.y,'vertical characters proceed downwards when viewed');
+    assert.ok(high.uv.y<bounds.vMax&&low.uv.y>bounds.vMin);
+    assert.equal(Math.sign(high.face.normal.z),Math.sign(z));
+    // A screen-right step maps toward higher atlas U from either viewpoint.
+    const screenRightX=side*options.halfSpan+(isFront?-.02:.02);
+    const right=new THREE.Raycaster(new THREE.Vector3(screenRightX,(placement.low+placement.high)/2,z),new THREE.Vector3(0,0,-z),0,2).intersectObject(root,true)[0];
+    const middle=hit((placement.low+placement.high)/2);
+    assert.ok(right&&middle&&right.uv.x>middle.uv.x,'glyphs must not mirror on either face');
+   }
+  }
+ }
+ assert.ok(texts[0].size>=4&&texts[1].size>=8,'initial donor labels and dates vary by gate');
 });

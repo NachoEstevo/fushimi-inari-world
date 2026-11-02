@@ -102,6 +102,59 @@ test('vendor reservations stay behind counters and machine placement requires a 
  assert.equal(installKeihanStreetCommerce({root:new THREE.Group()}).built,false);
 });
 
+test('food service sites expose reachable public anchors separately from staff and counter positions',()=>{
+ const a=fixture(),plan=planKeihanCommerce(a),runtime=installKeihanStreetCommerce(a),world=new SpatialCollisionWorld();
+ for(const collider of a.colliders)world.addBox(...collider.args);
+ assert.equal(plan.sites.length,3);assert.deepEqual(runtime.sites,plan.sites);
+ assert.deepEqual(plan.sites.map(site=>site.kind).sort(),['grill','senbei','soft-serve']);
+ for(const site of plan.sites){
+  const shop=a.keihanFrontages.storefronts.find(s=>s.id===site.id),base=shop.points[shop.edge];
+  const depth=p=>(p[0]-base[0])*shop.n[0]+(p[2]-base[2])*shop.n[1];
+  assert.ok(depth(site.position)>0&&depth(site.vendorPosition)<-1,'customer and attendant occupy opposite sides of the frontage');
+  assert.ok(depth(site.counterPosition)<0);
+  a.root.updateWorldMatrix(true,true);
+  const origin=new THREE.Vector3(...site.counterPosition).add(new THREE.Vector3(0,.015,0));
+  const hits=new THREE.Raycaster(origin,new THREE.Vector3(0,-1,0),0,.04).intersectObject(a.keihanFrontages.group,true);
+  assert.ok(hits.some(hit=>Math.abs(hit.point.y-site.counterPosition[1])<.015),`${site.id} serving rests on its actual counter`);
+  const [x,y,z]=site.position,resolved=world.resolvePlayer(x,y+1.7,z);
+  assert.ok(Math.hypot(resolved.x-x,resolved.z-z)<1e-7,`${site.id} customer position is unobstructed`);
+ }
+ runtime.dispose();
+});
+
+test('registered food counters remain available when no vending machine location is supported',()=>{
+ const a=fixture();delete a.keihanStation;
+ for(const shop of a.keihanFrontages.storefronts)delete shop.machineRecess;
+ const runtime=installKeihanStreetCommerce(a);
+ assert.equal(runtime.built,true);assert.equal(runtime.machines.length,0);assert.equal(runtime.sites.length,3);
+ assert.ok(runtime.createServing('grill','dango'));runtime.dispose();
+});
+
+test('served food has recognizable bounded forms and borrows cached geometry until commerce disposal',()=>{
+ const runtime=installKeihanStreetCommerce(fixture());
+ for(const [kind,item] of [['senbei','fox-senbei'],['soft-serve','tofu'],['soft-serve','matcha'],['grill','dango']]){
+  const one=runtime.createServing(kind,item),two=runtime.createServing(kind,item);
+  assert.notStrictEqual(one,two);assert.ok(one.isGroup&&two.isGroup);
+  assert.ok(one.children.length>=1&&one.children.length<=4);
+  assert.equal(one.children.length,two.children.length);
+  for(let i=0;i<one.children.length;i++){
+   assert.strictEqual(one.children[i].geometry,two.children[i].geometry);
+   assert.strictEqual(one.children[i].material,two.children[i].material);
+   const geometry=one.children[i].geometry;
+   for(const key of ['position','normal','uv'])assert.ok(geometry.attributes[key]);
+   for(const value of geometry.attributes.uv.array)assert.ok(Number.isFinite(value));
+  }
+  const box=new THREE.Box3().setFromObject(one),size=box.getSize(new THREE.Vector3());
+  assert.ok(Math.abs(box.min.y)<1e-5,`${item} has a supporting base`);
+  assert.ok(size.x<.18&&size.z<.18&&size.y<.25,`${item} fits the hand and service counter`);
+  assert.ok(one.children.reduce((n,m)=>n+m.geometry.attributes.position.count,0)>150,`${item} has modeled food rather than a printed box`);
+ }
+ assert.equal(runtime.createServing('grill','matcha'),null);
+ const serving=runtime.createServing('grill','dango'),geometry=serving.children[0].geometry;
+ let disposed=0;geometry.addEventListener('dispose',()=>disposed++);
+ runtime.dispose();runtime.dispose();assert.equal(disposed,1,'commerce owns the shared serving geometry');
+});
+
 test('commerce disposal releases its own shared resources once and removes only its interaction and collider owners',()=>{
  const a=fixture(),existingColliders=[...a.colliders],other=new THREE.Group();a.legacy.interactables.push(other);
  const r=installKeihanStreetCommerce(a),geometries=new Set(),materials=new Set(),maps=new Set();

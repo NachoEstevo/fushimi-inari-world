@@ -1,5 +1,5 @@
 import {mountainToriiProfile,toriiInscriptionProfile,toriiInscriptionVariantCount} from './mountain-torii-profile.mjs?v=29c';
-import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-2';
+import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-3';
 import * as THREE from 'three';
 import {pathSampler} from './spatial.mjs';
 import {toriiVariation} from './torii-variation.mjs';

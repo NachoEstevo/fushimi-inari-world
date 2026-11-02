@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {applyMetricUVs} from './keihan-context-materials.mjs';
 
 export const keihanFrontageIds=['way/305213552','way/305213538','way/305213554','way/305213533','way/305213560'];
 const definitions=[
@@ -88,8 +89,22 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   lamp:new THREE.MeshStandardMaterial({color:'#fff0ca',emissive:'#ffc16b',emissiveIntensity:1.2,roughness:.6}),
   labels:new THREE.MeshStandardMaterial({color:'#ffffff',map:labelTexture(),roughness:.88})
  };
+ const surfaceLibrary=materials?.architecturalSurfaceLibrary;
+ if(surfaceLibrary?.getMaps){
+  const timber=surfaceLibrary.getMaps('timber'),plaster=surfaceLibrary.getMaps('plaster');
+  Object.assign(palette.timber,timber);palette.timber.color.set('#e9c7a8');palette.timber.bumpScale=.002;
+  palette.plaster.bumpMap=plaster.bumpMap;palette.plaster.roughnessMap=plaster.roughnessMap;palette.plaster.bumpScale=.0007;
+ }
  const batches=new Map(),pending=[],lightPositions=[];
- const put=(g,m,tint)=>{const geom=g.index?g.toNonIndexed():g;if(g!==geom)g.dispose();if(m.vertexColors){const c=new THREE.Color(tint??'#ffffff'),colors=new Float32Array(geom.attributes.position.count*3);for(let i=0;i<colors.length;i+=3){colors[i]=c.r;colors[i+1]=c.g;colors[i+2]=c.b;}geom.setAttribute('color',new THREE.BufferAttribute(colors,3));}if(!batches.has(m))batches.set(m,[]);batches.get(m).push(geom);};
+ const put=(g,m,tint)=>{
+  const geom=g.index?g.toNonIndexed():g;if(g!==geom)g.dispose();
+  if(surfaceLibrary?.getMaps&&(m===palette.timber||m===palette.plaster)){
+   applyMetricUVs(geom);const uv=geom.attributes.uv;
+   for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*1.5,uv.getY(i)*1.5);
+  }
+  if(m.vertexColors){const c=new THREE.Color(tint??'#ffffff'),colors=new Float32Array(geom.attributes.position.count*3);for(let i=0;i<colors.length;i+=3){colors[i]=c.r;colors[i+1]=c.g;colors[i+2]=c.b;}geom.setAttribute('color',new THREE.BufferAttribute(colors,3));}
+  if(!batches.has(m))batches.set(m,[]);batches.get(m).push(geom);
+ };
  const box=(w,h,d,x,y,z,mat,yaw=0,tint)=>{if(w<=0||h<=0||d<=0)return;const g=new THREE.BoxGeometry(w,h,d);g.rotateY(yaw);g.translate(x,y,z);put(g,mat,tint);};
  for(const [storeIndex,s]of stores.entries()){
   const {points,width:w,height:h,floor,at,yaw,kind}=s;
@@ -98,11 +113,11 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   const shaped=(geometry,u,y,v,mat,tint)=>{const [x,z]=at(u,v);geometry.rotateY(yaw);geometry.translate(x,floor+y,z);put(geometry,mat,tint);};
   // The existing projection is retained; the cloth now falls away from the
   // wall instead of reading as a thick horizontal slab. No clearance changes.
-  const awning=(bw,u,back,front,backY,frontY,tint)=>{
+  const awning=(bw,u,back,front,backY,frontY,tint,material=palette.cloth)=>{
    const depth=front-back,g=new THREE.BoxGeometry(bw,.035,depth),p=g.attributes.position;
    for(let i=0;i<p.count;i++){const f=(depth/2-p.getZ(i))/depth;p.setY(i,p.getY(i)+backY+(frontY-backY)*f);}
-   g.computeVertexNormals();shaped(g,u,0,(back+front)/2,palette.cloth,tint);
-   fb(bw,.16,.035,u,frontY-.075,front,palette.cloth,tint);
+   g.computeVertexNormals();shaped(g,u,0,(back+front)/2,material,tint);
+   fb(bw,.16,.035,u,frontY-.075,front,material,tint);
    fb(bw,.045,.045,u,backY-.04,back,palette.dark);
    for(const du of [-bw/2+.05,bw/2-.05]){
     const rib=new THREE.BoxGeometry(.025,.025,Math.hypot(depth,backY-frontY));rib.rotateX(-Math.atan2(backY-frontY,depth));
@@ -164,6 +179,9 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
     fb(bw-.20,.96,.035,u,4.43,.015,palette.dark);
     for(let j=0;j<7;j++)fb(.04,1.02,.055,u-(bw-.25)/2+j*(bw-.25)/6,4.43,.05,palette.timber);
     for(const y of [3.94,4.92])fb(bw-.12,.04,.06,u,y,.05,palette.timber);
+    // Openwork upper-storey guards echo the photographed street's balconies.
+    for(const y of [4.11,4.69])fb(bw-.12,.035,.045,u,y,.12,palette.dark);
+    for(let j=0;j<7;j++)fb(.025,.60,.035,u-(bw-.20)/2+j*(bw-.20)/6,4.40,.12,palette.dark);
    }
    if(green){
     fb(w,.10,.54,w/2,3.14,.17,palette.stone);
@@ -176,7 +194,11 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
   for(const u of [.11,w-.11]){fb(.22,2.7,.34,u,1.35,-.17,palette.plaster);blocker(.22,.34,u,-.17,0,2.7,'keihan_store_jamb');}
   // Each canopy is above walking clearance. Products and cases remain inside
   // the mapped property instead of narrowing the public street with props.
-  awning(w+.18,w/2,-.19,.72,3.02,2.83,kind==='senbei'?'#66584a':kind==='soft-serve'?'#708572':'#e4cfa5');
+  awning(w+.18,w/2,-.19,.72,3.02,2.83,kind==='soft-serve'?'#708572':'#e4cfa5',kind==='senbei'?palette.dark:palette.cloth);
+  if(kind==='senbei')for(const v of [.02,.16,.30,.44,.58]){
+   const y=3.02-(3.02-2.83)*(v+.19)/.91;
+   fb(w+.12,.018,.025,w/2,y+.02,v,palette.stone);
+  }
   for(const u of [.14,w-.14])fb(.065,2.56,.075,u,1.30,-.025,palette.timber);
   fb(w-.24,.12,.10,w/2,2.64,-.035,palette.timber);
   if(kind!=='grill'){
@@ -250,6 +272,8 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    // The photograph shows a shallow tiled eave, not a new main-roof shape.
    fb(w+.22,.10,.63,w/2,3.14,.17,palette.stone);
    for(let i=0;i<19;i++){const tile=new THREE.CylinderGeometry(.055,.055,.64,6,1,true);tile.rotateX(Math.PI/2);shaped(tile,w*i/18,3.20,.17,palette.dark);}
+   // The source photograph shows wood panelling at the right of the recess.
+   fb(w*.56,2.28,.014,w*.32,1.32,-1.355,palette.timber);
    for(let i=0;i<16;i++)fb(.035,2.30,.025,.30+i*(w-.60)/15,1.30,-1.345,palette.timber);
    // Timber shop entrance surround and the dark recessed workshop visible in
    // the merchant-association photograph. Dimensions remain approximate.
@@ -311,10 +335,6 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
    for(const u of [w*.32,w*.67]){
     fb(.74,.06,.42,u,1.06,-.42,palette.dark);
     for(let i=0;i<6;i++)fb(.025,.018,.37,u-.30+i*.12,1.102,-.42,palette.stone);
-    for(let i=0;i<3;i++){
-     const v=-.28-i*.12;fb(.55,.018,.012,u,1.125,v,palette.food);
-     for(let j=0;j<3;j++)shaped(new THREE.SphereGeometry(.045,8,4),u-.12+j*.12,1.16,v,palette.food);
-    }
    }
    // One upper window is visible above the awning; the rest remains plain.
    fb(1.50,1.18,.04,w/2,4.43,-.04,palette.dark);
@@ -330,6 +350,6 @@ export function buildKeihanFrontages(root,features,surfaces,materials={},collide
  };
  group.userData={built:true,builtIds:stores.map(s=>s.id),storefronts:publicStores,lightPositions,openServiceBays:4,surfaceHeight,collidersAdded:pending.length,materialBatches:group.children.length,drawBatches:group.children.length,triangles:group.children.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0),sources:['https://www.youtube.com/watch?v=K0UC5GkHbaU&t=35s','https://inari-kyoto.com/hogyokudo','https://inari-kyoto.com/kyozuan','Street View October 2024 panorama jdt_0bBLBQcMoedhCMDVJA','Street View November 2020 panorama 6ki716lGb157sL6O6f-Gqw'],provenance:'Named OSM footprints 305213552/305213538 and merchant-association photos. North-side counter appearance from October 2024 Street View; parcel 305213554 is photo-inferred. Anonymous rows 305213533/305213560 interpret observed November 2020 facade classes. No additional business-name claims.',inferred:'Six-metre envelopes retain the existing default two-storey massing. Counter dimensions, upper elevations outside the crop and exact product positions are inferred. Public-road fronts remain clear. Four open anonymous service bays are interpretive additions requested for the expanded experience, not observed operating-status claims. No claim of current inventory or surveyed dimensions. Cloth seams, sloped canopies and piped soft-serve/product forms use the user video as typological reference; its edited sequence does not establish these exact parcel details.'};
  group.userData.productDetails={source:'https://inari-kyoto.com/kyozuan',categories:['tofu-soft-serve','matcha-tofu-soft-serve'],boards:2,inferred:'Original product-category typography, colors and board placement; not a current menu or stock claim.'};
- group.userData.hogyokudoDetails={source:'https://inari-kyoto.com/hogyokudo',photo:'https://inari-kyoto.com/wp/wp-content/uploads/2021/12/hogyokudo_main.jpg',features:['paired angled glazed timber cases','recessed timber surround','fox and bell senbei silhouettes'],inferred:'Case dimensions, framing, workshop depth and product placement are approximate; no current stock claim.'};
+ group.userData.hogyokudoDetails={source:'https://inari-kyoto.com/hogyokudo',photo:'https://inari-kyoto.com/wp/wp-content/uploads/2021/12/hogyokudo_main.jpg',features:['paired angled glazed timber cases','rigid ribbed lower eave beneath tiled ledge','recessed timber surround and panel','fox and bell senbei silhouettes'],inferred:'Case and canopy dimensions, framing, workshop depth and product placement are approximate; no current stock claim.'};
  root.add(group);colliders.push(...pending);return {group,...group.userData};
 }

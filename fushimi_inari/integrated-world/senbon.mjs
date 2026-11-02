@@ -1,4 +1,4 @@
-import {buildToriiInscriptions,initialToriiInscriptionProfile} from './torii-inscriptions.mjs?v=mountain-walk-2';
+import {buildToriiInscriptions,initialToriiInscriptionProfile} from './torii-inscriptions.mjs?v=mountain-walk-3';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {routeSpec} from './route-spec.mjs';
