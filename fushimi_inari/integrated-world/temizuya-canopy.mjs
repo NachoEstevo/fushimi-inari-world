@@ -62,6 +62,18 @@ export function refineTemizuyaCanopy(group){
     box(4.65,.24,.22,0,2.67,z,red);
     for(const x of [-2.1,2.1])box(.52,.17,.46,x,2.51,z,red);
   }
+  // The inherited columns meet the lower crossbeams at y=2.775, but the
+  // curved rafters sit higher. Carry each purlin down to that beam with four
+  // short timber supports. Both purlins touch the underside of the rafters;
+  // they are structural infill, not a second floating roof.
+  for(const z of [-1.4,1.4]){
+    const purlinTop=height(z)-.175, purlinBottom=purlinTop-.15;
+    box(4.65,.15,.18,0,(purlinTop+purlinBottom)/2,z,red);
+    for(const x of [-2.1,2.1]){
+      const beamTop=2.79;
+      box(.24,purlinBottom-beamTop+.01,.24,x,(beamTop+purlinBottom)/2,z,red);
+    }
+  }
   for(let x=-2.9;x<3;x+=.32){
     for(const sign of [-1,1]){
       // Segmented rafters stay below the actual concave copper pitch.
@@ -97,6 +109,6 @@ export function refineTemizuyaCanopy(group){
   }
   let pieces=0,verticesCount=0;
   for(const [mat,parts]of batches){const merged=mergeGeometries(parts);pieces+=parts.length;parts.forEach(g=>g.dispose());if(!merged)throw Error('Temizuya canopy geometry merge failed');verticesCount+=merged.getAttribute('position').count;const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;details.add(mesh);}
-  details.userData={sourcePhoto:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0677-2_20190331.jpg',earlierReference:'FmRyJ-RtBPg 00:35-00:50',provenance:'Observed copper roof, dark fascia, raised corners, pale soffit, red rafters with pale ends and layered bearing joinery. Dimensions estimated within inherited 6.2x4.6m canopy envelope. Basin, interaction roots, terrain, columns and collisions retained.',materialBatches:batches.size,sourcePieces:pieces,vertices:verticesCount,roofGrid:[widthSegments,depthSegments],soffitOffset:.085};
+  details.userData={sourcePhoto:'https://fushimiinari-guide.com/wp-content/uploads/DSC_0677-2_20190331.jpg',earlierReference:'FmRyJ-RtBPg 00:35-00:50',provenance:'Observed copper roof, dark fascia, raised corners, pale soffit, red rafters with pale ends, purlins, vertical timber supports and layered bearing joinery. Dimensions estimated within inherited 6.2x4.6m canopy envelope. Basin, interaction roots, terrain, columns and collisions retained.',materialBatches:batches.size,sourcePieces:pieces,vertices:verticesCount,roofGrid:[widthSegments,depthSegments],soffitOffset:.085};
 
 }

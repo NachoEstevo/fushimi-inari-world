@@ -1,5 +1,4 @@
-import {buildToriiInscriptions} from './torii-inscriptions.mjs?v=mountain-walk-1';
-import {toriiInscriptionProfile} from './mountain-torii-profile.mjs?v=29c';
+import {buildToriiInscriptions,initialToriiInscriptionProfile} from './torii-inscriptions.mjs?v=mountain-walk-2';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {routeSpec} from './route-spec.mjs';
@@ -53,7 +52,7 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
       const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(sx,sy,variation.depth));
       mats.push(m);
       const thickness=(s.entrancePillarDiameters[i]??s.pillarDiameter)/s.pillarDiameter;
-      ink.push({m,thickness,...toriiInscriptionProfile(13,mats.length-1)});
+      ink.push({m,thickness,...initialToriiInscriptionProfile(mats.length-1)});
       const footRadius=.083*thickness*Math.max(sx,variation.depth);
       minimumClearWidth=Math.min(minimumClearWidth,s.pillarCenters*sx-2*footRadius);
       // Side-mounted fittings follow the actual gate's position, rotation and

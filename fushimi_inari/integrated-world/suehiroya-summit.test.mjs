@@ -26,6 +26,21 @@ test('borrowed maps survive idempotent cleanup and all finishes remain in bounde
  for(const source of [f.texture,...Object.values(f.materials)])source.addEventListener('dispose',()=>disposedSource++);
  result.dispose();result.dispose();assert.equal(disposedMaterials,materials.size);assert.equal(disposedGeometries,meshes.length);assert.equal(disposedSource,0);
 });
+
+test('the offering display has tied pouches and peaked tablets resting on the shelves',()=>{
+ const result=createSuehiroyaSummit({buildings,ground:()=>229,walkHeight:()=>231,materials:{}});
+ assert.equal(result.stats.offeringPouches,6);assert.equal(result.stats.offeringTablets,6);
+ assert.ok(result.stats.batches<=8);assert.ok(result.stats.triangles<5000);
+ const goods=result.group.children.find(mesh=>mesh.material.name==='Suehiro-ya neutral display goods');
+ const p=goods.geometry.attributes.position,uv=goods.geometry.attributes.uv;
+ assert.equal(p.count,uv.count);for(const value of uv.array)assert.ok(Number.isFinite(value));
+ for(const y of [.88,1.25,1.61]){
+  let touches=0;for(let i=0;i<p.count;i++)if(Math.abs(p.getY(i)-(231+y+.0175))<.0001)touches++;
+  assert.ok(touches>=8,'goods meet the top of each shelf');
+ }
+ assert.ok(p.count>500,'display contains shaped goods, not the old twelve boxes');
+ result.dispose();
+});
 test('missing identity or canonical walking support fails closed without claiming another building',()=>{
  for(const options of [{buildings:[],walkHeight:()=>231},{buildings,walkHeight:()=>NaN}]){
   const result=createSuehiroyaSummit({...options,ground:()=>229,materials:{}});assert.equal(result.builtIds.size,0);assert.equal(result.group.children.length,0);result.dispose();

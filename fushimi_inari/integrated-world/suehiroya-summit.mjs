@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {staticParts} from './mountain-landmarks-geometry.mjs';
+import {appendOmamoriPouch,appendEmaTablet} from './heritage-goods.mjs';
 
 const CAFE='way/626313732',SHRINE='way/626313728';
 // Google Maps photo Jim Kim, April 2024, CIHM0ogKEICAgIDjgsv8Eg:
@@ -123,24 +124,25 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
    box(pitch-.08,.035,.065,u,1.96,inset,timber);box(.025,.22,.055,u+.15,1.10,inset-.018,dark);
   }
  }
- // A small shaded display recess; exact merchandise/interior is not surveyed.
+ // A visit reports offerings sold here; the display and specific forms are
+ // inferred: https://ameblo.jp/adgjmptwyyyy/entry-12828821985.html
  const u=.25+(openBay+.5)*pitch;
  box(pitch-.10,1.95,.05,u,1.05,1.32,dark);
  // Closed side returns keep the shallow display from looking through to the
  // landscape. The unphotographed interior remains an inferred dark recess.
  for(const side of [-1,1])box(.055,1.95,.90,u+side*(pitch-.10)/2,1.05,.90,dark);
  box(pitch-.18,.72,.42,u,.51,.93,timber);
- for(const y of [.88,1.25,1.61]){
+ const frontSign=n[0]*(-t[1])+n[1]*t[0]>0?-1:1;
+ for(const [row,y] of [.88,1.25,1.61].entries()){
   box(pitch-.20,.035,.30,u,y,1.00,timber);
   for(let j=0;j<4;j++){
-   const w=j%2?.13:.11,h=j%3===0?.19:.15,x=u-.30+j*.20;
-   box(w,h,.12,x,y+.025+h/2,.99,display);
-   // Plain bands suggest wrapping without inventing product names.
-   box(w*.9,.018,.007,x,y+.025+h*.72,.925,j%2?timber:dark);
+   const position=at(u-.30+j*.20,floor+y+.0175,.98);
+   if((row+j)%2===0)appendOmamoriPouch(parts,{position,yaw,width:.13,height:.17,depth:.07,body:display,cord:dark,front:frontSign});
+   else appendEmaTablet(parts,{position,yaw,width:.14,height:.16,depth:.014,wood:display,cord:dark,front:frontSign});
   }
  }
  const budget=parts.flush();group.traverse(mesh=>{if(mesh.isMesh&&mesh.material===roof)mesh.name='Suehiro-ya pitched metal roof';});
- builtIds.add(CAFE);Object.assign(stats,budget,{built:true,buildMs:performance.now()-started,floor,roofFrontRun,skylights:3,references:[stats.reference,{author:'Petr Nouza',date:'September 2025',photo:'CIABIhAqKh32_ZCTC5JQqXjkjJou',url:'https://www.google.com/maps/place/Suehiroya/@34.9669704,135.7855404/'}],roofMin:roofY(minZ),roofMax:roofY(maxZ),bays,displayBoxes:12,
+ builtIds.add(CAFE);Object.assign(stats,budget,{built:true,buildMs:performance.now()-started,floor,roofFrontRun,skylights:3,references:[stats.reference,{author:'Petr Nouza',date:'September 2025',photo:'CIABIhAqKh32_ZCTC5JQqXjkjJou',url:'https://www.google.com/maps/place/Suehiroya/@34.9669704,135.7855404/'}],roofMin:roofY(minZ),roofMax:roofY(maxZ),bays,offeringPouches:6,offeringTablets:6,
   sharedArchitecturalSurfaces:!!surfaces?.getMaps,front:{edge:front.edge,a:[...a],b:[...b],outward:[-n[0],-n[1]],inset},footprint:ring.map(p=>[p[0],p[2]])});
  group.userData={sourceFeature:CAFE,builtIds:[CAFE],reference:stats.reference,estimatedDimensions:true};
  return result;

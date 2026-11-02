@@ -543,6 +543,7 @@ try {
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     const reviewPoints=[
+      ['audit_south_shinme','Review · Southern Shinme',97.801,-17.377,94.577,-6.451],
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
       ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1151.8,-190.8],
       ['audit_mikoshiko','Review · Mikoshiko exterior',71.15,6,77.8,11.9],
@@ -552,6 +553,8 @@ try {
       ['audit_hogyokudo','Review · Hogyokudo',-287.92,-112.15,-289.148,-109.087],
       ['audit_kandakara','Review · Kandakara shrine',376.8,67.3,386.88,66.8]
     ];
+    const receptionReview=assembly.root.getObjectByName('Mapped shrine reception');
+    if(receptionReview){receptionReview.updateWorldMatrix(true,false);const p=receptionReview.localToWorld(new THREE.Vector3(2.2,0,13.9)),t=receptionReview.localToWorld(new THREE.Vector3(2.25,0,12.04));reviewPoints.push(['audit_reception_stamp','Review · Reception stamp',p.x,p.z,t.x,t.z]);}
     const reviewTargets=contextFinishes.stats.records.filter(r=>r.upperCafe).map(record=>{
       const building=features.buildings.find(b=>b.id===record.id),i=record.upperCafe.edge,a=building.points[i],b=building.points[i+1];
       return {id:record.id,label:record.upperCafe.kind==='tsujitei'?'Tsujitei':'Okamoto',point:[(a[0]+b[0])/2,(a[2]+b[2])/2]};
@@ -570,6 +573,8 @@ try {
       }
       if(nearest)reviewPoints.push(['audit_'+id,'Review · '+label,nearest.x,nearest.z,tx,tz]);
     }
+    const reverseTunnel=assembly.spatial.twins[0];
+    if(reverseTunnel){const p=reverseTunnel.at(.20).point,t=reverseTunnel.at(.08).point;reviewPoints.push(['audit_senbon_reverse','Review · Senbon inscriptions',p[0],p[2],t[0],t[2]]);}
     for(const [id,label,x,z,tx,tz]of reviewPoints){
       const y=assembly.surfaces.height(x,z),target=[tx,y+1.5,tz];
       const anchor={id,label,target,source:[...target],checkpoint:[x,y,z],lookAt:target};

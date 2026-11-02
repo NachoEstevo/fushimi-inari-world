@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {staticParts,stonePalette,shide} from './mountain-landmarks-geometry.mjs';
+import {addShinmeHorse} from './shinme-horse-geometry.mjs';
 
 export const SOUTH_SHINMESHA_ID='way/305214599';
 export function southShinmeshaLayout(features){
@@ -62,17 +63,9 @@ export function buildTamayamaSouthShinmesha(root,materials,features,surfaces,col
   parts.box(w,.23,.28,0,3.58,front+.03,p.red);
   // Recessed dark interior and open geometric lattice avoid an opaque glass box.
   parts.box(opening,2.75,.04,0,1.86,front+1.55,p.dark);
-  // White standing horse is visible behind the lattice (2014 close view).
-  // Low-poly silhouette only; no invented dedication lettering or anatomy detail.
-  const oval=(rx,ry,rz,xx,yy,zz,mat)=>parts.put(new THREE.SphereGeometry(1,12,8).scale(rx,ry,rz).translate(xx,yy,zz),mat);
+  // White standing horse remains behind the original display lattice.
   const hz=front+.66;
-  oval(.73,.38,.26,.03,1.54,hz,p.paper);
-  oval(.19,.60,.20,-.53,1.97,hz,p.paper);
-  oval(.34,.18,.19,-.72,2.43,hz,p.paper);
-  for(const xx of [-.49,.52])for(const zz of [hz-.15,hz+.15])parts.beam([xx,1.45,zz],[xx+.05,.62,zz],.064,p.paper,.074,8);
-  for(const xx of [-.68,-.48])parts.beam([xx,2.51,hz],[xx-.015,2.72,hz],.055,p.paper,.015,6);
-  parts.beam([.64,1.7,hz],[.90,.99,hz],.045,p.dark,.025,8);
-  oval(.37,.11,.28,.06,1.88,hz,p.metal);
+  addShinmeHorse(parts,p,hz);
   for(let i=0;i<=10;i++)parts.box(.035,2.60,.055,-opening/2+opening*i/10,1.82,frontZ,green);
   for(let i=0;i<=9;i++)parts.box(opening,.035,.055,0,.52+2.60*i/9,frontZ,green);
   parts.box(.085,2.64,.09,0,1.84,front-.025,green);

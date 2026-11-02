@@ -1,3 +1,4 @@
+import {buildReceptionCounterGoods} from './reception-counter-goods.mjs';
 import {createBasinWaterAppearance} from './water-appearance.mjs';
 import {receptionLevels} from './reception-levels.mjs';
 import {sculptEntranceFoxes} from './precinct-life.mjs?v=32';
@@ -136,9 +137,12 @@ export function buildReception(root,features,ground,m,colliders){
   const g=new THREE.Group();g.name='Mapped shrine reception';g.position.set(a[0],ground(a[0],a[2]),a[2]);g.rotation.y=yaw;
   const wood=materialsWood(),dark=new THREE.MeshStandardMaterial({color:'#20221e',roughness:1});
   const vermilion=new THREE.MeshStandardMaterial({color:'#ad3826',roughness:.78});
+  const timberMaps=m.architecturalSurfaceLibrary?.getMaps('timber');
+  if(timberMaps){Object.assign(wood,timberMaps);wood.color.set('#eee9df');wood.bumpScale=.002;}
+  const metricWood=mesh=>{if(mesh.material!==wood||!timberMaps)return mesh;const p=mesh.geometry.attributes.position,n=mesh.geometry.attributes.normal,uv=mesh.geometry.attributes.uv;for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));uv.setXY(i,ny>=nx&&ny>=nz?p.getX(i):nx>=nz?p.getZ(i):p.getX(i),ny>=nx&&ny>=nz?p.getZ(i):p.getY(i));}return mesh;};
   const levels=receptionLevels(a,yaw,ground);
   let activeRise=null;
-  const raisedBox=(w,h,d,x,y,z,material,parent)=>box(w,h,d,x,y+(activeRise??(x>levels.split+.1?levels.rise:0)),z,material,parent);
+  const raisedBox=(w,h,d,x,y,z,material,parent)=>metricWood(box(w,h,d,x,y+(activeRise??(x>levels.split+.1?levels.rise:0)),z,material,parent));
   const wings=[{x:5.8,z:3.9,w:11.6,d:7.8},{x:20.46,z:3.9,w:17.72,d:7.8},{x:5.8,z:9.73,w:11.6,d:3.86}];
   for(const wing of wings){
     const {x,z,w,d}=wing,rise=x>levels.split?levels.rise:0;activeRise=rise;
@@ -194,10 +198,12 @@ export function buildReception(root,features,ground,m,colliders){
     raisedBox(w,.14,.20,(start+end)/2,2.50,z+.05,vermilion,g);
     for(let x=start;x<=end;x+=1.25)raisedBox(.075,2.4,.12,x,1.65,z+.03,vermilion,g);
     for(let x=start+.35;x<end;x+=1.7){
+      if(z>10&&x+.325>1.4&&x-.325<3.1)continue;
       raisedBox(.65,.035,.34,x,1.24,z+.17,m.plasterMat,g);
-      raisedBox(.18,.08,.18,x+.16,1.30,z+.17,vermilion,g);
+
     }
   }
+  g.userData.counterGoods=buildReceptionCounterGoods(g,{wood,paper:m.plasterMat,cloth:vermilion,levels});
   const title=sign('授与所 · Shrine reception',6,.48);title.position.set(5.8,2.78,11.85);g.add(title);
   const counter=sign('御朱印 · Goshuin',2,.30);counter.position.set(2.2,2.25,11.85);g.add(counter);
   g.userData.receptionLevels=levels;root.add(g);return {id:footprint.id,levels,detail:'inferred counter layout on mapped footprint'};

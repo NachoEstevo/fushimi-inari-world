@@ -9,8 +9,16 @@ const frontTileStart=toriiInscriptionRecords.length*2;
 // The existing 8 MiB atlas accommodates 24 records without extra materials.
 export const toriiInkAtlas=Object.freeze({width:2048,height:1024,columns:16,rows:4,tileWidth:128,tileHeight:256});
 if(frontTileStart+16>toriiInkAtlas.columns*toriiInkAtlas.rows)throw new RangeError('Torii inscription atlas supports at most 24 records');
+// The vacant donor cells of date-only records hold explicitly generic group
+// labels for the inferred initial tunnel. They are not names of actual donors.
+const initialLabels=['奉納者一同','氏子有志','稲荷講中','参拝者一同','信者一同'];
+const initialRecords=toriiInscriptionRecords.flatMap((record,index)=>!record.donorLines.length&&record.date?[index]:[]);
+export function initialToriiInscriptionProfile(index){
+  const i=((index%initialRecords.length)+initialRecords.length)%initialRecords.length;
+  return {recordIndex:initialRecords[i],inkStyle:((index*7)%8+8)%8,initial:true};
+}
 export const toriiInkTiles=Object.freeze([
-  ...toriiInscriptionRecords.flatMap(record=>[record.donorLines.join('\n'),record.date??'']),
+  ...toriiInscriptionRecords.flatMap((record,index)=>[record.donorLines.join('\n')||initialLabels[initialRecords.indexOf(index)%initialLabels.length]||'',record.date??'']),
   ...Array.from({length:8},()=>['奉','納']).flat(),
 ]);
 const styles=[
@@ -33,7 +41,10 @@ export function toriiInkTile(entry,side,front){
   if(front){const style=Number.isInteger(entry.inkStyle)?modulo(entry.inkStyle,styles.length):record%styles.length;return frontTileStart+style*2+column;}
   // A date is always taken from this same source record. Legacy independently
   // selected dateInscription values cannot create an invented donor/date pair.
-  const tile=record*2+column;
+  const tile=record*2+column,source=toriiInscriptionRecords[record];
+  // Date-only source records stay date-only in all established usages. The
+  // initial tunnel may use the synthetic collective label in the vacant cell.
+  if(!column&&!source.donorLines.length&&!entry.initial)return -1;
   return toriiInkTiles[tile]?tile:-1;
 }
 export function toriiInkUvBounds(tile){

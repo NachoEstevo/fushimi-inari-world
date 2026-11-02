@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import {staticParts} from './mountain-landmarks-geometry.mjs';
+import {appendMochi} from './heritage-goods.mjs';
 
 const NAME='Takeya photographed keepsake counter';
 const SOURCE='https://fushimiinari-guide.com/takeya/';
+const PRODUCT_SOURCE='https://www.takeya-gofukumochi.com/shop';
 
 function woodGrain(){
  const w=128,h=256,data=new Uint8Array(w*h*4);
@@ -32,18 +34,18 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
  const front=frontage?.frontage,floor=frontage?.floor;
  if(!front||!Number.isFinite(floor)||front.openingWidth<2.8)return {built:false,reason:'Registered Takeya frontage required'};
  const {a,b,length,inward:[nx,nz],openingCenter,openingWidth}=front;
- const ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length,yaw=-Math.atan2(uz,ux);
+ const ux=(b[0]-a[0])/length,uz=(b[2]-a[2])/length,yaw=-Math.atan2(uz,ux),handed=ux*nz-uz*nx;
  const left=openingCenter-openingWidth/2,center=left+.79;
  const group=new THREE.Group();group.name=NAME;group.position.set(a[0]+ux*center+nx*.61,floor,a[2]+uz*center+nz*.61);
  const at=(s,d,y)=>[a[0]+ux*s+nx*d-group.position.x,y,a[2]+uz*s+nz*d-group.position.z];
  const parts=staticParts(group),grain=woodGrain(),lettering=labels();
  const wood=new THREE.MeshStandardMaterial({color:'#d8b98a',map:grain,roughness:.82});
  const basket=new THREE.MeshStandardMaterial({color:'#b5a06b',roughness:.94});
- const paper=new THREE.MeshStandardMaterial({color:'#ebe7d9',roughness:.72});
+ const paper=new THREE.MeshStandardMaterial({name:'Takeya paper wrappers',color:'#ebe7d9',roughness:.94});
  const red=materials.vermilionMat??new THREE.MeshStandardMaterial({color:'#b84629',roughness:.7});
  const black=materials.blackNemakiMat??new THREE.MeshStandardMaterial({color:'#292e28',roughness:.65});
- const orange=new THREE.MeshStandardMaterial({color:'#dc6237',roughness:.68});
- const blue=new THREE.MeshStandardMaterial({color:'#8dc6cb',roughness:.7});
+ const kinako=new THREE.MeshStandardMaterial({name:'Takeya kinako mochi',color:'#c5aa7d',roughness:.98});
+ const matcha=new THREE.MeshStandardMaterial({name:'Takeya matcha mochi',color:'#9daa7c',roughness:.98});
  const printed=new THREE.MeshStandardMaterial({color:'#eee5d0',...(lettering?{map:lettering,color:'#ffffff'}:{}),roughness:.8});
  const box=(w,h,d,s,y,inset,material)=>parts.put(new THREE.BoxGeometry(w,h,d).rotateY(yaw).translate(...at(s,inset,y)),material);
  const top=.79;
@@ -54,17 +56,29 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
   for(let i=0;i<uv.count;i++)uv.setX(i,(uv.getX(i)+slot)/3);
   parts.put(g.rotateX(-Math.PI/2).rotateY(yaw).translate(...at(s,d,y)),printed,false);
  };
- const packets=[paper,orange,blue];
- // Small individually wrapped offerings on the two shallow back shelves.
- // Printed faces reuse the same observed-name atlas as the counter labels.
+ const packets=[paper,kinako,matcha];
+ // Quiet folded paper parcels stand on the two shallow back shelves.
  for(const h of [.94,1.64])for(let i=0;i<8;i++){
   const s=left+.25+i*(openingWidth-.5)/7,w=i%3===0?.16:.20,height=i%3===0?.21:.16;
-  box(w,height,.10,s,h+.0325+height/2,.98,packets[i%3]);
-  box(w,.025,.006,s,h+.0325+height*.72,.927,i%2?red:black);
-  const face=new THREE.PlaneGeometry(w*.73,height*.55),uv=face.attributes.uv,slot=i%3;
+  const shape=new THREE.Shape();shape.moveTo(-w*.48,0);shape.lineTo(w*.48,0);shape.lineTo(w*.46,height*.69);
+  shape.lineTo(w*.32,height*.85);shape.lineTo(0,height);shape.lineTo(-w*.32,height*.85);shape.lineTo(-w*.46,height*.69);shape.closePath();
+  const parcel=new THREE.ExtrudeGeometry(shape,{depth:.085,bevelEnabled:false,steps:1}).translate(0,0,-.0425);
+  parts.put(parcel.rotateY(yaw).translate(...at(s,.98,h+.0325)),packets[i%3]);
+  const fold=[at(s-w*.42,.934,h+.0325+height*.70),at(s,.927,h+.0325+height*.91),at(s+w*.42,.934,h+.0325+height*.70)];
+  parts.sheet((handed<0?[fold[0],fold[2],fold[1]]:fold).flat(),packets[i%3]);
+  const face=new THREE.PlaneGeometry(w*.70,height*.43),uv=face.attributes.uv,slot=i%4===1?1:0;
   for(let j=0;j<uv.count;j++)uv.setX(j,(uv.getX(j)+slot)/3);
-  parts.put(face.rotateY(yaw).translate(...at(s,.923,h+.0325+height*.48)),printed,false);
+  parts.put(face.rotateY(yaw+(handed>0?Math.PI:0)).translate(...at(s,.927,h+.0325+height*.40)),printed,false);
  }
+ const foldedWrap=(s,d,y)=>{
+  const p=(x,z,rise=0)=>at(s+x,d+z,y+rise),vertices=[];
+  const tri=(a,b,c)=>vertices.push(...a,...(handed>0?c:b),...(handed>0?b:c));
+  const corners=[p(-.030,-.030),p(.030,-.030),p(.030,.030),p(-.030,.030)];
+  const outer=[p(0,-.045,.010),p(.045,0,.010),p(0,.045,.010),p(-.045,0,.010)];
+  tri(corners[0],corners[1],corners[2]);tri(corners[0],corners[2],corners[3]);
+  for(let i=0;i<4;i++)tri(corners[i],outer[i],corners[(i+1)%4]);
+  parts.sheet(vertices,paper);
+ };
  for(let tray=0;tray<3;tray++){
   const s=left+.29+tray*.47;
   // Separate rim and crossing strips leave a woven, shallow open basket.
@@ -76,8 +90,8 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
   }
   for(let i=0;i<5;i++){
    const u=s+(i%3-1)*.085,d=.42+Math.floor(i/3)*.075;
-   box(.091,.025,.10,u,top+.035+(i%2)*.008,d,packets[tray]);
-   stamp(u,d,top+.049+(i%2)*.008,.063,.022,0);
+   foldedWrap(u,d,top+.020);
+   appendMochi(parts,{position:at(u,d,top+.020),yaw,width:.077,height:.043,depth:.071,material:packets[tray]});
   }
   stamp(s,.58,top+.018,.20,.085,0);
  }
@@ -99,10 +113,10 @@ export function buildTakeyaKeepsakes(root,frontage,materials,interactables){
   if(!o.isMesh||Array.isArray(o.material))return;
   const m=o.material;if([0x554331,0x36352c].includes(m.color?.getHex())&&!m.map){m.map=grain;m.needsUpdate=true;reused.add(m);}
  });
- const record={built:true,batches:stats.batches,triangles:stats.triangles,packets:15,toriiMagnets:6,baskets:3,
-  sourceFeature:'way/301527736',source:SOURCE,extraLights:0,extraColliders:0,textures:1+Number(!!lettering),retexturedMaterials:reused.size,
-  limits:'Display dimensions, placement and package colors inferred from 2019 photographs; no prices or indoor route asserted.'};
+ const record={built:true,batches:stats.batches,triangles:stats.triangles,mochi:15,foldedWraps:15,shelfParcels:16,toriiMagnets:6,baskets:3,
+  sourceFeature:'way/301527736',source:SOURCE,productSource:PRODUCT_SOURCE,extraLights:0,extraColliders:0,textures:1+Number(!!lettering),retexturedMaterials:reused.size,
+  limits:'Mochi and kinako/matcha varieties follow the shop description; display, folded wraps and parcel arrangement are inferred. No prices or indoor route asserted.'};
  group.userData={...record,interactable:{language:'en',title:'Takeya · keepsakes',proximity:true,reach:2.5,cooldownMs:1200,
-  prompt:'Browse the keepsakes',directAction:()=>'Tiny torii magnets and paper-wrapped sweets. A memory of the mountain.'}};
+  prompt:'Browse the keepsakes',directAction:()=>'Soft mochi in folded paper and tiny torii magnets. A memory of the mountain.'}};
  root.add(group);interactables.push(group);return group.userData;
 }
