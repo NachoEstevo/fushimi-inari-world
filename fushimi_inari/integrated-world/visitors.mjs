@@ -4,13 +4,14 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {createVisitorClothTexture,prepareVisitorTemplate} from './visitor-appearance.mjs';
 import {planVisitorRoutes,createVisitorState,stepVisitor} from './visitor-navigation.mjs';
-import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=counter-reach-3';
+import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=living-20261105';
+import {bindPersonPresence,personGazeTarget,updatePersonGaze,posePersonPresence} from './person-presence.mjs';
 
 export function installVisitors(assembly){
  const routes=planVisitorRoutes(assembly),people=routes.map((route,i)=>{
   const root=new THREE.Group();root.name=`Visitor ${i+1} · ${route.zone}`;assembly.root.add(root);
-  const state=createVisitorState(route,i),interaction=createPersonInteraction();root.position.set(state.x,state.y+.03,state.z);
-  root.userData.interactable=interaction.data;assembly.legacy?.interactables?.push(root);return {root,state,interaction};
+  const state=createVisitorState(route,i),interaction=createPersonInteraction({seed:i,zone:route.zone});root.position.set(state.x,state.y+.03,state.z);
+  root.userData.interactable=interaction.data;assembly.legacy?.interactables?.push(root);return {root,state,interaction,index:i};
  });
  document.body.dataset.visitors=JSON.stringify({count:people.length,zones:routes.map(r=>r.zone),mode:'validated paths; pause, stroll and yield',radius:.48});
  const loader=new GLTFLoader(),files=['Casual_Male','Kimono_Female','Casual_Female'];
@@ -29,26 +30,36 @@ export function installVisitors(assembly){
   const idle=asset.animations.find(a=>/idle/i.test(a.name))??asset.animations[0];
   if(idle){const action=p.mixer.clipAction(idle);action.play();action.time=i*.63%idle.duration;action.timeScale=.9+i*.04;}
   p.mixer.update(0);
-  p.bones=bindVisitorRig(model);
+  p.bones=bindPersonPresence(bindVisitorRig(model),model);
  }).catch(error=>console.warn('Visitor asset unavailable',error))));
- let lastTime=null;
- return {update(camera,time){
+ const cameraBlocker={x:0,y:0,z:0};
+ for(const p of people)p.blockers=people.filter(q=>q!==p).map(q=>q.state).concat(cameraBlocker);
+ let lastTime=null,wasBlocked=false;
+ return {update(camera,time,options){
   if(disposed)return;
-  const dt=lastTime===null?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;
+  const blocked=options?.blocked??false;
+  const dt=lastTime===null||blocked||wasBlocked?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;wasBlocked=blocked;
+  for(const p of people)p.interaction.advance(dt,blocked);
+  if(blocked)return;
+  const eye=camera.position;cameraBlocker.x=eye.x;cameraBlocker.y=eye.y-1.7;cameraBlocker.z=eye.z;
   for(const p of people){
-   const s=p.state;p.root.visible=Math.hypot(s.x-camera.position.x,s.z-camera.position.z)<65;if(!p.root.visible||!p.mixer)continue;
-   const blockers=people.filter(q=>q!==p).map(q=>q.state);blockers.push({x:camera.position.x,y:camera.position.y-1.7,z:camera.position.z});
-   const greeting=p.interaction.progress(time*1000);
-   if(greeting===null)stepVisitor(s,dt,blockers);else{s.travel=0;s.yaw=Math.atan2(camera.position.x-s.x,camera.position.z-s.z);}
+   const s=p.state,dx=eye.x-s.x,dz=eye.z-s.z,d=Math.hypot(dx,dz);
+   p.root.visible=!!p.bones&&d<65&&Math.abs(eye.y-s.y-1.7)<26;if(!p.root.visible||!p.mixer)continue;
+   const greeting=p.interaction.progress();
+   if(greeting===null)stepVisitor(s,dt,p.blockers);
+   else{s.travel=0;const angle=Math.atan2(dx,dz)-s.yaw;s.yaw+=Math.atan2(Math.sin(angle),Math.cos(angle))*Math.min(1,dt*4);}
    p.root.position.set(s.x,s.y+.03,s.z);p.root.rotation.y=s.yaw;
+   p.animationDebt=(p.animationDebt??0)+dt;
+   if(p.animationDebt<=0||(d>=20&&p.animationDebt<1/15))continue;
+   const animationDt=Math.min(.1,p.animationDebt);p.animationDebt=0;p.animationTime=(p.animationTime??0)+animationDt;
    // Restore the last mixer pose; static tracks may not be written again.
-   resetVisitorRig(p.bones);
-   p.mixer.update(dt);
-   captureVisitorPose(p.bones);
-   p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,dt);
+   resetVisitorRig(p.bones);p.mixer.update(animationDt);captureVisitorPose(p.bones);
+   p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,animationDt);
    poseVisitorGait(p.bones,s.phase,p.gait);
-   if(s.state!=='walk')p.bones.Head?.bone.rotateY(Math.sin(time*.45+people.indexOf(p))*.14);
-   posePersonGreeting(p.bones,greeting);
+   const target=personGazeTarget(eye.x-s.x,eye.y-s.y-1.55,eye.z-s.z,s.yaw);
+   p.gaze=updatePersonGaze(p.gaze??0,target,animationDt);
+   posePersonPresence(p.bones,p.animationTime,p.index,p.gait,p.gaze);
+   posePersonGreeting(p.bones,greeting,p.interaction.gesture);
   }
  },count:people.length,people,routes,ready,dispose(){
   if(disposed)return;disposed=true;

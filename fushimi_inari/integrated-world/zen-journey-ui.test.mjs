@@ -34,6 +34,17 @@ test('one existing journal keeps its close header and switches accessible sectio
   const sketches=f.find('Sketches');sketches.dispatch('keydown',{key:'ArrowRight',preventDefault(){}});assert.equal(f.find('Seals').attributes['aria-selected'],'true');
  }finally{f.cleanup();}assert.deepEqual(f.binding.children,[f.top,f.seal]);
 });
+test('quiet walk choices show one next step and can be dismissed without losing moments',()=>{
+ const f=fixture();try{
+  const summary=f.find('Quiet walks'),note=f.all.find(node=>node.className==='zen-story-copy');
+  const first=f.find('First pause'),gates=f.find('Torii rhythm'),mountain=f.find('Mountain day'),none=f.find('No invitation');
+  assert.ok(summary&&first&&gates&&mountain&&none);assert.equal(none.attributes['aria-pressed'],'true');
+  gates.click();assert.equal(f.journey.snapshot().activeWalk,'gates');assert.equal(gates.attributes['aria-pressed'],'true');assert.equal(first.attributes['aria-pressed'],'false');assert.match(note.textContent,/Photograph.*Senbon/);
+  first.click();assert.equal(f.journey.snapshot().activeWalk,'station');assert.match(summary.textContent,/First pause/);assert.equal(note.textContent,'Meet Aki at the station.');
+  f.journey.recordMoment('aki',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.equal(note.textContent,'Pick up a drink for the walk.');
+  none.click();assert.equal(f.journey.snapshot().activeWalk,'none');assert.ok(f.journey.snapshot().moments.aki);assert.equal(none.attributes['aria-pressed'],'true');assert.match(note.textContent,/Yotsutsuji/);
+ }finally{f.cleanup();}
+});
 test('ending appears only after root completes the train and continuing releases its camera owner',async()=>{
  let f;f=fixture({onContinueWalking:()=>f.calls.push('continue')});try{
   assert.equal(f.find('Postcard').hidden,true);f.find('Return by train').click();await Promise.resolve();assert.deepEqual(f.calls,['train']);assert.equal(f.journey.snapshot().visit.finishedAt,0);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=counter-reach-3';
+import {createPersonInteraction,posePersonGreeting} from './person-interaction.mjs?v=living-20261105';
+import {bindPersonPresence,personGazeTarget,updatePersonGaze,posePersonPresence} from './person-presence.mjs';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {createVisitorClothTexture,prepareVisitorTemplate} from './visitor-appearance.mjs';
@@ -103,32 +104,28 @@ export function streetPersonVisible(wasVisible,distance,verticalDistance=0){
  return distance<(wasVisible?64:54)&&verticalDistance<(wasVisible?26:22);
 }
 
+const vendorWorkspaces=new WeakMap();
 export function bindStreetPersonRig(model){
- const rig=bindVisitorRig(model);
- for(const side of ['L','R']){
-  const bone=model.getObjectByName(`LowerArm${side}`);
-  if(!bone?.isBone)throw Error(`Street visitor forearm missing: ${side}`);
-  rig[`LowerArm.${side}`]={bone,rest:bone.quaternion.clone(),position:bone.position.clone(),scale:bone.scale.clone()};
- }
+ const rig=bindPersonPresence(bindVisitorRig(model),model);
+ vendorWorkspaces.set(rig,{lateral:new THREE.Vector3(),axis:new THREE.Vector3(),world:new THREE.Quaternion(),parent:new THREE.Quaternion(),rotation:new THREE.Quaternion()});
  return rig;
 }
 
+function poseVendorArm(bone,forearm,angle,workspace){
+ const {lateral,axis,parent,rotation}=workspace;
+ bone.parent.getWorldQuaternion(parent).invert();axis.copy(lateral).applyQuaternion(parent);
+ bone.quaternion.premultiply(rotation.setFromAxisAngle(axis,angle));
+ forearm.parent.getWorldQuaternion(parent).invert();axis.copy(lateral).applyQuaternion(parent);
+ forearm.quaternion.premultiply(rotation.setFromAxisAngle(axis,.25));
+}
+
 export function poseStreetVendor(rig,root,time,phase=0){
- // The source bones have oblique local axes. Rotate around the character's
- // lateral axis, transformed into each shoulder's parent frame, so the hands
- // reach forward above the counter instead of disappearing behind the body.
- const lateral=new THREE.Vector3(1,0,0).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
- for(const [side,angle]of [['R',-2.0+Math.sin(time*1.4+phase)*.05],['L',-1.96+Math.sin(time*.9+phase)*.04]]){
-  const bone=rig[`UpperArm.${side}`].bone;
-  const axis=lateral.clone().applyQuaternion(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert());
-  bone.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis,angle));
-  // Lower the forearm independently: the source idle clip bends its elbow,
-  // so rotating only the shoulder produces raised fists beside the face.
-  const forearm=rig[`LowerArm.${side}`].bone;
-  const forearmAxis=lateral.clone().applyQuaternion(forearm.parent.getWorldQuaternion(new THREE.Quaternion()).invert());
-  forearm.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(forearmAxis,.46));
- }
- rig.Head.bone.rotateY(Math.sin(time*.6+phase)*.18);
+ // The source shoulder axes are oblique. A small rotation in the person's
+ // lateral frame keeps the arms relaxed behind the counter, with subtle work.
+ const workspace=vendorWorkspaces.get(rig),{lateral,world}=workspace;
+ root.getWorldQuaternion(world);lateral.set(1,0,0).applyQuaternion(world);
+ poseVendorArm(rig['UpperArm.R'].bone,rig['LowerArm.R'].bone,-.25+Math.sin(time*1.1+phase)*.04,workspace);
+ poseVendorArm(rig['UpperArm.L'].bone,rig['LowerArm.L'].bone,-.20+Math.sin(time*.8+phase)*.035,workspace);
 }
 
 export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStreetLife(assembly),onStats}={}){
@@ -142,13 +139,15 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
  for(const p of people){
   p.root=new THREE.Group();p.root.name=p.vendor?`Food attendant · ${p.state.id}`:`Street visitor · ${p.state.route.zone}`;
   p.root.position.set(p.state.x,p.state.y+.015,p.state.z);p.root.rotation.y=p.state.yaw;p.root.visible=false;
-  p.interaction=createPersonInteraction({vendor:p.vendor});p.root.userData.interactable=p.interaction.data;
+  p.interaction=createPersonInteraction({vendor:p.vendor,seed:p.index,zone:'street',kind:p.state.kind});p.root.userData.interactable=p.interaction.data;
   assembly.legacy?.interactables?.push(p.root);
   p.root.matrixAutoUpdate=false;p.root.updateMatrix();owner.add(p.root);
  }
+ const cameraBlocker={x:0,y:0,z:0};
+ for(const p of people)p.blockers=people.filter(q=>q!==p).map(q=>q.state).concat(cameraBlocker);
  const stats={pedestrians:plan.routes.length,attendants:plan.vendors.length,omitted:plan.omitted,active:0,animated:0,loadedModels:0,assetRequests:0,loadErrors:0,loading:false};
  const loader=new GLTFLoader(),files=['Casual_Male','Casual_Female','Kimono_Female'];
- let loading=null,lastTime=null,lastReport=-Infinity,disposed=false,clothTexture=null;
+ let loading=null,lastTime=null,lastReport=-Infinity,disposed=false,clothTexture=null,wasBlocked=false;
  const preparedOwners=new Set(),sources=new Set(),variantsByAsset=new Map();
  const releaseSource=asset=>{const geometries=new Set(),materials=new Set();asset.scene.traverse(o=>{if(o.isMesh){geometries.add(o.geometry);for(const m of [o.material].flat())materials.add(m);}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();};
  function beginLoading(){
@@ -179,31 +178,37 @@ export function installKeihanStreetLife(assembly,{loadAsset,plan=planKeihanStree
   return loading;
  }
  return {group:owner,groups:people.map(p=>p.root),people,plan,stats,get ready(){return loading??Promise.resolve(stats);},
-  update(camera,time){
+  update(camera,time,options){
    if(disposed)return;
-   const dt=lastTime===null?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;
-   const eye=camera.position,blockers=people.map(p=>p.state);blockers.push({x:eye.x,y:eye.y-1.7,z:eye.z});
+   const blocked=options?.blocked??false;
+   const dt=lastTime===null||blocked||wasBlocked?0:Math.min(.05,Math.max(0,time-lastTime));lastTime=time;wasBlocked=blocked;
+   for(const p of people)p.interaction.advance(dt,blocked);
+   if(blocked)return;
+   const eye=camera.position;cameraBlocker.x=eye.x;cameraBlocker.y=eye.y-1.7;cameraBlocker.z=eye.z;
    stats.active=0;stats.animated=0;
    for(const p of people){
     const s=p.state,d=Math.hypot(s.x-eye.x,s.z-eye.z),dy=Math.abs(s.y+1.7-eye.y);
     if(d<72&&dy<26)beginLoading();
     p.root.visible=streetPersonVisible(p.root.visible,d,dy)&&!!p.bones;
     if(!p.root.visible)continue;stats.active++;
-    const greeting=p.interaction.progress(time*1000);
-    if(!p.vendor){if(greeting===null)stepVisitor(s,dt,blockers.filter(b=>b!==s));else{s.travel=0;s.yaw=Math.atan2(eye.x-s.x,eye.z-s.z);}p.root.position.set(s.x,s.y+.015,s.z);p.root.rotation.y=s.yaw;p.root.updateMatrix();}
+    const greeting=p.interaction.progress();
+    if(!p.vendor){
+     if(greeting===null)stepVisitor(s,dt,p.blockers);
+     else{s.travel=0;const angle=Math.atan2(eye.x-s.x,eye.z-s.z)-s.yaw;s.yaw+=Math.atan2(Math.sin(angle),Math.cos(angle))*Math.min(1,dt*4);}
+     p.root.position.set(s.x,s.y+.015,s.z);p.root.rotation.y=s.yaw;p.root.updateMatrix();
+    }
     // The animation clock advances only nearby. Far bodies update at 15 Hz,
     // close faces at 30 Hz; movement remains frame-rate independent.
     p.animationDebt=(p.animationDebt??0)+dt;
     if(p.animationDebt<(d<20?1/30:1/15))continue;
-    const animationDt=Math.min(.1,p.animationDebt);p.animationDebt=0;stats.animated++;
+    const animationDt=Math.min(.1,p.animationDebt);p.animationDebt=0;p.animationTime=(p.animationTime??0)+animationDt;stats.animated++;
     resetVisitorRig(p.bones);p.mixer.update(animationDt);captureVisitorPose(p.bones);
-    if(p.vendor){
-     poseStreetVendor(p.bones,p.root,time,p.index);
-    }else{
-     p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,animationDt);poseVisitorGait(p.bones,s.phase,p.gait);
-     if(s.state!=='walk')p.bones.Head.bone.rotateY(Math.sin(time*.45+p.index)*.14);
-    }
-    posePersonGreeting(p.bones,greeting);
+    if(p.vendor)poseStreetVendor(p.bones,p.root,p.animationTime,p.index);
+    else{p.gait=THREE.MathUtils.damp(p.gait??0,s.travel>0?1:0,9,animationDt);poseVisitorGait(p.bones,s.phase,p.gait);}
+    const target=personGazeTarget(eye.x-s.x,eye.y-s.y-1.55,eye.z-s.z,s.yaw);
+    p.gaze=updatePersonGaze(p.gaze??0,target,animationDt);
+    posePersonPresence(p.bones,p.animationTime,p.index,p.gait??0,p.gaze);
+    posePersonGreeting(p.bones,greeting,p.interaction.gesture);
    }
    if(time-lastReport>1){lastReport=time;onStats?.({...stats});}
   },dispose(){

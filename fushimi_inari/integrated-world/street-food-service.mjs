@@ -36,7 +36,7 @@ export function installStreetFoodService({scene,camera,assembly,commerce,walker,
  for(const site of commerce?.sites??[]){
   if(!site.position?.every(Number.isFinite)||!site.counterPosition?.every(Number.isFinite))continue;
   const state=createStreetFoodOrder(site.kind),owner=new THREE.Group(),models=new Map();owner.name='Street food service · '+site.id;owner.position.fromArray(site.position);
-  for(const item of state.menu){const model=commerce.createServing(site.kind,item.id);if(!model)continue;model.position.set(...site.counterPosition.map((v,i)=>v-site.position[i]));model.rotation.y=Math.atan2(site.position[0]-site.counterPosition[0],site.position[2]-site.counterPosition[2]);model.visible=false;owner.add(model);models.set(item.id,model);preparationRoots.push(model);}
+  for(const item of state.menu){const model=commerce.createServing(site.kind,item.id);if(!model)continue;model.position.set(...site.counterPosition.map((v,i)=>v-site.position[i]));model.rotation.y=Math.atan2(site.position[0]-site.counterPosition[0],site.position[2]-site.counterPosition[2]);model.visible=false;owner.add(model);models.set(item.id,model);preparationRoots.push(...(model.userData.preparationRoots??[model]));}
   if(!models.size)continue;
   const data={language:'en',title:site.name,proximity:true,reach:3.1,cooldownMs:450,directAction:()=>interact(site.id)};
   Object.defineProperty(data,'prompt',{enumerable:true,get:()=>state.phase==='served'?'Take '+state.item.name:state.phase==='preparing'?'Preparing your snack':'Order a snack'});
@@ -45,7 +45,7 @@ export function installStreetFoodService({scene,camera,assembly,commerce,walker,
   if(vendor){const original=vendor.userData.interactable;entries.get(site.id).greet=original?.directAction;replaced.push([vendor,original]);vendor.userData.interactable=data;}
  }
  assembly.root.updateMatrixWorld(true);
- return {detailGroups,preparationRoots,get active(){return !!dialog?.open;},open,order,interact,
+ return {detailGroups,preparationRoots,held,get active(){return !!dialog?.open;},open,order,interact,
   collect(event){if(held.collect(event)){onCollected(event);return true;}return false;},stow:()=>held.stow(),
   update(dt,{blocked=false}={}){
    if(disposed)return;for(const entry of entries.values()){

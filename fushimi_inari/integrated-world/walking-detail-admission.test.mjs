@@ -42,7 +42,7 @@ function fixture(){
 test('all twenty real late detail owners are admitted even when dormant, without changing their scene ownership',()=>{
  const f=fixture();assert.deepEqual(f.families.map(v=>v.detailGroups.length),[7,8,1,4]);
  let meshes=0;for(const owner of f.owners)owner.traverse(o=>{if(o.isMesh)meshes++;});
- assert.equal(meshes,76,'named senbei and tofu shops no longer own generic grill-menu meshes');assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
+ assert.equal(meshes,109,'five added static product/glaze batches plus 32 hidden vessel leaves stay within the known owner budget');assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
  const existing=f.root.children[0],originalBounds=new THREE.Sphere(new THREE.Vector3(9000,0,0),1);
  const bounds=new Map([[existing,originalBounds]]);f.owners[0].visible=false;
  const before=f.owners.map(o=>({object:o,parent:o.parent,visible:o.visible,position:o.position.toArray(),rotation:o.quaternion.toArray(),scale:o.scale.toArray()}));
@@ -67,7 +67,12 @@ test('walking preparation compiles dormant late groups before their first activa
  for(let time=0;time<10&&compiledOwners.size<f.owners.length;time++){
   service.update(camera.position,time*100,{direction:new THREE.Vector3(1,0,0)});while(tasks.length)await tasks.shift()();
  }
- assert.equal(compiledOwners.size,20);assert.equal(compiledMeshes.size,72,'four initially hidden collection-tray cans remain covered by zen.prepare instead');
+ assert.equal(compiledOwners.size,20);assert.equal(compiledMeshes.size,77,'only the five added static batches join the walking pass; tray variants stay covered by zen.prepare');
+ const trayRoots=f.families[0].machines.flatMap(machine=>machine.can.children),trayMeshes=[];
+ for(const variant of trayRoots)variant.traverse(object=>{if(object.isMesh)trayMeshes.push(object);});
+ assert.equal(trayMeshes.length,32);
+ await compileSelectedVisuals(renderer,f.scene,trayRoots,camera,{includeHiddenRoots:true,reuseRenderScene:true,yieldWork:async()=>{},getLights:async()=>[]});
+ assert.ok(trayMeshes.every(mesh=>compiledMeshes.has(mesh)),'every selectable tray variant is explicitly warmed, including hidden products');
  for(const owner of f.owners)assert.equal(owner.visible,false);for(const [o,parent]of parents)assert.equal(o.parent,parent);
  assert.equal(service.stats.failed,0);service.dispose();
 });
@@ -76,4 +81,13 @@ test('empty and nonfinite late bounds never enter the walking spatial index',()=
  const empty=new THREE.Group(),invalid=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());mesh.position.x=NaN;invalid.add(mesh);
  const bounds=new Map();admit(THREE,new Set([empty,invalid]),bounds);assert.equal(bounds.size,0);
  mesh.geometry.dispose();mesh.material.dispose();
+});
+
+test('all edible stages are warmed before a first bite, including initially hidden senbei pieces',async()=>{
+ const f=fixture(),camera=new THREE.PerspectiveCamera(),compiled=new Set(),renderer={hasInitialized:()=>true,async compileAsync(scene){for(const object of scene.children)if(object.isMesh)compiled.add(object);}};
+ for(const [kind,item] of [['senbei','fox-senbei'],['soft-serve','tofu'],['soft-serve','matcha'],['grill','dango']]){
+  const serving=f.families[0].createServing(kind,item);f.root.add(serving);
+  await compileSelectedVisuals(renderer,f.scene,serving.userData.preparationRoots,camera,{includeHiddenRoots:true,reuseRenderScene:true,yieldWork:async()=>{},getLights:async()=>[]});
+  for(let remaining=serving.userData.bites;remaining>=0;remaining--){serving.userData.setBitesRemaining(remaining);serving.traverseVisible(object=>{if(object.isMesh)assert.ok(compiled.has(object),kind+' never exposes an unwarmed bite stage');});}
+ }
 });

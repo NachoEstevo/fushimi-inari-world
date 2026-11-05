@@ -12,14 +12,14 @@ body:has(dialog[open]) .zen-pocket-actions,body.photo-mode .zen-pocket-actions,b
 @media(pointer:fine){#zen-interact{display:none}}
 @media(max-width:540px){.zen-pocket-actions{right:15px;bottom:250px;flex-direction:column}#zen-departure{bottom:15px;padding:17px}.zen-experience-notice{bottom:120px}#zen-departure p{font-size:18px}}
 
-#street-food-menu {
+:is(#street-food-menu,#drink-machine-menu) {
  width:min(320px,calc(100vw - 40px));padding:24px;border:1px solid #b9ae98;
  border-radius:8px;background:#eee5d3;color:#34382e;box-shadow:0 16px 60px #15271c44;
 }
-#street-food-menu::backdrop {background:#10221d88;backdrop-filter:blur(3px)}
-#street-food-menu h2 {font:24px Georgia,serif;margin:0 36px 24px 0}
-#street-food-menu>button {position:absolute;right:12px;top:12px;border:0;background:transparent;color:inherit;font-size:24px;width:36px;height:36px;cursor:pointer}
-#street-food-menu .street-food-choices {display:grid;gap:10px}
-#street-food-menu .street-food-choices button {padding:14px;border:1px solid #bbae92;border-radius:4px;background:#f6f0e4;color:inherit;font:15px system-ui;cursor:pointer;text-align:left}
-#street-food-menu button:focus-visible {outline:2px solid #a13b2e;outline-offset:3px}
-#street-food-menu .street-food-choices button:hover {background:#e2d5bd}
+:is(#street-food-menu,#drink-machine-menu)::backdrop {background:#10221d88;backdrop-filter:blur(3px)}
+:is(#street-food-menu,#drink-machine-menu) h2 {font:24px Georgia,serif;margin:0 36px 24px 0}
+:is(#street-food-menu,#drink-machine-menu)>button {position:absolute;right:12px;top:12px;border:0;background:transparent;color:inherit;font-size:24px;width:36px;height:36px;cursor:pointer}
+:is(#street-food-menu,#drink-machine-menu) .street-food-choices {display:grid;gap:10px}
+:is(#street-food-menu,#drink-machine-menu) .street-food-choices button {padding:14px;border:1px solid #bbae92;border-radius:4px;background:#f6f0e4;color:inherit;font:15px system-ui;cursor:pointer;text-align:left}
+:is(#street-food-menu,#drink-machine-menu) button:focus-visible {outline:2px solid #a13b2e;outline-offset:3px}
+:is(#street-food-menu,#drink-machine-menu) .street-food-choices button:hover {background:#e2d5bd}

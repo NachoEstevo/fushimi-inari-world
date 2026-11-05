@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {planKeihanStreetLife,streetPersonClearance,streetPersonVisible,installKeihanStreetLife,poseStreetVendor,bindStreetPersonRig} from './keihan-street-life.mjs';
 import {resetVisitorRig,captureVisitorPose} from './visitor-rig.mjs';
+import {posePersonGreeting} from './person-interaction.mjs';
 import {heightAt} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 
@@ -96,31 +97,57 @@ test('existing skinned assets load only near the street, pause when distant, and
  life.dispose();life.dispose();assert.equal(sourceDisposals,0,'loadAsset test seam retains source ownership');assert.equal(life.group.parent,null);life.update(camera,9);assert.equal(person.mixer.time,time);
 });
 
-for(const name of ['Casual_Male','Casual_Female','Kimono_Female'])test(`${name}: vendor hands reach forward above the counter in a rotated shop frame`,async()=>{
+for(const name of ['Casual_Male','Casual_Female','Kimono_Female'])test(`${name}: attendant arms rest near the body, clear of the counter`,async()=>{
  const b=fs.readFileSync(new URL(`../assets/models/visitors/${name}.glb`,import.meta.url));
  const asset=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
  const prepared=prepareVisitorTemplate(asset,{armFactor:1}),root=new THREE.Group(),model=prepared.scene;root.position.set(-254,31.5,-93);root.rotation.y=2.76;
  const bounds=new THREE.Box3().setFromObject(model),scale=1.65/(bounds.max.y-bounds.min.y);
  model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;root.add(model);
  const mixer=new THREE.AnimationMixer(model);mixer.clipAction(prepared.animations[0]).play();mixer.update(0);
- const rig=bindStreetPersonRig(model);let checked=0,minFoot=Infinity;
+ const rig=bindStreetPersonRig(model),inverse=new THREE.Matrix4();let minFoot=Infinity;
  for(let time=0;time<9;time+=.25){
-  resetVisitorRig(rig);mixer.update(.25);captureVisitorPose(rig);poseStreetVendor(rig,root,time);root.updateMatrixWorld(true);
-  const inverse=new THREE.Matrix4().copy(root.matrixWorld).invert();
-  model.traverse(mesh=>{
-   if(!mesh.isSkinnedMesh)return;mesh.skeleton.update();
-   const count=mesh.geometry.attributes.position.count,indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
-   for(let i=0;i<count;i++){
-    const p=mesh.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);minFoot=Math.min(minFoot,p.y);
+  resetVisitorRig(rig);mixer.update(.25);captureVisitorPose(rig);poseStreetVendor(rig,root,time);root.updateMatrixWorld(true);inverse.copy(root.matrixWorld).invert();
+  for(const side of ['L','R']){
+   const hand=model.getObjectByName(`Fist${side}`).getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse);
+   const shoulder=model.getObjectByName(`UpperArm${side}`).getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse);
+   assert.ok(hand.y<shoulder.y-.2,`hand raised above relaxed position: ${hand.y.toFixed(2)}`);
+   assert.ok(hand.z<.25,`hand reaches into the counter: ${hand.z.toFixed(2)}`);
+  }
+  model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;mesh.skeleton.update();
+   const indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
+   for(let i=0;i<mesh.geometry.attributes.position.count;i++){
+    const point=mesh.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);minFoot=Math.min(minFoot,point.y);
     let armWeight=0;for(let j=0;j<4;j++)if(/LowerArm/.test(mesh.skeleton.bones[indices.array[i*4+j]].name))armWeight+=weights.array[i*4+j];
-    if(armWeight<.65||p.z<=.25||mesh.material.name!=='Skin')continue;
-    checked++;assert.ok(p.y>1.02,`Hand enters 1.02m counter top at ${p.y.toFixed(3)}m`);
-    assert.ok(p.y<1.28,`Hand raised toward face instead of serving low: ${p.y.toFixed(3)}m`);
-    assert.ok(p.z<.62,'Hands must stay within the serving recess');
-    assert.ok(Math.abs(p.x)<.5,'Hands must use the clear central space between display cases');
+    if(armWeight>.65&&point.z>.25)assert.ok(point.y>1.02,`arm intersects counter at ${point.y.toFixed(2)}m`);
    }
   });
  }
- assert.ok(checked>100,'Actual skinned forearm/hand vertices must be visibly forward');
- assert.ok(minFoot>-.002&&minFoot<.02,'Serving must preserve the grounded foot pose');prepared.dispose();
+ assert.ok(minFoot>-.002&&minFoot<.02,'resting pose preserves grounded feet');prepared.dispose();
+});
+
+test('paused street life freezes greeting, walking and animation across a long gap',async()=>{
+ const a=makeAssembly(),plan=planKeihanStreetLife(a,patrol),life=installKeihanStreetLife(a,{plan,loadAsset:async name=>{
+  const b=fs.readFileSync(new URL(`../assets/models/visitors/${name}.glb`,import.meta.url));return new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
+ }}),camera={position:new THREE.Vector3(-280,3.7,-100)};
+ life.update(camera,0);await life.ready;life.update(camera,.05);const p=life.people[0];p.interaction.data.directAction();life.update(camera,.1);
+ const progress=p.interaction.progress(),mixer=p.mixer.time,position=p.root.position.clone();
+ life.update(camera,60,{blocked:true});life.update(camera,61,{blocked:true});
+ assert.equal(p.interaction.progress(),progress);assert.equal(p.mixer.time,mixer);assert.ok(p.root.position.equals(position));
+ life.update(camera,62);assert.ok(p.interaction.progress()!==null);assert.ok(p.interaction.progress()<=progress+.03);
+ life.update(camera,1000);assert.ok(p.interaction.progress()!==null,'unannounced time jumps cannot expire a greeting');life.dispose();
+});
+
+for(const name of ['Casual_Male','Casual_Female','Kimono_Female'])test(`${name}: wave lifts one forearm and resets without drift`,async()=>{
+ const b=fs.readFileSync(new URL(`../assets/models/visitors/${name}.glb`,import.meta.url));
+ const asset=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
+ const prepared=prepareVisitorTemplate(asset),root=new THREE.Group(),model=prepared.scene;root.rotation.y=2.7;
+ const bounds=new THREE.Box3().setFromObject(model),scale=1.65/(bounds.max.y-bounds.min.y);model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;root.add(model);
+ const mixer=new THREE.AnimationMixer(model);mixer.clipAction(prepared.animations[0]).play();mixer.update(0);
+ const rig=bindStreetPersonRig(model),inverse=new THREE.Matrix4().copy(root.matrixWorld);
+ const hand=()=>{root.updateMatrixWorld(true);inverse.copy(root.matrixWorld).invert();return model.getObjectByName('FistR').getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse);};
+ const resting=hand();posePersonGreeting(rig,.5,'wave');const lifted=hand();
+ assert.ok(lifted.y-resting.y>.12,`wave lifts the hand: ${resting.y.toFixed(2)} to ${lifted.y.toFixed(2)}`);
+ assert.ok(Math.abs(lifted.x)<.5&&lifted.z<.5,'wave stays near the body');
+ for(let i=0;i<100;i++){resetVisitorRig(rig);captureVisitorPose(rig);posePersonGreeting(rig,.5,'wave');assert.ok(hand().distanceTo(lifted)<1e-6);}
+ resetVisitorRig(rig);assert.ok(hand().distanceTo(resting)<1e-6);prepared.dispose();
 });

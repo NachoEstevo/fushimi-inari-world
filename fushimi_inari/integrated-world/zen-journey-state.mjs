@@ -1,3 +1,5 @@
+import {ZEN_QUIET_WALKS,describeQuietWalks} from './quiet-walks.mjs';
+
 export const ZEN_JOURNEY_KEY='inari-quiet-visit-v2';
 export const ZEN_INTENTIONS=Object.freeze([
  {id:'wander',title:'Wander freely',note:'Follow whatever catches your attention.'},
@@ -18,8 +20,11 @@ export const ZEN_SKETCHES=Object.freeze([
 const moments={aki:['station'],cat:['station'],tea:['tea'],drink:['station','canal','drink'],map:['station','tea'],postcard:['station','postcard'],return:['station']};
 const finitePoint=p=>Array.isArray(p)&&p.length===3&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<1e6);
 const positive=n=>Number.isSafeInteger(n)&&n>0;
-const choices={intention:ZEN_INTENTIONS.map(x=>x.id),weather:['clear','drizzle']};
-const blank=()=>({version:2,intention:'wander',weather:'clear',settingsAt:{intention:0,weather:0},moments:{},sketches:{},photoPrompts:{},photos:[],visit:{number:1,startedAt:0,finishedAt:0,updatedAt:0,departed:false}});
+// A corrupt far-future clock must not exhaust the monotonic safe-integer range.
+const year=366*24*60*60*1000;
+const validTime=n=>positive(n)&&n<=Date.now()+100*year;
+const choices={intention:ZEN_INTENTIONS.map(x=>x.id),weather:['clear','drizzle'],activeWalk:['none',...ZEN_QUIET_WALKS.map(x=>x.id)]};
+const blank=()=>({version:2,intention:'wander',weather:'clear',activeWalk:'none',settingsAt:{intention:0,weather:0,activeWalk:0},moments:{},sketches:{},photoPrompts:{},photos:[],visit:{number:1,startedAt:0,finishedAt:0,updatedAt:0,departed:false}});
 const entries=value=>finitePoint(value)?[{point:value}]:Array.isArray(value)?value.map(x=>finitePoint(x)?{point:x}:x):value?.point?[value]:[];
 function nearby(position,locations,place,radius=place==='station'?85:place==='drink'?3.6:30){
  return finitePoint(position)&&entries(locations[place]).some(({point}={})=>finitePoint(point)&&Math.abs(position[1]-point[1]-1.7)<=8&&Math.hypot(position[0]-point[0],position[2]-point[2])<=radius);
@@ -38,25 +43,40 @@ function framing(details,locations,place){
  return place!=='yotsu'||dx/horizontal<-.5;
 }
 function photoRecord(value){
- if(!value||!positive(value.createdAt)||!finitePoint(value.position)||!finitePoint(value.direction)||!['walk','train'].includes(value.mode)||!choices.weather.includes(value.weather)||!Number.isFinite(value.fov)||value.fov<20||value.fov>85||!['width','height'].every(k=>positive(value[k])&&value[k]<=8192))return null;
+ if(!value||!validTime(value.createdAt)||!finitePoint(value.position)||!finitePoint(value.direction)||!['walk','train'].includes(value.mode)||!choices.weather.includes(value.weather)||!Number.isFinite(value.fov)||value.fov<20||value.fov>85||!['width','height'].every(k=>positive(value[k])&&value[k]<=8192))return null;
  const ids=ZEN_PHOTO_PROMPTS.map(x=>x.id);
  return {id:String(value.id??'').slice(0,100),createdAt:value.createdAt,position:[...value.position],direction:[...value.direction],fov:value.fov,width:value.width,height:value.height,mode:value.mode,weather:value.weather,thumbnailId:typeof value.thumbnailId==='string'?value.thumbnailId.slice(0,100):null,promptIds:value.mode==='walk'&&Array.isArray(value.promptIds)?[...new Set(value.promptIds.filter(id=>ids.includes(id)))]:[]};
+}
+function latestTime(state){return Math.max(0,...Object.values(state.settingsAt),...Object.values(state.moments),...Object.values(state.sketches),...Object.values(state.photoPrompts),...state.photos.map(p=>p.createdAt),state.visit.startedAt,state.visit.finishedAt,state.visit.updatedAt);}
+function repairClock(state){
+ const refs=[];for(const field of ['settingsAt','moments','sketches','photoPrompts'])for(const key of Object.keys(state[field]))refs.push([state[field],key]);
+ for(const key of ['startedAt','finishedAt','updatedAt'])refs.push([state.visit,key]);for(const photo of state.photos)refs.push([photo,'createdAt']);
+ const wall=Date.now(),cutoff=wall+25*year,times=refs.map(([object,key])=>object[key]);
+ const future=[...new Set(times.filter(time=>time>cutoff))].sort((a,b)=>a-b);
+ // Anchor to this payload, not the changing wall clock: replaying the same
+ // delayed storage event must produce the same repaired timestamps.
+ const base=Math.max(0,...times.filter(time=>time<=cutoff));const replacement=new Map(future.map((time,index)=>[time,base+index+1]));
+ for(const [object,key]of refs)if(replacement.has(object[key]))object[key]=replacement.get(object[key]);
+ return latestTime(state);
 }
 function decode(raw){
  try{
   const data=JSON.parse(raw);if(data?.version!==2)return null;const value=blank();
-  for(const [field,ids]of Object.entries(choices))if(ids.includes(data[field])){value[field]=data[field];value.settingsAt[field]=positive(data.settingsAt?.[field])?data.settingsAt[field]:0;}
-  for(const [field,ids]of [['moments',Object.keys(moments)],['sketches',ZEN_SKETCHES.map(s=>s.id)],['photoPrompts',ZEN_PHOTO_PROMPTS.map(p=>p.id)]])for(const id of ids)if(positive(data[field]?.[id]))value[field][id]=data[field][id];
+  for(const [field,ids]of Object.entries(choices))if(ids.includes(data[field])){value[field]=data[field];value.settingsAt[field]=validTime(data.settingsAt?.[field])?data.settingsAt[field]:0;}
+  for(const [field,ids]of [['moments',Object.keys(moments)],['sketches',ZEN_SKETCHES.map(s=>s.id)],['photoPrompts',ZEN_PHOTO_PROMPTS.map(p=>p.id)]])for(const id of ids)if(validTime(data[field]?.[id]))value[field][id]=data[field][id];
   value.photos=(Array.isArray(data.photos)?data.photos:[]).map(photoRecord).filter(p=>p?.id).slice(-12);
   if(positive(data.visit?.number))value.visit.number=Math.min(data.visit.number,9999);
-  for(const key of ['startedAt','finishedAt','updatedAt'])if(positive(data.visit?.[key]))value.visit[key]=data.visit[key];
+  for(const key of ['startedAt','finishedAt','updatedAt'])if(validTime(data.visit?.[key]))value.visit[key]=data.visit[key];
   value.visit.departed=data.visit?.departed===true;
+  // Normalize each stored payload before merging, so a delayed corrupt event
+  // cannot reintroduce an extreme clock after another tab has made progress.
+  if(latestTime(value)>=Date.now()+50*year)repairClock(value);
   return value;
  }catch{return null;}
 }
 function merge(a,b){
  if(!b)return;
- for(const field of Object.keys(choices))if(b.settingsAt[field]>a.settingsAt[field]){a[field]=b[field];a.settingsAt[field]=b.settingsAt[field];}
+ for(const field of Object.keys(choices))if(b.settingsAt[field]>a.settingsAt[field]||(field==='activeWalk'&&b.settingsAt[field]>0&&b.settingsAt[field]===a.settingsAt[field]&&b[field]>a[field])){a[field]=b[field];a.settingsAt[field]=b.settingsAt[field];}
  for(const field of ['moments','sketches','photoPrompts'])for(const [id,time]of Object.entries(b[field]))a[field][id]=id==='return'?Math.max(a[field][id]??0,time):Math.min(a[field][id]??time,time);
  a.photos=[...new Map([...a.photos,...b.photos].map(p=>[p.id,p])).values()].sort((x,y)=>x.createdAt-y.createdAt||x.id.localeCompare(y.id)).slice(-12);
  if(b.visit.updatedAt>a.visit.updatedAt)a.visit={...b.visit};else if(b.visit.updatedAt===a.visit.updatedAt)a.visit.departed||=b.visit.departed;
@@ -64,8 +84,8 @@ function merge(a,b){
 
 export function createZenJourney({storage=null,locations={},now=()=>Date.now()}={}){
  let state=blank(),persistent=!!storage,disposed=false,serial=0,lastTime=0,lastRaw=Symbol('unread');const listeners=new Set();
- const timestamp=()=>{const n=now();return lastTime=Math.max(lastTime+1,positive(n)?n:Date.now());};
- function accept(value){merge(state,value);lastTime=Math.max(lastTime,...Object.values(state.settingsAt),...Object.values(state.moments),...Object.values(state.sketches),...Object.values(state.photoPrompts),...state.photos.map(p=>p.createdAt),state.visit.updatedAt);}
+ const timestamp=()=>{const wall=Date.now();if(lastTime>=wall+50*year)lastTime=repairClock(state);const n=now();return lastTime=Math.max(lastTime+1,validTime(n)&&n<=wall+25*year?n:wall);};
+ function accept(value){merge(state,value);lastTime=Math.max(lastTime,latestTime(state));if(lastTime>=Date.now()+50*year)lastTime=repairClock(state);}
  function acceptRaw(raw){if(raw===lastRaw)return false;accept(decode(raw));lastRaw=raw;return true;}
  // Keep the GET before every write/observation for cross-tab concurrency;
  // identical stored bytes need no repeated decode, merge or photo cloning.
@@ -74,7 +94,7 @@ export function createZenJourney({storage=null,locations={},now=()=>Date.now()}=
   const photos=state.photos.map(p=>({...p,position:[...p.position],direction:[...p.direction],promptIds:[...p.promptIds]}));
   const readyToReturn=Math.max(state.moments.aki??0,state.photoPrompts['kyoto-view']??0,state.moments.tea??0);
   const stage=!state.moments.aki?0:!state.photoPrompts['kyoto-view']?1:!state.moments.tea?2:!(state.moments.return>readyToReturn)?3:4;
-  return {version:2,intention:state.intention,weather:state.weather,moments:{...state.moments},sketches:{...state.sketches},photoPrompts:{...state.photoPrompts},photos,story:{stage,complete:stage===4},visit:{...state.visit},persistent};
+  return {version:2,intention:state.intention,weather:state.weather,activeWalk:state.activeWalk,walks:describeQuietWalks(state),moments:{...state.moments},sketches:{...state.sketches},photoPrompts:{...state.photoPrompts},photos,story:{stage,complete:stage===4},visit:{...state.visit},persistent};
  }
  function changed(){if(persistent)try{const raw=JSON.stringify(state);storage.setItem(ZEN_JOURNEY_KEY,raw);lastRaw=raw;}catch{persistent=false;}for(const fn of listeners)fn(snapshot());}
  function setting(field,id){if(disposed||!choices[field].includes(id))return false;refresh();if(state[field]===id)return false;state[field]=id;state.settingsAt[field]=timestamp();changed();return true;}
@@ -82,7 +102,7 @@ export function createZenJourney({storage=null,locations={},now=()=>Date.now()}=
  // Existing seals remain owned by the original journal, under its original key.
  const onStorage=event=>{if(disposed||event.key!==ZEN_JOURNEY_KEY||!acceptRaw(event.newValue))return;for(const fn of listeners)fn(snapshot());};
  globalThis.window?.addEventListener?.('storage',onStorage);
- return {snapshot,setIntention:id=>setting('intention',id),setWeather:id=>setting('weather',id),
+ return {snapshot,setIntention:id=>setting('intention',id),setWeather:id=>setting('weather',id),setActiveWalk:id=>setting('activeWalk',id),
   canRecordPhoto(details={}){return !disposed&&!!photoRecord({...details,id:'eligibility',createdAt:1});},
   observe(position,{mode}={}){
    if(disposed||mode!=='walk'||!finitePoint(position))return false;refresh();if(state.visit.departed)return false;

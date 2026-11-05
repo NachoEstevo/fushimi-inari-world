@@ -2,11 +2,9 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {appendStreetFood,STREET_FOOD_ITEMS} from './keihan-street-food.mjs';
+import {DRINK_PRODUCTS,createDrinkVesselResources} from './drink-vessels.mjs';
 
-export const STREET_DRINKS=Object.freeze([
- {name:'Green tea',color:'#81a85c'},{name:'Water',color:'#78b7d5'},
- {name:'Coffee',color:'#a87548'},{name:'Citrus soda',color:'#e5b94e'}
-]);
+export const STREET_DRINKS=DRINK_PRODUCTS;
 
 // Small, explicit machine interaction: selection, release, collection. There
 // is no payment, stock persistence or network service in this scene prop.
@@ -23,7 +21,7 @@ export function createDrinkCollectionAction(controller,machineId){
  return ()=>{
   if(controller.state.phase!=='dispensed')return controller.dispense();
   const drink=STREET_DRINKS[controller.state.selected],message=controller.collect();controller.select();
-  return {message,event:{type:'drink.collected',drink:drink.name,color:drink.color,machineId}};
+  return {message,event:{type:'drink.collected',drink:drink.name,color:drink.color,productId:drink.id,machineId}};
  };
 }
 
@@ -32,16 +30,9 @@ function atlasTexture(){
  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=1024;const c=canvas.getContext('2d');
  if(!c)return null;
  c.fillStyle='#e9e8de';c.fillRect(0,0,1024,1024);c.textAlign='center';c.textBaseline='middle';
- // Four atlas cells: machine display, vertical menu, awning fascia, food cards.
+ // Four atlas cells: machine signs, vertical menu, awning fascia, food cards.
  c.fillStyle='#172b33';c.fillRect(0,0,512,512);c.fillStyle='#f6f2df';c.font='bold 48px sans-serif';c.fillText('DRINKS',256,55);
  c.font='22px sans-serif';c.fillStyle='#8ce2ff';c.fillText('つめたい  COLD',256,104);
- // The old full display printed another eighteen bottles behind the real
- // eighteen models. This cell now supplies cropped labels, not a second shelf.
- for(const [i,name]of ['TEA','H2O','COFFEE','SODA'].entries()){
-  const x=i*128;c.fillStyle=['#d5e5af','#d7f0f3','#e8d0a9','#f2db86'][i];c.fillRect(x,128,128,128);
-  c.fillStyle=['#40652f','#246e89','#603c29','#8c5b12'][i];c.fillRect(x+8,137,112,6);c.fillRect(x+8,237,112,6);
-  c.font=`bold ${i===2?24:33}px sans-serif`;c.fillText(name,x+64,184);c.font='17px sans-serif';c.fillText(['緑茶','天然水','珈琲','炭酸'][i],x+64,220);
- }
  c.fillStyle='#172b33';c.fillRect(0,256,512,80);c.fillStyle='#d5edbd';c.font='bold 29px sans-serif';c.fillText('E · CHOOSE A DRINK',256,296);
  // Original fox mark inspired by the station context; no photograph pixels.
  c.clearRect(0,352,160,160);c.fillStyle='#f0f2e8';c.beginPath();c.arc(75,438,48,.1,Math.PI*1.93);c.fill();
@@ -65,11 +56,11 @@ function atlasRegion(geometry,x,y,width,height){
 
 function geometryBatch(group,palette){
  const parts=new Map();
- function put(g,key,color){const geometry=g.index?g.toNonIndexed():g;if(geometry!==g)g.dispose();if(palette[key].vertexColors){const c=new THREE.Color(color??'#ffffff'),values=new Float32Array(geometry.attributes.position.count*3);for(let i=0;i<values.length;i+=3){values[i]=c.r;values[i+1]=c.g;values[i+2]=c.b;}geometry.setAttribute('color',new THREE.BufferAttribute(values,3));}if(!parts.has(key))parts.set(key,[]);parts.get(key).push(geometry);}
+ function put(g,key,color){const geometry=g.index?g.toNonIndexed():g;if(geometry!==g)g.dispose();if(palette[key].vertexColors&&!geometry.hasAttribute('color')){const c=new THREE.Color(color??'#ffffff'),values=new Float32Array(geometry.attributes.position.count*3);for(let i=0;i<values.length;i+=3){values[i]=c.r;values[i+1]=c.g;values[i+2]=c.b;}geometry.setAttribute('color',new THREE.BufferAttribute(values,3));}if(!parts.has(key))parts.set(key,[]);parts.get(key).push(geometry);}
  return {put,box(w,h,d,x,y,z,key,color){const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);put(g,key,color);},
   cylinder(r1,r2,h,x,y,z,key,color,segments=10){const g=new THREE.CylinderGeometry(r1,r2,h,segments);g.translate(x,y,z);put(g,key,color);},
   plane(w,h,x,y,z,cell=0){const g=new THREE.PlaneGeometry(w,h),uv=g.attributes.uv;const regions=[[0,.5,.5,1],[.5,1,.5,1],[0,.5,0,.5],[.5,1,0,.5]],r=regions[cell];for(let i=0;i<uv.count;i++){uv.setXY(i,r[0]+uv.getX(i)*(r[1]-r[0]),r[2]+uv.getY(i)*(r[3]-r[2]));}g.translate(x,y,z);put(g,'print');},
-  finish(){for(const [key,geometries]of parts){const g=mergeGeometries(geometries,false);geometries.forEach(p=>p.dispose());const m=new THREE.Mesh(g,palette[key]);m.name=group.name+' · '+key;m.castShadow=key!=='print'&&key!=='glass';m.receiveShadow=key!=='glass';group.add(m);}parts.clear();}
+  finish(){for(const [key,geometries]of parts){const g=mergeGeometries(geometries,false);geometries.forEach(p=>p.dispose());const m=new THREE.Mesh(g,palette[key]);m.name=group.name+' · '+key;m.castShadow=key!=='print'&&key!=='glass'&&key!=='drinkLabel';m.receiveShadow=key!=='glass';group.add(m);}parts.clear();}
  };
 }
 
@@ -96,12 +87,14 @@ export function installKeihanStreetCommerce(assembly){
  const existing=root.getObjectByName('Keihan commerce r104');if(existing)return existing.userData.runtime;
  const plan=planKeihanCommerce(assembly);if(!plan.machines.length&&!plan.sites.length)return {built:false,reason:'No supported commerce positions'};
  const group=new THREE.Group();group.name='Keihan commerce r104';
- const texture=atlasTexture(),palette={
+ const texture=atlasTexture(),drinkResources=createDrinkVesselResources(),borrowedDrinkGeometry=new Set(),palette={
   color:new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.64}),
   metal:new THREE.MeshStandardMaterial({color:'#aab2af',roughness:.32,metalness:.7}),
   dark:new THREE.MeshStandardMaterial({color:'#17252a',roughness:.65}),
   white:new THREE.MeshStandardMaterial({color:'#e9e5d8',roughness:.72}),
+  glaze:new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.28}),
   print:new THREE.MeshStandardMaterial({map:texture,roughness:.65,emissive:'#b8d1c7',emissiveIntensity:.10}),
+  drinkLabel:drinkResources.materials.drinkLabel,
  };
  const machinePalette={...palette,
   color:new THREE.MeshPhysicalMaterial({color:'#ffffff',vertexColors:true,roughness:.42,metalness:.02,clearcoat:.18,clearcoatRoughness:.30}),
@@ -125,12 +118,8 @@ export function installKeihanStreetCommerce(assembly){
    const y=.98+row*.28;b.box(.73,.025,.10,-.075,y-.09,.42,'metal');
    b.put(atlasRegion(new THREE.PlaneGeometry(.70,.012),192,368,32,32).translate(-.075,y-.067,.477),'print');
    for(let col=0;col<6;col++){
-    const x=-.37+col*.118,kind=col%4,drink=STREET_DRINKS[kind],radius=kind===1?.027:.031;
-    b.cylinder(radius,radius,kind===3?.13:.116,x,y,.445,'color',drink.color,8);
-    if(kind<2){b.cylinder(.014,radius,.025,x,y+.07,.445,'color',drink.color,8);b.cylinder(.014,.016,.018,x,y+.091,.445,'white',undefined,8);}
-    else for(const side of [-1,1])b.put(new THREE.CircleGeometry(radius,8).rotateX(-side*Math.PI/2).translate(x,y+side*(kind===3?.065:.058),.445),'metal');
-    const label=new THREE.CylinderGeometry(radius+.0007,radius+.0007,.044,8,1,true,-.95,1.9);
-    b.put(atlasRegion(label,kind*128,128,128,128).translate(x,y,.445),'print');
+    const x=-.37+col*.118,drink=STREET_DRINKS[col%STREET_DRINKS.length];
+    drinkResources.append(b,drink.id,{position:[x,y-.0775,.445]});
     b.box(.068,.025,.025,x,y-.12,.437,'color','#c5d7b6');
    }
   }
@@ -158,8 +147,9 @@ export function installKeihanStreetCommerce(assembly){
   if(spec.existingCollider)for(const side of [-1,1])for(const y of [.42,.95,1.48])b.put(atlasRegion(new THREE.PlaneGeometry(.46,.46),0,352,160,160).rotateY(side*Math.PI/2).translate(side*.5206,y,0),'print');
   b.finish();
   const lamp=new THREE.Mesh(new THREE.BoxGeometry(.065,.024,.02),new THREE.MeshBasicMaterial({color:'#c7f0a2'}));lamp.position.set(-.37,.86,.46);lamp.name='Selected product button';owner.add(lamp);
-  const can=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.15,12),new THREE.MeshStandardMaterial({color:STREET_DRINKS[0].color,roughness:.4,metalness:.22}));can.position.set(-.075,.37,.42);can.rotation.z=Math.PI/2;can.visible=false;can.name='Dispensed drink in collection tray';owner.add(can);
-  const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.material.color.set(STREET_DRINKS[state.selected].color);lamp.position.x=-.37+state.selected*.118;});
+  const can=new THREE.Group();can.position.set(.025,.37,.42);can.rotation.z=Math.PI/2;can.visible=false;can.name='Dispensed drink in collection tray';owner.add(can);
+  for(const [i,drink] of STREET_DRINKS.entries()){const model=drinkResources.create(drink.id);model.visible=i===0;model.traverse(o=>{if(o.isMesh)borrowedDrinkGeometry.add(o.geometry);});can.add(model);}
+  const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.children.forEach((model,i)=>{model.visible=i===state.selected;});lamp.position.x=-.37+state.selected*.118;});
   owner.userData.interactable={language:'en',title:'Street drink machine',description:'Choose a drink, dispense it, then collect it from the lower tray.',note:'Interactive scene prop · no payment required.',actions:[{label:'Next drink',run:()=>controller.select()},{label:'Dispense',run:()=>controller.dispense()},{label:'Collect drink',run:()=>controller.collect()}]};
   Object.assign(owner.userData.interactable,{proximity:true,cooldownMs:650,
    directAction:createDrinkCollectionAction(controller,spec.id??owner.name)});
@@ -213,26 +203,40 @@ export function installKeihanStreetCommerce(assembly){
   b.finish();
  }
  root.add(group);assembly.colliders.push(...colliders);assembly.legacy.interactables.push(...machines.map(m=>m.group));group.updateMatrixWorld(true);
- const ownedGeometry=new Set(),ownedMaterials=new Set([...Object.values(palette),...Object.values(machinePalette)]);
- let triangles=0,batches=0;group.traverse(o=>{if(o.isMesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;batches++;ownedGeometry.add(o.geometry);ownedMaterials.add(o.material);}});
+ const drinkMaterials=new Set(Object.values(drinkResources.materials));
+ const ownedGeometry=new Set(),ownedMaterials=new Set([...Object.values(palette),...Object.values(machinePalette)].filter(m=>!drinkMaterials.has(m)));
+ let triangles=0,batches=0;
+ group.traverse(o=>{if(o.isMesh){if(!borrowedDrinkGeometry.has(o.geometry))ownedGeometry.add(o.geometry);if(!drinkMaterials.has(o.material))ownedMaterials.add(o.material);}});
+ group.traverseVisible(o=>{if(o.isMesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;batches++;}});
  // Templates are prepared once; served/held clones borrow their geometries
  // and materials. The commerce owner alone releases those resources.
  const servingTemplates=new Map();let servingTriangles=0;
  for(const [kind,items] of Object.entries(STREET_FOOD_ITEMS))for(const item of items){
   const template=new THREE.Group();template.name=`Street serving ${item}`;
-  const batch=geometryBatch(template,palette);appendStreetFood(batch,kind,item,{packaged:true});batch.finish();
-  template.traverse(o=>{if(o.isMesh){ownedGeometry.add(o.geometry);servingTriangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});
-  servingTemplates.set(`${kind}:${item}`,template);
+  const bites=kind==='senbei'?2:3,batchesByStage=[];
+  for(let stage=0;stage<=bites;stage++){const part=new THREE.Group();part.name=`Food portion ${stage}`;part.userData.stage=stage;template.add(part);batchesByStage.push(geometryBatch(part,palette));}
+  appendStreetFood({put(geometry,key,color,stage){batchesByStage[stage].put(geometry,key,color);}},kind,item,{packaged:true});
+  for(const batch of batchesByStage)batch.finish();
+  template.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;ownedGeometry.add(o.geometry);servingTriangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});
+  servingTemplates.set(`${kind}:${item}`,{template,bites});
  }
- const stats={machines:machines.length,foodCounters:detailGroups.length-machines.length,drawBatches:batches,triangles,servingTriangles,collidersAdded:colliders.length,textureAtlases:1,pointLights:0};
+ const stats={machines:machines.length,foodCounters:detailGroups.length-machines.length,drawBatches:batches,triangles,servingTriangles,collidersAdded:colliders.length,textureAtlases:2,pointLights:0};
  let disposed=false;
  const runtime={built:true,group,detailGroups,machines,vendorStations:plan.vendorStations,sites:plan.sites,stats,
-  createServing(kind,item){return disposed?null:servingTemplates.get(`${kind}:${item}`)?.clone(true)??null;},
+  createServing(kind,item){
+   const entry=disposed?null:servingTemplates.get(`${kind}:${item}`);if(!entry)return null;
+   const model=entry.template.clone(true),parts=model.children;model.userData.bites=entry.bites;
+   model.userData.preparationRoots=parts.slice();
+   model.userData.setBitesRemaining=value=>{const remaining=Math.max(0,Math.min(entry.bites,Math.floor(Number(value)||0)));for(const part of parts)part.visible=part.userData.stage===0||(kind==='senbei'?part.userData.stage===remaining:part.userData.stage<=remaining);};
+   model.userData.setBitesRemaining(entry.bites);
+   return model;
+  },
+  createDrink(productId){return disposed?null:drinkResources.create(productId);},
   update(camera,time){if(disposed)return;for(const m of machines){if(!m.group.visible||Math.hypot(camera.position.x-m.spec.position[0],camera.position.z-m.spec.position[2])>22)continue;m.lamp.material.color.setHex(m.controller.state.phase==='dispensed'?0xffdb85:0xc7f0a2);if(m.controller.state.phase==='dispensed')m.can.rotation.x=Math.sin(time*2)*.025;}},dispose(){
   if(disposed)return;disposed=true;group.removeFromParent();
   for(const {group:owner}of machines){const i=assembly.legacy.interactables.indexOf(owner);if(i!==-1)assembly.legacy.interactables.splice(i,1);}
   for(const collider of colliders){const i=assembly.colliders.indexOf(collider);if(i!==-1)assembly.colliders.splice(i,1);}
-  for(const geometry of ownedGeometry)geometry.dispose();for(const material of ownedMaterials)material.dispose();texture?.dispose();servingTemplates.clear();
+  for(const geometry of ownedGeometry)geometry.dispose();for(const material of ownedMaterials)material.dispose();texture?.dispose();drinkResources.dispose();servingTemplates.clear();
  }};
  group.userData.runtime=runtime;return runtime;
 }

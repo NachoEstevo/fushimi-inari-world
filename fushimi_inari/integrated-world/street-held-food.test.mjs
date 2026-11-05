@@ -16,3 +16,12 @@ test('replacing a snack during a bite restores Eat; blocked views pause consumpt
  food.eat();for(let i=0;i<12;i++)food.update(.1);assert.equal(food.stats.carrying,false);assert.equal(food.group.visible,false);
  food.dispose();food.dispose();assert.equal(scene.children.length,0);assert.equal(listeners.size,0);assert.equal(disposed,0);geometry.dispose();material.dispose();
 });
+
+
+test('a failing consumption listener cannot count another bite or leave the animation busy',()=>{
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();let notices=0;
+ const food=createStreetHeldFood({scene,camera,document:null,commerce:{createServing(){return new THREE.Group();}},onConsume(){notices++;throw Error('listener');}});
+ food.collect({kind:'senbei',itemId:'fox-senbei'});food.eat();
+ for(let i=0;i<15;i++)try{food.update(.1);}catch(error){assert.equal(error.message,'listener');}
+ assert.equal(notices,1);assert.equal(food.stats.bites,1);assert.equal(food.stats.eating,false);food.dispose();
+});

@@ -24,7 +24,7 @@ test('four supported machines and three counter groups are batched without light
  const a=fixture(),before=a.colliders.length,r=installKeihanStreetCommerce(a);
  assert.equal(r.built,true);assert.equal(r.machines.length,4);assert.equal(r.detailGroups.length,7);
  assert.equal(r.stats.collidersAdded,2);assert.equal(a.colliders.length,before+2);assert.equal(a.legacy.interactables.length,4);
- assert.ok(r.stats.triangles<22000,JSON.stringify(r.stats));assert.ok(r.stats.drawBatches<=47,JSON.stringify(r.stats));
+ assert.ok(r.stats.triangles<30000,JSON.stringify(r.stats));assert.ok(r.stats.drawBatches<=47,JSON.stringify(r.stats));
  let lights=0;r.group.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite));});assert.equal(lights,0);
  assert.equal(installKeihanStreetCommerce(a),r);assert.equal(a.legacy.interactables.length,4);assert.equal(a.colliders.length,before+2);
 });
@@ -51,17 +51,18 @@ test('machine paint, single-pane glass and beveled shells share finishes without
  for(const m of platform){const color=new THREE.Color(m.spec.color);assert.ok(color.b>color.r,'photographed platform navy replaces the former red/white placeholder palette');}
 });
 
-test('the display atlas labels four physical drink types instead of painting duplicate product rows',()=>{
+test('one product atlas labels the physical drinks and is shared across all machines',()=>{
  const previous=Object.getOwnPropertyDescriptor(globalThis,'document'),printed=[];
  const context=new Proxy({},{get:(_,key)=>key==='fillText'?(value)=>printed.push(value):()=>{},set:()=>true});
  const canvas={width:0,height:0,getContext:()=>context};globalThis.document={createElement:()=>canvas};
  try{
   const assembly={root:new THREE.Group(),colliders:[],legacy:{interactables:[]},keihanStation:{spec:{platformFloor:31}}};
-  const r=installKeihanStreetCommerce(assembly),names=['TEA','H2O','COFFEE','SODA'];
+  const r=installKeihanStreetCommerce(assembly),names=['Oi Ocha','おいしい水','BOSS','Sparkling'];
   assert.deepEqual(printed.filter(v=>names.includes(v)),names,'one original label per drink, reused on the physical containers');
-  assert.equal(r.stats.textureAtlases,1);const maps=new Set();
-  for(const m of r.machines){const print=m.group.children.find(o=>o.name===m.spec.id+' · print');maps.add(print.material.map);assert.ok(print.material.alphaTest>0);}
-  assert.equal(maps.size,1);assert.equal([...maps][0].image.width,1024);assert.equal([...maps][0].image.height,1024);
+  assert.equal(r.stats.textureAtlases,2);const maps=new Set();
+  for(const m of r.machines){const print=m.group.children.find(o=>o.name===m.spec.id+' · print'),labels=m.group.children.find(o=>o.name===m.spec.id+' · drinkLabel');maps.add(labels.material.map);assert.ok(print.material.alphaTest>0);}
+  assert.equal(maps.size,1);assert.equal([...maps][0].image.width,1024);assert.equal([...maps][0].image.height,512);
+  assert.strictEqual(r.createDrink('water').children.find(o=>o.name==='drinkLabel').material.map,[...maps][0]);r.dispose();
  }finally{if(previous)Object.defineProperty(globalThis,'document',previous);else delete globalThis.document;}
 });
 
@@ -71,7 +72,7 @@ test('direct machine interaction dispenses and collects with a live proximity pr
  data.directAction();assert.equal(machine.can.visible,true);assert.equal(data.prompt,'Collect drink');
  assert.match(data.directAction().message,/Green tea collected/);assert.equal(machine.can.visible,false);
  assert.equal(machine.controller.state.selected,1);assert.equal(data.prompt,'Get a drink');
- data.directAction();assert.equal(machine.can.material.color.getHexString(),new THREE.Color(STREET_DRINKS[1].color).getHexString());
+ data.directAction();assert.equal(machine.can.children.find(child=>child.visible).userData.productId,STREET_DRINKS[1].id);
 });
 
 test('platform machines preserve original equipment clearance and all cabinets meet their support',()=>{
@@ -87,7 +88,7 @@ test('ray hits resolve to the machine ancestor and actions update visible select
  const eye=new THREE.Vector3(m.spec.position[0]-2,m.spec.position[1]+1.3,m.spec.position[2]),ray=new THREE.Raycaster(eye,new THREE.Vector3(1,0,0),0,3),hit=ray.intersectObjects(a.legacy.interactables,true)[0];assert.ok(hit);
  let target=hit.object;while(target&&!target.userData.interactable)target=target.parent;assert.equal(target,m.group);
  const actions=target.userData.interactable.actions;assert.equal(actions.length,3);actions[0].run();assert.equal(m.controller.state.selected,1);assert.ok(Math.abs(m.lamp.position.x-(-.252))<1e-6);
- actions[1].run();assert.equal(m.can.visible,true);assert.equal(m.can.material.color.getHexString(),new THREE.Color(STREET_DRINKS[1].color).getHexString());actions[2].run();assert.equal(m.can.visible,false);
+ actions[1].run();assert.equal(m.can.visible,true);assert.equal(m.can.children.find(child=>child.visible).userData.productId,STREET_DRINKS[1].id);actions[2].run();assert.equal(m.can.visible,false);
 });
 
 test('new street colliders preserve the mapped centerline and one-metre lateral lanes',()=>{
@@ -137,20 +138,22 @@ test('served food has recognizable bounded forms and borrows cached geometry unt
   assert.notStrictEqual(one,two);assert.ok(one.isGroup&&two.isGroup);
   assert.ok(one.children.length>=1&&one.children.length<=4);
   assert.equal(one.children.length,two.children.length);
-  for(let i=0;i<one.children.length;i++){
-   assert.strictEqual(one.children[i].geometry,two.children[i].geometry);
-   assert.strictEqual(one.children[i].material,two.children[i].material);
-   const geometry=one.children[i].geometry;
+  const meshes=[],otherMeshes=[];one.traverse(o=>{if(o.isMesh)meshes.push(o);});two.traverse(o=>{if(o.isMesh)otherMeshes.push(o);});
+  assert.equal(meshes.length,otherMeshes.length);
+  for(let i=0;i<meshes.length;i++){
+   assert.strictEqual(meshes[i].geometry,otherMeshes[i].geometry);
+   assert.strictEqual(meshes[i].material,otherMeshes[i].material);
+   const geometry=meshes[i].geometry;
    for(const key of ['position','normal','uv'])assert.ok(geometry.attributes[key]);
    for(const value of geometry.attributes.uv.array)assert.ok(Number.isFinite(value));
   }
   const box=new THREE.Box3().setFromObject(one),size=box.getSize(new THREE.Vector3());
   assert.ok(Math.abs(box.min.y)<1e-5,`${item} has a supporting base`);
   assert.ok(size.x<.18&&size.z<.18&&size.y<.25,`${item} fits the hand and service counter`);
-  assert.ok(one.children.reduce((n,m)=>n+m.geometry.attributes.position.count,0)>150,`${item} has modeled food rather than a printed box`);
+  assert.ok(meshes.reduce((n,m)=>n+m.geometry.attributes.position.count,0)>150,`${item} has modeled food rather than a printed box`);
  }
  assert.equal(runtime.createServing('grill','matcha'),null);
- const serving=runtime.createServing('grill','dango'),geometry=serving.children[0].geometry;
+ const serving=runtime.createServing('grill','dango');let geometry;serving.traverse(o=>{if(o.isMesh&&!geometry)geometry=o.geometry;});
  let disposed=0;geometry.addEventListener('dispose',()=>disposed++);
  runtime.dispose();runtime.dispose();assert.equal(disposed,1,'commerce owns the shared serving geometry');
 });
@@ -166,10 +169,42 @@ test('commerce disposal releases its own shared resources once and removes only 
  assert.equal(typeof r.dispose,'function');r.dispose();r.dispose();r.update(new THREE.PerspectiveCamera(),3);
  assert.equal(r.group.parent,null);assert.equal(a.root.getObjectByName('Keihan commerce r104'),undefined);
  assert.deepEqual(a.legacy.interactables,[other]);assert.equal(a.colliders.length,existingColliders.length);assert.ok(a.colliders.every((c,i)=>c===existingColliders[i]));
- assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterials,materials.size);assert.equal(releasedTextures,1);
+ assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterials,materials.size);assert.equal(releasedTextures,maps.size);assert.equal(maps.size,2);
 });
 
 test('only a collected drink produces a carried-drink completion event',async()=>{
  const {createDrinkCollectionAction,createDrinkMachineState}=await import('./keihan-street-commerce.mjs');const controller=createDrinkMachineState(),act=createDrinkCollectionAction(controller,'station-machine');
  assert.equal(typeof act(),'string');const collected=act();assert.equal(collected.event.type,'drink.collected');assert.equal(collected.event.drink,'Green tea');assert.equal(collected.event.machineId,'station-machine');assert.equal(controller.state.collected,1);assert.equal(typeof act(),'string');assert.equal(controller.state.collected,1);
+});
+
+test('each collected product uses its selected physical model through the machine and shared factory',()=>{
+ const runtime=installKeihanStreetCommerce(fixture()),machine=runtime.machines[0],action=machine.group.userData.interactable.directAction;
+ for(const product of STREET_DRINKS){
+  assert.equal(machine.controller.state.selected,STREET_DRINKS.indexOf(product));
+  action();assert.equal(machine.can.visible,true);
+  const shown=machine.can.children.filter(child=>child.visible);
+  assert.equal(shown.length,1);assert.equal(shown[0].userData.productId,product.id);
+  const carried=runtime.createDrink(product.id);assert.equal(carried.userData.productId,product.id);
+  assert.equal(carried.children.length,shown[0].children.length);
+  for(let i=0;i<carried.children.length;i++){assert.strictEqual(carried.children[i].geometry,shown[0].children[i].geometry);assert.strictEqual(carried.children[i].material,shown[0].children[i].material);}
+  const result=action();assert.equal(result.event.productId,product.id);assert.equal(machine.can.visible,false);
+ }
+ assert.equal(runtime.createDrink('unknown'),null);runtime.dispose();
+});
+
+test('served food changes visible portions after bites without allocating or disposing geometry',()=>{
+ const runtime=installKeihanStreetCommerce(fixture());
+ for(const [kind,item,bites] of [['senbei','fox-senbei',2],['soft-serve','tofu',3],['grill','dango',3]]){
+  const serving=runtime.createServing(kind,item),other=runtime.createServing(kind,item);
+  assert.equal(serving.userData.bites,bites);assert.equal(typeof serving.userData.setBitesRemaining,'function');
+  const nodes=[];serving.traverse(o=>{if(o.isMesh)nodes.push(o);});
+  const geometries=nodes.map(o=>o.geometry),before=serving.children.filter(part=>part.visible&&part.userData.stage>0).length;
+  for(let remaining=bites-1;remaining>=0;remaining--){serving.userData.setBitesRemaining(remaining);assert.equal(serving.children.filter(part=>part.visible&&part.userData.stage>0).length,kind==='senbei'?Math.min(1,remaining):remaining);}
+  const after=serving.children.filter(part=>part.visible&&part.userData.stage>0).length;
+  assert.equal(before,kind==='senbei'?1:bites);assert.equal(after,0,'all edible portions disappear while their support remains');
+  assert.equal(serving.userData.preparationRoots.length,bites+1);assert.ok(serving.children[0].visible);
+  assert.deepEqual(nodes.map(o=>o.geometry),geometries);assert.ok(other.children.some(child=>child.visible),'a separate serving is unaffected');
+  serving.userData.setBitesRemaining(bites);assert.equal(serving.children.filter(part=>part.visible&&part.userData.stage>0).length,kind==='senbei'?1:bites);
+ }
+ runtime.dispose();
 });

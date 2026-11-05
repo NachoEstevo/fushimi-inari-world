@@ -912,6 +912,14 @@ try {
     onIntention:applyZenIntention});
   for(const group of zen.food.detailGroups)detailChunks.add(group,{radius:80,margin:20});
   if(query.get('audit')==='1'){
+    const reviewVisitor=document.createElement('button');reviewVisitor.type='button';reviewVisitor.textContent='Review · Nearby visitor';
+    reviewVisitor.onclick=()=>{
+      let nearest=null,distance=Infinity;for(const person of streetLife.people){if(person.vendor||!person.root.visible)continue;const d=camera.position.distanceToSquared(person.root.position);if(d<distance){nearest=person;distance=d;}}
+      if(!nearest)return;const p=nearest.root.position,yaw=nearest.state.yaw,x=p.x+Math.sin(yaw)*2,z=p.z+Math.cos(yaw)*2;
+      requestCheckpoint({id:'audit_nearby_visitor',label:'Review · Visitor',point:[x,assembly.walkHeight(x,z),z],target:[p.x,p.y+1.55,p.z]});
+    };$('checkpoint-buttons').append(reviewVisitor);
+  }
+  if(query.get('audit')==='1'){
     for(const [i,owner] of zen.world.interactionRoots.entries()){
       const target=owner.getWorldPosition(new THREE.Vector3()),id=`audit_zen_${i}`;
       const seatProp=['cat','map','postcard'].includes(owner.userData.zenMoment);
@@ -1078,6 +1086,7 @@ try {
   lastTime=performance.now();
   let mapTimer=0,aheadPrefetchAt=0,aheadCheckpoint=null;const aheadPrefetchPosition=camera.position.clone();
   const prewarmFrameBudget=query.get('prewarmHeadroom')==='1'?createPrewarmFrameBudget():null;
+  const peopleFrameState={blocked:false};
   function animate(time){
     const callbackEntryMs=movementFrameAudit?.active?performance.now():null;
     frameSchedulingAudit?.noteFrame(time);
@@ -1129,7 +1138,8 @@ try {
     for(const water of waterControllers)water.update(time/1000);
     fareGates?.update(camera.position.toArray(),time/1000,document.hidden||zen.active||menu.active||photo.active||journal.active);
     if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
-    sunShafts.setReducedMotion(arrivalUI?.reducedMotion??shaftReducedMotion?.matches??false);sunShafts.update(camera,time/1000);sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
+    peopleFrameState.blocked=document.hidden||menu.active||photo.active||journal.active||zen.food.active||zen.vending.active||!!arrival?.active||renderPreparation.busy||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open');
+    sunShafts.setReducedMotion(arrivalUI?.reducedMotion??shaftReducedMotion?.matches??false);sunShafts.update(camera,time/1000);sky.update();flashlight.update();visitors.update(camera,time/1000,peopleFrameState);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000,peopleFrameState);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
     if(!arrival?.active&&!document.body.classList.contains('welcome-open'))textureStreaming.update(camera.position,dt);

@@ -1,3 +1,5 @@
+import {installDrinkMachineService} from './drink-machine-service.mjs';
+import {installHeldPropInput} from './held-prop-input.mjs';
 import {installStreetFoodService} from './street-food-service.mjs';
 import * as THREE from 'three';
 import {createZenJourney} from './zen-journey-state.mjs';
@@ -15,7 +17,7 @@ import {zenJourneyLocations} from './zen-locations.mjs';
 // Connect optional activities through explicit completions. Existing walking,
 // journal and route owners retain their responsibilities and their data.
 export function installZenExperience({scene,camera,cameraElement,walker,controls,assembly,shop,visitors,streetCommerce,audio,onPhoto,openJournal,onIntention,onTimeOfDay,getTimeOfDay,getQuality,audit=false,getBlocked=()=>false}){
- const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./zen-experience.css?v=street-r3-1',import.meta.url).href;document.head.append(style);
+ const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./zen-experience.css?v=living-nov05-1',import.meta.url).href;document.head.append(style);
  let storage=null;try{storage=localStorage;}catch{}
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
  const locations=zenJourneyLocations(assembly,shop,streetCommerce),journey=createZenJourney({storage,locations}),album=createZenPhotoAlbum();
@@ -23,7 +25,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  let journeyState=journey.snapshot();
  const weather=createZenWeather({scene,camera,assembly,shop,getQuality});
  const seat=createZenSeatedCamera({camera,walker,controls,reducedMotion:()=>reducedMotion.matches});
- const drink=createZenHeldDrink({scene,camera});
+ const drink=createZenHeldDrink({scene,camera,commerce:streetCommerce});
  const direction=new THREE.Vector3();
  const context=()=>({position:camera.position.toArray(),direction:camera.getWorldDirection(direction).toArray(),mode:walker.mode,fov:camera.fov,weather:journeyState.weather,light:getTimeOfDay(),createdAt:Date.now()});
  const notice=document.createElement('p');notice.id='zen-experience-notice';notice.className='zen-experience-notice';notice.hidden=true;notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');document.body.append(notice);let noticeUntil=0;
@@ -51,9 +53,13 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
   if(payload.leave){seat.stand();world.setSeated(false);return;}
   const accepted=!returning.cameraOwned&&!getBlocked()&&seat.sit({...payload,onLeave(){world?.setSeated(false);payload.onLeave?.();}});world.setSeated(!!accepted);
  },onReturn:startReturn});
- const food=installStreetFoodService({scene,camera,assembly,commerce:streetCommerce,walker,announce,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned,onCollected:()=>drink.stow()});
+ const food=installStreetFoodService({scene,camera,assembly,commerce:streetCommerce,walker,announce,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||vending.active,onCollected:()=>drink.stow()});
+ const vending=installDrinkMachineService({commerce:streetCommerce,camera,walker,announce,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||food.active});
+ const heldFood={group:food.held.group,canConsume:()=>food.held.stats.bites>0,consume:()=>food.held.eat()},heldDrink={group:drink.group,canConsume:()=>drink.stats.sips>0,consume:()=>drink.sip()};
+ const heldLook=new THREE.Euler(0,0,0,'YXZ');
+ const heldInput=installHeldPropInput({element:cameraElement,camera,document,onClaimUnlocked:()=>walker.releasePointerLock(),onDrag:(dx,dy)=>{heldLook.setFromQuaternion(camera.quaternion);heldLook.y-=dx*.003;heldLook.x=THREE.MathUtils.clamp(heldLook.x-dy*.003,-1.45,1.45);camera.quaternion.setFromEuler(heldLook);},getItem:()=>food.held.group.visible?heldFood:drink.group.visible?heldDrink:null,enabled:()=>walker.mode==='walk'&&!walker.paused&&!getBlocked()&&!world.active&&!seat.active&&!returning.cameraOwned&&!food.active&&!vending.active&&!document.hidden});
  let inputBlocked=false;
- const seatedLook=installZenSeatedLook({element:cameraElement,document,seat,enabled:()=>seat.active&&!inputBlocked&&!getBlocked()&&!world.active&&!returning.cameraOwned&&!food.active});
+ const seatedLook=installZenSeatedLook({element:cameraElement,document,seat,enabled:()=>seat.active&&!inputBlocked&&!getBlocked()&&!world.active&&!returning.cameraOwned&&!food.active&&!vending.active});
  ui=installZenJourneyUI({journey,album,onPhoto,onReturn:startReturn,onContinueWalking:()=>returning.continueWalking(),getContext:context,onOpen:openJournal,onIntention:id=>onIntention(id),onWeather:mode=>weather.setMode(mode)});
  weather.setMode(journeyState.weather);
  const unsubscribe=journey.subscribe(state=>{journeyState=state;weather.setMode(state.weather);});
@@ -72,38 +78,38 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  document.addEventListener('pointerdown',unlock);document.addEventListener('keydown',unlock);
  const onKey=event=>{
   if(event.repeat||event.ctrlKey||event.metaKey||event.target?.closest?.('input,select,textarea,button,a,[contenteditable="true"]'))return;
-  if(event.code==='KeyU'&&!getBlocked()&&!world.active&&!returning.cameraOwned&&!food.active){event.preventDefault();toggleUmbrella();}
+  if(event.code==='KeyU'&&!getBlocked()&&!world.active&&!returning.cameraOwned&&!food.active&&!vending.active){event.preventDefault();toggleUmbrella();}
  };
  document.addEventListener('keydown',onKey,true);
  const hint=document.getElementById('interaction-hint'),volume=document.getElementById('ambient-volume');
  const returnState={paused:false},seatState={paused:false},worldState={blocked:false,mode:walker.mode,weather:journeyState.weather},weatherState={blocked:false},drinkState={blocked:false};
  let capturedPrompt=null,lastInteractHidden=true,lastDepartureHidden=true,lastDepartureDisabled=false;
- const runtime={journey,album,weather,world,returning,seat,get active(){return seat.active||world.active||returning.cameraOwned||food.active;},get cameraOwned(){return seat.active||returning.cameraOwned;},
-  get preparationRoots(){return [...world.interactionRoots,...world.interactionRoots.map(root=>root.userData.teaSurface).filter(Boolean),...(streetCommerce?.machines??[]).map(machine=>machine.can),returning.interactionRoot,drink.group,...food.preparationRoots,weather.group].filter(Boolean);},
+ const runtime={journey,album,weather,world,returning,seat,get active(){return seat.active||world.active||returning.cameraOwned||food.active||vending.active;},get cameraOwned(){return seat.active||returning.cameraOwned;},
+  get preparationRoots(){return [...world.interactionRoots,...world.interactionRoots.map(root=>root.userData.teaSurface).filter(Boolean),...(streetCommerce?.machines??[]).flatMap(machine=>machine.can.children.length?machine.can.children:[machine.can]),returning.interactionRoot,...drink.preparationRoots,...food.preparationRoots,weather.group].filter(Boolean);},
   async prepare(compile){await world.ready;if(disposed)return;world.update(0,performance.now()/1000,{blocked:true,mode:walker.mode,weather:journeyState.weather});await compile(runtime.preparationRoots.filter(root=>root!==weather.group));await weather.prepare(()=>compile([weather.group]));},
   async recordPhoto(details){
    if(disposed)return '';if(!journey.canRecordPhoto(details))return 'This view cannot be kept in the journal.';let thumbnail=null;try{thumbnail=await album.save(details.blob);}catch(error){announce(error.message);}
    const record=journey.recordPhoto({...details,thumbnailId:thumbnail?.id,promptId:capturedPrompt});capturedPrompt=null;
    if(!record)return 'This view cannot be kept in the journal.';
    return thumbnail?(thumbnail.persistent?'Kept in your journal.':'Kept for this visit · browser photo storage unavailable.'):'The memory is noted; the image preview could not be kept.';
-  },selectPhotoPrompt(id){capturedPrompt=id;},collectFood(event){return food.collect(event);},get food(){return food;},collectDrink(event){food.stow();drink.collect(event);journey.recordMoment('drink',{...context(),intent:'interact'});},
+  },selectPhotoPrompt(id){capturedPrompt=id;},collectFood(event){return food.collect(event);},get food(){return food;},get vending(){return vending;},collectDrink(event){if(!drink.collect(event))return false;food.stow();journey.recordMoment('drink',{...context(),intent:'interact'});return true;},
   cancelActivity(){seat.stand();world.setSeated(false);returning.cancel();},
   update(dt,time,{blocked=false}={}){
    if(disposed)return;
    const external=blocked||document.hidden;inputBlocked=external;
-   returnState.paused=external||food.active;seatState.paused=external||world.active||returning.cameraOwned||food.active;returning.update(dt,returnState);seatedLook.update(dt);seat.update(dt,seatState);
-   food.update(dt,{blocked:external||world.active||seat.active||returning.cameraOwned});
-   worldState.blocked=external||returning.cameraOwned||food.active;worldState.mode=walker.mode;worldState.weather=journeyState.weather;world.update(dt,time/1000,worldState);
+   returnState.paused=external||food.active||vending.active;seatState.paused=external||world.active||returning.cameraOwned||food.active||vending.active;returning.update(dt,returnState);seatedLook.update(dt);seat.update(dt,seatState);
+   food.update(dt,{blocked:external||world.active||seat.active||returning.cameraOwned||vending.active});vending.update(dt,{blocked:external||world.active||seat.active||returning.cameraOwned||food.active});
+   worldState.blocked=external||returning.cameraOwned||food.active||vending.active;worldState.mode=walker.mode;worldState.weather=journeyState.weather;world.update(dt,time/1000,worldState);
    if(world.active!==worldWasActive){worldWasActive=world.active;walker.pause(world.active||external||seat.active||returning.cameraOwned);if(world.active)controls.enabled=false;}
 
    const canInteract=!!(!external&&!runtime.active&&hint&&!hint.hidden);if(lastInteractHidden===canInteract){lastInteractHidden=!canInteract;interactButton.hidden=lastInteractHidden;}if(canInteract&&interactButton.textContent!==hint.textContent)interactButton.textContent=hint.textContent;
    ui.update(time);const hideDeparture=!returning.active||external;if(lastDepartureHidden!==hideDeparture){lastDepartureHidden=hideDeparture;departure.hidden=hideDeparture;}if(lastDepartureDisabled!==external){lastDepartureDisabled=external;cancel.disabled=skip.disabled=external;}if(departurePhase!==returning.stats.phase){departurePhase=returning.stats.phase;departureText.textContent=returning.active?({opening:'Doors opening',boarding:'Boarding',aisle:'Inside the train',turning:'Take a seat',seating:'Take a seat',closing:'Doors closing',departing:'Leaving Fushimi-Inari'}[returning.stats.phase]??'Your return journey'):'';}
    if(time-lastObserve>=500){lastObserve=time;weather.setAudioEnabled(audio.enabled);weather.setVolume(Number(volume?.value??55)/100);if(!external&&!returning.cameraOwned)journey.observe(camera.position.toArray(),{mode:walker.mode});
     const mode=getTimeOfDay();if(mode!==lastMode){autoDay=false;day.checked=false;lastMode=mode;}
-    if(audit)document.body.dataset.zenExperience=JSON.stringify({activity:{seated:seat.active,modal:world.active,returning:returning.active,trainSeated:returning.stats.seated},weather:weather.stats,returnTrain:returning.stats,world:world.stats,carriedDrink:drink.stats,streetFood:food.stats,story:journeyState.story});
+    if(audit)document.body.dataset.zenExperience=JSON.stringify({activity:{seated:seat.active,modal:world.active,returning:returning.active,trainSeated:returning.stats.seated},weather:weather.stats,returnTrain:returning.stats,world:world.stats,carriedDrink:drink.stats,streetFood:food.stats,vending:vending.stats,story:journeyState.story});
    }
    if(!notice.hidden&&time>noticeUntil)notice.hidden=true;
-  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned||food.active;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);food.afterCamera(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();food.dispose();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
+  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned||food.active||vending.active;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);food.afterCamera(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();heldInput.dispose();vending.dispose();food.dispose();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
    const i=roots.indexOf(returning.interactionRoot);if(i>=0)roots.splice(i,1);extras.remove();notice.remove();departure.remove();interactButton.remove();style.remove();document.removeEventListener('pointerdown',unlock);document.removeEventListener('keydown',unlock);document.removeEventListener('keydown',onKey,true);
   }};
  return runtime;
