@@ -99,6 +99,8 @@ function vesselParts(product,index,display=false){
   put(new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),radial),'drinkBody',body);
   const capRadius=citrus?.013:.015,capHeight=citrus?.010:.015,capY=citrus?.117:.1915;
   put(capGeometry(capRadius,capHeight,capY,display?radial:16,!display),display?'drinkBody':'drinkCap',cap);
+  // The cap hides this recessed opening until the first sip; reuse the body batch.
+  if(!display){const [neckRadius,neckY]=points.at(-1);put(new THREE.CircleGeometry(neckRadius*.86,radial).rotateX(-Math.PI/2).translate(0,neckY-.0015,0),'drinkBody','#14251b');}
   const label=new THREE.CylinderGeometry(radius+.00035,radius+.00035,labelHeight,radial,1,true).rotateY(Math.PI).translate(0,labelBottom+labelHeight/2,0);
   put(applyAtlas(label,index),'drinkLabel');
  }else{

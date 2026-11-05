@@ -92,3 +92,14 @@ test('opening a held drink moves only its shared cap or tab and can reset withou
  }
  resources.dispose();
 });
+
+test('opened bottles have a recessed mouth inside the existing body batch',()=>{
+ const resources=createDrinkVesselResources({document:null});
+ for(const id of ['green-tea','water','citrus']){
+  const model=resources.create(id),body=model.getObjectByName('drinkBody'),position=body.geometry.attributes.position,color=body.geometry.attributes.color;let mouth=[];
+  for(let i=0;i<position.count;i++)if(color.getX(i)<.015&&color.getY(i)<.025&&color.getZ(i)<.02)mouth.push([position.getX(i),position.getY(i),position.getZ(i)]);
+  assert.ok(mouth.length>=24,'opaque dark recess stops the open mouth showing scenery through the bottle');
+  const top=id==='citrus'?.113:.184;assert.ok(mouth.every(([x,y,z])=>Math.abs(y-(top-.0015))<1e-7&&Math.hypot(x,z)<.013));
+  model.userData.setOpenProgress(1);assert.equal(model.getObjectByName('drinkCap').visible,false);assert.equal(model.children.length,3,'the recess does not add another draw leaf');
+ }resources.dispose();
+});
