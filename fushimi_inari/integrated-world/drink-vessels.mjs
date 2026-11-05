@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
-// Original hand-drawn labels, informed by the manufacturers' product pages.
-// These are scene interpretations, not downloaded label photographs.
+// Original hand-drawn labels, informed by manufacturers' product pages and
+// package photographs. No photographed label pixels or traced logos are used.
 export const DRINK_PRODUCTS=Object.freeze([
  Object.freeze({id:'green-tea',name:'Green tea',color:'#81a85c',vessel:'bottle'}),
  Object.freeze({id:'water',name:'Water',color:'#78b7d5',vessel:'bottle'}),
@@ -13,31 +13,45 @@ export const DRINK_PRODUCTS=Object.freeze([
 function drawLabels(c){
  c.textAlign='center';c.textBaseline='middle';
  const rect=(color,x,y,w,h)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
- const text=(value,x,y,size,color='#142322',font='sans-serif')=>{c.fillStyle=color;c.font=`bold ${size}px ${font}`;c.fillText(value,x,y);};
- // Oi Ocha: a green sleeve and vertically arranged dark calligraphy.
- rect('#5aab31',0,0,256,512);rect('#83c94f',0,35,256,32);rect('#4b972e',0,463,256,22);
- text('伊藤園',128,58,21,'#174b26','serif');text('純国産茶葉',196,170,16,'#1a5a2b','serif');
- for(const [i,ch] of Array.from('お〜いお茶').entries())text(ch,125,130+i*46,45,'#103b22','serif');
- text('Oi Ocha',128,405,23,'#153c21','serif');text('GREEN TEA  600ml',128,438,13,'#245927');
- // Oishii Mizu: cool white and blue mineral-water label with mountains.
- rect('#e8f6f8',256,0,256,512);rect('#298bc1',256,0,256,50);rect('#c4e8ef',256,408,256,104);
- c.fillStyle='#a8dce9';c.beginPath();c.arc(384,234,98,0,Math.PI*2);c.fill();
- c.fillStyle='#d7f1f3';c.beginPath();c.arc(384,234,75,0,Math.PI*2);c.fill();
- text('Asahi',384,79,25,'#126d9c');text('おいしい水',384,135,29,'#1678a4','serif');text('水',384,233,79,'#0587b4','serif');
- text('天然水',384,335,33,'#136e9d','serif');text('六 甲',384,379,22,'#316986','serif');text('NATURAL MINERAL WATER',384,448,12,'#31778d');text('600 ml',384,480,15,'#167ca1');
- // BOSS: black, cream and gold, with a simple original coffee medallion.
- rect('#151b1e',512,0,256,512);rect('#bca87a',512,12,256,10);rect('#bca87a',512,488,256,10);
- text('SUNTORY COFFEE',640,70,16,'#e3dac0');text('BOSS',640,145,52,'#f3ead6','serif');
- c.fillStyle='#e1d8c0';c.beginPath();c.arc(640,249,55,0,Math.PI*2);c.fill();
- c.fillStyle='#29302e';c.beginPath();c.arc(640,249,39,0,Math.PI*2);c.fill();
- text('COFFEE',640,249,16,'#eee4c9');text('BLACK',640,360,36,'#f1e8d4');text('無糖',640,416,24,'#dfd5b9','serif');
- // Chelate Lemon: a lemon disk over the distinctive green diagonal sash.
- rect('#f7f5e8',768,0,256,512);rect('#f7d542',768,0,256,50);rect('#ecd02e',768,449,256,63);
- text('POKKA',896,72,18,'#b6412d');c.fillStyle='#f4d52d';c.beginPath();c.arc(896,176,61,0,Math.PI*2);c.fill();
- c.fillStyle='#74a92e';c.beginPath();c.ellipse(945,133,12,25,.7,0,Math.PI*2);c.fill();
- text('キレートレモン',896,267,26,'#26382c','serif');
- c.fillStyle='#328747';c.beginPath();c.moveTo(768,339);c.lineTo(1024,305);c.lineTo(1024,407);c.lineTo(768,441);c.closePath();c.fill();
- text('Sparkling',896,366,30,'#fffbea','serif');text('LEMON  500ml',896,475,15,'#495c27');
+ const text=(value,x,y,size,color='#142322',font='sans-serif',width=230)=>{c.fillStyle=color;c.font=`bold ${size}px ${font}`;c.fillText(value,x,y,width);};
+ const disk=(color,x,y,r)=>{c.fillStyle=color;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();};
+ // The unwrapped circumference is much wider than the label is tall. Counter
+ // that physical aspect ratio while drawing, so glyphs and circles are not
+ // stretched on the curved face. Backgrounds remain continuous at the seam.
+ const front=(center,squeeze,draw)=>{c.save();c.translate(center,0);c.scale(squeeze,1);c.translate(-center,0);draw();c.restore();};
+ // Oi Ocha: long green sleeve with a green cap and amber tea showing above.
+ rect('#76b83e',0,0,256,512);rect('#9bd15c',0,18,256,44);rect('#68a833',0,459,256,20);
+ for(let x=10;x<256;x+=8)rect('rgba(255,255,255,.035)',x,70,1,376);
+ front(128,.292,()=>{
+  text('伊藤園',128,43,34,'#285b25','serif');disk('#d64b32',53,110,27);text('日本',53,110,19,'#fff7db','serif',48);
+  for(const [i,ch] of Array.from('お〜い').entries())text(ch,180,124+i*55,62,'#154622','serif',90);
+  for(const [i,ch] of Array.from('お茶').entries())text(ch,79,242+i*69,72,'#154622','serif',90);
+  text('Oi Ocha',128,421,38,'#285c2c','serif');text('GREEN TEA',128,452,19,'#305d2d');
+ });
+ // Oishii Mizu: short white/blue sleeve and a cool water-ring motif.
+ rect('#f5fbfa',256,0,256,512);rect('#398eb8',256,75,256,340);rect('#d4eef1',256,91,256,305);
+ front(384,.169,()=>{
+  disk('#9ed5e3',384,246,177);disk('#c5e8ec',384,246,135);disk('#edf9f7',384,246,92);
+  text('Asahi',384,54,44,'#2476a5');text('おいしい水',384,139,44,'#154f80','serif');
+  text('水',384,253,142,'#168b9f','serif');text('天然水',384,353,48,'#145b8b','serif');
+  text('NATURAL WATER',384,400,20,'#236683');text('600 ml',384,461,28,'#1677a1');
+ });
+ // BOSS Black: original typographic treatment on printed black metal.
+ rect('#14191a',512,0,256,512);rect('#bf9b48',512,18,256,9);rect('#bf9b48',512,485,256,9);
+ front(640,.272,()=>{
+  rect('#bd9845',523,45,14,416);text('SUNTORY COFFEE',640,70,25,'#e7dfcc');text('BOSS',640,145,86,'#f3f1e9','serif');
+  disk('#e1d8c0',640,226,49);disk('#303631',640,226,39);text('COFFEE',640,226,17,'#eee4c9',undefined,76);
+  text('BLACK',640,319,77,'#f2f1e8','serif');text('無糖',640,390,40,'#e4e0d2','serif');text('185 g',640,449,24,'#d4cbb8');
+ });
+ // Chelate Lemon: a white label on a small green bottle, with a lemon graphic.
+ rect('#f6f5e8',768,0,256,512);rect('#e9eed7',768,458,256,54);
+ front(896,.224,()=>{
+  text('POKKA',896,52,30,'#a8432e');disk('#f3d329',896,174,90);
+  c.fillStyle='#71a333';c.beginPath();c.ellipse(957,108,14,28,.7,0,Math.PI*2);c.fill();
+  rect('#68a13f',884,126,24,94);rect('#68a13f',849,161,94,24);
+  text('キレートレモン',896,293,45,'#252f28','serif');text('Vitamin C',896,353,38,'#5d963e');
+  text('Sparkling',896,408,29,'#547e41','serif');text('LEMON',896,459,26,'#6b8649');
+ });
 }
 
 function createAtlas(doc){
@@ -54,31 +68,47 @@ function applyAtlas(geometry,index){
  return geometry;
 }
 
+function capGeometry(radius,height,y,radial,detail){
+ const geometry=new THREE.CylinderGeometry(radius,radius,height,radial);
+ if(detail){const vertices=geometry.attributes.position;for(let i=0;i<vertices.count;i++){
+  const x=vertices.getX(i),z=vertices.getZ(i);
+  if(Math.hypot(x,z)>radius*.8&&Math.cos(Math.atan2(x,z)*8)<0){vertices.setX(i,x*.97);vertices.setZ(i,z*.97);}
+ }geometry.computeVertexNormals();}
+ return geometry.translate(0,y,0);
+}
+
 function vesselParts(product,index,display=false){
  const pieces=[],put=(geometry,key,color)=>pieces.push({geometry,key,color});
- const radial=display?8:10;
+ const radial=display?8:12;
  if(product.vessel==='bottle'){
-  const radius=product.id==='water'?.031:.033;
-  const amber=product.id==='green-tea'?'#ba9953':product.id==='water'?'#d9e8e7':'#e0c65a';
-  const cap=product.id==='green-tea'?'#8cbc3b':product.id==='water'?'#398acb':'#e7e9e1';
-  // Molded base, cylindrical labeled portion, rounded shoulder and neck.
-  const base=product.id==='water'&&!display?[[.020,0],[radius*.94,.003],[radius,.009],[radius*.96,.016],[radius,.020],[radius*.96,.026],[radius,.030],[radius*.96,.036],[radius,.040]]:
-   display?[[.020,0],[radius,.009]]:[[.020,0],[radius*.94,.003],[radius,.009],[radius*.96,.016],[radius,.023]];
-  const points=[...base,[radius,.137],[radius*.98,.147],[radius*.90,.155],[.022,.169],...(display?[]:[[.015,.178]]),[.014,.184]];
-  put(new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),radial),'drinkBody',amber);
-  const capGeometry=new THREE.CylinderGeometry(.015,.015,.015,display?radial:16);
-  if(!display){const vertices=capGeometry.attributes.position;for(let i=0;i<vertices.count;i++){const x=vertices.getX(i),z=vertices.getZ(i);if(Math.hypot(x,z)>.01&&Math.cos(Math.atan2(x,z)*8)<0){vertices.setX(i,x*.975);vertices.setZ(i,z*.975);}}capGeometry.computeVertexNormals();}
-  put(capGeometry.translate(0,.1915,0),'drinkBody',cap);
-  const labelHeight=product.id==='water'?.085:.109,labelBottom=product.id==='water'?.05:.0255;
-  const label=new THREE.CylinderGeometry(radius+.0004,radius+.0004,labelHeight,radial,1,true).rotateY(Math.PI).translate(0,labelBottom+labelHeight/2,0);
+  const citrus=product.id==='citrus',water=product.id==='water',radius=citrus?.0235:water?.031:.033;
+  const body=citrus?'#52742f':water?'#d0e3e6':'#c2a964';
+  const cap=citrus?'#e3c538':water?'#3b91ca':'#a1cc42';
+  let points,labelBottom,labelHeight;
+  if(citrus){
+   // The 155 ml glass bottle has a short shoulder and a small yellow crown cap.
+   points=[[.016,0],[.022,.002],[radius,.005],[radius,.082],[.0225,.091],[.019,.099],[.013,.106],[.012,.110],[.012,.113]];
+   labelBottom=.016;labelHeight=.066;
+  }else{
+   // PET shoulder, neck ring and gently molded lower grip/base.
+   const base=water?(display?[[.020,0],[.027,.002],[radius,.006],[radius*.96,.021],[radius,.027],[radius*.96,.039],[radius,.052]]:[[.020,0],[.027,.002],[radius,.006],[radius*.97,.010],[radius,.015],[radius*.96,.021],[radius,.027],[radius*.96,.033],[radius,.039],[radius*.97,.045],[radius,.052]]):
+    [[.020,0],[.029,.002],[radius,.006],[radius*.96,.012],[radius,.018],[radius,.026]];
+   points=[...base,[radius,.141],[radius*.98,.149],[radius*.89,.157],[.022,.172],[.014,.180],[.014,.184]];
+   labelBottom=water?.073:.022;labelHeight=water?.066:.121;
+  }
+  put(new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),radial),'drinkBody',body);
+  const capRadius=citrus?.013:.015,capHeight=citrus?.010:.015,capY=citrus?.117:.1915;
+  put(capGeometry(capRadius,capHeight,capY,display?radial:16,!display),display?'drinkBody':'drinkCap',cap);
+  const label=new THREE.CylinderGeometry(radius+.00035,radius+.00035,labelHeight,radial,1,true).rotateY(Math.PI).translate(0,labelBottom+labelHeight/2,0);
   put(applyAtlas(label,index),'drinkLabel');
  }else{
   const radius=.026;
+  // Rolled metal rims, a subtly inset lid and a printed, nonmetallic sleeve.
   const points=[[.022,0],[.025,.002],[radius,.006],[radius,.097],[.024,.102],[.025,.104],[.023,.105]];
   put(new THREE.LatheGeometry(points.map(([r,y])=>new THREE.Vector2(r,y)),radial),'drinkMetal');
   put(new THREE.CylinderGeometry(.0225,.0225,.0015,radial).translate(0,.1055,0),'drinkMetal');
-  if(!display)put(new THREE.RingGeometry(.0035,.006,8).scale(.75,1,1).rotateX(-Math.PI/2).translate(0,.107,.003),'drinkMetal');
-  const label=new THREE.CylinderGeometry(radius+.0004,radius+.0004,.089,radial,1,true).rotateY(Math.PI).translate(0,.052,0);
+  if(!display)put(new THREE.RingGeometry(.0035,.006,8).scale(.75,1,1).rotateX(-Math.PI/2).translate(0,0,.003),'drinkTab');
+  const label=new THREE.CylinderGeometry(radius+.00035,radius+.00035,.089,radial,1,true).rotateY(Math.PI).translate(0,.052,0);
   put(applyAtlas(label,index),'drinkLabel');
  }
  return pieces;
@@ -92,7 +122,11 @@ function makeTemplate(product,index,materials,display=false){
   if(!byMaterial.has(key))byMaterial.set(key,[]);byMaterial.get(key).push(geometry);
  }
  const template=new THREE.Group();template.name=`Drink ${product.id}`;template.userData.productId=product.id;
- for(const [key,parts] of byMaterial){const merged=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());const mesh=new THREE.Mesh(merged,materials[key]);mesh.name=key;template.add(mesh);}
+ for(const [key,parts] of byMaterial){
+  const merged=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());
+  const material=key==='drinkCap'?materials.drinkBody:key==='drinkTab'?materials.drinkMetal:materials[key];
+  const mesh=new THREE.Mesh(merged,material);mesh.name=key;if(key==='drinkTab')mesh.position.y=.107;template.add(mesh);
+ }
  return template;
 }
 
@@ -100,14 +134,24 @@ function makeTemplate(product,index,materials,display=false){
 // but only this owner disposes geometries, materials and the shared atlas.
 export function createDrinkVesselResources({document:doc=globalThis.document}={}){
  const atlas=createAtlas(doc),materials={
-  drinkBody:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.32,metalness:.03}),
+  drinkBody:new THREE.MeshStandardMaterial({vertexColors:true,roughness:.42,metalness:0}),
   drinkMetal:new THREE.MeshStandardMaterial({color:'#c7cbc7',roughness:.3,metalness:.72}),
-  drinkLabel:new THREE.MeshStandardMaterial({map:atlas,roughness:.48}),
+  drinkLabel:new THREE.MeshStandardMaterial({map:atlas,roughness:.66}),
  };
  const templates=new Map(DRINK_PRODUCTS.map((product,index)=>[product.id,makeTemplate(product,index,materials)]));
  const displayTemplates=new Map(DRINK_PRODUCTS.map((product,index)=>[product.id,makeTemplate(product,index,materials,true)]));let disposed=false;
  return {atlas,materials,
-  create(productId){return disposed?null:templates.get(productId)?.clone(true)??null;},
+  create(productId){
+   const template=disposed?null:templates.get(productId);if(!template)return null;
+   const model=template.clone(true),cap=model.getObjectByName('drinkCap'),tab=model.getObjectByName('drinkTab');
+   // Closure geometry/materials are shared; updates only change transforms.
+   model.userData.setOpenProgress=value=>{
+    const progress=Math.max(0,Math.min(1,Number(value)||0));
+    if(cap){cap.position.x=.012*progress;cap.position.y=.014*progress;cap.rotation.y=-Math.PI*progress;cap.visible=progress<1;}
+    if(tab){tab.rotation.x=-.85*progress;tab.position.y=.107+.001*progress;}
+   };
+   return model;
+  },
   append(batch,productId,{position=[0,0,0]}={}){
    const template=disposed?null:displayTemplates.get(productId);if(!template)return false;
    for(const mesh of template.children){const key=mesh.name==='drinkBody'?'color':mesh.name==='drinkMetal'?'metal':'drinkLabel';batch.put(mesh.geometry.clone().translate(...position),key);}

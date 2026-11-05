@@ -18,7 +18,7 @@ test('bottles and coffee can have distinct supported silhouettes and share produ
   assert.ok(Math.abs(bounds.min.y)<.0001&&size.x<.075&&size.z<.075);heights.push(size.y);
  }
  assert.ok(heights[2]<heights[0]*.65,'the compact coffee can is not a PET bottle');
- assert.ok(heights[0]>.18&&heights[1]>.18&&heights[3]>.18);
+ assert.ok(heights[0]>.18&&heights[1]>.18&&heights[3]>.10);
  assert.equal(resources.create('unknown'),null);resources.dispose();
 });
 
@@ -46,5 +46,49 @@ test('display copies can be batched without mutating or disposing reusable templ
  assert.notStrictEqual(collected[0].geometry,held.children[0].geometry);
  collected.forEach(p=>p.geometry.dispose());
  assert.equal(resources.append({put(){}},'unknown'),false);assert.ok(held.children[0].geometry.attributes.position.count>0);
+ resources.dispose();
+});
+
+test('the citrus drink uses a small bottle and PET and print stay nonmetallic',()=>{
+ const resources=createDrinkVesselResources({document:null});
+ const tea=resources.create('green-tea'),citrus=resources.create('citrus');
+ const size=object=>new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+ assert.ok(size(citrus).y<size(tea).y*.75,'the lemon bottle is a small individual serving');
+ assert.ok(size(citrus).x<size(tea).x*.85,'the lemon bottle is narrower than a PET bottle');
+ assert.equal(resources.materials.drinkBody.metalness,0);
+ assert.ok(resources.materials.drinkBody.roughness>=.38);
+ assert.ok(resources.materials.drinkLabel.roughness>=.6);
+ resources.dispose();
+});
+
+test('major label lettering is constrained to the front visible arc of its atlas tile',()=>{
+ const texts=[],stack=[];let scale=1,offset=0;
+ const target={save(){stack.push([scale,offset]);},restore(){[scale,offset]=stack.pop();},
+  translate(x){offset+=scale*x;},scale(x){scale*=x;},
+  fillText(value,x,y,maxWidth){texts.push({value,x:offset+scale*x,maxWidth:scale*maxWidth});}};
+ const context=new Proxy(target,{get:(obj,key)=>obj[key]??(()=>{}),set:(obj,key,value)=>(obj[key]=value,true)});
+ const resources=createDrinkVesselResources({document:{createElement:()=>({getContext:()=>context})}});
+ for(const [value,index] of [['お',0],['おいしい水',1],['BOSS',2],['キレートレモン',3]]){
+  const call=texts.find(text=>text.value===value);assert.ok(call,value);
+  assert.ok(Math.abs(call.x-(index*256+128))<=24,`${value} stays near the front`);
+  assert.ok(call.maxWidth<=85,`${value} fits the central visible arc`);
+ }
+ resources.dispose();
+});
+
+test('opening a held drink moves only its shared cap or tab and can reset without rebuilding',()=>{
+ const resources=createDrinkVesselResources({document:null});
+ for(const [id,name] of [['green-tea','drinkCap'],['water','drinkCap'],['citrus','drinkCap'],['coffee','drinkTab']]){
+  const model=resources.create(id),part=model.getObjectByName(name),geometry=part?.geometry;
+  assert.ok(part,`${id} has an operable closure`);
+  assert.equal(typeof model.userData.setOpenProgress,'function');
+  const originalY=part.position.y;model.userData.setOpenProgress(.5);
+  assert.ok(part.rotation.x!==0||part.rotation.y!==0,`${id} closure moves while opening`);
+  model.userData.setOpenProgress(1);
+  if(name==='drinkCap')assert.equal(part.visible,false);
+  model.userData.setOpenProgress(0);
+  assert.equal(part.visible,true);assert.equal(part.position.y,originalY);
+  assert.ok(Math.abs(part.rotation.x)<1e-9&&Math.abs(part.rotation.y)<1e-9);assert.strictEqual(part.geometry,geometry);
+ }
  resources.dispose();
 });

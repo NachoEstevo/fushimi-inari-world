@@ -42,7 +42,7 @@ function fixture(){
 test('all twenty real late detail owners are admitted even when dormant, without changing their scene ownership',()=>{
  const f=fixture();assert.deepEqual(f.families.map(v=>v.detailGroups.length),[7,8,1,4]);
  let meshes=0;for(const owner of f.owners)owner.traverse(o=>{if(o.isMesh)meshes++;});
- assert.equal(meshes,109,'five added static product/glaze batches plus 32 hidden vessel leaves stay within the known owner budget');assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
+ assert.equal(meshes,125,'77 static leaves plus 48 hidden vessel leaves include the sixteen articulated caps/tabs');assert.equal(collectInstancePrewarmEntries(f.owners).length,0,'the former instance-only pass omitted every ordinary detail mesh');
  const existing=f.root.children[0],originalBounds=new THREE.Sphere(new THREE.Vector3(9000,0,0),1);
  const bounds=new Map([[existing,originalBounds]]);f.owners[0].visible=false;
  const before=f.owners.map(o=>({object:o,parent:o.parent,visible:o.visible,position:o.position.toArray(),rotation:o.quaternion.toArray(),scale:o.scale.toArray()}));
@@ -70,7 +70,7 @@ test('walking preparation compiles dormant late groups before their first activa
  assert.equal(compiledOwners.size,20);assert.equal(compiledMeshes.size,77,'only the five added static batches join the walking pass; tray variants stay covered by zen.prepare');
  const trayRoots=f.families[0].machines.flatMap(machine=>machine.can.children),trayMeshes=[];
  for(const variant of trayRoots)variant.traverse(object=>{if(object.isMesh)trayMeshes.push(object);});
- assert.equal(trayMeshes.length,32);
+ assert.equal(trayMeshes.length,48,'every prebuilt tray vessel includes its existing, now articulated cap or tab');
  await compileSelectedVisuals(renderer,f.scene,trayRoots,camera,{includeHiddenRoots:true,reuseRenderScene:true,yieldWork:async()=>{},getLights:async()=>[]});
  assert.ok(trayMeshes.every(mesh=>compiledMeshes.has(mesh)),'every selectable tray variant is explicitly warmed, including hidden products');
  for(const owner of f.owners)assert.equal(owner.visible,false);for(const [o,parent]of parents)assert.equal(o.parent,parent);

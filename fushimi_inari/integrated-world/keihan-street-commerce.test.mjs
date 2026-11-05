@@ -20,11 +20,40 @@ test('drink selection requires collection before another dispense and has bounde
  assert.match(c.dispense(),/Water/);assert.equal(changed.length,12);assert.equal(STREET_DRINKS.length,4);
 });
 
+test('direct product selection validates the index and cannot change a dispensed drink',()=>{
+ const changes=[],c=createDrinkMachineState(s=>changes.push({...s}));
+ assert.equal(typeof c.selectIndex,'function');
+ c.selectIndex(2);assert.equal(c.state.selected,2);assert.match(c.report(),/Coffee/);
+ for(const invalid of [-1,4,1.5,NaN,'1',null]){c.selectIndex(invalid);assert.equal(c.state.selected,2);}
+ assert.equal(changes.length,1);c.dispense();c.selectIndex(0);assert.equal(c.state.selected,2);
+ assert.match(c.collect(),/Coffee collected/);c.selectIndex(0);assert.equal(c.state.selected,0);
+});
+
+test('every visible product slot exposes its corresponding local physical button and collection target',()=>{
+ const r=installKeihanStreetCommerce(fixture());
+ for(const machine of r.machines){
+  assert.equal(machine.productButtons.length,18);
+  for(let row=0;row<3;row++)for(let col=0;col<6;col++){
+   const target=machine.productButtons[row*6+col];
+   assert.equal(target.productId,STREET_DRINKS[col%STREET_DRINKS.length].id);
+   assert.ok(target.position.every(Number.isFinite));assert.ok(target.width>0&&target.height>0);
+   if(col>0)assert.ok(target.position[0]>machine.productButtons[row*6+col-1].position[0]);
+   if(row>0)assert.ok(target.position[1]>machine.productButtons[(row-1)*6+col].position[1]);
+  }
+  assert.ok(machine.productButtons.every(button=>button.position[2]>.49),'buttons face the visitor, outside the product glazing');
+  assert.ok(machine.collectionTarget.position.every(Number.isFinite));
+  assert.ok(machine.collectionTarget.width>0&&machine.collectionTarget.height>0);
+  assert.ok(machine.collectionTarget.position[1]<machine.productButtons[0].position[1]);
+ }
+ r.dispose();
+});
+
 test('four supported machines and three counter groups are batched without lights; installing twice is inert',()=>{
  const a=fixture(),before=a.colliders.length,r=installKeihanStreetCommerce(a);
  assert.equal(r.built,true);assert.equal(r.machines.length,4);assert.equal(r.detailGroups.length,7);
  assert.equal(r.stats.collidersAdded,2);assert.equal(a.colliders.length,before+2);assert.equal(a.legacy.interactables.length,4);
- assert.ok(r.stats.triangles<30000,JSON.stringify(r.stats));assert.ok(r.stats.drawBatches<=47,JSON.stringify(r.stats));
+ // Detailed bottle profiles and molded food add static triangles, not batches or lights.
+ assert.ok(r.stats.triangles<38000,JSON.stringify(r.stats));assert.equal(r.stats.drawBatches,46,JSON.stringify(r.stats));
  let lights=0;r.group.traverse(o=>{if(o.isLight)lights++;if(o.isMesh)assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite));});assert.equal(lights,0);
  assert.equal(installKeihanStreetCommerce(a),r);assert.equal(a.legacy.interactables.length,4);assert.equal(a.colliders.length,before+2);
 });
@@ -207,4 +236,18 @@ test('served food changes visible portions after bites without allocating or dis
   serving.userData.setBitesRemaining(bites);assert.equal(serving.children.filter(part=>part.visible&&part.userData.stage>0).length,kind==='senbei'?1:bites);
  }
  runtime.dispose();
+});
+
+test('a dispensed vessel rests on the collection sill instead of hovering above it',()=>{
+ const r=installKeihanStreetCommerce(fixture());
+ for(const machine of r.machines){
+  for(const model of machine.can.children){machine.group.updateWorldMatrix(true,true);const geometry=new THREE.Box3().setFromObject(model),sill=machine.spec.position[1]+.285+.025/2;assert.ok(geometry.min.y>=sill&&geometry.min.y-sill<.015,'all bottle and can bottoms touch or closely clear the existing sill');}
+ }r.dispose();
+});
+
+test('dispensing settles once into the tray and a resting bottle never rocks forever',()=>{
+ const r=installKeihanStreetCommerce(fixture()),machine=r.machines[0],camera={position:new THREE.Vector3(...machine.spec.position)};
+ machine.controller.dispense();r.update(camera,1);const initial=machine.can.position.y;r.update(camera,1.3);assert.ok(machine.can.position.y<initial);
+ r.update(camera,2);const rest=machine.can.position.toArray();assert.equal(machine.can.rotation.x,0);r.update(camera,200);assert.deepEqual(machine.can.position.toArray(),rest);assert.equal(machine.can.rotation.x,0);
+ machine.controller.collect();r.update(camera,201);machine.controller.dispense();r.update(camera,202);assert.ok(machine.can.position.y>rest[1]);r.dispose();
 });

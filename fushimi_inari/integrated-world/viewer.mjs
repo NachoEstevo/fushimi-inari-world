@@ -271,6 +271,7 @@ try {
   assembly.walkHeight=approachFloors.walkHeight;
   await startupCheckpoint('installKeihanStreetCommerce');
   const streetCommerce=installKeihanStreetCommerce(assembly);
+  const commerceAudioSites=[...(streetCommerce.machines??[]).map(machine=>({kind:'vending',position:machine.spec.position})),...(streetCommerce.sites??[]).map(site=>({kind:site.kind==='grill'?'shop':'food',position:site.counterPosition??site.position}))];
   await startupCheckpoint('buildKeihanStreetObservedDetails');
   const observedStreet=buildKeihanStreetObservedDetails(assembly);
   await startupCheckpoint('buildKeihanStationDetailPolish');
@@ -1179,7 +1180,7 @@ try {
     if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
     document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
     document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
-    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),musicPaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
+    menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{commerce:commerceAudioSites,commercePaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),musicPaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
     if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs),callbackEntryMs);
 
   }

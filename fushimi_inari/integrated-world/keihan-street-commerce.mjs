@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {appendStreetFood,STREET_FOOD_ITEMS} from './keihan-street-food.mjs';
 import {DRINK_PRODUCTS,createDrinkVesselResources} from './drink-vessels.mjs';
+import {appendVendingFace,createVendingSelectionLamp,drawVendingAtlas,setVendingSelectionLamp} from './vending-face.mjs';
 
 export const STREET_DRINKS=DRINK_PRODUCTS;
 
@@ -12,6 +12,7 @@ export function createDrinkMachineState(onChange=()=>{}){
  const state={selected:0,phase:'ready',collected:0};
  const report=()=>state.phase==='dispensed'?`${STREET_DRINKS[state.selected].name} is in the collection tray.`:`Selected: ${STREET_DRINKS[state.selected].name}.`;
  return {state,select(){if(state.phase==='dispensed')return 'Collect the drink before choosing another.';state.selected=(state.selected+1)%STREET_DRINKS.length;onChange(state);return report();},
+  selectIndex(index){if(state.phase==='dispensed')return 'Collect the drink before choosing another.';if(!Number.isInteger(index)||index<0||index>=STREET_DRINKS.length)return 'Choose an available drink.';state.selected=index;onChange(state);return report();},
   dispense(){if(state.phase==='dispensed')return 'Your drink is already in the tray.';state.phase='dispensed';onChange(state);return report();},
   collect(){if(state.phase!=='dispensed')return 'Choose a drink and press Dispense first.';const name=STREET_DRINKS[state.selected].name;state.phase='ready';state.collected++;onChange(state);return `${name} collected. Enjoy your walk!`;},report};
 }
@@ -31,14 +32,7 @@ function atlasTexture(){
  if(!c)return null;
  c.fillStyle='#e9e8de';c.fillRect(0,0,1024,1024);c.textAlign='center';c.textBaseline='middle';
  // Four atlas cells: machine signs, vertical menu, awning fascia, food cards.
- c.fillStyle='#172b33';c.fillRect(0,0,512,512);c.fillStyle='#f6f2df';c.font='bold 48px sans-serif';c.fillText('DRINKS',256,55);
- c.font='22px sans-serif';c.fillStyle='#8ce2ff';c.fillText('つめたい  COLD',256,104);
- c.fillStyle='#172b33';c.fillRect(0,256,512,80);c.fillStyle='#d5edbd';c.font='bold 29px sans-serif';c.fillText('E · CHOOSE A DRINK',256,296);
- // Original fox mark inspired by the station context; no photograph pixels.
- c.clearRect(0,352,160,160);c.fillStyle='#f0f2e8';c.beginPath();c.arc(75,438,48,.1,Math.PI*1.93);c.fill();
- c.clearRect(63,397,42,37);c.beginPath();c.moveTo(67,419);c.lineTo(63,370);c.lineTo(84,384);c.lineTo(110,373);c.lineTo(106,418);c.closePath();c.fill();
- c.fillStyle='#183246';c.beginPath();c.arc(81,397,2.2,0,Math.PI*2);c.fill();c.beginPath();c.arc(98,397,2.2,0,Math.PI*2);c.fill();
- c.fillStyle='#edf4e2';c.fillRect(192,368,32,32);
+ drawVendingAtlas(c);
  c.fillStyle='#253d34';c.fillRect(512,0,512,512);c.fillStyle='#efe3bb';c.font='bold 50px serif';c.fillText('お品書き',768,66);c.font='29px serif';
  for(const [i,label]of ['焼きだんご','お茶  •  TEA','串焼き  •  GRILL','できたて'].entries()){c.fillText(label,768,157+i*85);c.fillStyle='#b99d6c';c.fillRect(553,197+i*85,430,2);c.fillStyle='#efe3bb';}
  c.fillStyle='#d9c398';c.fillRect(0,512,512,256);c.fillStyle='#493b2d';c.font='bold 62px serif';c.fillText('いなりの小径',256,602);c.font='24px sans-serif';c.fillText('TEA · SWEETS · FRESHLY GRILLED',256,683);
@@ -46,12 +40,6 @@ function atlasTexture(){
  c.fillStyle='#faf0da';c.fillRect(512,512,512,512);c.fillStyle='#51432e';c.font='bold 42px serif';c.fillText('本日のおすすめ',768,565);
  for(let i=0;i<3;i++){c.strokeStyle='#a97d45';c.lineWidth=4;c.beginPath();c.moveTo(565,650+i*105);c.lineTo(970,650+i*105);c.stroke();for(let j=0;j<4;j++){c.fillStyle=['#c8954f','#d9b46a','#7c9961'][i];c.beginPath();c.arc(620+j*86,640+i*105,24,0,Math.PI*2);c.fill();}}
  const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
-}
-
-function atlasRegion(geometry,x,y,width,height){
- const uv=geometry.attributes.uv;
- for(let i=0;i<uv.count;i++)uv.setXY(i,(x+uv.getX(i)*width)/1024,1-(y+(1-uv.getY(i))*height)/1024);
- return geometry;
 }
 
 function geometryBatch(group,palette){
@@ -98,64 +86,24 @@ export function installKeihanStreetCommerce(assembly){
  };
  const machinePalette={...palette,
   color:new THREE.MeshPhysicalMaterial({color:'#ffffff',vertexColors:true,roughness:.42,metalness:.02,clearcoat:.18,clearcoatRoughness:.30}),
-  print:new THREE.MeshStandardMaterial({map:texture,roughness:.45,alphaTest:.1,emissive:'#e3f3ed',emissiveIntensity:.20}),
+  print:new THREE.MeshStandardMaterial({map:texture,roughness:.45,alphaTest:.1,emissive:'#e3f3ed',emissiveIntensity:.38}),
   glass:new THREE.MeshPhysicalMaterial({color:'#b9d7d5',transparent:true,opacity:.085,depthWrite:false,roughness:.12,ior:1.5,envMapIntensity:.7})
  };
  const detailGroups=[],machines=[],colliders=[];
  for(const spec of plan.machines){
   const owner=new THREE.Group();owner.name=spec.id;owner.position.set(...spec.position);owner.rotation.y=spec.yaw;owner.scale.z=.8;owner.userData.detailRadius=34;group.add(owner);detailGroups.push(owner);
   const b=geometryBatch(owner,machinePalette);
-  // Standard standing cabinet. Body, inset display, control recess, lower
-  // service panel, perforated ventilation and collection shelf are geometry.
-  b.put(new RoundedBoxGeometry(1.04,1.78,.70,2,.028).translate(0,.96,0),'color',spec.color);b.box(1.00,.11,.65,0,.07,0,'dark');
-  for(const x of [-.43,.43])for(const z of [-.25,.25])b.cylinder(.035,.045,.08,x,.04,z,'metal');
-  b.box(.80,1.13,.035,-.075,1.24,.365,'white');b.box(.73,.92,.035,-.075,1.29,.389,'dark');
-  b.put(atlasRegion(new THREE.PlaneGeometry(.72,.13),0,0,512,125).translate(-.075,1.73,.410),'print');
-  b.put(new THREE.PlaneGeometry(.73,.94).translate(-.075,1.29,.494),'glass');
-  for(const x of [-.452,.302])b.box(.012,.99,.018,x,1.29,.490,'metal');
-  for(const y of [.795,1.785])b.box(.766,.012,.018,-.075,y,.490,'metal');
-  for(let row=0;row<3;row++){
-   const y=.98+row*.28;b.box(.73,.025,.10,-.075,y-.09,.42,'metal');
-   b.put(atlasRegion(new THREE.PlaneGeometry(.70,.012),192,368,32,32).translate(-.075,y-.067,.477),'print');
-   for(let col=0;col<6;col++){
-    const x=-.37+col*.118,drink=STREET_DRINKS[col%STREET_DRINKS.length];
-    drinkResources.append(b,drink.id,{position:[x,y-.0775,.445]});
-    b.box(.068,.025,.025,x,y-.12,.437,'color','#c5d7b6');
-   }
-  }
-  b.put(new RoundedBoxGeometry(.14,.48,.055,1,.012).translate(.433,.99,.372),'dark');b.box(.065,.055,.016,.433,1.12,.411,'metal');
-  b.box(.052,.008,.018,.433,1.122,.423,'dark');b.box(.074,.047,.02,.433,.98,.40,'color','#7db9ac');
-  b.cylinder(.026,.026,.016,.433,.88,.40,'metal',undefined,12);
-  b.box(.12,.028,.016,.433,.73,.393,'metal');b.box(.09,.009,.019,.433,.731,.405,'dark');
-  // Repeat the atlas instruction in the unobstructed strip below the display.
-  // The lower product row intentionally stays physical rather than being
-  // removed to reveal text printed behind it.
-  const instruction=atlasRegion(new THREE.PlaneGeometry(.82,.13),0,256,512,80);
-  instruction.translate(-.075,.605,.375);b.put(instruction,'print');
-  b.box(.63,.22,.035,-.075,.40,.372,'dark');b.box(.66,.025,.14,-.075,.285,.41,'metal');
-  b.box(.64,.025,.035,-.075,.517,.402,'white');b.box(.68,.17,.025,-.075,.13,.367,'color',spec.color);
-  if(spec.color==='#bd3d31'){
-   // The 2024 street reference shows a red cabinet with a pale fascia and a
-   // diagonal pale lower panel. This is a cabinet-family treatment, not a
-   // claim that this interpreted bay is the photographed machine's parcel.
-   b.box(.10,.98,.018,-.485,1.29,.376,'white');
-   const panel=new THREE.Shape();panel.moveTo(-.48,.27);panel.lineTo(-.32,.27);panel.lineTo(-.39,.52);panel.lineTo(-.48,.52);panel.closePath();
-   b.put(new THREE.ShapeGeometry(panel).translate(0,0,.395),'white');
-  }
-  for(let i=0;i<6;i++)b.put(new THREE.BoxGeometry(.57,.011,.023).rotateX(-.30).translate(-.075,.073+i*.022,.383),'dark');
-  b.box(.017,1.72,.025,.50,.99,.365,'metal');b.box(.09,.016,.025,.43,1.66,.389,'metal');
-  if(spec.existingCollider)for(const side of [-1,1])for(const y of [.42,.95,1.48])b.put(atlasRegion(new THREE.PlaneGeometry(.46,.46),0,352,160,160).rotateY(side*Math.PI/2).translate(side*.5206,y,0),'print');
-  b.finish();
-  const lamp=new THREE.Mesh(new THREE.BoxGeometry(.065,.024,.02),new THREE.MeshBasicMaterial({color:'#c7f0a2'}));lamp.position.set(-.37,.86,.46);lamp.name='Selected product button';owner.add(lamp);
-  const can=new THREE.Group();can.position.set(.025,.37,.42);can.rotation.z=Math.PI/2;can.visible=false;can.name='Dispensed drink in collection tray';owner.add(can);
+  const {productButtons,collectionTarget}=appendVendingFace(b,spec,drinkResources,STREET_DRINKS);b.finish();
+  const lamp=createVendingSelectionLamp();owner.add(lamp);
+  const can=new THREE.Group();can.position.set(.025,.333,.42);can.rotation.z=Math.PI/2;can.visible=false;can.name='Dispensed drink in collection tray';owner.add(can);
   for(const [i,drink] of STREET_DRINKS.entries()){const model=drinkResources.create(drink.id);model.visible=i===0;model.traverse(o=>{if(o.isMesh)borrowedDrinkGeometry.add(o.geometry);});can.add(model);}
-  const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.children.forEach((model,i)=>{model.visible=i===state.selected;});lamp.position.x=-.37+state.selected*.118;});
+  const controller=createDrinkMachineState(state=>{can.visible=state.phase==='dispensed';can.children.forEach((model,i)=>{model.visible=i===state.selected;});setVendingSelectionLamp(lamp,state.selected);});
   owner.userData.interactable={language:'en',title:'Street drink machine',description:'Choose a drink, dispense it, then collect it from the lower tray.',note:'Interactive scene prop · no payment required.',actions:[{label:'Next drink',run:()=>controller.select()},{label:'Dispense',run:()=>controller.dispense()},{label:'Collect drink',run:()=>controller.collect()}]};
   Object.assign(owner.userData.interactable,{proximity:true,cooldownMs:650,
    directAction:createDrinkCollectionAction(controller,spec.id??owner.name)});
   Object.defineProperty(owner.userData.interactable,'prompt',{get:()=>controller.state.phase==='dispensed'?'Collect drink':'Get a drink',enumerable:true});
   if(!spec.existingCollider)colliders.push({type:'box',args:[spec.position[0],spec.position[2],.52,.35,spec.yaw,spec.position[1],spec.position[1]+1.85,'keihan-street-vending']});
-  machines.push({group:owner,spec,controller,can,lamp});
+  machines.push({group:owner,spec,controller,can,lamp,productButtons,collectionTarget,trayAt:null,lastPhase:null});
  }
  // Details stay on existing counters and upper facades. In particular, the
  // attendant strip v=-1.12 is reserved and public centerlines remain clear.
@@ -232,7 +180,8 @@ export function installKeihanStreetCommerce(assembly){
    return model;
   },
   createDrink(productId){return disposed?null:drinkResources.create(productId);},
-  update(camera,time){if(disposed)return;for(const m of machines){if(!m.group.visible||Math.hypot(camera.position.x-m.spec.position[0],camera.position.z-m.spec.position[2])>22)continue;m.lamp.material.color.setHex(m.controller.state.phase==='dispensed'?0xffdb85:0xc7f0a2);if(m.controller.state.phase==='dispensed')m.can.rotation.x=Math.sin(time*2)*.025;}},dispose(){
+  update(camera,time){if(disposed)return;for(const m of machines){if(!m.group.visible||Math.hypot(camera.position.x-m.spec.position[0],camera.position.z-m.spec.position[2])>22)continue;const phase=m.controller.state.phase;if(phase!==m.lastPhase){m.lastPhase=phase;m.trayAt=phase==='dispensed'?time:null;m.lamp.material.color.setHex(phase==='dispensed'?0xffdb85:0xc7f0a2);}
+   const age=m.trayAt===null?1:Math.max(0,time-m.trayAt),settling=age<.65?Math.exp(-age*13):0;m.can.position.y=.333+.055*settling*Math.abs(Math.cos(age*10));m.can.rotation.x=settling?.08*settling*Math.sin(age*12):0;}},dispose(){
   if(disposed)return;disposed=true;group.removeFromParent();
   for(const {group:owner}of machines){const i=assembly.legacy.interactables.indexOf(owner);if(i!==-1)assembly.legacy.interactables.splice(i,1);}
   for(const collider of colliders){const i=assembly.colliders.indexOf(collider);if(i!==-1)assembly.colliders.splice(i,1);}

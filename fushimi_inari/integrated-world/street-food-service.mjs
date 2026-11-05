@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {createStreetFoodOrder} from './street-food-state.mjs';
 import {createStreetHeldFood} from './street-held-food.mjs';
 
-export function installStreetFoodService({scene,camera,assembly,commerce,walker,getBlocked=()=>false,onCollected=()=>{},announce=()=>{},document:doc=globalThis.document}){
- const held=createStreetHeldFood({scene,camera,commerce,document:doc}),entries=new Map(),replaced=[],detailGroups=[],preparationRoots=[...held.preparationRoots];
+export function installStreetFoodService({scene,camera,assembly,commerce,walker,getBlocked=()=>false,onCollected=()=>{},onSound=()=>{},announce=()=>{},document:doc=globalThis.document}){
+ const held=createStreetHeldFood({scene,camera,commerce,document:doc,onConsume:event=>onSound({type:'food.bite',position:camera.position.toArray(),...event})}),entries=new Map(),replaced=[],detailGroups=[],preparationRoots=[...held.preparationRoots];
  const dialog=doc?.createElement('dialog');let title,list,closeButton,menuSite=null,disposed=false;
  if(dialog){
   dialog.id='street-food-menu';dialog.setAttribute('aria-labelledby','street-food-title');
@@ -46,7 +46,7 @@ export function installStreetFoodService({scene,camera,assembly,commerce,walker,
  }
  assembly.root.updateMatrixWorld(true);
  return {detailGroups,preparationRoots,held,get active(){return !!dialog?.open;},open,order,interact,
-  collect(event){if(held.collect(event)){onCollected(event);return true;}return false;},stow:()=>held.stow(),
+  collect(event){if(held.collect(event)){onCollected(event);onSound({...event,type:'food.collect',position:camera.position.toArray()});return true;}return false;},stow:()=>held.stow(),
   update(dt,{blocked=false}={}){
    if(disposed)return;for(const entry of entries.values()){
     const before=entry.state.phase;entry.state.update(dt,{paused:blocked||!!dialog?.open});

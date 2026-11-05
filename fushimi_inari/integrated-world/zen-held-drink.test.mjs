@@ -36,3 +36,13 @@ test('the drink silhouette stays inside the default 45 degree view and clear of 
   });
  }drink.dispose();
 });
+
+test('opening precedes the first completed sip, pauses with overlays and resets for a new vessel',()=>{
+ const scene=new Scene(),camera=new PerspectiveCamera(),events=[],progress=[];
+ const commerce={createDrink(id){const model=new Group();model.userData.setOpenProgress=v=>progress.push([id,v]);return model;}};
+ const drink=createZenHeldDrink({scene,camera,commerce,document:null,onOpen:e=>events.push(['open',e]),onConsume:e=>events.push(['sip',e])});
+ drink.collect({productId:'coffee'});drink.sip();for(let i=0;i<3;i++)drink.update(.1);assert.equal(events.length,0);drink.update(30,{blocked:true});assert.equal(events.length,0);
+ drink.update(.1);assert.equal(events[0][0],'open');assert.equal(events[0][1].kind,'can');assert.equal(drink.stats.sips,3);for(let i=0;i<10;i++)drink.update(.1);
+ assert.equal(events[1][0],'sip');drink.sip();for(let i=0;i<14;i++)drink.update(.1);assert.equal(events.filter(e=>e[0]==='open').length,1);
+ drink.collect({productId:'water'});assert.equal(drink.stats.opened,false);assert.deepEqual(progress.at(-1),['water',0]);drink.sip();drink.update(.1);drink.stow();for(let i=0;i<20;i++)drink.update(.1);assert.equal(events.filter(e=>e[0]==='open').length,1);drink.dispose();
+});

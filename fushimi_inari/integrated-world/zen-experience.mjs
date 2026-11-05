@@ -1,4 +1,6 @@
 import {installDrinkMachineService} from './drink-machine-service.mjs';
+import {installVendingPointerInput} from './vending-pointer-input.mjs';
+import {createVendingOcclusion} from './vending-occlusion.mjs';
 import {installHeldPropInput} from './held-prop-input.mjs';
 import {installStreetFoodService} from './street-food-service.mjs';
 import * as THREE from 'three';
@@ -25,7 +27,8 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  let journeyState=journey.snapshot();
  const weather=createZenWeather({scene,camera,assembly,shop,getQuality});
  const seat=createZenSeatedCamera({camera,walker,controls,reducedMotion:()=>reducedMotion.matches});
- const drink=createZenHeldDrink({scene,camera,commerce:streetCommerce});
+ const commerceSound=event=>audio.commerce?.(event);
+ const drink=createZenHeldDrink({scene,camera,commerce:streetCommerce,onOpen:event=>commerceSound({type:'drink.open',position:camera.position.toArray(),...event}),onConsume:event=>commerceSound({type:'drink.sip',position:camera.position.toArray(),...event})});
  const direction=new THREE.Vector3();
  const context=()=>({position:camera.position.toArray(),direction:camera.getWorldDirection(direction).toArray(),mode:walker.mode,fov:camera.fov,weather:journeyState.weather,light:getTimeOfDay(),createdAt:Date.now()});
  const notice=document.createElement('p');notice.id='zen-experience-notice';notice.className='zen-experience-notice';notice.hidden=true;notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');document.body.append(notice);let noticeUntil=0;
@@ -53,11 +56,14 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
   if(payload.leave){seat.stand();world.setSeated(false);return;}
   const accepted=!returning.cameraOwned&&!getBlocked()&&seat.sit({...payload,onLeave(){world?.setSeated(false);payload.onLeave?.();}});world.setSeated(!!accepted);
  },onReturn:startReturn});
- const food=installStreetFoodService({scene,camera,assembly,commerce:streetCommerce,walker,announce,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||vending.active,onCollected:()=>drink.stow()});
- const vending=installDrinkMachineService({commerce:streetCommerce,camera,walker,announce,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||food.active});
+ const food=installStreetFoodService({scene,camera,assembly,commerce:streetCommerce,walker,announce,onSound:commerceSound,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||vending.active,onCollected:()=>drink.stow()});
+ const vending=installDrinkMachineService({commerce:streetCommerce,camera,walker,announce,onSound:commerceSound,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||food.active});
  const heldFood={group:food.held.group,canConsume:()=>food.held.stats.bites>0,consume:()=>food.held.eat()},heldDrink={group:drink.group,canConsume:()=>drink.stats.sips>0,consume:()=>drink.sip()};
  const heldLook=new THREE.Euler(0,0,0,'YXZ');
- const heldInput=installHeldPropInput({element:cameraElement,camera,document,onClaimUnlocked:()=>walker.releasePointerLock(),onDrag:(dx,dy)=>{heldLook.setFromQuaternion(camera.quaternion);heldLook.y-=dx*.003;heldLook.x=THREE.MathUtils.clamp(heldLook.x-dy*.003,-1.45,1.45);camera.quaternion.setFromEuler(heldLook);},getItem:()=>food.held.group.visible?heldFood:drink.group.visible?heldDrink:null,enabled:()=>walker.mode==='walk'&&!walker.paused&&!getBlocked()&&!world.active&&!seat.active&&!returning.cameraOwned&&!food.active&&!vending.active&&!document.hidden});
+ const dragHeld=(dx,dy)=>{heldLook.setFromQuaternion(camera.quaternion);heldLook.y-=dx*.003;heldLook.x=THREE.MathUtils.clamp(heldLook.x-dy*.003,-1.45,1.45);camera.quaternion.setFromEuler(heldLook);};
+ const canvasActionsEnabled=()=>walker.mode==='walk'&&!walker.paused&&!getBlocked()&&!world.active&&!seat.active&&!returning.cameraOwned&&!food.active&&!vending.active&&!document.hidden;
+ const vendingInput=installVendingPointerInput({element:cameraElement,camera,machines:streetCommerce?.machines??[],document,enabled:canvasActionsEnabled,onDrag:dragHeld,onClaimUnlocked:()=>walker.releasePointerLock(),isOccluded:createVendingOcclusion(assembly.colliders,streetCommerce?.machines??[]),onSelect:(machine,productId)=>{if(vending.order(machine.spec.id??machine.group.name,productId))announce('Your drink is on its way.');},onCollect:machine=>{const result=vending.collect(machine.spec.id??machine.group.name);if(result?.event&&runtime.collectDrink(result.event))announce(result.message);}});
+ const heldInput=installHeldPropInput({element:cameraElement,camera,document,onClaimUnlocked:()=>walker.releasePointerLock(),onDrag:dragHeld,getItem:()=>food.held.group.visible?heldFood:drink.group.visible?heldDrink:null,enabled:canvasActionsEnabled});
  let inputBlocked=false;
  const seatedLook=installZenSeatedLook({element:cameraElement,document,seat,enabled:()=>seat.active&&!inputBlocked&&!getBlocked()&&!world.active&&!returning.cameraOwned&&!food.active&&!vending.active});
  ui=installZenJourneyUI({journey,album,onPhoto,onReturn:startReturn,onContinueWalking:()=>returning.continueWalking(),getContext:context,onOpen:openJournal,onIntention:id=>onIntention(id),onWeather:mode=>weather.setMode(mode)});
@@ -92,7 +98,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
    const record=journey.recordPhoto({...details,thumbnailId:thumbnail?.id,promptId:capturedPrompt});capturedPrompt=null;
    if(!record)return 'This view cannot be kept in the journal.';
    return thumbnail?(thumbnail.persistent?'Kept in your journal.':'Kept for this visit · browser photo storage unavailable.'):'The memory is noted; the image preview could not be kept.';
-  },selectPhotoPrompt(id){capturedPrompt=id;},collectFood(event){return food.collect(event);},get food(){return food;},get vending(){return vending;},collectDrink(event){if(!drink.collect(event))return false;food.stow();journey.recordMoment('drink',{...context(),intent:'interact'});return true;},
+  },selectPhotoPrompt(id){capturedPrompt=id;},collectFood(event){return food.collect(event);},get food(){return food;},get vending(){return vending;},collectDrink(event){if(!drink.collect(event))return false;food.stow();commerceSound({type:'drink.collect',position:camera.position.toArray(),productId:event.productId});journey.recordMoment('drink',{...context(),intent:'interact'});return true;},
   cancelActivity(){seat.stand();world.setSeated(false);returning.cancel();},
   update(dt,time,{blocked=false}={}){
    if(disposed)return;
@@ -109,7 +115,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
     if(audit)document.body.dataset.zenExperience=JSON.stringify({activity:{seated:seat.active,modal:world.active,returning:returning.active,trainSeated:returning.stats.seated},weather:weather.stats,returnTrain:returning.stats,world:world.stats,carriedDrink:drink.stats,streetFood:food.stats,vending:vending.stats,story:journeyState.story});
    }
    if(!notice.hidden&&time>noticeUntil)notice.hidden=true;
-  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned||food.active||vending.active;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);food.afterCamera(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();heldInput.dispose();vending.dispose();food.dispose();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
+  },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned||food.active||vending.active;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);food.afterCamera(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();vendingInput.dispose();heldInput.dispose();vending.dispose();food.dispose();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
    const i=roots.indexOf(returning.interactionRoot);if(i>=0)roots.splice(i,1);extras.remove();notice.remove();departure.remove();interactButton.remove();style.remove();document.removeEventListener('pointerdown',unlock);document.removeEventListener('keydown',unlock);document.removeEventListener('keydown',onKey,true);
   }};
  return runtime;
