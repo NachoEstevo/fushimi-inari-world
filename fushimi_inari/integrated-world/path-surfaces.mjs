@@ -103,10 +103,12 @@ export function makePathSurfaces(features,ground){
   function edgeCovered(x,z,y,pathId){
     for(const s of cells.get(`${Math.floor(x/size)},${Math.floor(z/size)}`)??[]){
       if(s.id===pathId)continue;
-      const connected=[...(pathNodes.get(s.id)??[])].some(id=>{
+      // Hot during path meshing: walk the node set without copying it.
+      let connected=false;
+      for(const id of pathNodes.get(s.id)??[]){
         const j=junctions.get(id);
-        return j.paths.has(pathId)&&Math.hypot(x-j.point[0],z-j.point[2])<s.width+3;
-      });
+        if(j.paths.has(pathId)&&Math.hypot(x-j.point[0],z-j.point[2])<s.width+3){connected=true;break;}
+      }
       if(!connected)continue;
       const dx=s.b[0]-s.a[0],dz=s.b[2]-s.a[2],t=Math.max(0,Math.min(1,((x-s.a[0])*dx+(z-s.a[2])*dz)/(dx*dx+dz*dz)));
       if(Math.hypot(x-s.a[0]-t*dx,z-s.a[2]-t*dz)<s.width/2+.12&&Math.abs(y-s.ya-(s.yb-s.ya)*t)<.25)return true;

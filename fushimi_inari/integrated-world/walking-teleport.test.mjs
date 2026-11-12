@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installWalking} from './walking.mjs';
+import {createWalkSettings} from './walk-settings.mjs';
 function fixture({sample=true,colliders=[],isWalkable,resolveMove,allowDebugCamera=false,interactables=[]}={}){
  const saved={document:globalThis.document,location:globalThis.location,addEventListener:globalThis.addEventListener},els=new Map(),events={};
  globalThis.document={createElement(){return {append(){},setAttribute(){},hidden:false};},querySelector(){return null;},body:{append(){},dataset:{},classList:{add(){},remove(){},contains(){return false;}}},getElementById(id){if(!els.has(id))els.set(id,{hidden:false,textContent:''});return els.get(id);}};
  globalThis.location={search:''};globalThis.addEventListener=(name,fn)=>events[name]=fn;
  const camera=new THREE.PerspectiveCamera();camera.position.set(20,30,40);const controls={enabled:true,target:new THREE.Vector3()};
  const assembly={legacy:{interactables},colliders,isWalkable,spatial:{main:[],returning:[]},surfaces:{segments:[],sample:()=>sample?{segment:{id:'way/105449722',kind:'stone'}}:null,height:()=>33.664626},walkHeight:()=>33.664626};
- const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:()=>33.664626,assembly,audio:{step(){}},onStart(){},resolveMove,allowDebugCamera});
+ const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:()=>33.664626,assembly,audio:{step(){}},onStart(){},resolveMove,allowDebugCamera,settings:createWalkSettings({storage:null,initial:{headBob:false}})});
  return {camera,controls,walker,events,els,restore(){for(const [k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}};
 }
 test('E triggers a nearby action directly once and leaves the interaction menu hidden',()=>{

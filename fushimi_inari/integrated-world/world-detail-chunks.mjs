@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Rendering residency only: collision/floor owners are never removed. The
 // terrain, path ribbons and distant city/canopy keep their existing ownership.
-export function createWorldDetailChunks({cellSize=128,near=220,far=260,onStats=()=>{}}={}){
+export function createWorldDetailChunks({cellSize=128,near=220,far=260,onStats=null}={}){
  const cells=new Map(),entries=[],objects=new Set(),active=new Set();
  let last=-Infinity,lastScale=1,checks=0,dirty=true,updates=0,skippedUpdates=0,totalChecks=0,visibilityWrites=0,lastPosition=new THREE.Vector3(Infinity,Infinity,Infinity);
  function add(object,{radius=near,margin=far-near,bounds=null}={}){
@@ -33,7 +33,8 @@ export function createWorldDetailChunks({cellSize=128,near=220,far=260,onStats=(
    const enabled=limit>=0&&camera.position.distanceToSquared(entry.center)<=limit*limit;checks++;totalChecks++;
    if(enabled!==entry.enabled){entry.enabled=enabled;entry.object.visible=enabled;visibilityWrites++;if(enabled)active.add(entry);else active.delete(entry);}
   }
-  onStats(stats());
+  // Diagnostics only: ordinary visits build no per-update stats object.
+  if(onStats)onStats(stats());
  }
  const stats=()=>({registered:entries.length,active:active.size,dormant:entries.length-active.size,cells:cells.size,checked:checks,updates,skippedUpdates,totalChecks,visibilityWrites,nearMetres:near,farMetres:far,rangeScale:lastScale,mode:'spatial render activation; collision data retained'});
  return {add,update,stats,restore(){for(const e of entries){if(!e.object.visible){e.object.visible=true;visibilityWrites++;}e.enabled=true;active.add(e);}dirty=true;}};

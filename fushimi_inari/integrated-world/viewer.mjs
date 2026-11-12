@@ -1,4 +1,5 @@
 import {createTrailGuide} from './trail-guide.mjs';
+import {telemetry} from './telemetry.mjs';
 import {createStartupCheckpoint,yieldStartupTask,startStartupYieldAudit} from './startup-work.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
 import {installShadowMaterialSource} from './shadow-material-source.mjs';
@@ -66,7 +67,7 @@ import {distantCanopy} from './distant-canopy.mjs?v=33';
 import {blendCourtyardGround} from './courtyard-ground-nodes.mjs';
 import {blendEntranceGroundAsync} from './entrance-ground-nodes.mjs';
 import {blendKeihanStreetGround} from './keihan-street-ground-nodes.mjs';
-import {makePrecinctGroundCover} from './ground-cover.mjs?v=64';
+import {makePrecinctGroundCover,terrainGroundCoverAsync} from './ground-cover.mjs?v=64';
 import {installSeasons} from './seasons.mjs?v=welcome-hud-1';
 import {buildPathMeshesAsync} from './path-meshes.mjs?v=usability-9';
 import {installExplorationHUD} from './exploration-hud.mjs?v=welcome-hud-1';
@@ -93,7 +94,7 @@ const startupCheckpoint=createStartupCheckpoint({onStep:startupStep});
 function loadingStage(message){
   $('loading').textContent=message;
   loadingStages.push({message,ms:Math.round(performance.now())});
-  document.body.dataset.loadingStages=JSON.stringify(loadingStages);
+  telemetry.report('loadingStages',loadingStages);
 }
 try {
   document.body.dataset.bootPhase='geography';
@@ -121,9 +122,11 @@ try {
   const instanceCapacityEnabled=query.get('pipelineAudit')!=='1'||query.get('instanceCapacity')!=='0';
   const instanceBufferNames=instanceCapacityEnabled?installStaticInstanceBufferNames(renderer.backend,{objects:staticShaderOwners}):null;
   let renderBuildAudit=null,rendererHealth=null,frameStallAudit=null,backendWorkAudit=null,frameSchedulingAudit=null;
+  // Failure context reads live owners; per-frame camera/shaft attributes are audit-only.
+  let healthCamera=null,healthShafts=null;
   rendererHealth=installRendererHealth({renderer,audit:query.get('gpuAudit')==='1',getContext:()=>({
-    quality:document.body.dataset.renderQuality,timeOfDay:$('light').value,camera:document.body.dataset.camera?.split(',').map(Number),
-    prewarm:walkingPrewarm?.stats,textures:textureStreaming.stats,shafts:document.body.dataset.sunShafts,pipelineReadiness:document.body.dataset.pipelineReadiness
+    quality:document.body.dataset.renderQuality,timeOfDay:$('light').value,camera:healthCamera?.position.toArray().map(v=>Number(v.toFixed(2))),
+    prewarm:walkingPrewarm?.stats,textures:textureStreaming.stats,shafts:healthShafts?.(),pipelineReadiness:document.body.dataset.pipelineReadiness
   })});
   addEventListener('pagehide',event=>{if(!event.persisted)rendererHealth.dispose();});
   if(query.get('pipelineAudit')==='1'){
@@ -201,7 +204,7 @@ try {
     pos=await prepareTerrainClip(owner,pos);
   }
   await startupCheckpoint('terrain attributes and UVs');
-  document.body.dataset.officePonds=JSON.stringify(assembly.officePonds);
+  telemetry.report('officePonds',assembly.officePonds);
   terrainGeo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   terrainGeo.computeVertexNormals();
   const soil=textureStreaming.load('../assets/textures/nanobanana/surface_forest_soil_leaves.png');
@@ -214,21 +217,10 @@ try {
   }
   terrainGeo.setAttribute('uv',new THREE.Float32BufferAttribute(groundUV,2));
   loadingStage('Finishing the forest floor…');await yieldStartupTask();
-  const cover=new Float32Array(pos.length/3),precinctGrass=new Float32Array(pos.length/3),coverCache=new Map();
   const groundCover=makePrecinctGroundCover(features,{surfaceAreas:assembly.entranceSurfaces});
-  for(let i=0;i<pos.length;i+=3){
-    if(i%192===0){const pause=startupCheckpoint();if(pause)await pause;}
-    const x=pos[i],y=pos[i+1],z=pos[i+2],key=`${x},${z}`;
-    if(!coverCache.has(key)){
-      const slope=Math.hypot(ground(x+1,z)-ground(x-1,z),ground(x,z+1)-ground(x,z-1))/2;
-      const distance=assembly.pathDistance(x,z)?.distance??100;
-      coverCache.set(key,[groundCover(x,y,z,slope,distance),groundCover.precinct(x,y,z,slope,distance)]);
-    }
-    cover[i/3]=coverCache.get(key)[0];precinctGrass[i/3]=coverCache.get(key)[1];
-  }
+  const {cover,precinctGrass}=await terrainGroundCoverAsync(pos,{ground,pathDistance:assembly.pathDistance,cover:groundCover,checkpoint:startupCheckpoint});
   terrainGeo.setAttribute('groundCover',new THREE.Float32BufferAttribute(cover,1));
   terrainGeo.setAttribute('precinctGrass',new THREE.Float32BufferAttribute(precinctGrass,1));
-  coverCache.clear();
   loadingStage('Preparing nearby streets…');await yieldStartupTask();
   const terrainMaterial=new THREE.MeshStandardNodeMaterial({map:soil,normalMap:soilNormal,normalScale:new THREE.Vector2(.35,.35),roughness:1});
   // Reuse the terrain's streamed earth maps, with matching world-space UVs.
@@ -276,11 +268,11 @@ try {
   const stationDetails=buildKeihanStationDetailPolish(assembly);
   await startupCheckpoint('buildKeihanVideoMerchandise');
   const videoMerchandise=buildKeihanVideoMerchandise(assembly);
-  document.body.dataset.videoMerchandise=JSON.stringify(videoMerchandise.stats);
-  document.body.dataset.observedStreet=JSON.stringify(observedStreet.stats);
-  document.body.dataset.streetCommerce=JSON.stringify(streetCommerce.stats);
-  document.body.dataset.approachFloors=JSON.stringify(approachFloors.stats);
-  document.body.dataset.apronTransitionsR100=JSON.stringify(assembly.apronTransitionsR100);
+  telemetry.report('videoMerchandise',videoMerchandise.stats);
+  telemetry.report('observedStreet',observedStreet.stats);
+  telemetry.report('streetCommerce',streetCommerce.stats);
+  telemetry.report('approachFloors',approachFloors.stats);
+  telemetry.report('apronTransitionsR100',assembly.apronTransitionsR100);
 
   // Footprints are sourced. Extrusion height is metadata-based or explicitly inferred.
   const buildingGroup=new THREE.Group();scene.add(buildingGroup);buildingGroup.visible=$('buildings').checked;
@@ -290,7 +282,7 @@ try {
   await startupCheckpoint('createSuehiroyaSummit');
   const summitShop=createSuehiroyaSummit({buildings:features.buildings,ground,walkHeight:assembly.walkHeight,materials:assembly.legacy.materials});
   buildingGroup.add(summitShop.group);
-  document.body.dataset.suehiroyaSummit=JSON.stringify(summitShop.stats);
+  telemetry.report('suehiroyaSummit',summitShop.stats);
   addEventListener('pagehide',event=>{if(!event.persisted)summitShop.dispose();});
   await startupCheckpoint('>summitShop.builtIds.has');
   const omitContext=building=>summitShop.builtIds.has(building.id)||omitUnverifiedPrecinctProxy(building)||(!includeMappedProxies&&omitUnmodeledShrineProxy(building));
@@ -300,7 +292,7 @@ try {
   const contextFinishes=createMappedBuildingFinishes({buildings:features.buildings,segments:contextSegments,ground,excludesBuilding:assembly.excludesBuilding,omitBuilding:omitContext});
   buildingGroup.add(contextFinishes.group);
   inferredHeightCount=contextFinishes.stats.records.filter(record=>record.heightSource!=='height').length;
-  document.body.dataset.mappedBuildingFinishes=JSON.stringify(contextFinishes.stats);
+  telemetry.report('mappedBuildingFinishes',contextFinishes.stats);
   addEventListener('pagehide',event=>{if(!event.persisted)contextFinishes.dispose();});
 
   for(const b of features.buildings){
@@ -338,11 +330,11 @@ try {
   }
   buildingGroup.updateWorldMatrix(true,true);
   const mappedBuildingEntries=[];buildingGroup.traverse(object=>{if(object.isMesh)mappedBuildingEntries.push({object,bounds:new THREE.Box3().setFromObject(object)});});
-  document.body.dataset.mappedProxyPolicy=JSON.stringify({omittedShrineProxies,includeMappedProxies,provenance:'Unmodeled religious extrusions omitted; source footprints and POIs retained'});
+  telemetry.report('mappedProxyPolicy',{omittedShrineProxies,includeMappedProxies,provenance:'Unmodeled religious extrusions omitted; source footprints and POIs retained'});
   await startupCheckpoint('>assembly.excludesBuilding');
   const panorama=installCityPanorama(scene,features,ground,building=>assembly.excludesBuilding(building)||omitContext(building));
   const canopy=distantCanopy(features,ground,assembly.pathDistance,terrain);scene.add(canopy.group);
-  document.body.dataset.aerialContext=JSON.stringify({footprints:features.buildings.length,crowns:canopy.group.userData.count,canopyTriangles:canopy.group.userData.count*20,provenance:'OSM footprints; satellite-interpreted woodland; estimated heights'});
+  telemetry.report('aerialContext',{footprints:features.buildings.length,crowns:canopy.group.userData.count,canopyTriangles:canopy.group.userData.count*20,provenance:'OSM footprints; satellite-interpreted woodland; estimated heights'});
 
   const waterVertices=[];
   for(const w of features.water){
@@ -618,7 +610,7 @@ try {
   $('panels').onclick=()=>{const hidden=document.body.classList.toggle('panels-hidden');$('panels').textContent=hidden?'Show panels':'Hide panels';};
   await startupCheckpoint('>path.at');
   const routeLighting=installRouteLighting(scene,assembly.spatial.main,assembly.ground,{extraRoutes:[assembly.spatial.returning,...assembly.spatial.twins.map(path=>Array.from({length:81},(_,i)=>path.at(i/80).point))],extraEmitters:assembly.keihanFrontages.lightPositions??[],existingLights:assembly.legacy.lanternPointLights});
-  document.body.dataset.routeLighting=JSON.stringify(routeLighting.stats);
+  telemetry.report('routeLighting',routeLighting.stats);
   const sunOffset=new THREE.Vector3();
   $('light').onchange=()=>{
     const mode=$('light').value;
@@ -673,16 +665,18 @@ try {
   const shaftReducedMotion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const sunShafts=createLocalSunShafts({scene:shaftVolumeScene??scene,depthTexture:quality.shaftDepth,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
+  const sunShaftReport=()=>({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});
+  healthCamera=camera;healthShafts=()=>JSON.stringify(sunShaftReport());
   const applyTimeOfDay=$('light').onchange;
   $('light').onchange=()=>{appearance.updateBaseLighting(applyTimeOfDay);appearance.setTimeOfDay($('light').value);leafLight.setMode($('light').value);sunShafts.setMode($('light').value);sunShafts.update(camera);document.body.dataset.precinctLeafLight=JSON.stringify(leafLight.stats);};
   await startupCheckpoint();
   const photo=installPhotoMode({renderer,scene,camera,walker,controls,allowDebugCamera,includeImage:true,isCameraOwned:()=>!!zen?.active||!!arrival?.active,getCaptureContext:()=>({mode:zen?.returning.cameraOwned||arrival?.active?'train':walker.mode,fov:camera.fov,weather:zen?.journey.snapshot().weather??'clear',light:$('light').value}),onCaptured:async details=>{journal?.recordPhoto(details);return await zen?.recordPhoto(details)??'';},render:()=>{sunShadows.invalidate();sunShadows.update(performance.now(),camera.position,sunOffset);quality.render();},overlays:()=>[routeLine,marker,landmarkGroup]});
   await startupCheckpoint('installCandleFlameInstances');
   const candleFlames=installCandleFlameInstances(assembly.legacy.flickeringCandleMeshes,{polish:true});
-  document.body.dataset.candleFlames=JSON.stringify(candleFlames.stats);
+  telemetry.report('candleFlames',candleFlames.stats);
   let detailDistance='near';
   await startupCheckpoint('JSON.stringify');
-  const detailChunks=createWorldDetailChunks({onStats:stats=>document.body.dataset.detailChunks=JSON.stringify(stats)});
+  const detailChunks=createWorldDetailChunks({onStats:telemetry.enabled?stats=>telemetry.report('detailChunks',stats):null});
   for(const {object,bounds} of assembly.staticBatches.residencyEntries)detailChunks.add(object,{bounds});
   for(const {object,bounds} of assembly.forestChunks)detailChunks.add(object,{bounds,radius:260,margin:40});
   for(const group of videoMerchandise.detailGroups??[])detailChunks.add(group,{radius:28,margin:8});
@@ -772,7 +766,7 @@ try {
       }
     },
     report(value){
-      document.body.dataset.checkpointPreparation=JSON.stringify(value);
+      telemetry.report('checkpointPreparation',value);
       const latest=value.history.at(-1);
       if(value.busy&&latest?.stage){
         const message=`Preparing ${assembly.spatial.byId[latest.id]?.label??latest.id} · ${latest.stage}`;
@@ -790,15 +784,15 @@ try {
       const targetCamera=camera.clone();targetCamera.position.copy(position);targetCamera.lookAt(destination.target[0],position.y,destination.target[2]);targetCamera.updateMatrixWorld(true);
       if(!isCurrent())return;
       const textures=await stage('nearby textures',()=>textureStreaming.prepareAt(position));
-      destination.textureFailures=textures.failed;document.body.dataset.checkpointTextures=JSON.stringify(textures);
+      destination.textureFailures=textures.failed;telemetry.report('checkpointTextures',textures);
       if(!isCurrent())return;
       const visuals=await stage('nearby visual selection',async()=>{
         const result=await collectCheckpointVisuals({scene,position,residencyRoots:preparationResidency,residencyBounds:preparationBounds,radius:Math.min(300,prewarmViewRadius(targetCamera)+24),yieldWork:yieldPreparation});
-        const {objects,...stats}=result;document.body.dataset.checkpointVisuals=JSON.stringify({objects:objects.length,...stats});return objects;
+        const {objects,...stats}=result;telemetry.report('checkpointVisuals',{objects:objects.length,...stats});return objects;
       });
       if(!isCurrent())return;
       await stage('nearby shaders',async()=>{
-        const report=value=>{document.body.dataset.checkpointCompilation=JSON.stringify(value);};
+        const report=telemetry.enabled?value=>{telemetry.report('checkpointCompilation',value);}:undefined;
         await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:objects=>{renderBuildAudit?.noteCompiled(objects);if(query.get('pipelineAudit')!=='1'||query.get('prewarmPrepared')!=='0')for(const object of objects)walkingPrewarm?.markPrepared(object);}});
       });
       if(!isCurrent())return;
@@ -823,7 +817,7 @@ try {
   lookSelect.onchange=()=>{appearance.setLook(lookSelect.value);sky.setLook(lookSelect.value);sunShafts.setLook(lookSelect.value);};
   // Stable matrix-buffer capacities share r180 shaders across static cells.
   const instanceCapacity=instanceBufferNames?.enabled?padStaticInstanceMatrices([...assembly.staticBatches.meshes,...assembly.instancePrewarmEntries.map(entry=>entry.object),...assembly.forestChunks.map(entry=>entry.object),...assembly.staticBoundaryRoots],{onEligible:object=>staticShaderOwners.add(object)}):null;
-  document.body.dataset.instanceCapacity=JSON.stringify(instanceCapacity);
+  telemetry.report('instanceCapacity',instanceCapacity);
   const walkingPreparationBounds=new Map([...preparationBounds,...assembly.instancePrewarmEntries.map(({object,bounds})=>[object,bounds])]);
   // Late candle/detail instancing also creates per-object shader variants.
   // Snapshot admission once; these extra owners are never used for static culling.
@@ -835,7 +829,7 @@ try {
   const walkingViewDirection=new THREE.Vector3();
   renderBuildAudit?.noteRegistered([...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})));
   const walkingCompileHistory=renderBuildAudit?[]:null;
-  const reportWalkingNeighborhood=stats=>{document.body.dataset.walkingNeighborhood=JSON.stringify(stats);};
+  const reportWalkingNeighborhood=stats=>{telemetry.report('walkingNeighborhood',stats);};
   await startupCheckpoint();
   const walkingPreparationYield=createWalkingPreparationYield(),framePacedWalkingPreparation=query.get('prewarmFrameYield')!=='0';
   walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
@@ -910,8 +904,8 @@ try {
   await zen.prepare(compileZen);
   if(renderBuildAudit)visitors.ready.then(()=>document.body.dataset.visitorsReadyAt=String(performance.now()),()=>document.body.dataset.visitorsReadyAt='failed');
   const wildlife=createForestWildlife(assembly);
-  document.body.dataset.forestWildlife=JSON.stringify({count:wildlife.count});
-  const streetLife=installKeihanStreetLife(assembly,{onStats:stats=>document.body.dataset.streetLife=JSON.stringify(stats)});
+  telemetry.report('forestWildlife',{count:wildlife.count});
+  const streetLife=installKeihanStreetLife(assembly,{onStats:telemetry.enabled?stats=>telemetry.report('streetLife',stats):undefined});
   installSeasons(assembly,canopy);
   appearance.prepareFoliage();
   appearance.setTimeOfDay($('light').value);
@@ -928,7 +922,7 @@ try {
     return pondKeyState.key;
   }
   addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose?.();zen.dispose();visitors.dispose();streetLife.dispose();streetCommerce.dispose?.();journal.dispose();walkingPrewarm?.dispose();walkingPreparationYield.dispose();document.removeEventListener('visibilitychange',pauseWalkingPreparation);leafLight?.dispose();sunShafts.dispose();rendererHealth?.dispose();appearance.dispose();sky.dispose();pondReflections.dispose();sunShadows.dispose();quality.dispose();textureBindings.dispose();}});
-  document.body.dataset.inventory=JSON.stringify(assembly.inventory);
+  telemetry.report('inventory',assembly.inventory);
   loadingStage('Preparing materials for the arrival…');
   await textureStreaming.prepare(scene,new THREE.Vector3().fromArray(assembly.keihanStation?.spec.arrival.interiorPose.position??[-355,32,-100]));
   const prepareNearby=()=>{
@@ -940,8 +934,8 @@ try {
   try{
     const prepared=await prepareShinikeForWalking({probe:pondReflections,water:shinikeWater,camera,scene,quality,detailChunks,textureStreaming,
       waitForTextures:false,restoreView:prepareNearby,settle:()=>settleRenderer(renderer),getLights:compilationLights.getLights,getAppearanceKey:pondAppearanceKey});
-    document.body.dataset.pondPreparation=JSON.stringify(prepared);
-  }catch(error){document.body.dataset.pondPreparation=JSON.stringify({prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
+    telemetry.report('pondPreparation',prepared);
+  }catch(error){telemetry.report('pondPreparation',{prepared:false,error:String(error.message??error)});console.warn('Pond preparation unavailable',error);}
   loadingStage('Preparing train and platform…');
   const arrivalPrepared=await prepareTrainArrival({station:assembly.keihanStation??assembly.inariStation,camera,
     prepareView:prepareNearby,prepareAppearance:()=>appearance.prepare(),
@@ -959,7 +953,7 @@ try {
     const preview=(assembly.keihanStation??assembly.inariStation).spec.arrival.interiorPose;
     camera.position.set(...preview.position);camera.lookAt(...preview.target);prepareNearby();
   }
-  document.body.dataset.arrivalRenderPrepared=String(arrivalPrepared);
+  telemetry.text('arrivalRenderPrepared',arrivalPrepared);
   if(startupStep)document.body.dataset.startupSteps=JSON.stringify(startupSteps);
   if(startupYieldAudit)document.body.dataset.startupYieldAudit=JSON.stringify(startupYieldAudit);
   document.body.dataset.loadReadyMs=String(Math.round(performance.now()));
@@ -1100,7 +1094,7 @@ try {
     }else if(!photo.active&&!menu.active&&!journal.active&&!(sectorPreparation.busy||qualityPending>0)&&!walker.update(dt)&&allowDebugCamera){
       controls.update();
       const guard=protectOrbit(camera,controls,assembly.surfaces.terrainHeight);
-      document.body.dataset.orbitClearance=JSON.stringify(guard);
+      telemetry.report('orbitClearance',guard);
     }
     zen.afterCamera(dt,time,{blocked:captureOwnsCamera||!!arrival?.active||photo.active||menu.active||journal.active||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open')});
     sunShadows.update(time,camera.position,sunOffset);
@@ -1110,7 +1104,6 @@ try {
 
     for(const water of waterControllers)water.update(time/1000);
     fareGates?.update(camera.position.toArray(),time/1000,document.hidden||zen.active||menu.active||photo.active||journal.active);
-    if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
     sunShafts.setReducedMotion(arrivalUI?.reducedMotion??shaftReducedMotion?.matches??false);sunShafts.update(camera,time/1000);sky.update();flashlight.update();visitors.update(camera,time/1000);wildlife.update(camera,time/1000);streetLife.update(camera,time/1000);streetCommerce.update?.(camera,time/1000);assembly.keihanRail?.update(camera,time/1000);canopy.update(camera);assembly.precinctLife.update(camera);panorama.update(camera,$('buildings').checked);
     cloudShade.update(time/1000,$('light').value);
     if(!showcase?.active&&!arrival?.active&&!renderPreparation.busy&&!(sectorPreparation.busy||qualityPending>0)&&!document.body.classList.contains('welcome-open'))assembly.deferredBuildings.update(camera.position);
@@ -1130,8 +1123,6 @@ try {
     // Capture only settled images; a probe made from placeholders must refresh.
     const textureState=textureStreaming.stats;
     if(!arrival?.active&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,pondAppearanceKey());
-    document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
-    if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
     appearance.update(time/1000);
     if(prewarmFrameBudget){
       const warmState=walkingPrewarm.stats;
@@ -1146,11 +1137,17 @@ try {
       }}));
     }else renderWalkingFrame();
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
-    if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
-    document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
-    if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
-    document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
-    document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
+    // Frame diagnostics keep their audit cadence; ordinary visits skip them.
+    if(telemetry.enabled){
+      if(time-horizonAuditAt>1000){horizonAuditAt=time;document.body.dataset.cityHorizon=JSON.stringify(cityHorizon.stats);document.body.dataset.worldAppearance=JSON.stringify(appearance.stats);document.body.dataset.skyAppearance=JSON.stringify(sky.stats);document.body.dataset.walkingPrewarm=JSON.stringify(walkingPrewarm.stats);document.body.dataset.sunShafts=JSON.stringify(sunShaftReport());if(query.get('gpuAudit')==='1')document.body.dataset.pipelineReadiness=JSON.stringify(quality.pipelineStats);if(renderBuildAudit){document.body.dataset.renderBuildAudit=JSON.stringify(renderBuildAudit.stats);document.body.dataset.frameStalls=JSON.stringify(frameStallAudit.stats);document.body.dataset.frameScheduling=JSON.stringify(frameSchedulingAudit.stats);document.body.dataset.backendWork=JSON.stringify(backendWorkAudit.stats);}}
+      if(fareGates)document.body.dataset.fareGates=JSON.stringify(fareGates.state);
+      document.body.dataset.shinikeReflection=JSON.stringify(pondReflections.stats);
+      if(assembly.keihanRail)document.body.dataset.jrCrossing=JSON.stringify(assembly.keihanRail.group.userData.crossingState);
+      document.body.dataset.textureBindingRepairs=textureBindings.stats.repaired;
+      if(allowFastTravel)document.body.dataset.sunShadowSchedule=JSON.stringify(sunShadows.stats);
+      document.body.dataset.drawCalls=renderer.info.render.drawCalls??renderer.info.render.calls;
+      document.body.dataset.camera=[camera.position.x,camera.position.y,camera.position.z].map(v=>v.toFixed(2)).join(',');
+    }
     menu.update(time);journal.update(time);hud.update(time);audio.update(camera,$('light').value==='night',{gate:assembly.keihanStation?.spec.gate,gateState:fareGates?.state,arrival:arrival?.snapshot,rail:assembly.keihanRail,time:time/1000,paused:document.hidden||zen.active||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0),musicPaused:document.hidden||menu.active||photo.active||journal.active||(sectorPreparation.busy||qualityPending>0)});
     if(movementFrameAudit?.active)movementFrameAudit.afterRender(time,submitMs,Math.max(0,performance.now()-updateStart-submitMs),callbackEntryMs);
 

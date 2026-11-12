@@ -2,12 +2,44 @@ import * as THREE from 'three';
 import {SUN_DIRECTIONS,GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 import {normalizeVisualLook} from './visual-look.mjs';
 import {createPaintedClouds} from './aozora-clouds.mjs';
+import {HORIZON_COLORS,HAZE_COLORS} from './viewing-distance.mjs';
 import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,varying,screenDPR} from 'three/tsl';
 
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
 export const SKY_SUN_DIRECTIONS=SUN_DIRECTIONS;
 export const SKY_CLOUD_DRIFT=.0018;
 export const skyDistanceScale=far=>Math.min(1,far/7500);
+// [zenith, middle, horizon, lit cloud, cloud shade] per time of day.
+export const SKY_PALETTES=Object.freeze({
+  day:Object.freeze(['#3687c7','#89c8ec','#d7e6e7','#f8fbfc','#b9d2e0']),
+  gold:GOLDEN_ATMOSPHERE.skyPalette,
+  night:Object.freeze(['#081326','#172942','#34465c','#52647b','#293b52'])
+});
+// Creative palettes retain each time-of-day's brightness: night remains dark.
+export const CREATIVE_SKY_PALETTES=Object.freeze({
+  sakura:Object.freeze({
+    day:Object.freeze(['#7899cf','#c1bce4','#f4d5df','#fff8ed','#b7b3cf']),
+    gold:Object.freeze(['#686eaf','#c88eaf',GOLDEN_ATMOSPHERE.horizon,'#ffe3d1','#a282a8']),
+    night:Object.freeze(['#17152d','#30213e','#493047','#6e506a','#382c49'])
+  }),
+  aozora:Object.freeze({
+    day:Object.freeze(['#0754bb','#1074d6','#d7e6e7','#fffaf0','#8badd2']),
+    gold:Object.freeze(['#314f9b','#ad83bc',GOLDEN_ATMOSPHERE.horizon,'#ffe6c2','#777eae']),
+    night:Object.freeze(['#071435','#172b57','#34465c','#788fb5','#263a64'])
+  }),
+  'soft-light':Object.freeze({
+    day:Object.freeze(['#829eae','#c1d0cd','#e8dfca','#fff4dc','#a7b9b3']),
+    gold:Object.freeze(['#9189bc','#cb9ba5',GOLDEN_ATMOSPHERE.horizon,'#ffdbc0','#b18491']),
+    night:Object.freeze(['#111a30','#242c46','#3c4158','#62667e','#2f3650'])
+  })
+});
+// One palette source for the dome and the sky-derived environment. A horizon
+// that is the authored fog horizon becomes the sun-tinted haze the fog uses.
+export function skyPalette(mode,look){
+  const key=Object.hasOwn(SKY_PALETTES,mode)?mode:'day';
+  const [zenith,middle,authored,lit,shade]=(CREATIVE_SKY_PALETTES[normalizeVisualLook(look)]??SKY_PALETTES)[key];
+  return {mode:key,zenith,middle,horizon:authored===HORIZON_COLORS[key]?HAZE_COLORS[key]:authored,lit,shade};
+}
 export function installSky(scene,camera){
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
   const ctx=canvas.getContext('2d'),texture=new THREE.CanvasTexture(canvas);
@@ -57,29 +89,6 @@ export function installSky(scene,camera){
   starsMat.opacityNode=alpha;
   const stars=new THREE.Sprite(starsMat);stars.count=phases.length;
   stars.frustumCulled=false;stars.renderOrder=-90;scene.add(stars);
-  const palettes={
-    day:['#3687c7','#89c8ec','#d7e6e7','#f8fbfc','#b9d2e0'],
-    gold:GOLDEN_ATMOSPHERE.skyPalette,
-    night:['#081326','#172942','#34465c','#52647b','#293b52']
-  };
-  // Creative palettes retain each time-of-day's brightness: night remains dark.
-  const creativePalettes={
-    sakura:{
-      day:['#7899cf','#c1bce4','#f4d5df','#fff8ed','#b7b3cf'],
-      gold:['#686eaf','#c88eaf',GOLDEN_ATMOSPHERE.horizon,'#ffe3d1','#a282a8'],
-      night:['#17152d','#30213e','#493047','#6e506a','#382c49']
-    },
-    aozora:{
-      day:['#0754bb','#1074d6','#d7e6e7','#fffaf0','#8badd2'],
-      gold:['#314f9b','#ad83bc',GOLDEN_ATMOSPHERE.horizon,'#ffe6c2','#777eae'],
-      night:['#071435','#172b57','#34465c','#788fb5','#263a64']
-    },
-    'soft-light':{
-      day:['#829eae','#c1d0cd','#e8dfca','#fff4dc','#a7b9b3'],
-      gold:['#9189bc','#cb9ba5',GOLDEN_ATMOSPHERE.horizon,'#ffdbc0','#b18491'],
-      night:['#111a30','#242c46','#3c4158','#62667e','#2f3650']
-    }
-  };
   let mode='day',look='natural',disposed=false;
   const paintedClouds=createPaintedClouds({onReady(){if(look==='aozora'&&!disposed)paint();}});
   function paint(){
@@ -87,7 +96,7 @@ export function installSky(scene,camera){
     sunTint.value.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
     sunCenter.value.set(mode==='gold'?'#ffb16a':'#fff9e6');
     sunDirection.fromArray(SKY_SUN_DIRECTIONS[mode]??SKY_SUN_DIRECTIONS.day).normalize().multiplyScalar(5400);
-    const [zenith,middle,horizon,lit,shade]=(creativePalettes[look]??palettes)[mode];
+    const {zenith,middle,horizon,lit,shade}=skyPalette(mode,look);
     const gradient=ctx.createLinearGradient(0,0,0,1024);
     gradient.addColorStop(0,zenith);gradient.addColorStop(.30,middle);
     if(look==='aozora'&&mode==='day'){gradient.addColorStop(.42,'#1388d5');gradient.addColorStop(.475,'#49afe3');gradient.addColorStop(.50,'#a7d5e8');}
@@ -112,7 +121,7 @@ export function installSky(scene,camera){
     texture.needsUpdate=true;cloudTexture.needsUpdate=true;
   }
   function setMode(value){
-    const next=Object.hasOwn(palettes,value)?value:'day';
+    const next=Object.hasOwn(SKY_PALETTES,value)?value:'day';
     if(next===mode)return;
     mode=next;paint();
   }

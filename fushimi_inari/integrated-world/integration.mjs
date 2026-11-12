@@ -2,6 +2,7 @@ import {buildKandakaraShrine} from './kandakara-shrine.mjs';
 import {buildTakeyaKeepsakes} from './takeya-keepsakes.mjs';
 import {buildLateralWaymarkers} from './lateral-waymarkers.mjs';
 import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
+import {telemetry} from './telemetry.mjs';
 import {findVotiveWaxToRetain} from './candle-flame-instances.mjs';
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
@@ -174,6 +175,15 @@ import {buildGondenAccessTorii} from './gonden-access-torii.mjs?v=66';
 import {buildTamayamaAccessShoulders} from './tamayama-access-shoulders.mjs?v=66';
 import {refineNinomine} from './ninomine-details.mjs?v=39';
 
+// The generated legacy builders keep their original Spanish status strings;
+// like scripts/integrated-english.json, translate them where they reach the UI.
+export const legacyProgressEnglish=Object.freeze({
+  'Esculpiendo topografía y calzadas de piedra para túneles gemelos y cumbres...':'Shaping the terrain and stone paths…',
+  'Colocando 1020+ arcos Torii con paso amplio en la bifurcación y en toda la montaña...':'Placing more than 1,020 torii gates…',
+  'Construyendo santuarios, paneles de mapa real 3D (境内案内図) y bifurcaciones...':'Building shrines, map boards and trail junctions…',
+  'Plantando bosque volumétrico 3D con exclusión total de caminos y bifurcaciones...':'Planting the forest beside the paths…'
+});
+
 export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const yieldWork=callbacks.yieldWork??yieldStartupTask,checkpoint=createStartupCheckpoint({yieldWork,onStep:callbacks.startupStep});
   const [spec,entranceBarriers,entranceSurfaces,entranceContext]=await Promise.all([
@@ -183,7 +193,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     fetch('../geography/sources/entrance-context-r55.json').then(r=>{if(!r.ok)throw new Error('Entrance context data unavailable');return r.json();})
   ]);
   const spatial=makeSpatial(terrain,features,spec);
-  const legacy=await buildLegacy(renderer,{...callbacks,loadTexture:textureStreaming.load,yieldWork:checkpoint});
+  const legacy=await buildLegacy(renderer,{...callbacks,progress:callbacks.progress&&(message=>callbacks.progress(legacyProgressEnglish[message]??message)),loadTexture:textureStreaming.load,yieldWork:checkpoint});
   const gehaidenLanternCleanupR96=prepareGehaidenLanternCleanupR96(legacy);
   legacy.materials.entryStoneMat=fineGranite();
   legacy.materials.gravelMat.copy(courtyardGravel());
@@ -325,6 +335,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       .multiply(new THREE.Matrix4().makeRotationY(f.yaw))
       .multiply(new THREE.Matrix4().makeTranslation(...f.source.map(n=>-n)));
   }
+  // Invariant court pads, hoisted out of the per-sample anchor loop.
+  const groundPads={romon:[27,16,8],gehaiden:[8.2,6.4,0],naihaiden:[7.4,5,0],honden:[9.2,7,0]};
   function ground(x,z){
     const [ex,ez]=rotateXZ(x-byId.romon.target[0],z-byId.romon.target[2],-byId.romon.yaw);
     const west=westStairHeight(ex,ez);
@@ -333,13 +345,12 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const original=x>790&&x<808&&z>-226&&z<-207?yotsuGrade(x,z,raw):raw;
     let weight=0,weightedHeight=0;
     for(const a of anchors){
-      if(['yotsu','chaya_n','chaya_s'].includes(a.id))continue;
+      if(a.id==='yotsu'||a.id==='chaya_n'||a.id==='chaya_s')continue;
       if(!a.radius)continue;
       if(Math.hypot(x-a.target[0],z-a.target[2])>a.radius*1.5+8)continue;
       const [lx,lz]=rotateXZ(x-a.target[0],z-a.target[2],-a.yaw);
       const localX=a.source[0]+lx,localZ=a.source[2]+lz;
-      const pads={romon:[27,16,8],gehaiden:[8.2,6.4,0],naihaiden:[7.4,5,0],honden:[9.2,7,0]};
-      const pad=pads[a.id];
+      const pad=groundPads[a.id];
       const score=pad?Math.max(Math.abs(lx)/pad[0],Math.abs(lz-pad[2])/pad[1]):Math.hypot(lx,lz)/a.radius;
       const influence=1-THREE.MathUtils.smoothstep(score,.7,1.3);
       if(!influence)continue;
@@ -382,7 +393,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const summitDetail=refineIchinomine(object,legacy.materials);
     if(summitDetail){
       ichinomineRefinement=summitDetail;
-      document.body.dataset.ichinomineRefinement=JSON.stringify(summitDetail.stats);
+      telemetry.report('ichinomineRefinement',summitDetail.stats);
       addEventListener('pagehide',event=>{if(!event.persisted)summitDetail.dispose();});
     }
     refineNinomine(object,legacy.materials);
@@ -474,7 +485,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     prefetch:async (id,timing)=>{
       const gltf=await loadCompressedGLB(`${id}.glb`,{timing});
       await yieldShrineWork();let start=performance.now();
-      await refineShrineBuildingAsync(gltf.scene,id,legacy.materials,{diagnostics:document.body.dataset,gehaidenLanternCleanupR96,timing:(name,ms)=>timing('refine:'+name,ms)});
+      await refineShrineBuildingAsync(gltf.scene,id,legacy.materials,{diagnostics:telemetry.enabled?document.body.dataset:{},gehaidenLanternCleanupR96,timing:(name,ms)=>timing('refine:'+name,ms)});
       timing('refine',performance.now()-start);
       gltf.scene.applyMatrix4(matrix(byId[id]));gltf.scene.updateMatrixWorld(true);
       await yieldShrineWork();start=performance.now();
@@ -489,7 +500,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     load:async (id,scene,timing)=>{
       root.add(scene);scene.updateMatrixWorld(true);
       return scene;
-    },report:value=>{document.body.dataset.deferredBuildings=JSON.stringify(value);}});
+    },report:value=>{telemetry.report('deferredBuildings',value);}});
   const entrySteps=new THREE.Group();entrySteps.name='Romon podium approach adapter';
   for(const flight of [{count:11,width:9.2,start:6.5,end:3.4,bottom:0,rise:2.1},{count:4,width:3.6,start:-5,end:-3.4,bottom:1.6,rise:.5}]){
     const depth=Math.abs(flight.end-flight.start)/flight.count;
@@ -524,21 +535,21 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     return {type:c.type,args};
   }).filter(Boolean);
   if(ichinomineRefinement)colliders.push(...ichinomineRefinement.getColliders());
-  document.body.dataset.azumamaroTreesCleared=String(clearAzumamaroLegacySugi(legacy,features,colliders));
-  document.body.dataset.mitsurugiRegistration=JSON.stringify(registerMitsurugi(root,features,surfaces,colliders));
+  telemetry.text('azumamaroTreesCleared',clearAzumamaroLegacySugi(legacy,features,colliders));
+  telemetry.report('mitsurugiRegistration',registerMitsurugi(root,features,surfaces,colliders));
   await checkpoint('buildMitsurugiCafeFrontage');
   const mitsurugiCafe=buildMitsurugiCafeFrontage(root,features,surfaces,colliders,legacy.materials);
-  document.body.dataset.mitsurugiCafe=JSON.stringify(mitsurugiCafe);
+  telemetry.report('mitsurugiCafe',mitsurugiCafe);
   await checkpoint('buildYakurikiTrailContext');
   const yakurikiTrail=buildYakurikiTrailContext(root,features,surfaces,legacy.materials);
-  document.body.dataset.yakurikiTrail=JSON.stringify(yakurikiTrail);
+  telemetry.report('yakurikiTrail',yakurikiTrail);
   await checkpoint('buildMappedRoofCanopies');
   const mappedRoofCanopies=buildMappedRoofCanopies(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.mappedRoofCanopies=JSON.stringify(mappedRoofCanopies);
+  telemetry.report('mappedRoofCanopies',mappedRoofCanopies);
   colliders.push(...twinColliders);
   await checkpoint('buildOmotesandoArrivalR94');
   const omotesandoArrival=buildOmotesandoArrivalR94(root,features,surfaces);
-  document.body.dataset.omotesandoArrival=JSON.stringify(omotesandoArrival);
+  telemetry.report('omotesandoArrival',omotesandoArrival);
   callbacks.progress?.('Shaping the mountain…');await yieldWork();
   const renderedTerrainPositions=await integratedTerrainTrianglesAsync(terrain,anchors,pathDistance,surfaces.terrainHeight,{detailBounds:shinsenjoNorthCourtTerrainDetailR99(features),yieldWork,cacheHeights:true});
   callbacks.progress?.('Preparing mountain landmarks…');await yieldWork();
@@ -546,128 +557,128 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const tamayamaCompound=buildTamayamaCompound(root,features,surfaces,legacy.materials,colliders);
   await checkpoint('buildTamayamaSouthShinmesha');
   const southShinmesha=buildTamayamaSouthShinmesha(root,legacy.materials,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions});
-  document.body.dataset.southShinmesha=JSON.stringify(southShinmesha);
+  telemetry.report('southShinmesha',southShinmesha);
   await checkpoint('buildTamayamaForecourtAsync');
-  document.body.dataset.tamayamaForecourt=JSON.stringify(await buildTamayamaForecourtAsync(root,features,surfaces,legacy.materials,{terrainPositions:renderedTerrainPositions,yieldWork}));
+  telemetry.report('tamayamaForecourt',await buildTamayamaForecourtAsync(root,features,surfaces,legacy.materials,{terrainPositions:renderedTerrainPositions,yieldWork}));
   await checkpoint('buildPrecinctShrineCourts');
-  document.body.dataset.precinctShrineCourts=JSON.stringify(buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
+  telemetry.report('precinctShrineCourts',buildPrecinctShrineCourts(root,features,surfaces,legacy.materials));
   await checkpoint('buildNearPrecinctMineralCourts');
-  document.body.dataset.nearPrecinctMineralCourts=JSON.stringify(buildNearPrecinctMineralCourts(root,features,surfaces,legacy.materials));
+  telemetry.report('nearPrecinctMineralCourts',buildNearPrecinctMineralCourts(root,features,surfaces,legacy.materials));
   await checkpoint('buildOfficePondSurfaces');
   const officePonds=buildOfficePondSurfaces(root,features,surfaces,legacy.materials);
   await checkpoint('buildNosatsushoPavilion');
   const nosatsushoPavilion=buildNosatsushoPavilion(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.nosatsushoPavilion=JSON.stringify(nosatsushoPavilion);
+  telemetry.report('nosatsushoPavilion',nosatsushoPavilion);
   await checkpoint('buildOfficeGardenBanks');
-  document.body.dataset.officeGardenBanks=JSON.stringify(buildOfficeGardenBanks(root,features,surfaces));
+  telemetry.report('officeGardenBanks',buildOfficeGardenBanks(root,features,surfaces));
   await checkpoint('buildPrecinctNorthContext');
   const precinctNorthContext=buildPrecinctNorthContext(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.precinctNorthContext=JSON.stringify(precinctNorthContext);
+  telemetry.report('precinctNorthContext',precinctNorthContext);
   await checkpoint('buildNearPrecinctShrineRow');
   const nearPrecinctShrineRow=buildNearPrecinctShrineRow(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.nearPrecinctShrineRow=JSON.stringify(nearPrecinctShrineRow);
+  telemetry.report('nearPrecinctShrineRow',nearPrecinctShrineRow);
   await checkpoint('buildShinkosuiWellR96');
   const shinkosuiWellR96=buildShinkosuiWellR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
-  document.body.dataset.shinkosuiWellR96=JSON.stringify(shinkosuiWellR96);
+  telemetry.report('shinkosuiWellR96',shinkosuiWellR96);
   await checkpoint('buildMappedChojaR95');
   const mappedChojaR95=buildMappedChojaR95(root,features,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
-  document.body.dataset.mappedChojaR95=JSON.stringify(mappedChojaR95);
-  document.body.dataset.sanctuaryProxyRepairR95=JSON.stringify(clearMisplacedSanctuaryProxiesR95(root,colliders,{anchors:spatial.anchors}));
+  telemetry.report('mappedChojaR95',mappedChojaR95);
+  telemetry.report('sanctuaryProxyRepairR95',clearMisplacedSanctuaryProxiesR95(root,colliders,{anchors:spatial.anchors}));
   await checkpoint('buildNearPrecinctEnclosures');
-  document.body.dataset.nearPrecinctEnclosures=JSON.stringify(buildNearPrecinctEnclosures(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('nearPrecinctEnclosures',buildNearPrecinctEnclosures(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildNearPrecinctDrains');
-  document.body.dataset.nearPrecinctDrains=JSON.stringify(buildNearPrecinctDrains(root,features,surfaces,legacy.materials));
+  telemetry.report('nearPrecinctDrains',buildNearPrecinctDrains(root,features,surfaces,legacy.materials));
   await checkpoint('buildTamayamaStairBorders');
-  document.body.dataset.tamayamaStairBorders=JSON.stringify(buildTamayamaStairBorders(root,features,surfaces,legacy.materials));
+  telemetry.report('tamayamaStairBorders',buildTamayamaStairBorders(root,features,surfaces,legacy.materials));
   await checkpoint('buildSanctuaryContextR87');
-  document.body.dataset.sanctuaryContextR87=JSON.stringify(buildSanctuaryContextR87(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('sanctuaryContextR87',buildSanctuaryContextR87(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildGondenRearLandscapeAsync');
-  document.body.dataset.gondenRearLandscape=JSON.stringify(await buildGondenRearLandscapeAsync(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
+  telemetry.report('gondenRearLandscape',await buildGondenRearLandscapeAsync(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
   await checkpoint('buildGondenServiceR95');
-  document.body.dataset.gondenServiceR95=JSON.stringify(buildGondenServiceR95(root,legacy.materials));
+  telemetry.report('gondenServiceR95',buildGondenServiceR95(root,legacy.materials));
   await checkpoint('buildMikoshikoPrecinct');
   const mikoshiko=buildMikoshikoPrecinct(root,legacy.materials,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions});
   await checkpoint('buildMikoshikoDetailsR99');
-  document.body.dataset.mikoshikoDetailsR99=JSON.stringify(buildMikoshikoDetailsR99(root,features));
+  telemetry.report('mikoshikoDetailsR99',buildMikoshikoDetailsR99(root,features));
   // Full-ring terrain rises above the sourced facade; preserve legacy context
   // until service-floor/east-bank registration is resolved (R93 native review).
   const shinsenjo={built:false,builtIds:[],reason:'Pending registered floor and terrain levels: southeast ground exceeds proposed roof'};
-  document.body.dataset.rearPrecinctTreeClearance=JSON.stringify(clearRearPrecinctLegacyTrees(legacy,features,colliders,[...(mikoshiko.builtIds??[]),...(shinsenjo.builtIds??[])]));
-  document.body.dataset.mikoshikoPrecinct=JSON.stringify(mikoshiko);
-  document.body.dataset.shinsenjoPrecinct=JSON.stringify(shinsenjo);
+  telemetry.report('rearPrecinctTreeClearance',clearRearPrecinctLegacyTrees(legacy,features,colliders,[...(mikoshiko.builtIds??[]),...(shinsenjo.builtIds??[])]));
+  telemetry.report('mikoshikoPrecinct',mikoshiko);
+  telemetry.report('shinsenjoPrecinct',shinsenjo);
   await checkpoint('buildHondenRearBoundaryAsync');
-  document.body.dataset.hondenRearBoundary=JSON.stringify(await buildHondenRearBoundaryAsync(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
+  telemetry.report('hondenRearBoundary',await buildHondenRearBoundaryAsync(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
   await checkpoint('buildGondenSurroundings');
-  document.body.dataset.gondenSurroundings=JSON.stringify(buildGondenSurroundings(root,features,surfaces,legacy.materials,colliders));
-  document.body.dataset.tamayamaCompound=JSON.stringify(tamayamaCompound);
-  document.body.dataset.okumiyaDetail=JSON.stringify(okumiyaRefinement);
-  document.body.dataset.nearPrecinctAccess=JSON.stringify(nearPrecinctAccess);
+  telemetry.report('gondenSurroundings',buildGondenSurroundings(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('tamayamaCompound',tamayamaCompound);
+  telemetry.report('okumiyaDetail',okumiyaRefinement);
+  telemetry.report('nearPrecinctAccess',nearPrecinctAccess);
   await checkpoint('buildTamayamaStairRail');
-  document.body.dataset.tamayamaRail=JSON.stringify(buildTamayamaStairRail(root,surfaces,colliders));
+  telemetry.report('tamayamaRail',buildTamayamaStairRail(root,surfaces,colliders));
   await checkpoint('buildOkumiyaStairRail');
-  document.body.dataset.okumiyaRail=JSON.stringify(buildOkumiyaStairRail(root,surfaces,colliders));
+  telemetry.report('okumiyaRail',buildOkumiyaStairRail(root,surfaces,colliders));
   await checkpoint('buildGondenAccessTorii');
-  document.body.dataset.gondenAccessTorii=JSON.stringify(buildGondenAccessTorii(root,legacy,features,surfaces,colliders));
+  telemetry.report('gondenAccessTorii',buildGondenAccessTorii(root,legacy,features,surfaces,colliders));
   await checkpoint('buildTamayamaAccessShoulders');
-  document.body.dataset.tamayamaShoulders=JSON.stringify(buildTamayamaAccessShoulders(root,features,surfaces,legacy.materials));
+  telemetry.report('tamayamaShoulders',buildTamayamaAccessShoulders(root,features,surfaces,legacy.materials));
   await checkpoint('buildTamayamaStairLandscape');
-  document.body.dataset.tamayamaStairLandscape=JSON.stringify(buildTamayamaStairLandscape(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('tamayamaStairLandscape',buildTamayamaStairLandscape(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildTamayamaContinuationTorii');
-  document.body.dataset.tamayamaContinuationTorii=JSON.stringify(buildTamayamaContinuationTorii(root,legacy,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions}));
-  document.body.dataset.entranceShrineConflicts=JSON.stringify(clearLegacyShrineConflicts(root,colliders));
+  telemetry.report('tamayamaContinuationTorii',buildTamayamaContinuationTorii(root,legacy,features,surfaces,colliders,{terrainPositions:renderedTerrainPositions}));
+  telemetry.report('entranceShrineConflicts',clearLegacyShrineConflicts(root,colliders));
   legacy.interactables=legacy.interactables.filter(o=>!o.userData.legacyShrineConflictRemoved);
   legacy.flickeringCandleMeshes=legacy.flickeringCandleMeshes.filter(o=>!o.userData.legacyShrineConflictRemoved);
-  document.body.dataset.byakkoDetails=JSON.stringify(seatByakkoDetails(root,surfaces,colliders));
+  telemetry.report('byakkoDetails',seatByakkoDetails(root,surfaces,colliders));
   buildSanctuaryLanding(root,byId.naihaiden,legacy.materials,colliders);
   buildSanctuaryApproaches(root,features,surfaces,legacy.materials);
   buildRomonCourtSideDetails(root,byId.romon,legacy.materials);
   buildEntranceBoundaries(root,byId.romon,features,surfaces,legacy.materials,colliders);
   await checkpoint('buildRomonSurroundingsR72');
-  document.body.dataset.romonSurroundings=JSON.stringify(buildRomonSurroundingsR72(root,byId.romon,surfaces,legacy.materials));
+  telemetry.report('romonSurroundings',buildRomonSurroundingsR72(root,byId.romon,surfaces,legacy.materials));
   buildEntranceSidePlanting(root,byId.romon);
   buildOmotesandoShoulders(root,features,ground,surfaces,legacy.materials);
   await checkpoint('buildOmotesandoBollards');
-  document.body.dataset.omotesandoBollards=JSON.stringify(buildOmotesandoBollards(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('omotesandoBollards',buildOmotesandoBollards(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildEntranceMappedBoundaries');
   const mappedBoundaries=buildEntranceMappedBoundaries(root,entranceBarriers,ground,legacy.materials,colliders);
   await checkpoint('buildApproachContextR87');
-  document.body.dataset.approachContextR87=JSON.stringify(buildApproachContextR87(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
+  telemetry.report('approachContextR87',buildApproachContextR87(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
   await checkpoint('buildEntranceHedgeUnderstory');
-  document.body.dataset.entranceUnderstory=JSON.stringify(buildEntranceHedgeUnderstory(root,entranceBarriers,surfaces));
+  telemetry.report('entranceUnderstory',buildEntranceHedgeUnderstory(root,entranceBarriers,surfaces));
   await checkpoint('buildEntranceShrineEnclosures');
-  document.body.dataset.entranceShrineEnclosures=JSON.stringify(buildEntranceShrineEnclosures(root,entranceBarriers,ground,legacy.materials,colliders).ways);
+  telemetry.report('entranceShrineEnclosures',buildEntranceShrineEnclosures(root,entranceBarriers,ground,legacy.materials,colliders).ways);
   await checkpoint('buildEntranceRoadsideShrines');
-  document.body.dataset.entranceRoadsideShrines=JSON.stringify(buildEntranceRoadsideShrines(root,features,surfaces,legacy.materials,colliders).records);
+  telemetry.report('entranceRoadsideShrines',buildEntranceRoadsideShrines(root,features,surfaces,legacy.materials,colliders).records);
   buildEntranceShrineCourt(root,features,surfaces);
   await checkpoint('buildEntranceShrineCourtDetails');
-  document.body.dataset.entranceCourtDetails=JSON.stringify(buildEntranceShrineCourtDetails(root,features,surfaces,legacy.materials,colliders).records);
+  telemetry.report('entranceCourtDetails',buildEntranceShrineCourtDetails(root,features,surfaces,legacy.materials,colliders).records);
   await checkpoint('buildEntranceShrineCourtTrees');
-  document.body.dataset.entranceCourtTrees=JSON.stringify(buildEntranceShrineCourtTrees(root,features,surfaces,colliders));
+  telemetry.report('entranceCourtTrees',buildEntranceShrineCourtTrees(root,features,surfaces,colliders));
   await checkpoint('buildEntranceCourtMonument');
-  document.body.dataset.entranceCourtMonument=JSON.stringify(buildEntranceCourtMonument(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('entranceCourtMonument',buildEntranceCourtMonument(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildEntranceRoadsideBasin');
-  document.body.dataset.entranceRoadsideBasin=JSON.stringify(buildEntranceRoadsideBasin(root,entranceBarriers,surfaces,legacy.materials,colliders,features));
+  telemetry.report('entranceRoadsideBasin',buildEntranceRoadsideBasin(root,entranceBarriers,surfaces,legacy.materials,colliders,features));
   buildEntranceAreaSurfaces(root,entranceSurfaces,features,surfaces.terrainHeight);
   await checkpoint('buildEntranceBicycleSurfaceCollar');
-  document.body.dataset.bicycleSurfaceCollar=JSON.stringify(buildEntranceBicycleSurfaceCollar(root,features,surfaces,surfaces.terrainHeight));
+  telemetry.report('bicycleSurfaceCollar',buildEntranceBicycleSurfaceCollar(root,features,surfaces,surfaces.terrainHeight));
   await checkpoint('buildGishikidenAccessSurface');
-  document.body.dataset.gishikidenAccess=JSON.stringify(buildGishikidenAccessSurface(root,features,surfaces));
+  telemetry.report('gishikidenAccess',buildGishikidenAccessSurface(root,features,surfaces));
   await checkpoint('buildEntranceBicycleGate');
   const bicycleGate=buildEntranceBicycleGate(root,features,entranceBarriers,surfaces,legacy.materials,colliders);
-  if(bicycleGate)document.body.dataset.bicycleGate=JSON.stringify(bicycleGate.group.userData);
-  document.body.dataset.firstToriiAlignment=JSON.stringify(alignFirstOmotesandoTorii(root,features,surfaces,colliders));
+  if(bicycleGate)telemetry.report('bicycleGate',bicycleGate.group.userData);
+  telemetry.report('firstToriiAlignment',alignFirstOmotesandoTorii(root,features,surfaces,colliders));
   const stationPlacement=placeMappedInariStation(root,features,surfaces,colliders);
-  document.body.dataset.stationPlacement=JSON.stringify(stationPlacement);
-  document.body.dataset.approachSlabs=JSON.stringify(clearLegacyApproachSlabs(root));
-  document.body.dataset.entranceStatues=JSON.stringify(clearEntranceStatues(root,entranceBarriers,features,surfaces,colliders));
+  telemetry.report('stationPlacement',stationPlacement);
+  telemetry.report('approachSlabs',clearLegacyApproachSlabs(root));
+  telemetry.report('entranceStatues',clearEntranceStatues(root,entranceBarriers,features,surfaces,colliders));
   await checkpoint('buildEntranceGuardhouseDetails');
   const guardhouse=buildEntranceGuardhouseDetails(root,features,surfaces,legacy.materials,colliders);
   await checkpoint('buildOmotesandoNoticeR96');
   const omotesandoNoticeR96=buildOmotesandoNoticeR96(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.omotesandoNoticeR96=JSON.stringify((({group,...report})=>report)(omotesandoNoticeR96));
+  telemetry.report('omotesandoNoticeR96',(({group,...report})=>report)(omotesandoNoticeR96));
   await checkpoint('buildOmotesandoFrontageR96');
   const omotesandoFrontageR96=buildOmotesandoFrontageR96(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.omotesandoFrontageR96=JSON.stringify((({group,...report})=>report)(omotesandoFrontageR96));
+  telemetry.report('omotesandoFrontageR96',(({group,...report})=>report)(omotesandoFrontageR96));
   await checkpoint('buildKeihanUrasando');
   const keihanUrasando=buildKeihanUrasando(root,features,surfaces,legacy.materials,colliders);
   const neighborhoodFeatures={...features,buildings:features.buildings.filter(b=>b.id!==guardhouse?.id&&!omotesandoFrontageR96.builtIds.includes(b.id)&&!omotesandoNoticeR96.builtIds.includes(b.id)&&!keihanUrasando.builtIds.includes(b.id))};
@@ -676,9 +687,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   if(guardhouse)entranceNeighborhood.builtIds.push(guardhouse.id);
   entranceNeighborhood.builtIds.push(...omotesandoFrontageR96.builtIds);
   entranceNeighborhood.builtIds.push(...omotesandoNoticeR96.builtIds);
-  document.body.dataset.entranceNeighborhood=JSON.stringify({builtIds:entranceNeighborhood.builtIds,skipped:entranceNeighborhood.skippedLegacyShopOverlap});
+  telemetry.report('entranceNeighborhood',{builtIds:entranceNeighborhood.builtIds,skipped:entranceNeighborhood.skippedLegacyShopOverlap});
   await checkpoint('buildEntranceMappedTrees');
-  document.body.dataset.entranceTrees=JSON.stringify(buildEntranceMappedTrees(root,entranceContext,features,surfaces,colliders));
+  telemetry.report('entranceTrees',buildEntranceMappedTrees(root,entranceContext,features,surfaces,colliders));
   await checkpoint('buildLateralEntryDetails');
   const lateralEntry=buildLateralEntryDetails(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroSignage(root,features,surfaces,legacy.materials,colliders);
@@ -690,30 +701,30 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const yotsutsuji=buildYotsutsuji(root,legacy,features,ground,colliders,surfaces);
   await checkpoint('buildYotsutsujiContextR95');
   const yotsutsujiContextR95=buildYotsutsujiContextR95(root,features,legacy.materials);
-  document.body.dataset.yotsutsujiContextR95=JSON.stringify(yotsutsujiContextR95);
+  telemetry.report('yotsutsujiContextR95',yotsutsujiContextR95);
   await checkpoint('buildYotsutsujiContextR96');
-  document.body.dataset.yotsutsujiContextR96=JSON.stringify(buildYotsutsujiContextR96(root,features,ground,surfaces));
+  telemetry.report('yotsutsujiContextR96',buildYotsutsujiContextR96(root,features,ground,surfaces));
   await checkpoint('buildOsugiShrine');
-  document.body.dataset.osugiShrine=JSON.stringify(buildOsugiShrine(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('osugiShrine',buildOsugiShrine(root,features,surfaces,legacy.materials,colliders));
   await checkpoint('buildAinomine');
   const ainomine=buildAinomine(root,features,surfaces,legacy.materials,colliders);
   await checkpoint('refineMountainContextR87');
   const mountainContextR87=refineMountainContextR87(ainomine);
-  document.body.dataset.mountainContextR87=JSON.stringify(mountainContextR87?.stats??null);
+  telemetry.report('mountainContextR87',mountainContextR87?.stats??null);
   if(ainomine){anchors.push(ainomine.anchor);byId.ainomine=ainomine.anchor;}
   await checkpoint('buildMitsutsujiFrontages');
   const mitsutsujiFrontages=buildMitsutsujiFrontages(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.mitsutsujiFrontages=JSON.stringify(mitsutsujiFrontages);
+  telemetry.report('mitsutsujiFrontages',mitsutsujiFrontages);
   await checkpoint('buildMitsuFrontageAprons');
   const mitsuFrontageAprons=buildMitsuFrontageAprons(root,features,surfaces,legacy.materials);
-  document.body.dataset.mitsuFrontageAprons=JSON.stringify(mitsuFrontageAprons);
+  telemetry.report('mitsuFrontageAprons',mitsuFrontageAprons);
   await checkpoint('buildKumatakaTakeyaFrontage');
   const takeyaFrontage=buildKumatakaTakeyaFrontage(root,features,surfaces,legacy.materials,colliders);
   await checkpoint('buildTakeyaKeepsakes');
   const takeyaKeepsakes=buildTakeyaKeepsakes(root,takeyaFrontage,legacy.materials,legacy.interactables);
-  document.body.dataset.takeyaKeepsakes=JSON.stringify(takeyaKeepsakes);
-  document.body.dataset.takeyaFrontage=JSON.stringify(takeyaFrontage);
-  document.body.dataset.yotsutsujiRetaining=JSON.stringify(yotsutsuji.retainingEdge??null);
+  telemetry.report('takeyaKeepsakes',takeyaKeepsakes);
+  telemetry.report('takeyaFrontage',takeyaFrontage);
+  telemetry.report('yotsutsujiRetaining',yotsutsuji.retainingEdge??null);
   // Experimental only: the fixed-route A/B did not justify extra draw calls.
   const forestSubcellSize=callbacks.forestSubcellSize??0;
   const mountainDrawStart=root.children.length;
@@ -725,7 +736,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   buildAzumamaroHouses(root,features,(x,z)=>surfaces.height(x,z),legacy.materials,colliders);
   await checkpoint('buildAzumamaroCourtDetails');
   const courtDetails=buildAzumamaroCourtDetails(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.azumamaroCourtDetails=JSON.stringify(courtDetails);
+  telemetry.report('azumamaroCourtDetails',courtDetails);
   buildNorthCourtBuildings(root,features,surfaces,legacy.materials,colliders);
   buildNorthCourtPlanting(root,features,surfaces,legacy.materials,colliders);
   buildAzumamaroContext(root,features,surfaces,legacy.materials,colliders);
@@ -741,62 +752,62 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     if(poi){const a={id,label,osm,target:[...poi.point],radius:0};anchors.push(a);byId[id]=a;}
   }
   await checkpoint('buildKumatakaLakesideRail');
-  document.body.dataset.kumatakaLakesideRail=JSON.stringify(buildKumatakaLakesideRail(root,legacy.materials));
+  telemetry.report('kumatakaLakesideRail',buildKumatakaLakesideRail(root,legacy.materials));
   await checkpoint('buildShinikeWaterR97Async');
   const shinikeWater=await buildShinikeWaterR97Async(root,features,legacy.materials,{terrainPositions:renderedTerrainPositions,yieldWork});
-  document.body.dataset.shinikeWaterR97=JSON.stringify(shinikeWater);
+  telemetry.report('shinikeWaterR97',shinikeWater);
   await checkpoint('buildKumatakaRegistrationR97');
   const kumatakaRegistrationR97=buildKumatakaRegistrationR97(root,features,surfaces,legacy.materials,colliders,{water:shinikeWater});
-  document.body.dataset.kumatakaRegistrationR97=JSON.stringify(kumatakaRegistrationR97?(({group,...report})=>report)(kumatakaRegistrationR97):null);
+  telemetry.report('kumatakaRegistrationR97',kumatakaRegistrationR97?(({group,...report})=>report)(kumatakaRegistrationR97):null);
   await checkpoint('buildKumatakaRoofR97');
   const kumatakaRoofR97=buildKumatakaRoofR97(root);
-  document.body.dataset.kumatakaRoofR97=JSON.stringify(kumatakaRoofR97?(({group,...report})=>report)(kumatakaRoofR97):null);
+  telemetry.report('kumatakaRoofR97',kumatakaRoofR97?(({group,...report})=>report)(kumatakaRoofR97):null);
   const shinikeVegetation=repairShinikeVegetationR97(root,legacy,shinikeWater,colliders);
-  document.body.dataset.shinikeVegetationR97=JSON.stringify(shinikeVegetation);
+  telemetry.report('shinikeVegetationR97',shinikeVegetation);
   const extendedForestStart=root.children.length;
   callbacks.progress?.('Growing the forest…');await yieldWork();
   const forest=await extendForestAsync(root,legacy,features,anchors,ground,pathDistance,colliders,{yieldWork});
   callbacks.progress?.('Preparing the shrine paths…');await yieldWork();
   const extendedForestRoots=root.children.slice(extendedForestStart);
   await checkpoint('buildShinikeBankLandscapeR97');
-  document.body.dataset.shinikeBankLandscapeR97=JSON.stringify(buildShinikeBankLandscapeR97(root,features,surfaces,legacy,colliders,{terrainPositions:renderedTerrainPositions,water:shinikeWater}));
+  telemetry.report('shinikeBankLandscapeR97',buildShinikeBankLandscapeR97(root,features,surfaces,legacy,colliders,{terrainPositions:renderedTerrainPositions,water:shinikeWater}));
   await checkpoint('buildOmotesandoContextR95');
-  document.body.dataset.omotesandoContextR95=JSON.stringify(buildOmotesandoContextR95(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
+  telemetry.report('omotesandoContextR95',buildOmotesandoContextR95(root,features,entranceBarriers,surfaces,legacy.materials,colliders));
   await checkpoint('buildSenbonRestLandscape');
-  document.body.dataset.senbonRestLandscapeR94=JSON.stringify(buildSenbonRestLandscape(root,features,ground,pathDistance,legacy.materials,colliders));
+  telemetry.report('senbonRestLandscapeR94',buildSenbonRestLandscape(root,features,ground,pathDistance,legacy.materials,colliders));
   await checkpoint('buildUpperAccessR94');
-  document.body.dataset.upperAccessR94=JSON.stringify(buildUpperAccessR94(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  telemetry.report('upperAccessR94',buildUpperAccessR94(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   await checkpoint('buildRomonPrecinctR94Async');
-  document.body.dataset.romonPrecinctR94=JSON.stringify(await buildRomonPrecinctR94Async(root,byId.romon,features,surfaces,legacy.materials,{terrainPositions:renderedTerrainPositions,yieldWork}));
+  telemetry.report('romonPrecinctR94',await buildRomonPrecinctR94Async(root,byId.romon,features,surfaces,legacy.materials,{terrainPositions:renderedTerrainPositions,yieldWork}));
   await checkpoint('buildOkumiyaStairLanternsR95');
   const okumiyaStairLanternsR95=buildOkumiyaStairLanternsR95(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions});
-  document.body.dataset.okumiyaStairLanternsR95=JSON.stringify(okumiyaStairLanternsR95);
+  telemetry.report('okumiyaStairLanternsR95',okumiyaStairLanternsR95);
   await checkpoint('buildUpperAccessR95');
-  document.body.dataset.upperAccessR95=JSON.stringify(buildUpperAccessR95(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  telemetry.report('upperAccessR95',buildUpperAccessR95(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   await checkpoint('buildUpperEnclosureR96Async');
-  document.body.dataset.upperEnclosureR96=JSON.stringify(await buildUpperEnclosureR96Async(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
+  telemetry.report('upperEnclosureR96',await buildUpperEnclosureR96Async(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,yieldWork}));
   await checkpoint('buildUpperAccessR96');
-  document.body.dataset.upperAccessR96=JSON.stringify(buildUpperAccessR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  telemetry.report('upperAccessR96',buildUpperAccessR96(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   await checkpoint('buildOmotesandoContextR96');
-  document.body.dataset.omotesandoContextR96=JSON.stringify(buildOmotesandoContextR96(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('omotesandoContextR96',buildOmotesandoContextR96(root,features,surfaces,legacy.materials,colliders));
   const pathMarginRoots=[];
   await checkpoint('>pathMarginRoots.push');
   const margins=buildPathMargins(root,surfaces,ground,features,anchors,{onStaticRoot:group=>pathMarginRoots.push(group)});
-  document.body.dataset.pathMarginCull=JSON.stringify({enabled:!!callbacks.cullPathMargins,roots:pathMarginRoots.length});
+  telemetry.report('pathMarginCull',{enabled:!!callbacks.cullPathMargins,roots:pathMarginRoots.length});
   await checkpoint('buildOkushaCourt');
   const okushaCourt=buildOkushaCourt(root,features,byId.okusha,legacy.materials,colliders,surfaces);
   await checkpoint('buildSenbonRestR95');
-  document.body.dataset.okushaFrontageR95=JSON.stringify(buildSenbonRestR95(root,features,byId.okusha,legacy.materials));
-  document.body.dataset.okushaRestR96=JSON.stringify((({group,...report})=>report)(buildSenbonRestR96(root,features,byId.okusha,legacy.materials)));
+  telemetry.report('okushaFrontageR95',buildSenbonRestR95(root,features,byId.okusha,legacy.materials));
+  telemetry.report('okushaRestR96',(({group,...report})=>report)(buildSenbonRestR96(root,features,byId.okusha,legacy.materials)));
   await checkpoint('buildOkushaReceptionDisplay');
-  document.body.dataset.okushaReceptionDisplay=JSON.stringify(buildOkushaReceptionDisplay(root,legacy.materials));
+  telemetry.report('okushaReceptionDisplay',buildOkushaReceptionDisplay(root,legacy.materials));
   await checkpoint('buildOkushaDetailsR101');
   const okushaDetailsR101=buildOkushaDetailsR101(root,features,byId.okusha,legacy.materials);
-  document.body.dataset.okushaDetailsR101=JSON.stringify(okushaDetailsR101?(({group,...report})=>report)(okushaDetailsR101):null);
+  telemetry.report('okushaDetailsR101',okushaDetailsR101?(({group,...report})=>report)(okushaDetailsR101):null);
   await checkpoint('buildRestBoundaryR96');
   const restBoundaryR96=buildRestBoundaryR96(root,features,legacy.materials,colliders,ground);
-  document.body.dataset.okushaBoundaryR96=JSON.stringify(restBoundaryR96?(({group,...report})=>report)(restBoundaryR96):null);
-  document.body.dataset.okushaArchitecture=JSON.stringify(okushaCourt??null);
+  telemetry.report('okushaBoundaryR96',restBoundaryR96?(({group,...report})=>report)(restBoundaryR96):null);
+  telemetry.report('okushaArchitecture',okushaCourt??null);
   const terraces=supportTerraces(root,legacy,ground);
   const precinctLife=installPrecinctLife(root,legacy,callbacks);
   const forestSubcells={mode:'selective-shadow-only',minTriangles:50000,size:forestSubcellSize,mountainDrawCellSize:80,mountainShadowCellSize:forestSubcellSize?32:80,originalMeshCount:0,chunks:0,instances:0},legacyPartitionRoots=[];
@@ -814,15 +825,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     staticInstanceRoots.push(chunks);parent.add(chunks);mesh.removeFromParent();
   }
   await checkpoint('buildShinsenjoNorthCourtR99');
-  document.body.dataset.shinsenjoNorthCourtR99=JSON.stringify(buildShinsenjoNorthCourtR99(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
+  telemetry.report('shinsenjoNorthCourtR99',buildShinsenjoNorthCourtR99(root,features,surfaces,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions}));
   const apronTransitionsR100=prepareMikoshikoApronTransitionsR100(root);
   if(apronTransitionsR100.built)surfaces.partitionApronEdgesR100=apronTransitionsR100.partitionEdges;
-  document.body.dataset.apronTransitionsR100=JSON.stringify(apronTransitionsR100.report??apronTransitionsR100);
+  telemetry.report('apronTransitionsR100',apronTransitionsR100.report??apronTransitionsR100);
   await checkpoint('buildKumatakaDetailsR101');
   const kumatakaDetailsR101=buildKumatakaDetailsR101(root);
-  document.body.dataset.kumatakaDetailsR101=JSON.stringify(kumatakaDetailsR101?(({group,...report})=>report)(kumatakaDetailsR101):null);
+  telemetry.report('kumatakaDetailsR101',kumatakaDetailsR101?(({group,...report})=>report)(kumatakaDetailsR101):null);
   await checkpoint('buildEntranceDetailsR101');
-  document.body.dataset.entranceDetailsR101=JSON.stringify(buildEntranceDetailsR101(root,features));
+  telemetry.report('entranceDetailsR101',buildEntranceDetailsR101(root,features));
   // Replace only the identified legacy station after the complete public
   // access builds successfully. Preserve the original interactive sign object.
   let inariStation=null,inariStationRoute=null,inariBuildError=null,keihanRail=null;
@@ -851,11 +862,11 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
       inariStation=candidate;inariStationRoute=route;
     }else{candidate?.group?.removeFromParent();route?.group?.removeFromParent();keihanRail?.group?.removeFromParent();keihanRail=null;}
   }
-  document.body.dataset.inariStation=JSON.stringify(inariStation?{built:true,revision:inariStation.spec.revision,stats:inariStation.stats,provenance:inariStation.spec.provenance,interactablesBefore:stationInteractionsBefore,interactablesAfter:legacy.interactables.length}:{built:false,reason:inariBuildError??'station replacement ownership or access unavailable'});
-  document.body.dataset.inariStationRoute=JSON.stringify(inariStationRoute?{built:true,triangles:inariStationRoute.triangles,collidersAdded:inariStationRoute.collidersAdded,routePoints:inariStationRoute.routePoints}:{built:false});
+  telemetry.report('inariStation',inariStation?{built:true,revision:inariStation.spec.revision,stats:inariStation.stats,provenance:inariStation.spec.provenance,interactablesBefore:stationInteractionsBefore,interactablesAfter:legacy.interactables.length}:{built:false,reason:inariBuildError??'station replacement ownership or access unavailable'});
+  telemetry.report('inariStationRoute',inariStationRoute?{built:true,triangles:inariStationRoute.triangles,collidersAdded:inariStationRoute.collidersAdded,routePoints:inariStationRoute.routePoints}:{built:false});
   await checkpoint('buildInariStationFrontage');
   const inariStationFrontage=buildInariStationFrontage(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.inariStationFrontage=JSON.stringify(inariStationFrontage?(({group,...report})=>report)(inariStationFrontage):null);
+  telemetry.report('inariStationFrontage',inariStationFrontage?(({group,...report})=>report)(inariStationFrontage):null);
   // Keihan is a separate station and street approach. Commit both owners only
   // when the platform-to-street connection succeeds; JR remains independent.
   let keihanStation=null,keihanApproach=null,keihanError=null;
@@ -874,15 +885,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const keihanStreetContext=buildKeihanStreetContext(root,features,surfaces,legacy.materials,colliders);
   await checkpoint('buildKeihanEastParking');
   const keihanEastParking=buildKeihanEastParking(root,features,surfaces,legacy.materials,colliders);
-  document.body.dataset.keihanEastParking=JSON.stringify({built:keihanEastParking.built,triangles:keihanEastParking.triangles,reason:keihanEastParking.reason});
-  document.body.dataset.keihanStation=JSON.stringify(keihanStation?{built:true,stats:keihanStation.stats,revision:keihanStation.spec.revision}:{built:false,reason:keihanError});
-  document.body.dataset.keihanApproach=JSON.stringify(keihanApproach?{built:true,triangles:keihanApproach.triangles,drawBatches:keihanApproach.drawBatches}:{built:false});
-  document.body.dataset.keihanFrontages=JSON.stringify({built:keihanFrontages.built,builtIds:keihanFrontages.builtIds,triangles:keihanFrontages.triangles});
+  telemetry.report('keihanEastParking',{built:keihanEastParking.built,triangles:keihanEastParking.triangles,reason:keihanEastParking.reason});
+  telemetry.report('keihanStation',keihanStation?{built:true,stats:keihanStation.stats,revision:keihanStation.spec.revision}:{built:false,reason:keihanError});
+  telemetry.report('keihanApproach',keihanApproach?{built:true,triangles:keihanApproach.triangles,drawBatches:keihanApproach.drawBatches}:{built:false});
+  telemetry.report('keihanFrontages',{built:keihanFrontages.built,builtIds:keihanFrontages.builtIds,triangles:keihanFrontages.triangles});
   await checkpoint('buildKandakaraShrine');
   const kandakaraShrine=buildKandakaraShrine(root,features,surfaces,legacy.materials);
-  document.body.dataset.kandakaraShrine=JSON.stringify(kandakaraShrine);
+  telemetry.report('kandakaraShrine',kandakaraShrine);
   await checkpoint('buildLateralWaymarkers');
-  document.body.dataset.lateralWaymarkers=JSON.stringify(buildLateralWaymarkers(root,features,surfaces,legacy.materials,colliders));
+  telemetry.report('lateralWaymarkers',buildLateralWaymarkers(root,features,surfaces,legacy.materials,colliders));
   // Batch static detail by material after placement. Interactive objects and
   // animated candle flames retain their original identity and callbacks.
   root.updateMatrixWorld(true);
@@ -903,15 +914,15 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }
   await checkpoint('buildOkushaNorthBoundaryR103');
   const okushaNorthBoundary=buildOkushaNorthBoundaryR103(root,features,legacy.materials,colliders,{terrainPositions:renderedTerrainPositions,walkHeight});
-  document.body.dataset.okushaNorthBoundaryR103=JSON.stringify(okushaNorthBoundary?(({group,...report})=>report)(okushaNorthBoundary):null);
+  telemetry.report('okushaNorthBoundaryR103',okushaNorthBoundary?(({group,...report})=>report)(okushaNorthBoundary):null);
   await checkpoint('buildOkushaExitFlanks');
-  document.body.dataset.okushaExitFlanks=JSON.stringify(buildOkushaExitFlanks(root,legacy.materials,surfaces.terrainHeight,surfaces,colliders));
+  telemetry.report('okushaExitFlanks',buildOkushaExitFlanks(root,legacy.materials,surfaces.terrainHeight,surfaces,colliders));
   await checkpoint('buildOkushaMappedSheltersR102');
   const okushaMappedSheltersR102=buildOkushaMappedSheltersR102(root,features,legacy.materials,walkHeight,colliders);
-  document.body.dataset.okushaMappedSheltersR102=JSON.stringify(okushaMappedSheltersR102?(({group,...report})=>report)(okushaMappedSheltersR102):null);
+  telemetry.report('okushaMappedSheltersR102',okushaMappedSheltersR102?(({group,...report})=>report)(okushaMappedSheltersR102):null);
   await checkpoint('buildKumatakaRestFurnitureR102');
   const kumatakaRestFurnitureR102=buildKumatakaRestFurnitureR102(root,features,surfaces,colliders,{water:shinikeWater,terrainPositions:renderedTerrainPositions});
-  document.body.dataset.kumatakaRestFurnitureR102=JSON.stringify(kumatakaRestFurnitureR102?(({group,...report})=>report)(kumatakaRestFurnitureR102):null);
+  telemetry.report('kumatakaRestFurnitureR102',kumatakaRestFurnitureR102?(({group,...report})=>report)(kumatakaRestFurnitureR102):null);
   // Reviewed exterior positions on the mapped approaches. The nearest graph
   // node can fall beside a stair or inside the sanctuary's solid footprint.
   // Native walking review: the former points were clear of collisions but
@@ -964,7 +975,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   // flames and railway objects retain automatic transforms.
   const staticInstances=(callbacks.freezeStaticInstances??forestSubcellSize>0)?freezeStaticInstanceTransforms(staticInstanceRoots):null;
   forestSubcells.frozenTransforms=staticInstances?.count??0;
-  document.body.dataset.forestSubcells=JSON.stringify(forestSubcells);
+  telemetry.report('forestSubcells',forestSubcells);
   const instancePrewarmEntries=collectInstancePrewarmEntries([...toriiPrewarmRoots,...mountainDrawRoots]);
   root.traverse(o=>{if(!o.userData.nearForest)return;const leaf=o.isLOD?o.levels[0].object:o;leaf.computeBoundingSphere();forestChunks.push({object:o,bounds:leaf.boundingSphere.clone().applyMatrix4(leaf.matrixWorld)});});
   const inventory={activities:precinctLife.stats,...originalStats,anchors:anchors.length,senbonGates:senbon.gates,senbon,mountainTorii,pathSurfaces:surfaces.stats,

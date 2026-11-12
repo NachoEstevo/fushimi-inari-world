@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createTrailGuide} from './trail-guide.mjs';
+import {createTrailGuide,setTrailGuideProminence,trailGuideProminentByDefault,TRAIL_GUIDE_STYLE} from './trail-guide.mjs';
 
 test('guide follows authored platform and stair floor, not graph elevation',async()=>{
  const points=[[0,0,0],[0,0,1],[0,0,2]],copy=structuredClone(points),calls=[];
@@ -37,4 +37,18 @@ test('sharp bends keep ribbon miters bounded and geometry finite',async()=>{
  const guide=await createTrailGuide({points:[[0,0,0],[1,0,0],[.1,0,.05]],walkHeight:()=>0}),p=guide.geometry.attributes.position;
  for(let i=0;i<p.count;i+=2){assert.ok(Number.isFinite(p.getX(i))&&Number.isFinite(p.getZ(i)));assert.ok(Math.hypot(p.getX(i)-p.getX(i+1),p.getZ(i)-p.getZ(i+1))<=.07001);}
  assert.equal(guide.geometry.index.count,(guide.userData.routeGuide.vertices-1)*6);guide.geometry.dispose();guide.material.dispose();
+});
+test('walking guide is a thin muted thread with a distance fade; debug and audit URLs keep the vermilion line',async()=>{
+ const half=g=>{const p=g.geometry.attributes.position;return Math.hypot(p.getX(0)-p.getX(1),p.getZ(0)-p.getZ(1))/2;};
+ const quiet=await createTrailGuide({points:[[0,0,0],[0,0,4]],walkHeight:()=>0,prominent:false});
+ assert.ok(Math.abs(half(quiet)-TRAIL_GUIDE_STYLE.quiet.width/2)<1e-6);assert.equal(quiet.material.color.getHex(),TRAIL_GUIDE_STYLE.quiet.color);
+ assert.equal(quiet.material.transparent,true);assert.ok(quiet.material.opacityNode,'opacity depends on camera distance');assert.equal(quiet.material.map,null);
+ assert.equal(JSON.parse(JSON.stringify({...quiet.userData.routeGuide})).prominent,false,'stats stay serializable');
+ assert.equal(setTrailGuideProminence(quiet,true),true);assert.equal(quiet.userData.routeGuide.prominence.value,1);assert.equal(quiet.material.color.getHex(),TRAIL_GUIDE_STYLE.prominent.color);
+ setTrailGuideProminence(quiet,false);assert.equal(quiet.userData.routeGuide.prominence.value,0);assert.equal(setTrailGuideProminence(null,true),false);
+ const strong=await createTrailGuide({points:[[0,0,0],[0,0,4]],walkHeight:()=>0,prominent:true});
+ assert.ok(Math.abs(half(strong)-TRAIL_GUIDE_STYLE.prominent.width/2)<1e-6);assert.equal(strong.userData.routeGuide.prominence.value,1);
+ for(const search of ['?audit=1','?debugCamera=1','?x=1&audit'])assert.equal(trailGuideProminentByDefault(search),true);
+ for(const search of ['','?quality=high'])assert.equal(trailGuideProminentByDefault(search),false);
+ for(const g of [quiet,strong]){g.geometry.dispose();g.material.dispose();}
 });

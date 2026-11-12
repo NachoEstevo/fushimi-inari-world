@@ -93,7 +93,8 @@ test('live quality, look and station transitions retain one environment without 
   const original=GPU.PMREMGenerator.prototype.fromScene;
   let captures=0,appearance;
   GPU.PMREMGenerator.prototype.fromScene=function(scene,sigma,near,far,options){
-    if(options?.renderTarget){captures++;return options.renderTarget;}
+    // The sky source is the global environment, not a world or station capture.
+    if(options?.renderTarget){if(scene.name!=='Sky environment source')captures++;return options.renderTarget;}
     return new GPU.RenderTarget(16,16);
   };
   const renderer={xr:{enabled:false},autoClear:true,getMRT:()=>null,getRenderTarget:()=>null,getActiveCubeFace:()=>0,
@@ -154,7 +155,7 @@ test('live quality, look and station transitions retain one environment without 
     assert.ok(ceilingLights.every(o=>o.intensity===18));
     assert.equal(scene.environment,globalEnvironment);assert.equal(captures,0);
     quality.mode='ultra';appearance.prepare();appearance.update(14);
-    assert.equal(captures,0,'Ultra retains the studio probe');assert.equal(scene.environment,globalEnvironment);
+    assert.equal(captures,0,'Ultra retains the sky probe');assert.equal(scene.environment,globalEnvironment);
     appearance.updateBaseLighting(()=>{});assert.equal(captures,0);assert.equal(scene.environment,globalEnvironment);
     appearance.dispose();assert.equal(first.material,metal,'disposal restores deferred materials');
     assert.equal(redMesh.material,red);assert.equal(lacquerMesh.material,lacquer);
@@ -170,7 +171,7 @@ test('High prepares only the bounded station surrogate once and keeps the global
  const GPU=await import('three/webgpu'),{installWorldAppearance}=await import('./world-appearance.mjs');
  const fromScene=GPU.PMREMGenerator.prototype.fromScene,captures=[];
  GPU.PMREMGenerator.prototype.fromScene=function(scene,sigma,near,far,options){
-  if(options?.renderTarget){captures.push(scene);return options.renderTarget;}
+  if(options?.renderTarget){if(scene.name!=='Sky environment source')captures.push(scene);return options.renderTarget;}
   return new GPU.RenderTarget(16,16);
  };
  let target=null,appearance;

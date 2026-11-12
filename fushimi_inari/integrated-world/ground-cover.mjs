@@ -73,6 +73,30 @@ export function makePrecinctGroundCover(features,{surfaceAreas=[],hardscapeAt=()
     return envelope*edge*gentle*.94;
   };
   const combined=(x,y,z,slope,pathDistance)=>Math.max(groundCover(x,y,z,slope,pathDistance),precinct(x,y,z,slope,pathDistance));
-  combined.precinct=precinct;
+  combined.precinct=precinct;combined.base=groundCover;
   return combined;
+}
+
+// Terrain cover and precinct grass per vertex of a non-indexed triangle list.
+// Each distinct planimetric (x,z) is sampled once; its first vertex fixes the
+// value, matching the former `${x},${z}` string cache without building keys.
+// The precinct term is evaluated once and reused for the combined maximum.
+export async function terrainGroundCoverAsync(pos,{ground,pathDistance,cover:coverAt,checkpoint=()=>null,interval=192}){
+  const count=pos.length/3,cover=new Float32Array(count),precinctGrass=new Float32Array(count);
+  const rows=new Map(),coverValues=[],grassValues=[],base=coverAt.base,precinct=coverAt.precinct;
+  for(let i=0;i<pos.length;i+=3){
+    if(i%interval===0){const pause=checkpoint();if(pause)await pause;}
+    const x=pos[i],z=pos[i+2];
+    let row=rows.get(x);if(row===undefined){row=new Map();rows.set(x,row);}
+    let slot=row.get(z);
+    if(slot===undefined){
+      const y=pos[i+1],slope=Math.hypot(ground(x+1,z)-ground(x-1,z),ground(x,z+1)-ground(x,z-1))/2;
+      const distance=pathDistance(x,z)?.distance??100;
+      const grass=precinct(x,y,z,slope,distance);
+      slot=coverValues.length;row.set(z,slot);
+      coverValues.push(base?Math.max(base(x,y,z,slope,distance),grass):coverAt(x,y,z,slope,distance));grassValues.push(grass);
+    }
+    cover[i/3]=coverValues[slot];precinctGrass[i/3]=grassValues[slot];
+  }
+  return {cover,precinctGrass,samples:coverValues.length};
 }

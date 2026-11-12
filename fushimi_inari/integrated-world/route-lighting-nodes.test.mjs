@@ -7,7 +7,7 @@ import {SKY_SUN_DIRECTIONS} from './sky-nodes.mjs';
 test('golden lighting is warm red-orange without adding energy or disconnecting the visible sun',()=>{
  const gold=LIGHT_PRESETS.gold,red=gold.color>>16&255,green=gold.color>>8&255,blue=gold.color&255;
  assert.ok(green/red<.6&&blue/red<.5,'golden direct light must lean red-orange');
- assert.equal(gold.sun,2.5);assert.equal(gold.exposure,1.04);
+ assert.equal(gold.sun,2.5);assert.equal(gold.exposure,1.15);
  assert.deepEqual(gold.offset,SKY_SUN_DIRECTIONS.gold);
  const elevation=Math.atan2(gold.offset[1],Math.hypot(gold.offset[0],gold.offset[2]))*180/Math.PI;
  assert.ok(elevation>=3&&elevation<=4);
@@ -21,4 +21,12 @@ test('warmth changes retain three nearby shadow-free route lights and fixed mark
   assert.equal(lights.length,3);assert.ok(lights.every(light=>!light.castShadow));assert.equal(lighting.stats.shadows,0);
   group.children.filter(object=>object.instanceMatrix).forEach((object,i)=>assert.deepEqual(object.instanceMatrix.array,matrices[i]));
  }
+});
+
+test('Neutral-calibrated exposures keep night readable without lighting it as day',()=>{
+ const {day,gold,night}=LIGHT_PRESETS;
+ assert.deepEqual([day.exposure,gold.exposure,night.exposure],[1,1.15,1.45]);
+ assert.ok(day.exposure<gold.exposure&&gold.exposure<night.exposure,'darker presets open exposure rather than adding light energy');
+ assert.ok(day.sun/day.fill<2.15/1.55,'daylight sun-to-fill ratio is softened for unclipped plaster and paving');
+ assert.ok((night.sun+night.fill)*night.exposure<(day.sun+day.fill)*day.exposure*.6,'night remains far below daylight output');
 });

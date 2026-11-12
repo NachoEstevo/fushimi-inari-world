@@ -118,14 +118,24 @@ test('understory changes preserve the pre-change forest seed, tree transforms an
     const matrices=[];let cells=0;
     for(const child of root.children){
       if(child.name==='Forest understory · static fern/sedge LOD'){cells++;continue;}
-      child.traverse(o=>{if(o.isInstancedMesh)matrices.push(Array.from(o.instanceMatrix.array));});
+      // Distance proxies repeat their source trees; the golden covers the sources.
+      child.traverse(o=>{if(o.isInstancedMesh&&!o.userData.forestProxy)matrices.push(Array.from(o.instanceMatrix.array));});
+    }
+    const trunkLODs=root.children.filter(child=>child.name==='Forest trunks · distance LOD');
+    assert.ok(trunkLODs.length>0,'distant trunks have a simplified level');
+    for(const lod of trunkLODs){
+      const [near,far]=lod.levels.map(level=>level.object);
+      assert.deepEqual(Array.from(far.instanceMatrix.array),Array.from(near.instanceMatrix.array),'the taper stands on the same trees');
+      assert.ok(far.geometry.attributes.position.count<near.geometry.attributes.position.count);
+      assert.ok(lod.levels[1].distance>=45+near.boundingSphere.radius,'no simplified trunk inside the foreground');
+      assert.equal(far.castShadow,false);
     }
     assert.equal(hash(matrices),'feddb69428767ff00c80e6acbf95df22da8a6bc0d91fcf6596ff80eb3bc72d06');
     assert.ok(cells>0&&report.understory>0&&report.understory<=169);
     const canopyOwners=[];
     for(const child of root.children){
       if(child.isLOD){
-        const isCrown=child.name!=='Forest understory · static fern/sedge LOD';
+        const isCrown=child.name!=='Forest understory · static fern/sedge LOD'&&child.name!=='Forest trunks · distance LOD';
         assert.equal(child.levels[0].object.userData.precinctCanopy===true,isCrown);
         for(const level of child.levels.slice(1))assert.notEqual(level.object.userData.precinctCanopy,true,'far LOD copies never duplicate crown metadata');
         if(isCrown)canopyOwners.push(child.levels[0].object);

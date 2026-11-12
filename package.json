@@ -1,0 +1,15 @@
+{
+  "name": "inariyama-explorer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "test": "node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.test.mjs",
+    "test:build": "node --test scripts/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.164.1",
+    "three-runtime": "npm:three@0.187.0"
+  }
+}

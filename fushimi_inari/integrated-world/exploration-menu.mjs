@@ -1,3 +1,4 @@
+import {SENSITIVITY_MIN,SENSITIVITY_MAX,prefersReducedMotion} from './walk-settings.mjs';
 const ICONS={
   menu:'<path d="M4 7h16M4 12h16M4 17h10"/>',
   photo:'<path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/>',
@@ -16,7 +17,7 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   document.body.append(menu);
 
   $('pane-0').innerHTML=`<div class="movement-modes"><button id="mode-walk">Walk</button>${allowDebugCamera?'<button id="mode-fly">Fly</button><button id="mode-orbit">Orbit</button>':''}</div>
-    <details><summary>Controls</summary><ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Click</kbd> enter mouse look · <kbd>Esc</kbd> release</li><li><kbd>Drag</kbd> look on touch screens</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li>${allowDebugCamera?'<li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li>':''}</ul></details>
+    <details><summary>Controls</summary><ul class="menu-keys"><li><kbd>W A S D</kbd> move</li><li><kbd>Click</kbd> enter mouse look · <kbd>Esc</kbd> release</li><li><kbd>Drag</kbd> look on touch screens</li><li><kbd>Shift</kbd> run</li><li><kbd>E</kbd> interact</li><li><kbd>M</kbd> mute</li><li><kbd>L</kbd> flashlight</li><li><kbd>Gamepad</kbd> left stick move · right stick look · <kbd>A</kbd> interact · shoulder or trigger run · <kbd>Start</kbd> menu</li>${allowDebugCamera?'<li><kbd>R</kbd> / <kbd>F</kbd> fly up / down</li>':''}</ul></details>
     ${allowFastTravel?'<h3 class="menu-section">Go to a place</h3>':''}`;
   places.hidden=!allowFastTravel;$('pane-0').append(places);
   $('overview').hidden=!allowDebugCamera;$('overview').textContent='Aerial overview';$('overview').classList.add('menu-link');$('pane-0').append($('overview'));
@@ -33,10 +34,28 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
     <div id="scene-settings"></div>
     <label for="render-quality">Quality</label><select id="render-quality"><option value="balanced">Balanced</option><option value="high">High quality</option></select>
     ${allowDebugCamera?'<label for="detail-distance">Detail distance</label><select id="detail-distance"><option value="near">Nearby - 220 m</option><option value="full">Entire world</option></select>':''}
+    ${walker.settings?`<div id="walk-settings"><h3 class="menu-section">Walking</h3>
+    <label for="look-sensitivity">Look sensitivity <output id="look-sensitivity-value" for="look-sensitivity"></output></label><input id="look-sensitivity" type="range" min="${SENSITIVITY_MIN*100}" max="${SENSITIVITY_MAX*100}" step="5">
+    <label class="check"><input id="invert-look" type="checkbox"> Invert vertical look</label>
+    <label class="check"><input id="head-bob" type="checkbox" aria-describedby="head-bob-note"> Head bob</label>
+    <p id="head-bob-note" class="menu-note" hidden>Your system asks for reduced motion, so head bob stays off.</p></div>`:''}
     <div id="menu-arrival"></div>`;
   const light=document.querySelector('label[for="light"]');light.textContent='Time of day';$('scene-settings').append(light,$('light'));
   $('render-quality').onchange=()=>onRenderQuality($('render-quality').value);
   if(allowDebugCamera)$('detail-distance').onchange=()=>onDetailDistance($('detail-distance').value);
+  let syncWalk=()=>{};
+  if(walker.settings){
+    const settings=walker.settings,slider=$('look-sensitivity'),value=$('look-sensitivity-value');
+    syncWalk=()=>{
+      const percent=Math.round(settings.sensitivity*100),label=`${(percent/100).toFixed(2)}×`;
+      slider.value=String(percent);slider.setAttribute('aria-valuetext',label);value.textContent=label;
+      $('invert-look').checked=settings.invertY;$('head-bob').checked=settings.headBob;$('head-bob-note').hidden=!prefersReducedMotion();
+    };
+    slider.oninput=()=>{settings.set({sensitivity:Number(slider.value)/100});syncWalk();};
+    $('invert-look').onchange=()=>settings.set({invertY:$('invert-look').checked});
+    $('head-bob').onchange=()=>settings.set({headBob:$('head-bob').checked});
+    syncWalk();
+  }
   document.querySelector('label[for="place"]').hidden=true;$('place').hidden=true;$('visit').parentElement.hidden=true;
 
   const bar=document.createElement('nav');bar.id='hud-actions';bar.setAttribute('aria-label','Quick controls');
@@ -66,8 +85,18 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
   const activate=i=>{tabs.forEach((_,j)=>{const t=$(`tab-${j}`);t.setAttribute('aria-selected',String(i===j));t.tabIndex=i===j?0:-1;$(`pane-${j}`).hidden=i!==j;});};
   const count=tabs.length;
   tabs.forEach((_,i)=>{const t=$(`tab-${i}`);t.onclick=()=>activate(i);t.onkeydown=e=>{let n=i;if(e.key==='ArrowRight')n=(i+1)%count;else if(e.key==='ArrowLeft')n=(i+count-1)%count;else if(e.key==='Home')n=0;else if(e.key==='End')n=count-1;else return;e.preventDefault();activate(n);$(`tab-${n}`).focus();};});
-  function open(){if(menu.open||document.body.classList.contains('welcome-open'))return;walker.pause(true);controls.enabled=false;$('interaction').hidden=true;menu.showModal();$('menu-close').focus();}
+  function open(){if(menu.open||document.body.classList.contains('welcome-open'))return;walker.pause(true);controls.enabled=false;$('interaction').hidden=true;syncWalk();menu.showModal();$('menu-close').focus();pollMenuGamepad();}
   function close(){if(menu.open)menu.close();}
+  // Gamepad Start opens the menu through the walker; while open, Start or B
+  // closes it. Polling runs only while the menu is open and a pad is connected.
+  walker.setMenuHandler?.(()=>{walker.releasePointerLock?.();open();});
+  let menuPoll=0;
+  function pollMenuGamepad(){
+    const pad=walker.gamepad;if(!pad||menuPoll||typeof requestAnimationFrame!=='function')return;
+    pad.reset();
+    const tick=()=>{menuPoll=0;if(!menu.open||!pad.connected)return;const state=pad.poll();if(state.menu||state.back){close();return;}menuPoll=requestAnimationFrame(tick);};
+    menuPoll=requestAnimationFrame(tick);
+  }
   trigger.onclick=open;$('menu-close').onclick=close;
   $('mode-walk').onclick=()=>{onNavigate();walker.start();close();};if(allowDebugCamera){$('mode-fly').onclick=()=>{onNavigate();walker.fly();close();};$('mode-orbit').onclick=()=>{onNavigate();walker.stop();close();};}
   menu.addEventListener('close',()=>{walker.pause(cameraOwned());controls.enabled=allowDebugCamera&&!cameraOwned()&&!walker.active&&$('stop').disabled;trigger.focus();});
@@ -88,7 +117,7 @@ export function installExplorationMenu({walker,controls,camera,assembly,places,s
     const nearest=assembly.spatial.anchors.reduce((best,a)=>{const distance=Math.hypot(camera.position.x-a.target[0],camera.position.z-a.target[2]);return !best||distance<best.distance?{a,distance}:best;},null);
     title.textContent=camera.position.y>400?'Inariyama':nearest.distance<45?nearest.a.label:`Trail · ${nearest.a.label}`;
     $('menu-context').textContent=`${title.textContent} · ${Math.round(camera.position.y-1.7)} m ASL`;
-    document.body.dataset.movementMode=walker.mode;
+    if(document.body.dataset.movementMode!==walker.mode)document.body.dataset.movementMode=walker.mode;
     for(const mode of allowDebugCamera?['walk','fly','orbit']:['walk'])$(`mode-${mode}`).setAttribute('aria-pressed',String(walker.mode===mode));
   }};
 }

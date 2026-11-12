@@ -48,8 +48,8 @@ Open [Inariyama Explorer](http://127.0.0.1:8420/integrated-world/index.html). Wa
 | Preset | Rendering |
 | --- | --- |
 | Balanced | Up to 2 million pixels, 1024 px shadows, nearby 512 px WebP textures |
-| High resolution | Up to 3 million pixels, 2048 px shadows, balanced textures |
-| Ultra | Up to 4 million pixels, 4096 px shadows, nearby original textures and increased filtering/detail range |
+| High resolution | Up to 3 million pixels, 2048 px shadows, nearby 1024 px WebP textures where the source is larger, otherwise the balanced ones |
+| Ultra | Up to 4 million pixels, 4096 px shadows, the High texture tier and increased filtering/detail range |
 
 Natural, Sakura and Dreamcore atmospheres share WebGPU materials, bloom and environment lighting. Station reflections and nearby lights are locally tuned. Cloud shade is a lightweight terrain approximation. Architectural dimensions remain partly inferred.
 
@@ -74,11 +74,11 @@ The geographic study area spans approximately **2.55 × 2.45 km**; it is not the
 
 The current entry point is `fushimi_inari/integrated-world/`. The original viewer and Blender sources are preserved. Do not run the historical `build_integrated_viewer.py` bootstrap over the current implementation.
 
-For local geometry tests, install the matching Three.js package if needed:
+For local tests, install the pinned dev dependencies:
 
 ```powershell
-npm install --no-save --package-lock=false three@0.164.1
-node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.test.mjs
+npm ci
+npm test
 ```
 
 Browser review is required for materials, shaders, camera clearance and UI changes; tests alone do not prove visual fidelity. Current validation and known limits are in [the release notes](docs/ultra-quality-and-release.md). The [sector review](docs/sector-review.md) retains reference and reconstruction history.

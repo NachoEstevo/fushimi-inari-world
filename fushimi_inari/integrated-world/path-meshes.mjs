@@ -1,4 +1,5 @@
 import {partitionWalkingTopsR96} from './path-top-ownership-r96.mjs';
+import {telemetry} from './telemetry.mjs';
 import {partitionStationStreetTops} from './station-street-path-ownership.mjs';
 import * as THREE from 'three';
 import {omotesandoContextSpecR95} from './omotesando-context-r95.mjs';
@@ -61,9 +62,24 @@ export async function buildPathMeshesAsync(network,legacy,ground,{yieldWork,now=
   }
   return next.value;
 }
+// Neighbouring curb strips and mountain shoulders sample identical points.
+// A small exact-coordinate memo returns the same heights without resampling.
+export function recentGround(ground,size=8){
+  const xs=new Float64Array(size).fill(NaN),zs=new Float64Array(size).fill(NaN),heights=new Array(size);let next=0;
+  return (x,z)=>{
+    // Signed zero stays uncached so a sign-sensitive sampler sees each call.
+    if(x!==0&&z!==0)for(let i=0;i<size;i++)if(xs[i]===x&&zs[i]===z)return heights[i];
+    const height=ground(x,z);
+    if(x!==0&&z!==0){xs[next]=x;zs[next]=z;heights[next]=height;next=(next+1)%size;}
+    return height;
+  };
+}
+const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const up=(p,h)=>[p[0],p[1]+h,p[2]];
 // Keep material ownership, interpolation and sampling identical. The async
 // caller yields between strips and the existing atomic partition stages.
-function* pathMeshWork(network,legacy,ground){
+function* pathMeshWork(network,legacy,sourceGround){
+  const ground=recentGround(sourceGround);
   yield 'path ribbons and curbs';
   const group=new THREE.Group(),buckets={stone:[],earth:[],street:[],restricted:[],edge:[],rail:[],senbon:[],precinct:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRiser:[],mountainRetaining:[]};
   const uvBuckets={stone:[],precinct:[],senbon:[],omotesando:[],mountainPaving:[],mountainTread:[],mountainRetaining:[]};
@@ -71,8 +87,9 @@ function* pathMeshWork(network,legacy,ground){
   const detail={segments:0,treads:0,groundedShoulders:0,retainingFaces:0,scope:'Mountain stone paths east of x=255 m; entrance and Senbon unchanged'};
   let roadCuts=null;
   const quad=(out,...corners)=>{
+    const uv=uvByVertices.get(out);
     for(const polygon of outsideArrival(corners))for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]]){
-      out.push(...p.slice(0,3));const uv=uvByVertices.get(out);if(uv)uv.push(p[3]??p[0]/2,p[4]??p[2]/2);
+      out.push(p[0],p[1],p[2]);if(uv)uv.push(p[3]??p[0]/2,p[4]??p[2]/2);
     }
   };
   for(const [index,s] of network.segments.entries()){
@@ -120,18 +137,27 @@ function* pathMeshWork(network,legacy,ground){
       quad(buckets[mountain?'mountainRiser':'edge'],point(p,y-s.rise,-s.width/2),point(p,y,-s.width/2),point(p,y,s.width/2),point(p,y-s.rise,s.width/2));
     }
     if(s.kind==='stone'){
+      // Open only mapped, connected junction mouths; never infer a junction
+      // from a projected crossing or a neighbouring parallel trail.
+      const cuts=Math.max(1,Math.ceil(len/(mountain ? .9 : .45)));
+      const lip=s.curbLip??.025;
+      // Only source-qualified nonstair curb faces enter this optional
+      // apron reconciliation. Stair tops/risers and other buckets bypass it.
+      const curbQuad=(...corners)=>{
+        if(mountain||s.stair||!network.partitionApronEdgesR100){quad(buckets.edge,...corners);return;}
+        const vertices=[];quad(vertices,...corners);
+        buckets.edge.push(...network.partitionApronEdgesR100(vertices,s));
+      };
+      const foot=p=>[p[0],Math.min(p[1]-.30,ground(p[0],p[2])-.20),p[2]];
       for(const side of [-1,1]){
         const inner=side*s.width/2,outer=inner+side*.13;
-        // Open only mapped, connected junction mouths; never infer a junction
-        // from a projected crossing or a neighbouring parallel trail.
-        const cuts=Math.max(1,Math.ceil(len/(mountain ? .9 : .45)));
-        const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+        const innerA=point(s.a,s.ya,inner),innerB=point(s.b,s.yb,inner),outerA=point(s.a,s.ya,outer),outerB=point(s.b,s.yb,outer);
         for(let part=0;part<cuts;part++){
           yield;
-          const a=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),part/cuts);
-          const b=lerp(point(s.a,s.ya,inner),point(s.b,s.yb,inner),(part+1)/cuts);
-          const oa=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),part/cuts);
-          const ob=lerp(point(s.a,s.ya,outer),point(s.b,s.yb,outer),(part+1)/cuts);
+          const a=lerp(innerA,innerB,part/cuts);
+          const b=lerp(innerA,innerB,(part+1)/cuts);
+          const oa=lerp(outerA,outerB,part/cuts);
+          const ob=lerp(outerA,outerB,(part+1)/cuts);
           if(s.accessJunction){
             a[1]=network.accessJunctionEdgeHeight(s,a[0],a[2],a[1]);
             b[1]=network.accessJunctionEdgeHeight(s,b[0],b[2],b[1]);
@@ -143,19 +169,9 @@ function* pathMeshWork(network,legacy,ground){
           // only their centre falls outside the connected branch. Trim the
           // whole strip conservatively if either end meets that branch.
           if((mountain||s.accessJunction)&&[a,b].some(p=>network.edgeCovered(p[0],p[2],p[1],s.id)))continue;
-          const up=(p,h)=>[p[0],p[1]+h,p[2]];
-          const lip=s.curbLip??.025;
           const cap=[up(a,lip),up(b,lip),up(ob,lip),up(oa,lip)];
           if(mountain&&side<0)cap.reverse();
-          // Only source-qualified nonstair curb faces enter this optional
-          // apron reconciliation. Stair tops/risers and other buckets bypass it.
-          const curbQuad=(...corners)=>{
-            if(mountain||s.stair||!network.partitionApronEdgesR100){quad(buckets.edge,...corners);return;}
-            const vertices=[];quad(vertices,...corners);
-            buckets.edge.push(...network.partitionApronEdgesR100(vertices,s));
-          };
           curbQuad(...cap);
-          const foot=p=>[p[0],Math.min(p[1]-.30,ground(p[0],p[2])-.20),p[2]];
           if(mountain){
             const ua=(s.distance+len*part/cuts)/1.4,ub=(s.distance+len*(part+1)/cuts)/1.4;
             const wall=[foot(oa),foot(ob),up(ob,lip),up(oa,lip)].map((p,i)=>[...p,i===0||i===3?ua:ub,p[1]/1.4]);
@@ -228,7 +244,7 @@ function* pathMeshWork(network,legacy,ground){
     // alignment, and a vertex tint darkens only the new mountain risers.
     // White colors leave all original entrance/precinct granite unchanged.
     const sourceKeys=key==='stone'?['stone','mountainPaving']:key==='edge'?['edge','mountainRiser']:[key];
-    const vertices=sourceKeys.length===1?bucket:sourceKeys.flatMap(source=>buckets[source]);
+    const vertices=sourceKeys.length===1?bucket:buckets[sourceKeys[0]].concat(buckets[sourceKeys[1]]);
     if(!vertices.length)continue;
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     geo.computeVertexNormals();
@@ -243,7 +259,7 @@ function* pathMeshWork(network,legacy,ground){
         if(Math.abs(normal.getY(n))>.5)uv.push(vertices[i]/2,vertices[i+2]/2);
         else uv.push((Math.abs(normal.getX(n))>.5?vertices[i+2]:vertices[i])/2,vertices[i+1]/2);
       }
-      if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3){if(i%768===0)yield;colors.push(...tint);}}
+      if(colors){const tint=source==='mountainRiser'?riserTint:[1,1,1];for(let i=offset;i<end;i+=3){if(i%768===0)yield;colors.push(tint[0],tint[1],tint[2]);}}
       offset=end;
     }
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
@@ -253,6 +269,6 @@ function* pathMeshWork(network,legacy,ground){
   }
   group.userData.mountainPaths=detail;
   if(network.accessJunctions)group.userData.accessJunctions=network.accessJunctions;
-  document.body.dataset.mountainPaths=JSON.stringify(detail);
+  telemetry.report('mountainPaths',detail);
   return group;
 }

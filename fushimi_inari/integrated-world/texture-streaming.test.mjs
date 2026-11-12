@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {createTextureStreaming,textureTierURL} from './texture-streaming.mjs';
+import {HIGH_TEXTURES} from './texture-tiers.mjs';
+// Generic tier mechanics use synthetic names; treat every one as High-capable.
+const anyHigh={has:()=>true};
 const until=async predicate=>{const end=performance.now()+10000;while(!predicate()){assert.ok(performance.now()<end,'stream work timed out');await new Promise(resolve=>setTimeout(resolve,5));}};
 const settled=stream=>until(()=>stream.stats.pending===0);
 
@@ -18,7 +22,7 @@ test('destination preparation uses the existing index and finishes while unrelat
 });
 
 test('destination preparation requests a newly selected tier for records already finished in the prior tier',async()=>{
- let finishSlow;const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:url=>{requests.push(url);return url.includes('slow')&&url.includes('balanced')?new Promise(resolve=>finishSlow=resolve):Promise.resolve({width:url.includes('balanced')?64:256,height:64});}});
+ let finishSlow;const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({highTextures:anyHigh,loadImage:url=>{requests.push(url);return url.includes('slow')&&url.includes('balanced')?new Promise(resolve=>finishSlow=resolve):Promise.resolve({width:url.includes('balanced')?64:256,height:64});}});
  const fast=stream.load('../assets/textures/checkpoint-fast.png'),slow=stream.load('../assets/textures/checkpoint-slow.png');for(const map of [fast,slow])scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));stream.index(scene);
  const prepared=stream.prepareAt(new THREE.Vector3(),{timeoutMs:2000});await until(()=>fast.image.width===64&&!!finishSlow);
  stream.setMode('high');finishSlow({width:64,height:64});await prepared;
@@ -33,23 +37,69 @@ test('destination preparation reports failed images and times out only its unfin
  finish({width:64,height:64});await settled(waiting);
  assert.deepEqual(await waiting.prepareAt(new THREE.Vector3()),{textures:1,failed:0});
 });
-test('only nearby texture users download; High requests originals and cached tiers are reused',async()=>{
- const requested=[],stream=createTextureStreaming({loadImage:async url=>{requested.push(url);return {width:512,height:512,url};}}),scene=new THREE.Scene();
- const a=stream.load('../assets/textures/nanobanana/wood_vermilion_shuiro_color.png'),b=stream.load('../assets/textures/nanobanana/prop_kitsune_ema_rack.png');
+test('only nearby texture users download; High requests its WebP only where one exists and cached tiers are reused',async()=>{
+ const requested=[],stream=createTextureStreaming({loadImage:async url=>{requested.push(url);return {width:/\/high\//.test(url)?1024:512,height:512,url};}}),scene=new THREE.Scene();
+ const a=stream.load('../assets/textures/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.png'),b=stream.load('../assets/textures/nanobanana/prop_kitsune_ema_rack.png');
  const near=new THREE.Mesh(new THREE.BoxGeometry(2,2,2),new THREE.MeshBasicMaterial({map:a})),far=new THREE.Mesh(new THREE.BoxGeometry(2,2,2),new THREE.MeshBasicMaterial({map:b}));far.position.x=1000;scene.add(near,far);
- await stream.prepare(scene,new THREE.Vector3());assert.equal(requested.length,1);assert.match(requested[0],/balanced\/nanobanana\/wood.*webp$/);
- stream.setMode('high');stream.update(new THREE.Vector3());await settled(stream);assert.equal(requested.length,2);assert.match(requested[1],/nanobanana\/wood.*png$/);assert.doesNotMatch(requested[1],/balanced/);
+ await stream.prepare(scene,new THREE.Vector3());assert.equal(requested.length,1);assert.match(requested[0],/balanced\/Torii_Kanji_Column\/.*BaseColor\.webp$/);
+ stream.setMode('high');stream.update(new THREE.Vector3());await settled(stream);assert.equal(requested.length,2);assert.match(requested[1],/\/textures\/high\/Torii_Kanji_Column\/.*BaseColor\.webp$/);
  stream.setMode('ultra');stream.update(new THREE.Vector3());await settled(stream);assert.equal(requested.length,2,'legacy Ultra reuses the High tier');
  stream.setMode('balanced');stream.update(new THREE.Vector3());await settled(stream);assert.equal(requested.length,2);assert.match(a.image.url,/balanced/);
  stream.update(new THREE.Vector3(1000,0,0));await settled(stream);assert.equal(requested.length,3);assert.match(requested[2],/ema_rack.webp$/);
+ assert.ok(requested.every(url=>url.endsWith('.webp')),'no tier requests an original PNG');
+});
+
+test('a tier switch whose URL is identical neither downloads, swaps, uploads nor revises',async()=>{
+ const requested=[],stream=createTextureStreaming({audit:true,report(){},loadImage:async url=>{requested.push(url);return {width:496,height:496};}}),scene=new THREE.Scene(),position=new THREE.Vector3();
+ const map=stream.load('../assets/textures/nanobanana/foliage_sugi_cedar.png'),clone=map.clone();let disposals=0;for(const t of [map,clone])t.addEventListener('dispose',()=>disposals++);
+ scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:clone,alphaTest:.28})));
+ await stream.prepare(scene,position);const image=map.image,version=map.source.version,revision=stream.stats.revision,local=stream.revisionAt(position);
+ assert.equal(requested.length,1);assert.equal(disposals,2);
+ for(const mode of ['high','ultra','balanced','high']){
+  stream.setMode(mode);stream.update(position);assert.equal(stream.stats.pending,0,mode+' queues nothing');
+  assert.deepEqual(await stream.prepareAt(position,{timeoutMs:200}),{textures:1,failed:0});
+ }
+ assert.equal(requested.length,1);assert.equal(map.image,image);assert.equal(clone.image,image);assert.equal(map.source.version,version,'no re-upload');
+ assert.equal(disposals,2);assert.equal(stream.stats.revision,revision);assert.equal(stream.revisionAt(position),local);
+});
+
+test('a 1024 px High variant really switches, releasing GPU storage on each dimension change',async()=>{
+ const requested=[],stream=createTextureStreaming({loadImage:async url=>{requested.push(url);const size=/\/high\//.test(url)?1024:512;return {width:size,height:size,url};}}),scene=new THREE.Scene(),position=new THREE.Vector3();
+ const map=stream.load('../assets/textures/Torii_Kanji_Column/Torii_Kanji_Column_Normal.png'),clone=map.clone(),events=[];
+ for(const t of [map,clone])t.addEventListener('dispose',()=>events.push([map.image.width,clone.image.width]));
+ scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial({normalMap:clone})));
+ await stream.prepare(scene,position);assert.equal(clone.image.width,512);assert.equal(events.length,2);
+ const revision=stream.stats.revision,balanced=stream.revisionAt(position);
+ stream.setMode('high');await stream.prepareAt(position);
+ assert.equal(map.image.width,1024);assert.equal(clone.image.width,1024);assert.match(clone.image.url,/\/textures\/high\/Torii_Kanji_Column\/Torii_Kanji_Column_Normal\.webp$/);
+ assert.equal(events.length,4);assert.ok(events.slice(2).every(([a,b])=>a===512&&b===512),'disposed before the larger image was assigned');
+ assert.equal(stream.stats.revision,revision+1);assert.notEqual(stream.revisionAt(position),balanced);
+ stream.setMode('balanced');await stream.prepareAt(position);assert.equal(clone.image.width,512);assert.equal(events.length,6);assert.equal(requested.length,2,'cached Balanced image is reused');
 });
 test('switching tier while a request is pending cannot apply a stale high image',async()=>{
- let resolve;const stream=createTextureStreaming({loadImage:()=>new Promise(r=>resolve=r)}),scene=new THREE.Scene(),texture=stream.load('../assets/textures/example.png');scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:texture})));
+ let resolve;const stream=createTextureStreaming({highTextures:anyHigh,loadImage:()=>new Promise(r=>resolve=r)}),scene=new THREE.Scene(),texture=stream.load('../assets/textures/example.png');scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:texture})));
  stream.index(scene);stream.setMode('high');stream.update(new THREE.Vector3());stream.setMode('balanced');const highResolve=resolve;highResolve({width:2048,height:2048});await until(()=>resolve!==highResolve);assert.equal(texture.image.width,1);
  resolve({width:64,height:64});await settled(stream);assert.equal(texture.image.width,64);
 });
-test('URL tier keeps originals unchanged and preserves relative directory ownership',()=>{
- const url='https://example.com/assets/textures/nanobanana/a.png';assert.equal(textureTierURL(url,'high'),url);assert.equal(textureTierURL(url,'ultra'),url);assert.equal(textureTierURL(url,'balanced'),'https://example.com/assets/textures/balanced/nanobanana/a.webp');
+test('URL tiers map to generated WebP, with High falling back to the identical Balanced URL',()=>{
+ const base='https://example.com/assets/textures/',url=base+'nanobanana/a.png',balanced=base+'balanced/nanobanana/a.webp';
+ assert.equal(textureTierURL(url,'balanced'),balanced);assert.equal(textureTierURL(url,'high'),balanced);assert.equal(textureTierURL(url,'ultra'),balanced);
+ const torii=base+'Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.png';
+ assert.equal(textureTierURL(torii,'balanced'),base+'balanced/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.webp');
+ assert.equal(textureTierURL(torii,'high'),base+'high/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.webp');assert.equal(textureTierURL(torii,'ultra'),textureTierURL(torii,'high'));
+ assert.equal(textureTierURL(base+'kandakara-cedar-albedo-v1.webp','high'),base+'balanced/kandakara-cedar-albedo-v1.webp');
+ assert.equal(textureTierURL(url,'high',new Set(['nanobanana/a.png'])),base+'high/nanobanana/a.webp');
+ assert.equal(textureTierURL('https://example.com/other/a.png','high'),'https://example.com/other/a.png');
+});
+
+test('generated High listing, tier manifests and WebP files on disk stay in sync',()=>{
+ const textures=new URL('../assets/textures/',import.meta.url),png=file=>{const b=readFileSync(new URL(file,textures));return Math.max(b.readUInt32BE(16),b.readUInt32BE(20));};
+ const originals=[],walk=dir=>{for(const e of readdirSync(new URL(dir,textures),{withFileTypes:true})){const rel=dir+e.name;if(e.isDirectory()){if(!['balanced','high','precinct-shared'].includes(e.name))walk(rel+'/');}else if(rel.endsWith('.png'))originals.push(rel);}};walk('');
+ const manifest=tier=>JSON.parse(readFileSync(new URL(tier+'/manifest.json',textures),'utf8'));
+ assert.deepEqual(manifest('high').map(i=>i.original).sort(),[...HIGH_TEXTURES].sort(),'texture-tiers.mjs matches the High manifest');
+ assert.deepEqual([...HIGH_TEXTURES].sort(),originals.filter(rel=>png(rel)>512).sort(),'High exists exactly where the original exceeds 512 px');
+ assert.deepEqual(manifest('balanced').map(i=>i.original).sort(),originals.sort(),'every original has a Balanced WebP');
+ for(const rel of originals)for(const mode of ['balanced','high']){const target=textureTierURL(new URL(rel,textures).href,mode);assert.ok(existsSync(new URL(target)),`${mode} ${rel} -> missing ${target}`);}
 });
 
 test('painted torii retain opaque vermilion on pending and failed images without tinting stone or data maps',async()=>{
@@ -65,7 +115,7 @@ test('painted torii retain opaque vermilion on pending and failed images without
  for(const mesh of scene.children)assert.deepEqual([...mesh.material.map.image.data],[190,49,25,255]);
 });
 test('clones and repeated loads inherit streamed images before and after indexing',async()=>{
- let finish;const stream=createTextureStreaming({loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
+ let finish;const stream=createTextureStreaming({highTextures:anyHigh,loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
  const url='../assets/textures/nanobanana/wood_vermilion_shuiro_color.png',texture=stream.load(url),early=texture.clone();
  early.repeat.set(3,4);scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:early})));
  stream.index(scene);stream.update(new THREE.Vector3());const late=texture.clone(),image={width:512,height:512};finish(image);await settled(stream);
@@ -95,7 +145,7 @@ test('DOM report diagnostics distinguish loaded alpha maps from unused placehold
 });
 
 test('dimension changes release every GPU texture before mutating shared sources',async()=>{
- let finish;const stream=createTextureStreaming({loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
+ let finish;const stream=createTextureStreaming({highTextures:anyHigh,loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
  const map=stream.load('../assets/textures/nanobanana/foliage_sugi_cedar.png'),clone=map.clone(),events=[];
  for(const texture of [map,clone])texture.addEventListener('dispose',()=>events.push({texture,width:map.image.width,cloneWidth:clone.image.width}));
  scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:clone,alphaTest:.28})));
@@ -114,7 +164,7 @@ test('production reports omit opt-in per-texture audit diagnostics',()=>{
 
 
 test('readonly stats expose applied-image revisions and outstanding stream work',async()=>{
- let finish;const stream=createTextureStreaming({loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
+ let finish;const stream=createTextureStreaming({highTextures:anyHigh,loadImage:()=>new Promise(resolve=>finish=resolve)}),scene=new THREE.Scene();
  const map=stream.load('../assets/textures/example.png');scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));
  assert.equal(stream.stats.revision,0);assert.equal(stream.stats.pending,0);stream.index(scene);stream.update(new THREE.Vector3());
  assert.equal(stream.stats.pending,1);assert.equal(stream.stats.revision,0);finish({width:512,height:512});await settled(stream);
@@ -195,7 +245,7 @@ test('distinct source groups apply across paced ticks while clones retain source
 });
 
 test('reverting mode during a partially applied tier restores every source group from cache',async()=>{
- const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}});
+ const requests=[],scene=new THREE.Scene(),stream=createTextureStreaming({highTextures:anyHigh,loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}});
  const textures=Array.from({length:4},()=>stream.load('../assets/textures/race.png')),base=textures[0];
  for(const map of textures)scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map})));
  await stream.prepare(scene,new THREE.Vector3());stream.setMode('high');stream.update(new THREE.Vector3());
@@ -207,7 +257,7 @@ test('reverting mode during a partially applied tier restores every source group
 });
 
 test('local image revisions change only for applied nearby images, including cached tier returns',async()=>{
- const requests=[],stream=createTextureStreaming({loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}}),scene=new THREE.Scene(),position=new THREE.Vector3();
+ const requests=[],stream=createTextureStreaming({highTextures:anyHigh,loadImage:async url=>{requests.push(url);return {width:url.includes('balanced')?64:256,height:64};}}),scene=new THREE.Scene(),position=new THREE.Vector3();
  const near=stream.load('../assets/textures/local-revision.png'),far=stream.load('../assets/textures/distant-revision.png');
  const local=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:near})),distant=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:far}));distant.position.x=1000;scene.add(local,distant);stream.index(scene);
  const placeholder=stream.revisionAt(position);assert.equal(typeof placeholder,'string');assert.equal(stream.stats.pending,0,'reading a revision must not request images');

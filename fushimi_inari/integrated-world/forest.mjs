@@ -3,6 +3,7 @@ import {routeSpec} from './route-spec.mjs';
 import {evergreenCanopy} from './evergreen-canopy.mjs?v=10';
 import {outlookOpening} from './panorama-policy.mjs?v=33';
 import {refineBamboo} from './bamboo-details.mjs';
+import {preservedForestLOD,createForestLODResources,trunkLOD,trunkProxyGeometry} from './forest-lod.mjs';
 import {understoryGeometry,createUnderstoryPlacement,understoryGround,understoryLOD,understoryBudget} from './forest-understory.mjs';
 
 // Reuses original trunk/crown assets with lightweight procedural understory.
@@ -60,6 +61,7 @@ function* forestWork(root,legacy,features,anchors,ground,pathDistance,colliders)
   const distantEvergreen=evergreenCanopy(48);
   const horizonEvergreen=evergreenCanopy(12);
   const branchGeo=new THREE.CylinderGeometry(.035,.12,1,6);branchGeo.translate(0,.5,0);
+  const crownLOD=createForestLODResources(),trunkProxy=trunkProxyGeometry(legacy.foliage[0].geometry);
   let total=0,understory=0,broadleaf=0;
   for(const trees of buckets.values()){
     yield;
@@ -127,6 +129,17 @@ function* forestWork(root,legacy,features,anchors,ground,pathDistance,colliders)
         tintLeaves(far);tintLeaves(horizon);
         list.forEach((matrix,i)=>horizon.setMatrixAt(i,matrix));horizon.position.copy(mesh.position);horizon.computeBoundingSphere();
         lod.addLevel(mesh,0);lod.addLevel(far,85,.12);lod.addLevel(horizon,200,.15);lod.userData.nearForest=true;root.add(lod);
+      }else if(index===1){
+        // Conifer crowns follow the preserved forest: textured cards, then a
+        // solid proxy, outside the foreground. The near crown alone feeds
+        // canopy sampling.
+        const cell=new THREE.Group();cell.add(mesh);
+        preservedForestLOD(cell,false,{resources:crownLOD,canopyProxy:false});
+        const lod=cell.children.find(child=>child.isLOD);lod.userData.nearForest=true;
+        for(const level of lod.levels.slice(1))level.object.userData.forestProxy=true;
+        root.add(lod);
+      }else if(index===0){
+        const lod=trunkLOD(mesh,trunkProxy);lod.userData.nearForest=true;root.add(lod);
       }else {mesh.userData.nearForest=true;root.add(mesh);}
     });
     total+=trees.length;

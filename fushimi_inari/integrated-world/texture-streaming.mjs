@@ -1,18 +1,26 @@
 import * as THREE from 'three';
+import {HIGH_TEXTURES} from './texture-tiers.mjs';
 
-export function textureTierURL(url,mode){
- const marker='/assets/textures/',at=url.indexOf(marker);
- return (mode==='high'||mode==='ultra')||at<0?url:url.slice(0,at)+marker+'balanced/'+url.slice(at+marker.length).replace(/\.png$/i,'.webp');
+// Both tiers are generated WebP (scripts/prepare-web-assets.py); original PNGs
+// are never requested. High has its own file only where the original exceeds
+// Balanced's 512 px; elsewhere both tiers name the same Balanced URL. The
+// generated listing is bundled, so mapping never probes the network.
+export function textureTierURL(url,mode,highTextures=HIGH_TEXTURES){
+ const marker='/assets/textures/',at=url.indexOf(marker);if(at<0)return url;
+ const rel=url.slice(at+marker.length),high=(mode==='high'||mode==='ultra')&&highTextures.has(rel);
+ return url.slice(0,at)+marker+(high?'high/':'balanced/')+rel.replace(/\.png$/i,'.webp');
 }
 
 // Image ownership is separate from geometry/collision ownership. Shared maps
-// download once; only maps used near the camera are requested. High retains
-// byte-identical original PNGs and swaps them in without replacing materials.
-export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false,maxSourceGroupsPerTick=1}={}){
+// download once; only maps used near the camera are requested. Records track
+// the applied URL, so a tier change whose URL is unchanged is a no-op: no
+// download, no swap, no upload, no revision.
+export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().loadAsync(url),report=()=>{},audit=false,maxSourceGroupsPerTick=1,highTextures=HIGH_TEXTURES}={}){
  const records=new Map(),sources=new Map();let mode='balanced',users=[],elapsed=1,active=0,queue=[],revision=0,maxUploadGroupTextures=0,maxUploadGroupPixels=0;
  const cells=new Map(),largeUsers=[],ready=[],indexedObjects=new Set();let lastPosition=null,timer=null,lastApply=-Infinity,lastReport=-Infinity,lastReportedPending=0;
  let indexGeneration=0,revisionCache=null;
- const tier=()=>mode;
+ const wanted=r=>textureTierURL(r.url,mode,highTextures);
+ const tierOf=url=>url==null?null:/\/assets\/textures\/high\//.test(url)?'high':'balanced';
  const pending=()=>queue.length+active+ready.length;
  // Reporting can serialize many texture clones in audit mode. Keep it off the
  // upload cadence; a transition to idle still publishes the final state.
@@ -20,7 +28,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   if(!force&&now-lastReport<500&&!(outstanding===0&&lastReportedPending>0))return;
   lastReport=now;lastReportedPending=outstanding;
   report({mode,maxUploadGroupTextures,maxUploadGroupPixels,registered:records.size,loaded:[...records.values()].filter(r=>r.current).length,pending:pending(),failed:[...records.values()].filter(r=>r.error).map(r=>r.url),
-  ...(audit?{diagnostics:[...records.values()].filter(r=>!r.current||/foliage/i.test(r.url)).map(r=>({file:r.url.split('/').pop(),tier:r.current??null,pending:r.pending??null,users:r.userCount??0,textures:[...r.textures].map(t=>({size:[t.image?.width??0,t.image?.height??0],source:t.source.id,sourceVersion:t.source.version,textureVersion:t.version}))}))}:{})});
+  ...(audit?{diagnostics:[...records.values()].filter(r=>!r.current||/foliage/i.test(r.url)).map(r=>({file:r.url.split('/').pop(),tier:tierOf(r.current),pending:tierOf(r.pending),users:r.userCount??0,textures:[...r.textures].map(t=>({size:[t.image?.width??0,t.image?.height??0],source:t.source.id,sourceVersion:t.source.version,textureVersion:t.version}))}))}:{})});
  }
  // Clones retain shared Source ownership, including GPU storage reuse in
  // WebGL. Track clones immediately so late/index-appended clones join upgrades.
@@ -34,11 +42,11 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
   return texture;
  }
  function applyBatch(job){
-  const {r,image,tier:loadedTier}=job;
+  const {r,image,url:loadedURL}=job;
   let count=0;const started=performance.now();
   while(count<Math.max(1,maxSourceGroupsPerTick)&&performance.now()-started<2){
    const next=job.groups.next();
-   if(next.done){r.current=loadedTier;r.ready=false;r.appliedVersion++;revision++;return true;}
+   if(next.done){r.current=loadedURL;r.ready=false;r.appliedVersion++;revision++;return true;}
    const textures=next.value;count++;
    maxUploadGroupTextures=Math.max(maxUploadGroupTextures,textures.size);
    maxUploadGroupPixels=Math.max(maxUploadGroupPixels,(image.width??0)*(image.height??0));
@@ -55,28 +63,28 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function schedule(){if(timer===null&&(queue.length||ready.length))timer=setTimeout(()=>{timer=null;drain();},50);}
  function drain(){
   if(ready.length&&performance.now()-lastApply>=50){
-   const job=ready[0],{r,tier:loadedTier}=job;
-   if(tier()!==loadedTier){ready.shift();r.ready=false;request(r);}
+   const job=ready[0],{r,url:loadedURL}=job;
+   if(wanted(r)!==loadedURL){ready.shift();r.ready=false;request(r);}
    else {
     if(!job.groups){r.current=null;job.groups=r.groups.values();}
     if(applyBatch(job))ready.shift();
     lastApply=performance.now();
    }
   }
-  if(active<2&&queue.length){const r=queue.shift(),requestedTier=tier();r.queued=false;
-   if(r.current!==requestedTier&&!r.pending){
-    if(r.images.has(requestedTier)){r.ready=true;ready.push({r,image:r.images.get(requestedTier),tier:requestedTier});}
-    else {active++;r.pending=requestedTier;
-     let transfer;try{transfer=loadImage(textureTierURL(r.url,requestedTier));}catch(error){transfer=Promise.reject(error);}
-     Promise.resolve(transfer).then(image=>{r.images.set(requestedTier,image);r.error=null;
-      if(tier()===requestedTier){r.ready=true;ready.push({r,image,tier:requestedTier});}
-     }).catch(error=>{r.error=String(error);console.warn('Texture unavailable',r.url,error);}).finally(()=>{active--;r.pending=null;if(tier()!==requestedTier)request(r);schedule();emit();});
+  if(active<2&&queue.length){const r=queue.shift(),url=wanted(r);r.queued=false;
+   if(r.current!==url&&!r.pending){
+    if(r.images.has(url)){r.ready=true;ready.push({r,image:r.images.get(url),url});}
+    else {active++;r.pending=url;
+     let transfer;try{transfer=loadImage(url);}catch(error){transfer=Promise.reject(error);}
+     Promise.resolve(transfer).then(image=>{r.images.set(url,image);r.error=null;
+      if(wanted(r)===url){r.ready=true;ready.push({r,image,url});}
+     }).catch(error=>{r.error=String(error);console.warn('Texture unavailable',url,error);}).finally(()=>{active--;r.pending=null;if(wanted(r)!==url)request(r);schedule();emit();});
     }
    }
   }
   schedule();emit();
  }
- function request(r){if(r.current===tier()||r.pending||r.queued||r.ready||r.error)return;r.queued=true;queue.push(r);}
+ function request(r){if(r.current===wanted(r)||r.pending||r.queued||r.ready||r.error)return;r.queued=true;queue.push(r);}
  function load(url){
   const absolute=new URL(url,import.meta.url).href;let r=records.get(absolute);
   if(!r){r={url:absolute,textures:new Set(),groups:new Map(),images:new Map(),appliedVersion:0};records.set(absolute,r);}
@@ -128,7 +136,7 @@ export function createTextureStreaming({loadImage=url=>new THREE.ImageLoader().l
  function prefetch(position){const nearby=nearbyRecords(position);for(const r of nearby)request(r);schedule();return nearby;}
  async function prepareAt(position,{timeoutMs=20000}={}){
   const selected=prefetch(position),start=performance.now();
-  while([...selected].some(r=>r.current!==tier()&&!r.error)){
+  while([...selected].some(r=>r.current!==wanted(r)&&!r.error)){
    // A completed record may belong to the previous tier when quality changes
    // during preparation. It has no pending transfer to enqueue the new tier.
    // Re-request this destination only; never reindex or wait for global idle.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installSky,SKY_SUN_DIRECTIONS,skyDistanceScale} from './sky-nodes.mjs';
 import {LIGHT_PRESETS} from './route-lighting-nodes.mjs';
-import {HORIZON_COLORS} from './viewing-distance.mjs';
+import {HAZE_COLORS} from './viewing-distance.mjs';
 import {GOLDEN_ATMOSPHERE} from './atmosphere-profile.mjs';
 
 test('sun follows sunset horizon, clouds drift without repainting and night preserves stars',()=>{
@@ -24,7 +24,7 @@ test('sun follows sunset horizon, clouds drift without repainting and night pres
     const angularDiameter=THREE.MathUtils.radToDeg(2*Math.atan(sun.scale.x*.22/(2*sun.position.distanceTo(camera.position))));
     assert.ok(angularDiameter>1.5&&angularDiameter<2,'the warm sunset core remains legible as a broad cinematic disc, rather than only enlarging its transparent halo');
     assert.ok(direction.distanceTo(new THREE.Vector3(...LIGHT_PRESETS.gold.offset).normalize())<1e-10,'visible disc and directional shadows share one solar direction');
-    for(const look of ['natural','sakura','dreamcore','aozora']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HORIZON_COLORS.gold,'golden sky meets the same haze as the scene fog');}
+    for(const look of ['natural','sakura','dreamcore','aozora']){sky.setLook(look);const gradient=canvases[0].context.gradients.at(-1);assert.equal(gradient.find(([at])=>at===.51)[1],HAZE_COLORS.gold,'golden sky meets the same sun-tinted haze as the scene fog');}
     const tints=[];sun.material.colorNode.traverse(node=>{if(node.isUniformNode&&node.value?.isColor)tints.push(node.value.getHexString());});
     assert.ok(tints.includes(GOLDEN_ATMOSPHERE.disc.slice(1)),'the rendered solar disc uses the shared red-orange tint');
     assert.equal(sun.material.toneMapped,false);

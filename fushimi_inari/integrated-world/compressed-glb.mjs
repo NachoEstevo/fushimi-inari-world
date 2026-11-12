@@ -9,7 +9,8 @@ export async function decodeGLBTransport(bytes){
 // original geometry. Embedded PNGs are shared as byte-identical external files.
 export async function loadCompressedGLB(url,{timing=()=>{},yieldWork=()=>new Promise(resolve=>setTimeout(resolve,0))}={}){
  let start=performance.now();
- const response=await fetch(url+'.gz');if(!response.ok)throw new Error(`${url}: HTTP ${response.status}`);
+ // A cache-busting query stays a query: the suffix belongs to the path.
+ const response=await fetch(url.replace(/(\?|$)/,'.gz$1'));if(!response.ok)throw new Error(`${url}: HTTP ${response.status}`);
  const transport=await response.arrayBuffer();timing('fetch',performance.now()-start);
  start=performance.now();const bytes=await decodeGLBTransport(transport);timing('decode',performance.now()-start);
  await yieldWork();start=performance.now();

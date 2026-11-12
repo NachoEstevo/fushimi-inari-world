@@ -1,8 +1,23 @@
 import * as THREE from 'three';
+import {cameraPosition,float,mix,positionWorld,smoothstep,uniform} from 'three/tsl';
 
 const MAX_VERTICES=40000,DESIRED_SPACING=.2,MAX_RISER_DEPTH=6,RISER_THRESHOLD=.075;
+// Walking keeps the guide a quiet, earthen thread that vanishes at the feet and
+// strengthens with distance; debug and audit URLs keep the legible vermilion line.
+export const TRAIL_GUIDE_STYLE={
+  quiet:{width:.024,color:0x9c6a4a,fadeIn:[1.5,7],opacity:.3,distant:[45,140],distantOpacity:.85},
+  prominent:{width:.035,color:0xd75b18}};
+export function trailGuideProminentByDefault(search=globalThis.location?.search??''){
+  try{const params=new URLSearchParams(search);return params.has('audit')||params.has('debugCamera');}catch{return false;}
+}
+// Viewer hook: e.g. raise the guide for an aerial overview. Width stays as built.
+export function setTrailGuideProminence(mesh,prominent){
+  const guide=mesh?.userData?.routeGuide;if(!guide?.prominence)return false;
+  guide.prominence.value=prominent?1:0;guide.prominent=!!prominent;
+  mesh.material.color.setHex(prominent?TRAIL_GUIDE_STYLE.prominent.color:TRAIL_GUIDE_STYLE.quiet.color);return true;
+}
 // Source graph elevations only guide floor selection; the walk surface owns Y.
-export async function createTrailGuide({points,walkHeight,yieldWork=async()=>{},isCancelled=()=>false}){
+export async function createTrailGuide({points,walkHeight,yieldWork=async()=>{},isCancelled=()=>false,prominent=trailGuideProminentByDefault()}){
  const start=performance.now();
  if(!Array.isArray(points)||points.length<2||typeof walkHeight!=='function'||isCancelled())return null;
  const lengths=new Float64Array(points.length);let total=0;
@@ -48,7 +63,7 @@ export async function createTrailGuide({points,walkHeight,yieldWork=async()=>{},
  if(isCancelled())return null;
  // A physical ribbon remains legible on pale paving. Clamp the miter at
  // bends so tight turns cannot protrude far outside the intended path.
- const half=.035/2,ribbon=new Float32Array(count*6),indices=new Uint32Array((count-1)*6);
+ const half=(prominent?TRAIL_GUIDE_STYLE.prominent:TRAIL_GUIDE_STYLE.quiet).width/2,ribbon=new Float32Array(count*6),indices=new Uint32Array((count-1)*6);
  for(let i=0;i<count;i++){
   const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2];
   const previous=Math.max(0,i-1),next=Math.min(count-1,i+1);
@@ -65,6 +80,12 @@ export async function createTrailGuide({points,walkHeight,yieldWork=async()=>{},
   if((i+1)%256===0){await yieldWork();if(isCancelled())return null;}
  }
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(ribbon,3));geometry.setIndex(new THREE.BufferAttribute(indices,1));geometry.computeBoundingSphere();
- const material=new THREE.MeshBasicMaterial({color:0xd75b18,depthTest:true,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
- const mesh=new THREE.Mesh(geometry,material);mesh.name='Trail guide';mesh.userData.routeGuide={vertices:count,spacing,builtMs:performance.now()-start,noExtraTextures:true};return mesh;
+ const quiet=TRAIL_GUIDE_STYLE.quiet,prominence=uniform(prominent?1:0),distance=positionWorld.sub(cameraPosition).length();
+ const walkingAlpha=smoothstep(float(quiet.fadeIn[0]),float(quiet.fadeIn[1]),distance).mul(mix(float(quiet.opacity),float(quiet.distantOpacity),smoothstep(float(quiet.distant[0]),float(quiet.distant[1]),distance)));
+ const material=new THREE.MeshBasicNodeMaterial({color:prominent?TRAIL_GUIDE_STYLE.prominent.color:quiet.color,transparent:true,depthTest:true,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
+ material.opacityNode=mix(walkingAlpha,float(1),prominence);
+ const mesh=new THREE.Mesh(geometry,material);mesh.name='Trail guide';
+ // The non-enumerable uniform stays out of the viewer's JSON stats spread.
+ mesh.userData.routeGuide={vertices:count,spacing,builtMs:performance.now()-start,noExtraTextures:true,prominent:!!prominent,width:half*2};
+ Object.defineProperty(mesh.userData.routeGuide,'prominence',{value:prominence,enumerable:false});return mesh;
 }

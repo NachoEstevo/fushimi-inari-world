@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {createSkyEnvironment} from './sky-environment.mjs';
 import {createStationMaterialStudy} from './webgpu-station-materials.mjs';
 import {LIGHT_PRESETS} from './route-lighting.mjs';
 import {createStationReflectionReadiness} from './station-reflection-readiness.mjs';
@@ -12,11 +12,16 @@ import {createAozoraFoliage} from './aozora-foliage.mjs';
 // The caller owns renderer initialization, the render loop and time-of-day.
 export async function installWorldAppearance({scene,renderer,assembly,camera,hemi,sun,quality}) {
   const previousEnvironment=scene.environment,previousIntensity=scene.environmentIntensity;
-  const room=new RoomEnvironment(),generator=new THREE.PMREMGenerator(renderer);
-  let environment;
-  try {environment=generator.fromScene(room,.04);}
-  finally {room.dispose();generator.dispose();}
-  scene.environment=environment.texture;scene.environmentIntensity=.3;
+  // Outdoor image light comes from the painted sky of the current time of day
+  // and look, regenerated only when either changes. Station finishes keep their
+  // own local probe through material.envMap; this owns only scene.environment.
+  const sky=createSkyEnvironment({renderer});
+  const initialLight=globalThis.document?.getElementById?.('light')?.value;
+  let timeOfDay=['day','gold','night'].includes(initialLight)?initialLight:'day';
+  try {sky.update({mode:timeOfDay,look:'natural',ground:hemi.groundColor});}
+  catch(error){sky.dispose();throw error;}
+  let environment=sky.texture;
+  scene.environment=environment;scene.environmentIntensity=.3;
   const station=assembly.keihanStation;
   const materials=station?.group?createStationMaterialStudy(station):null;
   materials?.setEnabled(true);
@@ -100,8 +105,17 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
   const center=new THREE.Vector3(-302.4,31,-176);
   let look='natural',disposed=false,near=false;
   applyTo(scene);
-  const stats={look,nearStation:false,motes:motes.stats,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null,get foliage(){return foliage.stats;}};
+  const stats={look,nearStation:false,motes:motes.stats,petals:petals.count,reflectionError:null,prepared:false,localReflections:false,stationMaterials:materials?.stats??null,get foliage(){return foliage.stats;},get environment(){return sky.stats;}};
   const lighting=createWorldLookLighting({scene,hemi,sun});
+  // Never per frame: the sky source changes only with time of day, look or the
+  // look-tinted ground bounce. A failed refresh keeps the previous environment.
+  function refreshEnvironment(){
+    if(disposed)return;
+    try{sky.update({mode:timeOfDay,look,ground:hemi.groundColor});}
+    catch(error){sky.stats.error=String(error?.message??error);return;}
+    const next=sky.texture;
+    if(next!==environment){if(scene.environment===environment)scene.environment=next;environment=next;}
+  }
   function applyStationQuality(){
     lighting.setQuality(quality?.mode);motes.setQuality(quality?.mode);
     materials?.setQuality(quality?.mode);
@@ -137,6 +151,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     quality?.setLook(next);
     look=next;stats.look=next;petals.visible=look==='sakura'&&!motion?.matches;motes.setEnabled(look==='soft-light');motes.setReducedMotion(motion?.matches);
     lighting.setLook(next);
+    refreshEnvironment();
     foliage.setLook(next);
     stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;
   }
@@ -158,10 +173,14 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     for(const material of replacements.values())material.dispose();
     scene.remove(practicals,petals);petalField.dispose();motes.dispose();
     practicals.traverse(object=>{if(object.isLight)object.dispose?.();});
-    if(scene.environment===environment.texture)scene.environment=previousEnvironment;
-    scene.environmentIntensity=previousIntensity;environment.dispose();
+    if(scene.environment===environment)scene.environment=previousEnvironment;
+    scene.environmentIntensity=previousIntensity;sky.dispose();
   }
-  return {prepare,update,setLook,updateBaseLighting,applyTo,dispose,stats,setTimeOfDay:mode=>foliage.setTimeOfDay(mode),prepareFoliage(){
+  function setTimeOfDay(mode){
+    foliage.setTimeOfDay(mode);
+    timeOfDay=['day','gold','night'].includes(mode)?mode:'day';refreshEnvironment();
+  }
+  return {prepare,update,setLook,updateBaseLighting,applyTo,dispose,stats,setTimeOfDay,prepareFoliage(){
     if(disposed||foliageReady)return;foliageReady=true;foliage.applyTo(scene);
     const select=document.getElementById('season');
     const sync=()=>foliage.setSeason(select?.value??'spring');sync();select?.addEventListener('change',sync);
@@ -229,7 +248,7 @@ export function createWorldLookLighting({scene,hemi,sun,onChange=()=>{}}) {
       const natural=look==='natural';
       hemi.intensity*=painted?.77:natural?.82:.88;sun.intensity*=painted?1.07:natural?1.06:1.04;
     }
-    // The studio probe must follow daylight energy rather than lighting night as day.
+    // The sky probe is luminance-normalized; daylight energy keeps night from being lit as day.
     const daylight=LIGHT_PRESETS.day.sun+LIGHT_PRESETS.day.fill;
     const energy=THREE.MathUtils.clamp((baseline.intensity+baseline.ambient)/daylight,0,1);
     scene.environmentIntensity=(values?.environment??.3)*energy*(daylightLook ? .9 : 1);

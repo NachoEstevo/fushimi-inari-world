@@ -6,7 +6,8 @@ import {createTextureStreaming} from './texture-streaming.mjs';
 
 // The viewer owns DOM/bootstrap side effects. Execute its actual preparation
 // callbacks with controlled dependencies rather than importing the whole app.
-const source=readFileSync(new URL('./viewer.mjs',import.meta.url),'utf8');
+// Windows checkouts carry CRLF; the excerpt markers below are written with LF.
+const source=readFileSync(new URL('./viewer.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const expression=(start,end)=>source.slice(source.indexOf(start)+start.length,source.indexOf(end,source.indexOf(start))).trim();
 const deferredExpression=expression('const compileGroup=',';\n    await (renderPreparation');
 const qualityExpression=expression('onRenderQuality:',',\n    onDetailDistance:');

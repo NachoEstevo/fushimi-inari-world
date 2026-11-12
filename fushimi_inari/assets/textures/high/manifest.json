@@ -1,0 +1,98 @@
+[
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_BaseColor.png",
+    "high": "high/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_BaseColor.webp",
+    "bytes": 31104,
+    "originalBytes": 535844
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Height.png",
+    "high": "high/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Height.webp",
+    "bytes": 211346,
+    "originalBytes": 283010
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Metallic.png",
+    "high": "high/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Metallic.webp",
+    "bytes": 88,
+    "originalBytes": 3158
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Normal.png",
+    "high": "high/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Normal.webp",
+    "bytes": 261268,
+    "originalBytes": 381912
+  },
+  {
+    "original": "Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Roughness.png",
+    "high": "high/Gold_Kanagu_Leaf/Gold_Kanagu_Leaf_Roughness.webp",
+    "bytes": 202790,
+    "originalBytes": 243243
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Height.png",
+    "high": "high/Granite_Stone_Moss/Granite_Stone_Moss_Height.webp",
+    "bytes": 340412,
+    "originalBytes": 430282
+  },
+  {
+    "original": "Granite_Stone_Moss/Granite_Stone_Moss_Metallic.png",
+    "high": "high/Granite_Stone_Moss/Granite_Stone_Moss_Metallic.webp",
+    "bytes": 86,
+    "originalBytes": 1097
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Height.png",
+    "high": "high/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Height.webp",
+    "bytes": 388234,
+    "originalBytes": 537982
+  },
+  {
+    "original": "Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Metallic.png",
+    "high": "high/Hiwadabuki_Bark_Roof/Hiwadabuki_Bark_Roof_Metallic.webp",
+    "bytes": 86,
+    "originalBytes": 1097
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.png",
+    "high": "high/Torii_Kanji_Column/Torii_Kanji_Column_BaseColor.webp",
+    "bytes": 113088,
+    "originalBytes": 776779
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Height.png",
+    "high": "high/Torii_Kanji_Column/Torii_Kanji_Column_Height.webp",
+    "bytes": 484154,
+    "originalBytes": 510545
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Metallic.png",
+    "high": "high/Torii_Kanji_Column/Torii_Kanji_Column_Metallic.webp",
+    "bytes": 94,
+    "originalBytes": 1601
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Normal.png",
+    "high": "high/Torii_Kanji_Column/Torii_Kanji_Column_Normal.webp",
+    "bytes": 1366758,
+    "originalBytes": 1482634
+  },
+  {
+    "original": "Torii_Kanji_Column/Torii_Kanji_Column_Roughness.png",
+    "high": "high/Torii_Kanji_Column/Torii_Kanji_Column_Roughness.webp",
+    "bytes": 478726,
+    "originalBytes": 505614
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Height.png",
+    "high": "high/Vermilion_ShuIro/Vermilion_ShuIro_Height.webp",
+    "bytes": 626472,
+    "originalBytes": 660168
+  },
+  {
+    "original": "Vermilion_ShuIro/Vermilion_ShuIro_Metallic.png",
+    "high": "high/Vermilion_ShuIro/Vermilion_ShuIro_Metallic.webp",
+    "bytes": 86,
+    "originalBytes": 1097
+  }
+]

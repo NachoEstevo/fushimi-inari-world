@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three/webgpu';
-import {qualityPixelRatio,createRenderQuality} from './render-quality-nodes.mjs';
+import {qualityPixelRatio,createRenderQuality,OUTPUT_TONE_MAPPING,AO_RESOLUTION_SCALE} from './render-quality-nodes.mjs';
 import ShadowNode from 'three/src/nodes/lighting/ShadowNode.js';
 import {pass} from 'three/tsl';
 
@@ -206,4 +206,58 @@ test('WebGPU transitions wait for submitted work and serialize mode and resize r
     THREE.RenderPipeline.prototype.dispose=disposePost;
     for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}
   }
+});
+
+function withBrowserGlobals(values,run){
+ const names=['document','innerWidth','innerHeight','devicePixelRatio'],previous=Object.fromEntries(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ Object.assign(globalThis,{document:{body:{dataset:{}}},innerWidth:1200,innerHeight:800,devicePixelRatio:1,...values});
+ const restore=()=>{for(const name of names){if(previous[name])Object.defineProperty(globalThis,name,previous[name]);else delete globalThis[name];}};
+ try{const result=run();return result?.then?result.finally(restore):(restore(),result);}catch(error){restore();throw error;}
+}
+
+test('the render pipeline owns one Neutral output transform and restores the previous operator',()=>withBrowserGlobals({},()=>{
+ const renderer={toneMapping:THREE.ACESFilmicToneMapping,outputColorSpace:THREE.SRGBColorSpace,getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){}};
+ const quality=createRenderQuality({renderer,scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(),sun:new THREE.DirectionalLight()});
+ assert.equal(OUTPUT_TONE_MAPPING,THREE.NeutralToneMapping);
+ assert.equal(renderer.toneMapping,THREE.NeutralToneMapping,'the viewer ACES assignment is superseded');
+ quality.dispose();assert.equal(renderer.toneMapping,THREE.ACESFilmicToneMapping);
+}));
+
+test('Neutral keeps sunlit vermilion red where ACES drifts orange',()=>{
+ // r187 operator math, linear in and out. Vermilion #b83523 at increasing irradiance.
+ const lin=c=>(c/=255)<=.04045?c/12.92:((c+.055)/1.055)**2.4,albedo=[0xb8,0x35,0x23].map(lin);
+ const neutral=(c,e)=>{let v=c.map(x=>x*e);const x=Math.min(...v),off=x<.08?x-6.25*x*x:.04;v=v.map(y=>y-off);const peak=Math.max(...v);if(peak<.76)return v;const d=.24,np=1-d*d/(peak+d-.76);v=v.map(y=>y*np/peak);const g=1-1/(.15*(peak-np)+1);return v.map(y=>y*(1-g)+np*g);};
+ const fit=x=>(x*(x+.0245786)-.000090537)/(x*(.983729*x+.4329510)+.238081),mul=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+ const aces=(c,e)=>mul([[1.60475,-.53108,-.07367],[-.10208,1.10813,-.00605],[-.00327,-.07276,1.07602]],mul([[.59719,.35458,.04823],[.076,.90834,.01566],[.0284,.13383,.83777]],c.map(x=>x*e/.6)).map(fit)).map(x=>Math.min(1,Math.max(0,x)));
+ const hue=([r,g,b])=>{[r,g,b]=[r,g,b].map(x=>x<=.0031308?12.92*x:1.055*x**(1/2.4)-.055);const max=Math.max(r,g,b),min=Math.min(r,g,b);return ((g-b)/(max-min)*60+360)%360;};
+ const spread=f=>{const h=[.6,1,1.4,2].map(k=>hue(f(albedo.map(x=>x*k),1)));return Math.max(...h)-Math.min(...h);};
+ assert.ok(spread(neutral)<5,'Neutral hue stays within a few degrees across sun and shade');
+ assert.ok(spread(neutral)<spread((c,e)=>aces(c,e))/2,'ACES shifts vermilion hue at least twice as much');
+});
+
+test('High-only GTAO uses scene depth without MRT, never renders in Balanced and is disabled on the WebGL fallback',async()=>{
+ const GTAO=(await import('three/addons/tsl/display/GTAONode.js')).default;
+ const render=GTAO.prototype.updateBefore;let renders=0;GTAO.prototype.updateBefore=function(){renders++;};
+ try{await withBrowserGlobals({},async()=>{
+  const renderer={backend:{isWebGPUBackend:true},getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){}};
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();
+  const quality=createRenderQuality({renderer,scene,camera,sun:new THREE.DirectionalLight()});
+  const report=()=>JSON.parse(document.body.dataset.renderQuality);
+  try{
+   assert.deepEqual(quality.ambientOcclusion,{supported:true,active:false,renders:0});assert.equal(report().ao,false);
+   // Reach the node through the public graph: frames in Balanced are no-ops.
+   const {createAmbientOcclusion}=await import('./render-quality-nodes.mjs');
+   const probe=createAmbientOcclusion({renderer,camera,depth:pass(scene,camera).getTextureNode('depth'),color:pass(scene,camera).getTextureNode()});
+   assert.equal(probe.node.normalNode,null,'normals are reconstructed from depth, so the scene pass needs no MRT');
+   assert.equal(probe.node.resolutionScale,AO_RESOLUTION_SCALE);assert.ok(AO_RESOLUTION_SCALE<1);
+   probe.node.updateBefore({});assert.equal(renders,0,'Balanced never renders AO');
+   probe.setActive(true);probe.node.updateBefore({});assert.equal(renders,1);
+   probe.setActive(false);probe.node.updateBefore({});assert.equal(renders,1);probe.dispose();
+   await quality.setMode('high');assert.equal(report().ao,true);assert.equal(quality.ambientOcclusion.active,true);
+   await quality.setMode('balanced');assert.equal(report().ao,false);
+  }finally{quality.dispose();}
+  const fallback={backend:{isWebGPUBackend:false},getMaxAnisotropy:()=>16,getPixelRatio:()=>1,setDrawingBufferSize(){}};
+  const webgl=createRenderQuality({renderer:fallback,scene,camera,sun:new THREE.DirectionalLight()});
+  try{await webgl.setMode('high');assert.equal(JSON.parse(document.body.dataset.renderQuality).ao,false);assert.equal(webgl.ambientOcclusion.supported,false);}finally{webgl.dispose();}
+ });}finally{GTAO.prototype.updateBefore=render;}
 });
