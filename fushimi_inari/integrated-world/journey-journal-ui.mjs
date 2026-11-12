@@ -1,7 +1,8 @@
+import {journeySeal} from './journey-seal-art.mjs';
 import {JOURNAL_KEY,JOURNEY_STAMPS,JOURNEY_DISCOVERIES,createJourneyJournal,journalDiscoveryForInteraction,journalStampDistance,isJournalPanorama} from './journey-journal.mjs';
 
 const glyph='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 5c-3-2-7-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-6-1-9 1Zm0 0v15M6 8h3m-3 4h3m6-4h3m-3 4h3"/></svg>';
-const seal=index=>`<svg viewBox="0 0 160 160" aria-hidden="true"><rect x="14" y="14" width="132" height="132" rx="${index===4?54:5}"/><rect x="21" y="21" width="118" height="118" rx="${index===4?48:2}"/><path d="M42 54q38 10 76 0M45 66h70M47 82h66M56 67l-4 45m52-45 4 45M80 67v15"/>${index>=2?'<path d="m38 115 25-23 17 13 23-20 23 30"/>':''}<text x="80" y="41" text-anchor="middle">INARIYAMA</text><text x="80" y="133" text-anchor="middle">${JOURNEY_STAMPS[index].mark}</text></svg>`;
+
 
 export function installJourneyJournal({camera,assembly,walker,controls,isBlocked=()=>false,cameraOwned=()=>false,storage:providedStorage}={}){
   let storage=providedStorage;
@@ -36,7 +37,7 @@ export function installJourneyJournal({camera,assembly,walker,controls,isBlocked
     $('journal-overview').textContent=`${Object.keys(state.stamps).length} of ${JOURNEY_STAMPS.length} seals · ${Object.keys(state.discoveries).length} of ${JOURNEY_DISCOVERIES.length} optional moments`;
     $('journal-number').textContent=`PAGE ${String(page+1).padStart(2,'0')} / 05`;
     $('journal-place').textContent=stamp.place;$('journal-note').textContent=earned?stamp.note:stamp.hint;
-    $('journal-stamp-title').textContent=stamp.title;$('journal-seal').innerHTML=seal(page);$('journal-seal').classList.toggle('is-earned',earned);
+    $('journal-stamp-title').textContent=stamp.title;$('journal-seal').innerHTML=journeySeal(page);$('journal-seal').classList.toggle('is-earned',earned);
     $('journal-state').textContent=earned?'Collected · a mark from your journey.':ready?'You are here. Leave a mark on this page.':!state.stamps.departure&&page!==0?'Begin with the first page near the station.':distance===null?'This page is waiting along the trail.':`About ${Math.max(10,roundedDistance)} m away, straight-line distance. Follow the paths to reach it.`;
     $('journal-collect').hidden=earned;$('journal-collect').disabled=!ready;
     $('journal-prev').disabled=page===0;$('journal-next').disabled=page===4;

@@ -88,7 +88,7 @@ test('fabric canopies slope toward the street and preserve head clearance in one
  const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces);root.updateMatrixWorld(true);
  const fabric=built.group.children.filter(m=>m.material.vertexColors&&m.material.color.getHex()===0xffffff);
  assert.equal(fabric.length,1);
- for(const s of built.storefronts){
+ for(const s of built.storefronts.filter(s=>s.kind!=='senbei')){
   const u=s.kind.endsWith('-row')?s.width/6:s.width/2;
   const height=v=>{const [x,z]=at(s,u,v);const hits=new THREE.Raycaster(new THREE.Vector3(x,s.floor+3.4,z),new THREE.Vector3(0,-1,0),0,1.1).intersectObject(fabric[0]);assert.ok(hits.length,`${s.kind}: cloth at ${v}`);return hits[0].point.y-s.floor;};
   const back=height(.02),front=height(s.kind.endsWith('-row')?.40:.60);
@@ -117,4 +117,42 @@ test('Kyozuan product boards are visible beside the shop name and use distinct s
  const uv=labelMesh.geometry.attributes.uv;
  assert.ok([...uv.array].every(Number.isFinite));
  assert.equal(built.drawBatches,10,'category boards reuse the name atlas material');
+});
+
+
+test('Hogyokudo has the rigid lower eave shown in the association photograph',()=>{
+ const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces),s=built.storefronts.find(s=>s.kind==='senbei');root.updateMatrixWorld(true);
+ const [x,z]=at(s,s.width/2,.60),ray=new THREE.Raycaster(new THREE.Vector3(x,s.floor+3.1,z),new THREE.Vector3(0,-1,0),0,.5);
+ const hit=ray.intersectObject(root,true)[0];assert.ok(hit,'the projected eave covers the front');
+ assert.equal(hit.object.material.color.getHexString(),'272e2b','Hogyokudo has dark rigid roofing here, not fabric');
+ assert.ok(hit.point.y-s.floor>2.6,'the eave remains above walking height');
+});
+
+test('storefront wood and plaster use shared architectural surfaces with metre-scale UVs',()=>{
+ const timber={map:new THREE.Texture(),bumpMap:new THREE.Texture(),roughnessMap:new THREE.Texture()};
+ const plaster={map:new THREE.Texture(),bumpMap:new THREE.Texture(),roughnessMap:new THREE.Texture()};
+ const materials={};Object.defineProperty(materials,'architecturalSurfaceLibrary',{value:{getMaps:kind=>({timber,plaster})[kind]}});
+ const built=buildKeihanFrontages(new THREE.Group(),features,surfaces,materials);
+ const wood=built.group.children.find(mesh=>mesh.material.map===timber.map);
+ const wall=built.group.children.find(mesh=>mesh.material.bumpMap===plaster.bumpMap);
+ assert.ok(wood&&wall,'shared library can be non-enumerable');
+ assert.equal(wood.material.bumpMap,timber.bumpMap);assert.equal(wood.material.roughnessMap,timber.roughnessMap);
+ assert.equal(wall.material.roughnessMap,plaster.roughnessMap);assert.equal(built.drawBatches,10);
+ const p=wood.geometry.attributes.position,uv=wood.geometry.attributes.uv;let metric=false;
+ for(let i=0;i<p.count;i+=3)for(let a=0;a<3;a++)for(let b=a+1;b<3;b++){
+  const j=i+a,k=i+b,dy=p.getY(j)-p.getY(k);
+  if(Math.abs(dy)>.2&&Math.abs(p.getX(j)-p.getX(k))<1e-4&&Math.abs(p.getZ(j)-p.getZ(k))<1e-4&&Math.abs(Math.abs(uv.getY(j)-uv.getY(k))-Math.abs(dy))<1e-3)metric=true;
+ }
+ assert.ok(metric,'vertical timber uses one UV unit per metre');
+});
+
+
+test('Hogyokudo wooden recess is on the photographed right-hand side',()=>{
+ const root=new THREE.Group(),built=buildKeihanFrontages(root,features,surfaces),s=built.storefronts.find(s=>s.kind==='senbei');root.updateMatrixWorld(true);
+ const point=(u,v)=>{const [x,z]=at(s,u,v);return new THREE.Vector3(x,s.floor+1.85,z);};
+ const camera=new THREE.PerspectiveCamera(55,1,.1,100);camera.position.copy(point(s.width/2,5));camera.lookAt(point(s.width/2,0));camera.updateMatrixWorld(true);
+ assert.ok(point(s.width*.20,0).project(camera).x>0,'low u is screen-right from the public street');
+ const hit=u=>new THREE.Raycaster(point(s.width*u,-1.30),new THREE.Vector3(-s.n[0],0,-s.n[1]),0,.3).intersectObject(root,true)[0];
+ assert.equal(hit(.20)?.object.material.color.getHexString(),'70503a','the right-hand half has the wooden panel');
+ assert.equal(hit(.80)?.object.material.color.getHexString(),'272e2b','the left-hand recess remains dark');
 });

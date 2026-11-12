@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createMappedBuildingFinishes} from './mapped-building-finishes.mjs';
+import {createArchitecturalSurfaceLibrary} from './architectural-surface-library.mjs';
 const building=(id,x=0,tags={})=>({id,tags:{building:'yes',...tags},points:[[x,0,0],[x+6,0,0],[x+6,0,4],[x,0,4],[x,0,0]]});
 const options=buildings=>({buildings,segments:[{a:[-10,0,-2],b:[100,0,-2],kind:'stone',stair:false}],ground:(x,z)=>x*.1+z*.2,focusPoints:[[0,0]],focusRadius:80});
 test('near anonymous context preserves exact source triangles and inferred height while walls receive finite metric UVs',()=>{
@@ -48,13 +49,53 @@ test('no nearby candidates allocate no geometry or GPU texture owners',()=>{
  assert.equal(result.detailedIds.size,0);assert.equal(result.stats.materials,0);assert.equal(result.stats.textures,0);assert.equal(result.stats.batches,0);result.dispose();
 });
 
-test('unreferenced context stays opaque with restrained plaster panels and subtle roof seams',()=>{
+test('mapped buildings borrow shared materials without disposing resources used elsewhere',()=>{
+ const surfaces=createArchitecturalSurfaceLibrary(),wood=surfaces.get('timber');
+ const result=createMappedBuildingFinishes({...options([building('wood',0,{'building:material':'wood'})]),surfaceLibrary:surfaces});
+ let wall;result.group.traverse(mesh=>{if(mesh.isMesh&&mesh.material===wood)wall=mesh;});
+ assert.ok(wall,'the facade uses the library material');
+ const uv=wall.geometry.attributes.uv;
+ assert.equal(Math.max(...Array.from(uv.array).filter((_,i)=>i%2===0)),6,'six metre wall spans six one-metre tiles');
+ let disposed=0;wood.map.addEventListener('dispose',()=>disposed++);
+ result.dispose();assert.equal(disposed,0);assert.strictEqual(surfaces.get('timber'),wood);
+ surfaces.dispose();assert.equal(disposed,1);
+});
+
+test('referenced cafe opens only its facing wall above the supported grade',()=>{
+ const cafe=building('way/626313740'),shrine={id:'way/626313736',tags:{building:'shrine'},points:[[-1,0,-3],[7,0,-3],[7,0,-2],[-1,0,-2],[-1,0,-3]]};
+ const result=createMappedBuildingFinishes({...options([cafe,shrine]),ground:x=>x*.1});
+ const record=result.stats.records[0],frontFloor=record.upperCafe.frontFloor;
+ assert.equal(record.upperCafe.edge,0);assert.ok(frontFloor>record.base);
+ const wallTriangles=[];
+ result.group.traverse(mesh=>{if(!mesh.isMesh||mesh.material.name!=='Mapped context plaster')return;
+  const p=mesh.geometry.attributes.position;
+  for(let i=0;i<p.count;i+=3)wallTriangles.push(Array.from({length:3},(_,j)=>[p.getX(i+j),p.getY(i+j),p.getZ(i+j)]));
+ });
+ const near=(a,b)=>Math.abs(a-b)<1e-5;
+ const front=wallTriangles.filter(tri=>tri.every(p=>near(p[2],0)));
+ assert.equal(front.length,2,'only the foundation remains in the original facing plane');
+ assert.ok(front.flat().every(p=>p[1]<=frontFloor+1e-5));
+ assert.equal(wallTriangles.filter(tri=>tri.every(p=>near(p[2],4))&&tri.some(p=>near(p[1],record.roof))).length,2,'opposite wall remains closed');
+ result.dispose();
+});
+
+test('referenced shell stays closed when its frontage cannot be built',()=>{
+ const cafe=building('way/626313740',0,{height:'1'}),shrine={id:'way/626313736',tags:{building:'shrine'},points:[[-1,0,-3],[7,0,-3],[7,0,-2],[-1,0,-2],[-1,0,-3]]};
+ const result=createMappedBuildingFinishes({...options([cafe,shrine]),ground:()=>0});
+ assert.equal(result.stats.records[0].inferredFacade,false);
+ let facing=0;result.group.traverse(mesh=>{if(!mesh.isMesh||mesh.material.name!=='Mapped context plaster')return;
+  const p=mesh.geometry.attributes.position;for(let i=0;i<p.count;i+=3)if([0,1,2].every(j=>p.getZ(i+j)===0))facing++;
+ });
+ assert.equal(facing,2,'no uncovered opening is left in a low envelope');result.dispose();
+});
+
+test('unreferenced context stays opaque with unshadowed plaster and subtle roof seams',()=>{
  const result=createMappedBuildingFinishes(options([building('finish')]));
  const materials=new Map();result.group.traverse(o=>{if(o.isMesh)materials.set(o.material.name,o.material);});
  const wall=materials.get('Mapped context plaster'),roof=materials.get('Mapped context roof');
  const pixel=(m,u,v)=>{const i=(Math.floor(v*256)*256+Math.floor(u*256))*4;return Array.from(m.map.image.data.slice(i,i+3));};
  const mean=(m,x0,x1,y)=>{let sum=0;for(let x=x0;x<x1;x++)sum+=pixel(m,x/256,y/256)[0];return sum/(x1-x0);};
- assert.ok(mean(wall,12,55,60)-mean(wall,12,55,8)>4,'plinth wear stays visible across broad surfaces');
+ assert.ok(Math.abs(mean(wall,0,256,4)-mean(wall,0,256,252))<4,'no repeated painted plinth or shadow');
  assert.equal(result.stats.records[0].windowFaces,0);assert.equal(result.stats.records[0].opaqueOnly,true);
  const packed=wall.roughnessMap.image.data;for(let i=0;i<packed.length;i+=4)assert.ok(packed[i+1]>200,'no low-roughness invented glass panes');
  assert.ok(pixel(wall,.4,.5)[0]>160,'former window area remains opaque plaster');

@@ -123,3 +123,48 @@ test('existing rear-lot owners receive only anonymous low window bands on their 
  const other=buildKeihanStreetContext(owned,features,surfaces);assert.deepEqual(other.parkingRearFinish.ids,[],'another owner is not duplicated or modified');
  assert.equal(built.drawBatches,6);assert.ok(built.triangles<32000);
 });
+
+test('context cloth canopies slope toward the street without reducing head clearance',()=>{
+ const {root,built}=fixture();
+ const cloth=built.group.children.find(o=>o.material.vertexColors&&o.material.roughness===.97);
+ assert.ok(cloth);
+ for(const id of ['way/305213535','way/305213543','way/305214380']){
+  const s=built.records.find(r=>r.id===id),face=s.frontages.find(f=>f.distance>1.4&&f.distance<8);
+  const a=s.points[face.edge],b=s.points[(face.edge+1)%s.points.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz),t=[dx/length,dz/length],mid=[(a[0]+b[0])/2,(a[2]+b[2])/2];
+  let n=[t[1],-t[0]];if((face.road.x-mid[0])*n[0]+(face.road.z-mid[1])*n[1]<0)n=n.map(v=>-v);
+  const height=v=>{
+   const ray=new THREE.Raycaster(new THREE.Vector3(mid[0]+n[0]*v,s.floor+3.2,mid[1]+n[1]*v),new THREE.Vector3(0,-1,0),0,1);
+   const hit=ray.intersectObject(cloth)[0];assert.ok(hit,`${id} canopy at ${v}`);return hit.point.y-s.floor;
+  };
+  const back=height(.08),front=height(.48);
+  assert.ok(back-front>.10,`${id} drops toward the street`);assert.ok(front>2.6);
+ }
+});
+
+test('street-facing fronts have a grounded base beneath their display panels',()=>{
+ const {root,built}=fixture();
+ for(const id of ['way/305213535','way/305213543']){
+  const s=built.records.find(r=>r.id===id),face=s.frontages.find(f=>f.distance>1.4&&f.distance<8);
+  const a=s.points[face.edge],b=s.points[(face.edge+1)%s.points.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz),t=[dx/length,dz/length],mid=[(a[0]+b[0])/2,(a[2]+b[2])/2];
+  let n=[t[1],-t[0]];if((face.road.x-mid[0])*n[0]+(face.road.z-mid[1])*n[1]<0)n=n.map(v=>-v);
+  const ray=new THREE.Raycaster(new THREE.Vector3(mid[0]+n[0]*.35,s.floor+.06,mid[1]+n[1]*.35),new THREE.Vector3(-n[0],0,-n[1]),0,.5);
+  const hit=ray.intersectObject(root,true)[0];assert.ok(hit);assert.equal(hit.object.material.color.getHexString(),'555d5b');
+ }
+});
+
+test('context finishes consume non-enumerable shared surfaces without adding material batches',()=>{
+ const timber={map:new THREE.Texture(),bumpMap:new THREE.Texture(),roughnessMap:new THREE.Texture()};
+ const plaster={map:new THREE.Texture(),bumpMap:new THREE.Texture(),roughnessMap:new THREE.Texture()};
+ const materials={};Object.defineProperty(materials,'architecturalSurfaceLibrary',{value:{getMaps:kind=>({timber,plaster})[kind]}});
+ const built=buildKeihanStreetContext(new THREE.Group(),features,surfaces,materials);
+ const wood=built.group.children.find(o=>o.material.map===timber.map);
+ const wall=built.group.children.find(o=>o.material.bumpMap===plaster.bumpMap);
+ assert.ok(wood&&wall);assert.equal(wood.material.bumpMap,timber.bumpMap);assert.equal(wall.material.roughnessMap,plaster.roughnessMap);
+ assert.equal(built.drawBatches,6);assert.ok(built.triangles<32000);
+ const p=wood.geometry.attributes.position,uv=wood.geometry.attributes.uv;let metric=false;
+ for(let i=0;i<p.count;i+=3)for(let a=0;a<3;a++)for(let b=a+1;b<3;b++){
+  const j=i+a,k=i+b,dy=p.getY(j)-p.getY(k);
+  if(Math.abs(dy)>.2&&Math.abs(p.getX(j)-p.getX(k))<1e-4&&Math.abs(p.getZ(j)-p.getZ(k))<1e-4&&Math.abs(Math.abs(uv.getY(j)-uv.getY(k))-Math.abs(dy))<1e-3)metric=true;
+ }
+ assert.ok(metric,'vertical timber uses one UV unit per metre');
+});

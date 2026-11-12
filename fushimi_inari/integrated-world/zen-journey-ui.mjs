@@ -1,4 +1,5 @@
 import {ZEN_INTENTIONS,ZEN_PHOTO_PROMPTS,ZEN_SKETCHES} from './zen-journey-state.mjs';
+import {ZEN_QUIET_WALKS} from './quiet-walks.mjs';
 import {ZEN_SKETCH_ART as SKETCH_INK} from './zen-sketch-art.mjs';
 
 const AKI=[
@@ -44,7 +45,7 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
  if(title)title.textContent='Journal';if(eyebrow)eyebrow.hidden=true;
  seals.append(...original.filter(e=>e!==top));
  const visit=element('section','zen-visit');visit.id='zen-visit';
- const style=element('link');style.rel='stylesheet';style.href=new URL('./zen-journey.css?v=zen-craft-1',import.meta.url).href;document.head.append(style);
+ const style=element('link');style.rel='stylesheet';style.href=new URL('./zen-journey.css?v=living-nov05-1',import.meta.url).href;document.head.append(style);
  let disposed=false,selectedPhotoId,photos=[],photoSignature='',request=0,last=-Infinity,wasOpen=false,current='story';
  const status=element('p','zen-status');status.hidden=true;status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  function announce(text){status.hidden=false;status.textContent=text;}
@@ -75,8 +76,12 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
   if(id==='photos'||id==='ending')refreshPhotos();
   loadVisibleSketches();
  }
- const storyCopy=element('p','zen-story-copy');
- const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(storyCopy,returnButton);
+ const walks=element('details','zen-walks'),walkSummary=element('summary','','Quiet walks'),walkChoices=element('div','zen-walk-choices');
+ walkChoices.setAttribute('role','group');walkChoices.setAttribute('aria-label','Quiet walk invitations');
+ const walkButtons=new Map();for(const {id,title}of ZEN_QUIET_WALKS){const choice=button(title,()=>journey.setActiveWalk(id));walkChoices.append(choice);walkButtons.set(id,choice);}
+ const noWalk=button('No invitation',()=>journey.setActiveWalk('none'));walkChoices.append(noWalk);walks.append(walkSummary,walkChoices);
+ const storyCopy=element('p','zen-story-copy');storyCopy.setAttribute('aria-live','polite');
+ const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(walks,storyCopy,returnButton);
  const photoGrid=element('div','zen-photo-grid'),albumStatus=element('p','zen-fine'),photoIdeas=element('details','zen-photo-ideas');photoIdeas.append(element('summary','','Photo ideas'));
  const promptNodes=new Map();for(const prompt of ZEN_PHOTO_PROMPTS){const card=element('div','zen-prompt'),{label,hint}=prompt,heading=element('span','',label),action=button('Photo',()=>{book.close();onPhoto(prompt.id);});action.setAttribute('aria-label',`Photograph ${label}`);card.append(heading,element('small','',hint),action);photoIdeas.append(card);promptNodes.set(prompt.id,{heading,label});}
  panes.photos.append(button('Take photo',()=>{book.close();onPhoto(null);},'zen-primary'),albumStatus,photoGrid,photoIdeas);
@@ -97,7 +102,10 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
  const saveState=element('p','zen-fine zen-save-state');visit.append(saveState);
  function render(){
   if(disposed)return;const state=journey.snapshot();tabs.at(-1).tab.hidden=!state.visit.finishedAt;
-  for(const input of intentionInputs)input.checked=input.value===state.intention;weather.value=state.weather;storyCopy.textContent=AKI[state.story.stage];
+  for(const input of intentionInputs)input.checked=input.value===state.intention;weather.value=state.weather;
+  const active=state.walks.find(walk=>walk.id===state.activeWalk);walkSummary.textContent=active?`Quiet walks · ${active.title}`:'Quiet walks';
+  storyCopy.textContent=active?(active.next??active.finished):AKI[state.story.stage];noWalk.setAttribute('aria-pressed',String(!active));
+  for(const walk of state.walks){const choice=walkButtons.get(walk.id);choice.textContent=`${walk.title}${walk.complete?' ✓':''}`;choice.setAttribute('aria-pressed',String(walk.id===state.activeWalk));choice.setAttribute('aria-label',walk.complete?`${walk.title}, completed`:walk.title);}
   for(const prompt of ZEN_PHOTO_PROMPTS){const node=promptNodes.get(prompt.id);node.heading.textContent=`${state.photoPrompts?.[prompt.id]?'✓ ':''}${node.label}`;}
   for(const sketch of ZEN_SKETCHES){const node=sketchNodes.get(sketch.id),found=!!state.sketches[sketch.id];node.drawing.hidden=!found;node.note.hidden=found;node.action.disabled=found;node.action.textContent=found?'Saved':'Sketch';}
   loadVisibleSketches();

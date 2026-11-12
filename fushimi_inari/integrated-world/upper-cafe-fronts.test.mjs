@@ -12,7 +12,7 @@ test('upper cafe details attach only to mapped source edges and fail closed with
   const options={building,buildings:features.buildings,ring,base:200,roof:206,append:(kind,p)=>triangles.push({kind,p})};
   const result=appendUpperCafeFront(options);assert.equal(result.id,id);assert.equal(result.kind,kind);assert.equal(result.shrine,shrine);
   assert.ok(triangles.length>100);const a=ring[result.edge],b=ring[(result.edge+1)%ring.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);
-  for(const {p} of triangles){const along=((p[0]-a[0])*dx+(p[2]-a[2])*dz)/length,offset=Math.abs((p[0]-a[0])*dz-(p[2]-a[2])*dx)/length;assert.ok(along>=-.001&&along<=length+.001);assert.ok(offset<.05);assert.ok(p[1]>=200&&p[1]<203);}
+  for(const {p} of triangles){const along=((p[0]-a[0])*dx+(p[2]-a[2])*dz)/length,offset=Math.abs((p[0]-a[0])*dz-(p[2]-a[2])*dx)/length;assert.ok(along>=-.001&&along<=length+.001);assert.ok(offset<=(kind==='tsujitei'?1.061:.301));assert.ok(p[1]>=200&&p[1]<=206);}
   assert.equal(appendUpperCafeFront({...options,buildings:[building]}),null);
  }
 });
@@ -69,7 +69,50 @@ test('Tsujitei has narrow cloth panels with per-panel UVs and observed vertical 
   const cafe=byId('way/626313740'),shrine=byId('way/626313736'),parts=[];
   const detail=appendUpperCafeFront({building:cafe,buildings:[cafe,shrine],ring:cafe.points.slice(0,-1),base:200,roof:204,append:(kind,p,uv)=>{if(kind==='cloth')parts.push({p,uv});}});
   assert.equal(parts.length,Math.ceil(detail.facadeWidth)*6);assert.ok(parts.every(v=>v.uv.every(c=>c>=0&&c<=1)));
+  const labeled=Array.from({length:parts.length/6},(_,i)=>parts.slice(i*6,i*6+6)).filter(panel=>panel.some(v=>v.uv[0]!==0||v.uv[1]!==0));assert.equal(labeled.length,1,'one panel carries the name');
+  const edge=cafe.points[detail.edge],next=cafe.points[detail.edge+1],v=parts.slice(Math.floor(Math.ceil(detail.facadeWidth)/2)*6,Math.floor(Math.ceil(detail.facadeWidth)/2)*6+3);
+  const dx=next[0]-edge[0],dz=next[2]-edge[2],cx=shrine.points.reduce((n,p)=>n+p[0],0)/shrine.points.length,cz=shrine.points.reduce((n,p)=>n+p[2],0)/shrine.points.length;
+  const backFacing=(-dz*(cx-edge[0])+dx*(cz-edge[2]))<0;
+  assert.equal(v[0].uv[0],backFacing?1:0);assert.equal(v[1].uv[0],backFacing?0:1);
   const result=createMappedBuildingFinishes({buildings:[cafe,shrine],segments:[{a:cafe.points[0],b:cafe.points[1]}],ground:()=>200});
   assert.deepEqual(texts,['辻','亭']);assert.ok(result.stats.textureBytes>0);result.dispose();
  }finally{if(old===undefined)delete globalThis.document;else globalThis.document=old;}
+});
+
+
+test('photographed fronts have sheltered, bounded joinery and projecting eaves',()=>{
+ for(const [id,shrine,kind] of cases){
+  const building=byId(id),ring=building.points.slice(0,-1),parts=[];
+  const detail=appendUpperCafeFront({building,buildings:[building,byId(shrine)],ring,base:200,roof:203.1,append:(material,p)=>parts.push({material,p})});
+  const a=ring[detail.edge],b=ring[(detail.edge+1)%ring.length],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
+  const depths=parts.map(({p})=>Math.abs((p[0]-a[0])*(b[2]-a[2])-(p[2]-a[2])*(b[0]-a[0]))/length);
+  assert.ok(Math.max(...depths)>(kind==='tsujitei'?1.05:.29));
+  assert.ok(depths.some(d=>Math.abs(d-(kind==='tsujitei'?1.06:.16))<.001));
+  assert.ok(parts.some(({material})=>material==='timber'));
+  assert.ok(parts.some(({material})=>material===(kind==='tsujitei'?'cloth':'brick')));
+  assert.ok(parts.every(({p})=>p[1]<=203.1));
+ }
+});
+
+
+test('upper cafe eave uses the roof surface three metre tile scale',()=>{
+ for(const [id,shrine] of cases){
+  const building=byId(id),vertices=[];
+  appendUpperCafeFront({building,buildings:[building,byId(shrine)],ring:building.points.slice(0,-1),base:200,roof:204,append:(kind,p,uv)=>{if(kind==='roof')vertices.push({p,uv});}});
+  const [a,b,c]=vertices;
+  const distance=(p,q)=>Math.hypot(...p.map((v,i)=>v-q[i]));
+  assert.ok(Math.abs(b.uv[0]-distance(a.p,b.p)/3)<1e-6);
+  assert.ok(Math.abs(c.uv[1]-distance(b.p,c.p)/3)<1e-6);
+ }
+});
+
+
+test('Tsujitei frontage clears the existing torii bases by staying recessed',()=>{
+ const building=byId('way/626313740'),shrine=byId('way/626313736'),ring=building.points.slice(0,-1),points=[];
+ const detail=appendUpperCafeFront({building,buildings:[building,shrine],ring,base:200,roof:204,append:(kind,p)=>points.push(p)});
+ const a=ring[detail.edge],b=ring[(detail.edge+1)%ring.length],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);
+ const center=ring.reduce((v,p)=>[v[0]+p[0]/ring.length,v[1]+p[2]/ring.length],[0,0]);
+ let nx=-dz/length,nz=dx/length;if(nx*(center[0]-(a[0]+b[0])/2)+nz*(center[1]-(a[2]+b[2])/2)>0){nx=-nx;nz=-nz;}
+ for(const p of points)assert.ok((p[0]-a[0])*nx+(p[2]-a[2])*nz<=-.599,'frontage remains behind the clearance plane');
+ assert.equal(detail.setback,.9);
 });

@@ -77,7 +77,13 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
   records.push({id:b.id,points,center:[cx,cz],floor,height,heightSource:Number.isFinite(explicit)&&explicit>0?'OSM height':Number.isFinite(levels)&&levels>0?'OSM storeys at estimated 3m':'inferred two-storey 6m envelope',frontage:frontages[0]??null,frontages});
  }
  if(!records.length)return {built:false,builtIds:[],reason:'No eligible mapped street footprints'};
- const {palette}=createKeihanContextMaterials();
+ const {palette}=createKeihanContextMaterials(),surfaceLibrary=materials?.architecturalSurfaceLibrary;
+ if(surfaceLibrary?.getMaps){
+  const timber=surfaceLibrary.getMaps('timber'),plaster=surfaceLibrary.getMaps('plaster'),oldPlaster=palette.plaster.bumpMap;
+  Object.assign(palette.timber,timber);palette.timber.color.set('#beb3a6');palette.timber.bumpScale=.002;
+  palette.plaster.bumpMap=plaster.bumpMap;palette.plaster.roughnessMap=plaster.roughnessMap;palette.plaster.bumpScale=.0007;
+  oldPlaster.dispose();
+ }
  const batches=new Map(),pending=[],group=new THREE.Group();group.name=name;
  const existingEntrance=root.getObjectByName('Mapped entrance neighborhood context'),finishRecords=[];
  for(const spec of entranceLayout.records){
@@ -89,7 +95,12 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
  }
  function part(g,mat,tint='#ffffff'){
   const geo=g.index?g.toNonIndexed():g;if(geo!==g)g.dispose();
-  if(mat===palette.plaster||mat===palette.shutter)applyMetricUVs(geo);
+  if(mat===palette.plaster||mat===palette.shutter||(surfaceLibrary?.getMaps&&mat===palette.timber)){
+   applyMetricUVs(geo);
+   if(surfaceLibrary?.getMaps&&(mat===palette.plaster||mat===palette.timber)){
+    const uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*1.5,uv.getY(i)*1.5);
+   }
+  }
   if(mat.vertexColors){const c=new THREE.Color(tint),colors=new Float32Array(geo.attributes.position.count*3);for(let i=0;i<colors.length;i+=3){colors[i]=c.r;colors[i+1]=c.g;colors[i+2]=c.b;}geo.setAttribute('color',new THREE.BufferAttribute(colors,3));}
   if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(geo);
  }
@@ -150,10 +161,18 @@ export function buildKeihanStreetContext(root,features,surfaces,materials={},col
     for(const y of [upper-.56,upper+.56])fb(w*.88,.055,.055,u,y,.10,palette.timber);
    }
   }
+  // Grounded dark skirting and a sloped canopy add depth without moving the
+  // wall, inventing an entrance, or extending the existing street envelope.
+  panel(length,.13,length/2,.065,.135,palette.roof);
   fb(length,.12,.42,length/2,2.61,.17,palette.roof);
   if(frontage.distance>1.4&&frontage.distance<8){
    const depth=Math.min(.58,frontage.distance-.85),color=index%3===0?'#8c5141':index%2?'#526f63':'#b7a58a';
-   fb(length,.06,depth,length/2,2.74,depth/2,palette.cloth,color);fb(length,.16,.035,length/2,2.66,depth,palette.cloth,color);
+   const canopy=new THREE.BoxGeometry(length,.04,depth),p=canopy.attributes.position;
+   const outward=Math.sign(n[0]*Math.sin(yaw)+n[1]*Math.cos(yaw));
+   for(let i=0;i<p.count;i++)p.setY(i,p.getY(i)+2.90-.18*(outward*p.getZ(i)+depth/2)/depth);
+   canopy.computeVertexNormals();
+   part(canopy.rotateY(yaw).translate(a[0]+t[0]*length/2+n[0]*depth/2,floor,a[2]+t[1]*length/2+n[1]*depth/2),palette.cloth,color);
+   fb(length,.10,.035,length/2,2.67,depth,palette.cloth,color);
   }
   if(frontage.road.id==='way/79699850'){
    // Wall-bound service fittings remain behind the public walking envelope.

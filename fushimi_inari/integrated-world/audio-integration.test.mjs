@@ -80,3 +80,17 @@ test('enabling audio while already hidden cannot wake music or resume the shared
   f.doc.hidden=false;f.listeners.get('visibilitychange')();f.walk(23);await f.runIdle();f.walk(.2);await flush();assert.equal(f.media[0].plays,1);
  }finally{await f.cleanup();}
 });
+
+test('commerce interactions use the shared context and pause with overlays rather than zen movement',async()=>{
+ const f=fixture();try{
+  f.audio.setEnabled(true);f.world.paused=true;f.world.commercePaused=false;f.world.commerce=[{kind:'vending',position:[0,60,1]}];
+  f.audio.update(f.camera,false,f.world);for(let i=0;i<8;i++)await f.runIdle();
+  assert.equal(typeof f.audio.commerce,'function');assert.equal(f.contexts.length,1);
+  assert.equal(f.audio.commerce({type:'vending.select',position:[0,60,1]}),true);
+  f.contexts[0].currentTime=2;f.audio.update(f.camera,false,f.world);assert.equal(JSON.parse(f.doc.body.dataset.commerceAudio).plays['vending.select'],1);
+  f.doc.hidden=true;f.listeners.get('visibilitychange')();assert.equal(f.audio.commerce({type:'vending.dispense',position:[0,60,1]}),false);
+  f.doc.hidden=false;f.listeners.get('visibilitychange')();f.world.commercePaused=true;f.audio.update(f.camera,false,f.world);
+  assert.equal(f.audio.commerce({type:'vending.dispense',position:[0,60,1]}),false);
+  f.world.commercePaused=false;f.audio.update(f.camera,false,f.world);assert.equal(f.audio.commerce({type:'vending.dispense',position:[0,60,1]}),true);
+ }finally{await f.cleanup();}
+});

@@ -98,7 +98,7 @@ test('generated High listing, tier manifests and WebP files on disk stay in sync
  const manifest=tier=>JSON.parse(readFileSync(new URL(tier+'/manifest.json',textures),'utf8'));
  assert.deepEqual(manifest('high').map(i=>i.original).sort(),[...HIGH_TEXTURES].sort(),'texture-tiers.mjs matches the High manifest');
  assert.deepEqual([...HIGH_TEXTURES].sort(),originals.filter(rel=>png(rel)>512).sort(),'High exists exactly where the original exceeds 512 px');
- assert.deepEqual(manifest('balanced').map(i=>i.original).sort(),originals.sort(),'every original has a Balanced WebP');
+ assert.deepEqual(manifest('balanced').map(i=>i.original).filter(rel=>rel.endsWith('.png')).sort(),originals.sort(),'every PNG original has a Balanced WebP');
  for(const rel of originals)for(const mode of ['balanced','high']){const target=textureTierURL(new URL(rel,textures).href,mode);assert.ok(existsSync(new URL(target)),`${mode} ${rel} -> missing ${target}`);}
 });
 

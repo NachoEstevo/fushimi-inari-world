@@ -15,6 +15,8 @@ export function buildOsugiShrine(root,features,surfaces,materials,colliders){
   const group=new THREE.Group();group.name='Osugi mapped shrine';group.position.set(cx,floor,cz);group.rotation.y=yaw;
   group.userData.sourceFeature=id;root.add(group);
   const p=staticParts(group),m=stonePalette(materials),world=(x,z)=>[cx+Math.cos(yaw)*x+Math.sin(yaw)*z,cz-Math.sin(yaw)*x+Math.cos(yaw)*z];
+  const timberMaps=materials.architecturalSurfaceLibrary?.getMaps('timber');
+  if(timberMaps){Object.assign(m.wood,timberMaps);m.wood.color.set('#eee9df');m.wood.bumpScale=.002;m.wood.roughness=1;}
   const solid=(x,z,w,d,low,high)=>{const [wx,wz]=world(x,z);colliders.push({type:'box',args:[wx,wz,w/2,d/2,yaw,floor+low,floor+high,'osugi_shrine']});};
   // Keep the open front at the mapped path endpoint. No new walkable platform
   // projects into the trail; each footing extends down to the local terrain.
@@ -24,6 +26,10 @@ export function buildOsugiShrine(root,features,surfaces,materials,colliders){
     p.box(.19,2.48,.19,x,1.28,z,m.wood);solid(x,z,.35,.35,bottom,2.52);
   }
   for(const z of [-1.02,.98]){p.box(2.65,.20,.24,0,2.40,z,m.wood);p.box(2.40,.12,.18,0,.36,z===.98?-.97:z,m.wood);}
+  // Layered crossbeams and bracket blocks under the gable are visible from
+  // the endpoint, without adding a wall across the offering approach.
+  for(const x of [-1.1,1.1]){p.box(.42,.16,.42,x,2.33,.92,m.wood);p.box(.30,.12,.32,x,2.18,.89,m.wood);}
+  for(const z of [-.65,0,.65])p.box(2.35,.11,.13,0,2.55,z,m.wood);
   for(const x of [-1.10,1.10])p.box(.18,.17,2.55,x,2.43,0,m.wood);
   for(const side of [-1,1]){
     p.sheet([0,3.20,-1.38,0,3.20,1.42,side*1.52,2.48,-1.38,side*1.52,2.48,-1.38,0,3.20,1.42,side*1.52,2.48,1.42],m.roof);
@@ -31,7 +37,7 @@ export function buildOsugiShrine(root,features,surfaces,materials,colliders){
     for(let z=-1.25;z<1.4;z+=.3)p.beam([0,3.14,z],[side*1.47,2.43,z],.035,m.wood);
     // Gathered cloth rises toward the middle, retaining a clear offering view.
     p.sheet([side*.04,2.23,1.02,side*1.04,2.23,1.02,side*1.04,1.35,1.02,side*.04,2.23,1.02,side*1.04,1.35,1.02,side*.04,1.91,1.02],m.paper);
-    for(let n=0;n<7;n++)p.beam([side*(.13+n*.13),2.23,1.045],[side*(.13+n*.13),1.91-n*.08,1.045],.008,m.straw);
+    for(let n=0;n<20;n++){const x=side*(.06+n*.05),end=1.70-.15*Math.sin(n*1.7);p.beam([x,2.23,1.045],[x+side*.015,end,1.045],.004,m.straw,.004,5);}
     shide(p,side*.82,2.24,1.10,.36,m.paper);
   }
   p.box(.14,.14,2.94,0,3.22,.02,m.roof);
@@ -49,6 +55,6 @@ export function buildOsugiShrine(root,features,surfaces,materials,colliders){
   p.box(.90,.30,.43,0,.20,.61,m.wood);
   for(let x=-.38;x<.4;x+=.10)p.box(.035,.025,.41,x,.365,.61,m.dark);
   solid(0,0,2.1,1.5,-.1,1.1);
-  const stats=p.flush();group.userData.photo='https://jinjafan.jp/img/shrine/kyoto/2601658/2601658_160.jpg';
+  const stats=p.flush();if(timberMaps)group.traverse(o=>{if(o.isMesh&&o.material===m.wood){const uv=o.geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*1.5,uv.getY(i)*1.5);}});group.userData.photo='https://jinjafan.jp/img/shrine/kyoto/2601658/2601658_160.jpg';
   return {built:true,id,entrance:[...entrance],center:[cx,floor,cz],stats,source:group.userData.photo,limits:'Mapped footprint and access; pavilion dimensions and details estimated from photograph. No invented trail or surveyed-height claim.'};
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildToriiInscriptions,toriiInkTile,toriiInkTiles,toriiInkAtlas,toriiInkUvBounds,toriiInkTileLayout,toriiInkPlacement} from './torii-inscriptions.mjs';
+import {buildToriiInscriptions,toriiInkTile,toriiInkTiles,toriiInkAtlas,toriiInkUvBounds,toriiInkTileLayout,toriiInkPlacement,initialToriiInscriptionProfile} from './torii-inscriptions.mjs';
 import {toriiInscriptionRecords} from './torii-inscription-records.mjs';
 
 const painted=[];
@@ -136,6 +136,61 @@ test('all gate records share one cached 8 MiB atlas and one material',()=>{
  const atlas=allMeshes[0].material.map.image;
  assert.equal(atlas.width,2048);assert.equal(atlas.height,1024);assert.equal(atlas.width*atlas.height*4,8*1024*1024);
  assert.ok(meshes(make()).length<=4);assert.ok(meshes(make({frontOnly:true})).length<=2);
- assert.equal(painted.filter(p=>p.text==='奉').length,8);assert.equal(painted.filter(p=>p.text==='納').length,8);
+ assert.ok(painted.filter(p=>p.text==='奉').length>=8);assert.ok(painted.filter(p=>p.text==='納').length>=8);
  assert.ok(new Set(painted.map(p=>p.font)).size>8);assert.ok(new Set(painted.map(p=>p.alpha)).size>4);
+});
+
+
+test('initial tunnel selects complete varied generic inscriptions without claiming donor identities',()=>{
+ const entries=Array.from({length:10},(_,i)=>({...initialToriiInscriptionProfile(i),m:new THREE.Matrix4().makeTranslation(i*.6,0,0)}));
+ assert.equal(new Set(entries.map(e=>e.recordIndex)).size,10);
+ const donors=new Set(),dates=new Set();
+ for(const entry of entries){
+  const source=toriiInscriptionRecords[entry.recordIndex],donor=toriiInkTiles[toriiInkTile(entry,-1,false)],date=toriiInkTiles[toriiInkTile(entry,1,false)];
+  assert.equal(source.donorLines.length,0);assert.equal(date,source.date);
+  assert.ok([...donor].length>=4);assert.ok([...date].length>=8);donors.add(donor);dates.add(date);
+  assert.equal(toriiInkTile({...entry,initial:false},-1,false),-1,'source date-only records remain unpaired outside initial tunnel');
+  assert.deepEqual(initialToriiInscriptionProfile(entries.indexOf(entry)),{recordIndex:entry.recordIndex,inkStyle:entry.inkStyle,initial:true});
+ }
+ assert.ok(donors.size>=4);assert.equal(dates.size,10);
+ const root=new THREE.Group();buildToriiInscriptions(root,entries,{...options,small:true});root.updateMatrixWorld(true);
+ assert.equal(triangles(root),entries.length*48);assert.equal(new Set(meshes(root).map(m=>m.material)).size,1);
+ for(const [i,entry] of entries.entries())for(const [side,front] of [[-1,false],[1,false],[-1,true],[1,true]]){
+  const z=front?-1:1,y=1.05;
+  const ray=new THREE.Raycaster(new THREE.Vector3(i*.6+side*options.halfSpan,y,z),new THREE.Vector3(0,0,-z),0,2);
+  // Entries are spaced below the gate width, so use a standalone transformed
+  // gate for unambiguous ray-to-tile and front/back orientation verification.
+  const single=make({small:true},entry),hit=ray.intersectObject(single,true)[0];
+  const bounds=toriiInkUvBounds(toriiInkTile(entry,side,front));
+  assert.ok(hit);assert.ok(hit.uv.x>=bounds.uMin&&hit.uv.x<=bounds.uMax&&hit.uv.y>=bounds.vMin&&hit.uv.y<=bounds.vMax);
+  assert.ok(hit.face.normal.z*z>0);
+ }
+});
+
+
+test('initial gates have full upright columns on both faces of both posts',()=>{
+ const texts=[new Set(),new Set()];
+ for(let i=0;i<10;i++){
+  const entry={...initialToriiInscriptionProfile(i),m:new THREE.Matrix4()},root=make({small:true},entry);
+  for(const side of [-1,1]){
+   const front=toriiInkTile(entry,side,true),back=toriiInkTile(entry,side,false);
+   assert.equal(front,back,'same fictional collective/date pairing from each face');
+   const layout=toriiInkTileLayout(front);assert.ok(layout.glyphs.length>=4);
+   texts[side===1?1:0].add(toriiInkTiles[front]);
+   for(const isFront of [true,false]){
+    const z=isFront?-1:1,bounds=toriiInkUvBounds(front),placement=toriiInkPlacement(entry,side,isFront,true);
+    const hit=y=>new THREE.Raycaster(new THREE.Vector3(side*options.halfSpan,y,z),new THREE.Vector3(0,0,-z),0,2).intersectObject(root,true)[0];
+    const low=hit(placement.low+(placement.high-placement.low)*.2),high=hit(placement.low+(placement.high-placement.low)*.8);
+    assert.ok(low&&high);assert.ok(high.uv.y>low.uv.y,'vertical characters proceed downwards when viewed');
+    assert.ok(high.uv.y<bounds.vMax&&low.uv.y>bounds.vMin);
+    assert.equal(Math.sign(high.face.normal.z),Math.sign(z));
+    // A screen-right step maps toward higher atlas U from either viewpoint.
+    const screenRightX=side*options.halfSpan+(isFront?-.02:.02);
+    const right=new THREE.Raycaster(new THREE.Vector3(screenRightX,(placement.low+placement.high)/2,z),new THREE.Vector3(0,0,-z),0,2).intersectObject(root,true)[0];
+    const middle=hit((placement.low+placement.high)/2);
+    assert.ok(right&&middle&&right.uv.x>middle.uv.x,'glyphs must not mirror on either face');
+   }
+  }
+ }
+ assert.ok(texts[0].size>=4&&texts[1].size>=8,'initial donor labels and dates vary by gate');
 });

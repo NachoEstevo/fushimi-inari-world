@@ -9,8 +9,16 @@ const frontTileStart=toriiInscriptionRecords.length*2;
 // The existing 8 MiB atlas accommodates 24 records without extra materials.
 export const toriiInkAtlas=Object.freeze({width:2048,height:1024,columns:16,rows:4,tileWidth:128,tileHeight:256});
 if(frontTileStart+16>toriiInkAtlas.columns*toriiInkAtlas.rows)throw new RangeError('Torii inscription atlas supports at most 24 records');
+// The vacant donor cells of date-only records hold explicitly generic group
+// labels for the inferred initial tunnel. They are not names of actual donors.
+const initialLabels=['奉納者一同','氏子有志','稲荷講中','参拝者一同','信者一同'];
+const initialRecords=toriiInscriptionRecords.flatMap((record,index)=>!record.donorLines.length&&record.date?[index]:[]);
+export function initialToriiInscriptionProfile(index){
+  const i=((index%initialRecords.length)+initialRecords.length)%initialRecords.length;
+  return {recordIndex:initialRecords[i],inkStyle:((index*7)%8+8)%8,initial:true};
+}
 export const toriiInkTiles=Object.freeze([
-  ...toriiInscriptionRecords.flatMap(record=>[record.donorLines.join('\n'),record.date??'']),
+  ...toriiInscriptionRecords.flatMap((record,index)=>[record.donorLines.join('\n')||initialLabels[initialRecords.indexOf(index)%initialLabels.length]||'',record.date??'']),
   ...Array.from({length:8},()=>['奉','納']).flat(),
 ]);
 const styles=[
@@ -30,10 +38,16 @@ function verticalGlyphs(text){return [...text.replaceAll('（有）','㈲').repl
 function recordIndex(entry){return modulo(Number.isInteger(entry.recordIndex)?entry.recordIndex:Number.isInteger(entry.inscription)?entry.inscription:0,toriiInscriptionRecords.length);}
 export function toriiInkTile(entry,side,front){
   const record=recordIndex(entry),column=side===1?1:0;
+  // Initial Senbon has complete columns on both visible faces. The same
+  // collective/date tiles serve both sides; no second atlas or overlay mesh.
+  if(front&&entry.initial)return record*2+column;
   if(front){const style=Number.isInteger(entry.inkStyle)?modulo(entry.inkStyle,styles.length):record%styles.length;return frontTileStart+style*2+column;}
   // A date is always taken from this same source record. Legacy independently
   // selected dateInscription values cannot create an invented donor/date pair.
-  const tile=record*2+column;
+  const tile=record*2+column,source=toriiInscriptionRecords[record];
+  // Date-only source records stay date-only in all established usages. The
+  // initial tunnel may use the synthetic collective label in the vacant cell.
+  if(!column&&!source.donorLines.length&&!entry.initial)return -1;
   return toriiInkTiles[tile]?tile:-1;
 }
 export function toriiInkUvBounds(tile){
@@ -69,9 +83,10 @@ export function toriiInkPlacement(entry,side,front,small){
   const e=entry.m?.elements,px=Math.round((e?.[12]??0)*10),pz=Math.round((e?.[14]??0)*10);
   let n=Math.imul(px^Math.imul(pz,31)^Math.imul(recordIndex(entry)+1,8191)^Math.imul((entry.inkStyle??0)+1,131)^side,1597334677);
   n=(n^(n>>>16))>>>0;
-  const size=.94+(n%13)*.01,shift=(((n>>>8)%9)-4)*(front?.007:.014);
-  const nominalLow=front?(small?1.42:1.97):(small?.63:.86);
-  const nominalHigh=front?nominalLow+(small?.30:.40):(small?1.55:2.12);
+  const shortFront=front&&!entry.initial;
+  const size=.94+(n%13)*.01,shift=(((n>>>8)%9)-4)*(shortFront?.007:.014);
+  const nominalLow=shortFront?(small?1.42:1.97):(small?.63:.86);
+  const nominalHigh=shortFront?nominalLow+(small?.30:.40):(small?1.55:2.12);
   const center=(nominalLow+nominalHigh)/2+shift,half=(nominalHigh-nominalLow)*size/2;
   return {low:center-half,high:center+half,size};
 }
@@ -103,7 +118,7 @@ export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRa
     if(tile<0)return;
     const {low,high,size}=toriiInkPlacement(entry,side,front,small);
     // A thicker post should not stretch the same painted character sideways.
-    const angle=(front?1.8:1.05)*size/Math.max(1,entry.thickness??1);
+    const angle=(front&&!entry.initial?1.8:1.05)*size/Math.max(1,entry.thickness??1);
     // A six-segment curved patch's chord must remain outside the post, too:
     // moving just its vertices 2mm out lets thicker posts occlude the ink.
     const radius=y=>((bottomRadius+(topRadius-bottomRadius)*(y-bottomY)/(topY-bottomY))*(entry.thickness??1))/Math.cos(angle/12)+.001;

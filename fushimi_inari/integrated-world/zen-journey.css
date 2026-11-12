@@ -12,6 +12,11 @@
 #journey-journal .zen-intentions input{width:14px;height:14px;min-width:0;margin:0;padding:0;accent-color:#993e33}
 .zen-weather{display:flex;align-items:center;gap:12px;font:12px/1.5 system-ui,sans-serif}
 .zen-weather select{font:inherit;padding:7px;border:1px solid #b4a68c;border-radius:4px;color:#363c31;background:#e9dfc9}
+.zen-walks{margin:0 0 16px;color:#64705a;font:12px/1.5 system-ui,sans-serif}
+.zen-walks summary{cursor:pointer;padding:7px 0}
+.zen-walk-choices{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px}
+#journey-journal .zen-walk-choices button{margin:0;padding:8px 10px;font-size:12px}
+#journey-journal .zen-walk-choices button[aria-pressed=true]{background:#dfd3b9;border-color:#9b7e59}
 .zen-story-copy{font:17px/1.6 Georgia,serif;color:#525b48;margin:0 0 22px;max-width:60ch}
 .zen-fine,.zen-status{font:12px/1.6 system-ui,sans-serif;color:#6f735e}
 .zen-status{margin:15px 0 0}

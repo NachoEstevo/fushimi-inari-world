@@ -19,3 +19,9 @@ test('Osugi restores the mapped dead-end destination with clear access and bound
  assert.equal(buildOsugiShrine(root,features,surfaces,{},colliders),null);
  assert.equal(root.children.length,1);
 });
+test('Osugi uses shared timber surfaces without changing their ownership',()=>{
+ const root=new THREE.Group(),texture=new THREE.Texture(),maps={map:texture,bumpMap:texture,roughnessMap:texture};
+ const result=buildOsugiShrine(root,features,{height:()=>155,terrainHeight:()=>154.7},{architecturalSurfaceLibrary:{getMaps:()=>maps}},[]);
+ let found=false;root.traverse(o=>{if(o.isMesh&&o.material.map===texture){found=true;assert.ok(o.geometry.attributes.uv);}});
+ assert.ok(result.built&&found);
+});
