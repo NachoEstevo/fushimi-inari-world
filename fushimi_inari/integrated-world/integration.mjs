@@ -140,7 +140,7 @@ import {makePathSurfaces} from './path-surfaces.mjs?v=68-near-precinct';
 import {buildSenbon} from './senbon.mjs?v=mountain-walk-2';
 import {buildMountainTorii} from './mountain-torii.mjs?v=mountain-walk-2';
 import {supportTerraces} from './terrace-foundations.mjs';
-import {buildYotsutsuji,teaHouses} from './yotsutsuji.mjs?v=repair-20261025b';
+import {buildYotsutsuji,teaHouses,shareYotsutsujiGateShadows} from './yotsutsuji.mjs?v=repair-20261025b';
 import {yotsuGrade} from './site-grading.mjs';
 import {partitionInstances,subdivideShadowInstanceLeaves,freezeStaticInstanceTransforms} from './spatial-mesh.mjs';
 import {collectInstancePrewarmEntries} from './instance-prewarm-entries.mjs';
@@ -981,6 +981,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   callbacks.progress?.('Finishing the landscape…');await yieldWork();
   await checkpoint('batchStaticScene');
   const staticBatches=batchStaticScene(root,retained,128,residencyRetained);
+  if(forestSubcells.size>0&&renderer.backend?.isWebGPUBackend)yotsutsuji.sharedGateShadows=shareYotsutsujiGateShadows(staticBatches.meshes,legacy.materials.blackNemakiMat);
   const forestChunks=[];root.updateMatrixWorld(true);
   // Only completed, immutable foliage/torii owners qualify. Animated visitors,
   // flames and railway objects retain automatic transforms.

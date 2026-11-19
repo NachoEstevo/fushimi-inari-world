@@ -64,7 +64,7 @@ export function summarizeWalkTrace(events,{pageMarkMs,walk,dataLossOccurred=fals
    intersectsWindow:intersects,fullyInsideWindow:from>=0&&to<=observedWindowMs,
    overlapping:intersects?slices.filter(e=>overlap(e)>0).sort((a,b)=>overlap(b)-overlap(a)).slice(0,15):[]};
  }
- return {markerMissing:false,startTimestampUs:start,windowMs:durationMs,observedWindowMs,dataLossOccurred,eventCount:events.length,
+ return {markerMissing:false,startTimestampUs:start,windowMs:durationMs,observedWindowMs,windowComplete:end>=start+durationMs*1000,dataLossOccurred,eventCount:events.length,
   endSyncTimestampUs:endMarker?.ts??null,lastActivityMs:ms(lastActivityUs-start),
   rendererMain:slices.filter(e=>e.lane==='rendererMain').slice(0,12),gpuProcess:slices.filter(e=>e.lane==='gpuProcess').slice(0,12),worstFrame};
 }
@@ -158,6 +158,7 @@ async function run(){
    }});
   console.log(JSON.stringify({label:summary.label,eventCount:summary.eventCount,bytes:summary.bytes,markerMissing:summary.markerMissing,distance:summary.walk.distanceWalked,worst:summary.walk.worst}));
   if(summary.markerMissing||!(summary.walk.distanceWalked>0))throw Error('Trace did not capture a marked, moving route');
+  if(!summary.windowComplete||summary.dataLossOccurred)throw Error('Incomplete trace window; inspect the saved diagnostic artifacts');
  }finally{await browser.close();}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)await run();

@@ -6,6 +6,25 @@ import {yotsutsujiRetainingPlan,buildYotsutsujiRetaining,retainingBuilding,retai
 import {buildYotsutsujiSupportsR95} from './yotsutsuji-support-r95.mjs?v=mountain-walk-1';
 import {yotsutsujiWestStairCutout,yotsutsujiCourtPieces} from './yotsutsuji-court-clearance.mjs';
 
+// Original and streamed albedos of these painted timbers are RGB. Their opaque
+// shadow silhouette is identical to the black sleeves drawn throughout the
+// mountain. Keep the original geometry and residency in both camera passes.
+export function shareYotsutsujiGateShadows(meshes,sleeve){
+  if(!sleeve||sleeve.map||sleeve.alphaMap||sleeve.displacementMap||sleeve.transparent)return 0;
+  let casters=0;
+  for(const owner of meshes){
+    const paint=owner.material;
+    if(!paint?.userData?.yotsutsujiGatePaint||!owner.castShadow||paint.transparent||paint.opacity!==1||
+      paint.alphaTest||paint.alphaMap||paint.displacementMap||paint.positionNode||paint.maskNode||
+      paint.castShadowNode||paint.castShadowPositionNode||paint.side!==sleeve.side||paint.shadowSide!==sleeve.shadowSide)continue;
+    const shadow=new THREE.Mesh(owner.geometry,sleeve);
+    shadow.name='Yotsutsuji gate silhouette';shadow.userData.shadowOnly=true;
+    shadow.castShadow=true;shadow.layers.set(1);shadow.matrixAutoUpdate=false;
+    owner.castShadow=false;owner.add(shadow);casters++;
+  }
+  return casters;
+}
+
 // Footprints are OSM; floor datums are tied to mapped approaches. Building
 // heights, windows and roofs are reference-informed estimates, not a survey.
 export const teaHouses=[
@@ -148,6 +167,7 @@ export function buildYotsutsuji(root,legacy,features,ground,colliders,surfaces){
   // Lateral ten-step approach and north branch are visible in panoramas.
   // Individual gate positions are inferred within these mapped ways.
   const finishes=toriiMaterials(legacy);
+  for(const material of [finishes.fresh,finishes.weathered])material.userData.yotsutsujiGatePaint=true;
   let gateCount=0;
   for(const id of ['way/1052553392','way/1052553395']){
     const path=features.paths.find(p=>p.id===id),sampler=pathSampler(path.points);

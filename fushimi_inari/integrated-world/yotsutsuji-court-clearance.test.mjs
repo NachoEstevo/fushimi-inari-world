@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {heightAt} from '../geography/geo-core.mjs';
 import {makePathSurfaces} from './path-surfaces.mjs';
 import {yotsuGrade,yotsuForecourt} from './site-grading.mjs';
-import {buildYotsutsuji} from './yotsutsuji.mjs';
+import {buildYotsutsuji,shareYotsutsujiGateShadows} from './yotsutsuji.mjs';
 import {yotsutsujiWestStairCutout,yotsutsujiCourtPieces,yotsutsujiCourtEdgeIntervals} from './yotsutsuji-court-clearance.mjs';
 import {polygonArea,clipConvex} from './entrance-area-surfaces-layout.mjs';
 const features=JSON.parse(readFileSync(new URL('../geography/features.json',import.meta.url))),terrain=JSON.parse(readFileSync(new URL('../geography/terrain.json',import.meta.url)));
@@ -38,4 +38,38 @@ test('only the registered west stair and its existing curb skin subtract from th
  assert.equal(yotsutsujiWestStairCutout({segments:network.segments.map(s=>s.id==='way/1052553397'?{...s,a:[s.a[0]+10,s.a[1],s.a[2]]}:s)}),null);
  assert.deepEqual(yotsutsujiCourtPieces(yotsuForecourt,null),[yotsuForecourt]);
  assert.deepEqual(yotsutsujiCourtEdgeIntervals([792,-220.7],[806,-220.7],mask),[[0,1]]);
+});
+
+test('only the two opaque lateral gate paints can reuse their sleeve depth silhouette',()=>{
+ const sleeve=new THREE.MeshStandardMaterial(),geometry=new THREE.BoxGeometry(1,2,3);
+ const colors=[new THREE.MeshPhysicalMaterial(),new THREE.MeshStandardMaterial(),new THREE.MeshStandardMaterial({alphaTest:.5})];
+ const owners=colors.map((paint,i)=>{
+  paint.userData.yotsutsujiGatePaint=true;
+  const mesh=new THREE.Mesh(geometry,paint);mesh.castShadow=true;mesh.position.set(i*2,i,3);return mesh;
+ });
+ const unmarked=new THREE.Mesh(geometry,sleeve);unmarked.castShadow=true;
+ assert.equal(shareYotsutsujiGateShadows([...owners,unmarked],sleeve),2);
+ const color=new THREE.PerspectiveCamera(),sun=new THREE.OrthographicCamera();sun.layers.enable(1);
+ for(const owner of owners.slice(0,2)){
+  owner.updateMatrixWorld(true);const [caster]=owner.children;
+  assert.equal(caster.geometry,geometry);assert.equal(caster.material,sleeve);assert.deepEqual(caster.matrixWorld.elements,owner.matrixWorld.elements);
+  assert.equal(color.layers.test(caster.layers),false);assert.equal(sun.layers.test(caster.layers),true);
+  assert.equal(owner.castShadow,false);assert.equal(caster.castShadow,true);
+ }
+ assert.equal(owners[2].children.length,0);assert.ok(owners[2].castShadow&&unmarked.castShadow);
+ assert.equal(shareYotsutsujiGateShadows(owners,sleeve),0);
+ geometry.dispose();for(const material of [...colors,sleeve])material.dispose();
+});
+
+test('Yotsutsuji paint albedos in the release tiers have opaque pixels',()=>{
+ const root=new URL('../assets/textures/',import.meta.url);
+ for(const rel of ['Torii_Kanji_Column/Torii_Kanji_Column_BaseColor','nanobanana/torii_weathered_kanji_color']){
+  const png=readFileSync(new URL(rel+'.png',root));
+  assert.equal(png[25],2,'true-color PNG');assert.equal(png.includes(Buffer.from('tRNS')),false,'no transparent color key');
+  for(const tier of ['balanced','high']){
+   const path=new URL(tier+'/'+rel+'.webp',root);let webp;
+   try{webp=readFileSync(path);}catch(error){if(error.code==='ENOENT'&&tier==='high')continue;throw error;}
+   assert.equal(webp.toString('ascii',8,16),'WEBPVP8 ','simple lossy WebP has no alpha payload');
+  }
+ }
 });
