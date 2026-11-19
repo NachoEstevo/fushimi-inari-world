@@ -16,6 +16,57 @@ def encode(p,out,edge,quality):
  im=Image.open(p)
  if edge:im.thumbnail((edge,edge),Image.Resampling.LANCZOS) # thumbnail never upscales
  out.parent.mkdir(parents=True,exist_ok=True);im.save(out,format='WEBP',lossless=is_data(p),quality=quality,method=6)
+# Copper is 484 square: both production tiers use the complete level-zero map.
+# This isolated bake writes candidate mip levels next to each other for review.
+def copper_mips(out):
+ from array import array
+ from math import sqrt
+ normal_path=textures/'nanobanana/roof_copper_patina_normal.png'
+ rough_path=textures/'nanobanana/roof_copper_patina_roughness.png'
+ with Image.open(normal_path) as source:normal=source.convert('RGB')
+ with Image.open(rough_path) as source:rough=source.convert('L')
+ if normal.size!=rough.size:raise ValueError('Copper normal and roughness must have matching dimensions')
+ # Material factors from the copper finish. GGX uses alpha = roughness squared.
+ roughness_scale=.44;normal_scale=1.1
+ def pixels(im):return im.get_flattened_data() if hasattr(im,'get_flattened_data') else im.getdata()
+ channels=[array('f') for _ in range(4)]
+ for (r,g,b),value in zip(pixels(normal),pixels(rough)):
+  x,y,z=(r/127.5-1)*normal_scale,(g/127.5-1)*normal_scale,b/127.5-1
+  length=sqrt(x*x+y*y+z*z)
+  if length<1e-8:x,y,z,length=0,0,1,1
+  for channel,component in zip(channels,(x/length,y/length,z/length,(value/255*roughness_scale)**4)):
+   channel.append(component)
+ fields=[Image.frombytes('F',normal.size,channel.tobytes()) for channel in channels]
+ width,height=normal.size;result=[]
+ out.mkdir(parents=True,exist_ok=True)
+ while width>1 or height>1:
+  width,height=max(1,width//2),max(1,height//2);size=(width,height)
+  # Every level sees all original normals. Re-filtering a previously normalized
+  # direction would discard the subpixel variance accumulated at finer levels.
+  means=[field.resize(size,Image.Resampling.BOX) for field in fields]
+  normals=bytearray();roughness=bytearray();variance_sum=0
+  for x,y,z,alpha_sq in zip(*(pixels(field) for field in means)):
+   length=min(1,sqrt(x*x+y*y+z*z))
+   # Estimate unresolved angular variance from the length of the mean direction.
+   variance=(1-length)/max(length,1e-6);variance_sum+=variance
+   roughness.append(round(255*min(1,(alpha_sq+variance)**.25/roughness_scale)))
+   # Undo the runtime normalScale before encoding the normalized direction.
+   x/=normal_scale;y/=normal_scale;length=sqrt(x*x+y*y+z*z)
+   if length<1e-8:x,y,z,length=0,0,1,1
+   normals.extend(round(127.5*(1+max(-1,min(1,component/length)))) for component in (x,y,z))
+  normal_file=out/f'normal-{width}x{height}.webp';rough_file=out/f'roughness-{width}x{height}.webp'
+  Image.frombytes('RGB',size,bytes(normals)).save(normal_file,lossless=True,method=6)
+  Image.frombytes('L',size,bytes(roughness)).save(rough_file,lossless=True,method=6)
+  result.append(dict(width=width,height=height,normalBytes=normal_file.stat().st_size,
+                     roughnessBytes=rough_file.stat().st_size,meanAngularVariance=variance_sum/(width*height),
+                     meanRoughness=sum(roughness)/len(roughness)/255*roughness_scale))
+ return result
+
+if sys.argv[1:2]==['copper-mips']:
+ if len(sys.argv)!=3:sys.exit('usage: prepare-web-assets.py copper-mips OUTPUT_DIRECTORY')
+ print(json.dumps(copper_mips(Path(sys.argv[2])),indent=2))
+ sys.exit()
+
 # A PNG and a WebP original with one stem would overwrite each other's tier file.
 outputs={}
 for p in sources():

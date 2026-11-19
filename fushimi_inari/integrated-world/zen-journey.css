@@ -18,6 +18,14 @@
 #journey-journal .zen-walk-choices button{margin:0;padding:8px 10px;font-size:12px}
 #journey-journal .zen-walk-choices button[aria-pressed=true]{background:#dfd3b9;border-color:#9b7e59}
 .zen-story-copy{font:17px/1.6 Georgia,serif;color:#525b48;margin:0 0 22px;max-width:60ch}
+.zen-field-places{margin:-12px 0 18px}
+.zen-story-copy[hidden]+.zen-field-places{margin-top:0}
+.zen-field-sheet{position:relative;width:fit-content;max-width:100%;padding:14px 29px 14px 16px;margin:0 0 20px;background:#e7d9bb;border:1px solid #b9aa8c;color:#424a38}
+.zen-field-sheet::after{content:'';position:absolute;top:-1px;right:-1px;width:17px;height:17px;background:linear-gradient(45deg,#c9ba99 0 49%,#b9aa8c 50% 54%,#eee5d1 55%)}
+.zen-field-sheet h3{margin:3px 0 10px;font:19px/1.4 Georgia,serif}
+.zen-field-sheet p,.zen-field-sheet dl{margin:0}
+.zen-field-sheet dt{font:12px/1.5 system-ui,sans-serif;margin:10px 0 2px}
+.zen-field-sheet dd{font:16px/1.5 Georgia,serif;margin:0}
 .zen-fine,.zen-status{font:12px/1.6 system-ui,sans-serif;color:#6f735e}
 .zen-status{margin:15px 0 0}
 #journey-journal .zen-primary{background:#993e33;color:#f5ecda;border-color:#993e33}

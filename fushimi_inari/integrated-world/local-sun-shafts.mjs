@@ -38,7 +38,7 @@ export function chooseShaftSites({routes=[],canopies=[],ground,maxSites=64}={}){
  return sites;
 }
 
-export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=false,depthTexture}={}){
+export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=false,depthTexture,groundOpening=true}={}){
  const cap=Math.min(8,Math.max(1,Math.floor(maxActive)||8));
  const ribbon=new THREE.PlaneGeometry(1,1),positions=ribbon.attributes.position;
  // A slight widening away from the canopy is less rigid than a flat rectangle.
@@ -47,7 +47,7 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  const crossed=ribbon.clone().rotateY(Math.PI/2),geometry=depthTexture?new THREE.CylinderGeometry(.5,.5,1,12,1,false):mergeGeometries([ribbon,crossed]);
  ribbon.dispose();crossed.dispose();geometry.computeBoundingSphere();
  const phases=new THREE.InstancedBufferAttribute(new Float32Array(cap),1);phases.setUsage(THREE.DynamicDrawUsage);geometry.setAttribute('shaftPhase',phases);
- const centerRadius=new THREE.InstancedBufferAttribute(new Float32Array(cap*4),4),lengthPhase=new THREE.InstancedBufferAttribute(new Float32Array(cap*2),2);
+ const centerRadius=new THREE.InstancedBufferAttribute(new Float32Array(cap*4),4),lengthPhase=new THREE.InstancedBufferAttribute(new Float32Array(cap*3),3);
  const volume=depthTexture?createShaftVolumeNodes({depthTexture,centerRadius,lengthPhase}):null;
  if(volume){geometry.setAttribute('shaftCenterRadius',centerRadius);geometry.setAttribute('shaftLengthPhase',lengthPhase);}
  const phase=varying(instancedBufferAttribute(phases)),time=volume?.time??uniform(0),sunAxis=volume?.axis??uniform(new THREE.Vector3());
@@ -82,8 +82,9 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
  const hit=new THREE.Vector3(),ray=new THREE.Ray(),expanded=new THREE.Box3();
  const entries=sites.slice(0,64).map(s=>{
   const seed=Math.sin(s.point[0]*.127+s.point[2]*.311+s.topY*.071)*43758.5453;
-  return {...s,phase:Math.fround((seed-Math.floor(seed))*Math.PI*2),matrix:new THREE.Matrix4(),end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false};
+  return {...s,verifiedCrown:!!s.source,phase:Math.fround((seed-Math.floor(seed))*Math.PI*2),matrix:new THREE.Matrix4(),end:new THREE.Vector3(...s.point),source:s.source?new THREE.Vector3(...s.source):new THREE.Vector3(s.point[0],s.topY,s.point[2]),center:new THREE.Vector3(),length:0,blocked:false};
  });
+ let pilot=null;
  const nearest=new Int16Array(cap),previousSites=new Int16Array(cap).fill(-1),slotVersions=new Int32Array(cap).fill(-1),distances=new Float64Array(cap);
  let mode='day',look='natural',quality='balanced',active=0,disposed=false,dirty=true,modeVersion=0,reducedMotion=false,lastSeconds=null,lastX,lastY,lastZ;
  function shade(){
@@ -107,6 +108,20 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
     expanded.copy(roof).expandByScalar(entry.width/2);
     if(expanded.containsPoint(entry.end)||(ray.intersectBox(expanded,hit)&&hit.distanceTo(entry.end)<=entry.length)){entry.blocked=true;break;}
    }
+   entry.groundOpening=false;
+  }
+  // The first verified daylight opening on the selected routes is the whole
+  // pilot. Keep its identity through changes of sun angle or camera position.
+  if(groundOpening&&volume&&mode==='day'&&!pilot){
+   pilot=entries.find(e=>e.verifiedCrown&&!e.blocked&&Math.abs(e.end.y-e.point[1])<.01);
+  }
+  if(pilot&&!pilot.blocked&&mode!=='night'&&Math.abs(pilot.end.y-pilot.point[1])<.01){
+   pilot.groundOpening=true;
+   // Cover steps and small grade changes below the analytical shaft cap.
+   // Its actual center and length still describe the original volume.
+   const extra=1.4,center=hit.copy(pilot.center).addScaledVector(axis,-extra/2);
+   scale.set(pilot.width,pilot.length+extra,pilot.width);
+   pilot.matrix.makeBasis(right,axis,normal).scale(scale).setPosition(center);
   }
  }
  setMode(mode);
@@ -133,14 +148,14 @@ export function createLocalSunShafts({scene,sites=[],roofs=[],maxActive=8,audit=
   let phaseChanged=false,matrixChanged=false;
   for(const index of nearest){
    if(index<0)break;const entry=entries[index];
-   if(slotVersions[active]!==modeVersion||previousSites[active]!==index){mesh.setMatrixAt(active,entry.matrix);previousSites[active]=index;slotVersions[active]=modeVersion;matrixChanged=true;if(volume){centerRadius.setXYZW(active,entry.center.x,entry.center.y,entry.center.z,entry.width/2);lengthPhase.setXY(active,entry.length/2,entry.phase);}}
+   if(slotVersions[active]!==modeVersion||previousSites[active]!==index){mesh.setMatrixAt(active,entry.matrix);previousSites[active]=index;slotVersions[active]=modeVersion;matrixChanged=true;if(volume){centerRadius.setXYZW(active,entry.center.x,entry.center.y,entry.center.z,entry.width/2);lengthPhase.setXYZ(active,entry.length/2,entry.phase,Number(entry.groundOpening));}}
    if(phases.getX(active)!==entry.phase){phases.setX(active,entry.phase);phaseChanged=true;}active++;
   }
   if(phaseChanged)phases.needsUpdate=true;
   mesh.count=active;mesh.visible=active>0;if(matrixChanged){mesh.instanceMatrix.needsUpdate=true;if(volume){centerRadius.needsUpdate=true;lengthPhase.needsUpdate=true;}}
  }
  return {mesh,setMode,setLook(value){if(disposed)return;look=value==='aozora'?'aozora':'natural';shade();},setReducedMotion(value){if(!disposed)reducedMotion=!!value;},setQuality(value){if(disposed)return;const next=value==='high'||value==='ultra'?'high':'balanced';if(next!==quality){quality=next;dirty=true;}},update,
-  get stats(){return {quality,mode,look,strength:strength.value,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{animationSeconds:time.value,phaseBytes:phases.array.byteLength,matrixVersion:mesh.instanceMatrix.version,phaseVersion:phases.version,materialVersion:material.version,placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked}))}:{}),reducedMotion,gpuAnimated:mesh.visible&&!reducedMotion&&lastSeconds!==null,active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:volume?1:0,renderTargets:volume?1:0,triangles:active*(volume?48:4),volumetric:!!volume,artistic:true};},
+  get stats(){return {quality,mode,look,strength:strength.value,sites:entries.length,blocked:entries.reduce((n,e)=>n+Number(e.blocked),0),...(audit?{animationSeconds:time.value,phaseBytes:phases.array.byteLength,matrixVersion:mesh.instanceMatrix.version,phaseVersion:phases.version,materialVersion:material.version,placement:entries.map(e=>({source:e.source.toArray(),end:e.end.toArray(),blocked:e.blocked,groundOpening:e.groundOpening}))}:{}),reducedMotion,gpuAnimated:mesh.visible&&!reducedMotion&&lastSeconds!==null,active,maxActive:cap,draws:mesh.visible?1:0,extraLights:0,textures:volume?1:0,renderTargets:volume?1:0,triangles:active*(volume?48:4),volumetric:!!volume,artistic:true};},
   dispose(){if(disposed)return;disposed=true;active=0;mesh.visible=false;scene.remove(mesh);geometry.dispose();material.dispose();mesh.dispose();}
  };
 }

@@ -17,7 +17,7 @@ function fixture(options={}){
  const previous=globalThis.document,head=node(),binding=node(),top=node(),seal=node(),book=node('dialog');binding.className='journal-binding';top.className='journal-top';binding.append(top,seal);book.append(binding);
  const open=node('button');open.click=()=>{book.open=true;};const all=[];
  globalThis.document={head,createElement(tag){const value=node(tag);all.push(value);return value;},getElementById(id){return id==='journey-journal'?book:id==='journal-open'?open:null;}};
- const journey=createZenJourney({locations:{station:[0,0,0],yotsu:[200,20,0],tea:[200,20,0]}}),calls=[];
+ const journey=createZenJourney({locations:{station:[0,0,0],yotsu:[200,20,0],tea:[200,20,0],'field-pond':[530,75,0],'field-steps':[580,100,0]}}),calls=[];
  const ui=installZenJourneyUI({journey,album:{list:async()=>[]},getContext:()=>({position:[0,1.7,0],mode:'walk'}),onReturn:()=>calls.push('train'),onIntention:id=>calls.push(id),...options});
  const find=text=>all.find(e=>e.textContent===text);
  return {ui,book,open,journey,calls,find,binding,top,seal,all,cleanup(){ui.dispose();journey.dispose();globalThis.document=previous;}};
@@ -33,6 +33,25 @@ test('one existing journal keeps its close header and switches accessible sectio
   f.journey.recordMoment('aki',{position:[0,1.7,0],mode:'walk',intent:'interact'});assert.match(note.textContent,/Yotsutsuji/);
   const sketches=f.find('Sketches');sketches.dispatch('keydown',{key:'ArrowRight',preventDefault(){}});assert.equal(f.find('Seals').attributes['aria-selected'],'true');
  }finally{f.cleanup();}assert.deepEqual(f.binding.children,[f.top,f.seal]);
+});
+
+test('the fourth walk keeps both observations on one folded sheet in the journal',()=>{
+ const f=fixture();try{
+  f.find('Where the steps fade').click();
+  assert.ok(f.find('Stop by the pond, or follow the stone steps to the landing.'));
+  const sheets=()=>f.all.filter(node=>node.className==='zen-field-sheet'&&!node.hidden);
+  assert.equal(sheets().length,0);
+  f.journey.recordMoment('field-steps',{position:[580,101.7,0],mode:'walk',intent:'interact'});
+  assert.ok(f.find('Where the steps fade ✓'));
+  assert.equal(sheets().length,1);
+  assert.ok(f.find('The steps disappeared beneath the trees.'));
+  const sheet=sheets()[0];
+  f.find('No invitation').click();
+  f.journey.recordMoment('field-pond',{position:[530,76.7,0],mode:'walk',intent:'interact'});
+  assert.deepEqual(sheets(),[sheet]);
+  assert.ok(f.find('The ripples carried on after my steps stopped.'));
+  assert.ok(f.find('Folded field sheet'));
+ }finally{f.cleanup();}
 });
 test('quiet walk choices show one next step and can be dismissed without losing moments',()=>{
  const f=fixture();try{

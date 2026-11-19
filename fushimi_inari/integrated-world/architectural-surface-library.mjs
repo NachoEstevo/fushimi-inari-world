@@ -64,6 +64,7 @@ export function createArchitecturalSurfaceLibrary({loadTexture,assets={}}={}){
  const urls={...ASSETS,...assets},maps=new Map(),materials=new Map(),streamed=new Set();let disposed=false;
  function getMaps(kind){
   if(disposed)throw new Error('Architectural surface library is disposed');
+  if(kind==='glazing')return {};
   if(!Object.hasOwn(COLORS,kind))throw new Error(`Unknown architectural surface: ${kind}`);
   if(!maps.has(kind)){maps.set(kind,surfaceMaps(kind,loadTexture,urls));if(loadTexture&&urls[kind]&&kind!=='cloth')streamed.add(kind);}
   return maps.get(kind);
@@ -71,7 +72,7 @@ export function createArchitecturalSurfaceLibrary({loadTexture,assets={}}={}){
  function get(kind){
   if(!materials.has(kind)){
    const textures=getMaps(kind);
-   materials.set(kind,new THREE.MeshStandardMaterial({name:`Mapped context ${kind}`,...textures,bumpScale:kind==='roof'?.0004:.002,roughness:1,metalness:0,envMapIntensity:.3,side:THREE.DoubleSide}));
+   materials.set(kind,new THREE.MeshStandardMaterial({name:`Mapped context ${kind}`,...textures,bumpScale:kind==='roof'?.0004:.002,color:kind==='glazing'?'#626e62':'#ffffff',roughness:kind==='glazing'?.27:1,metalness:0,envMapIntensity:.3,side:THREE.DoubleSide}));
   }
   if(disposed)throw new Error('Architectural surface library is disposed');
   return materials.get(kind);

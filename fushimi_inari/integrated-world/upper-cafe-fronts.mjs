@@ -4,6 +4,8 @@
 const SHOPS=new Map([
  ['way/626313740',{shrine:'way/626313736',kind:'tsujitei'}],
  ['way/626313752',{shrine:'way/626313751',kind:'okamoto'}],
+ ['way/301527778',{shrine:'node/3494102016',kind:'kyoya',route:'way/1372838159',corner:[595.055,-314.389],source:'https://livingkyo.com/wp-content/uploads/2019/07/200_45.png'}],
+ ['way/301527776',{shrine:'way/626342335',kind:'santokutei',route:'way/649037626',corner:[715.544,-290.043],source:'https://livingkyo.com/wp-content/uploads/2019/07/200_50.png'}],
 ]);
 export const isReferencedUpperCafe=building=>SHOPS.has(building.id);
 // The exterior photos show low shopfronts; exact dimensions are not surveyed.
@@ -13,8 +15,18 @@ export const upperCafeInferredHeight=building=>SHOPS.get(building.id)?.kind==='t
 // and the depth of the joinery are inferred from the photographs, not surveyed.
 export function upperCafeFront({building,buildings,ring}){
  const spec=SHOPS.get(building.id),shrine=spec&&buildings.find(b=>b.id===spec.shrine);
- if(!shrine||ring.length<3)return null;
+ if(!spec||(!spec.route&&!shrine)||ring.length<3)return null;
  const center=ring.reduce((p,q)=>[p[0]+q[0]/ring.length,p[1]+q[2]/ring.length],[0,0]);
+ if(spec.route){
+  // Both 2019 storefronts lie along the north-facing long edge, opposite
+  // their shrine. Select the geographic edge, allowing reversed ring order.
+  const i=ring.findIndex(p=>Math.hypot(p[0]-spec.corner[0],p[2]-spec.corner[1])<.15);
+  if(i<0||ring.length!==4)return null;
+  const edge=[i,(i+3)%4].find(e=>{const a=ring[e],b=ring[(e+1)%4];return Math.abs(b[0]-a[0])>9&&Math.abs(b[2]-a[2])<2;});
+  if(edge===undefined)return null;
+  const a=ring[edge],b=ring[(edge+1)%4],dx=b[0]-a[0],dz=b[2]-a[2];
+  return {a,b,dx,dz,length:Math.hypot(dx,dz),edge,spec,center};
+ }
  const target=shrine.points.reduce((p,q)=>[p[0]+q[0]/shrine.points.length,p[1]+q[2]/shrine.points.length],[0,0]);
  let best=null;
  for(let i=0;i<ring.length;i++){
@@ -37,7 +49,7 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
  const margin=Math.min(.3,length*.08),width=length-2*margin;
  // Existing mapped torii bases overlap this OSM roof edge at Tsujitei. Set the
  // whole reconstructed frontage back inside it, keeping the route and gates.
- const setback=spec.kind==='tsujitei'?.90:0;
+ const setback=spec.kind==='tsujitei'?.90:spec.route ? .26 : 0;
  const rect=(kind,u0,y0,u1,y1,offset,clothLabel=true)=>{
   const p=(u,y)=>[a[0]+ux*u+nx*(offset-setback),base+y,a[2]+uz*u+nz*(offset-setback)];
   const pts=[p(u0,y0),p(u1,y0),p(u1,y1),p(u0,y1)],uw=kind==='cloth'?1:(u1-u0)/(kind==='timber'||kind==='plaster'?1:3),vh=kind==='cloth'?1:(y1-y0)/(kind==='timber'||kind==='plaster'?1:3),uv=[[0,0],[uw,0],[uw,vh],[0,vh]];
@@ -60,11 +72,33 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
  side(0,0,roof-base,inset,0);side(length,0,roof-base,inset,0);
  // An overhanging eave with an exposed underside and fascia. Its exact slope
  // is inferred; the source shows the shaded upper edge rather than a survey.
- const eaveY=Math.min(2.66,roof-base-.12),eaveDepth=.30;
+ const eaveY=Math.min(spec.route?2.83:2.66,roof-base-.12),eaveDepth=spec.route?.length ? .61 : .30;
  quad('roof',[point(margin,eaveY,.01),point(length-margin,eaveY,.01),point(length-margin,eaveY-.08,eaveDepth),point(margin,eaveY-.08,eaveDepth)]);
  rect('roof',margin,eaveY-.15,length-margin,eaveY-.08,eaveDepth);
  side(margin,eaveY-.15,eaveY,.01,eaveDepth);side(length-margin,eaveY-.15,eaveY,.01,eaveDepth);
- if(spec.kind==='tsujitei'){
+ if(spec.route){
+  // The old walls extended more than a storey below the mountain shops.
+  // These details are measured from the public edge, on the uphill datum.
+  const bays=spec.kind==='kyoya'?4:5,bay=width/bays;
+  for(let i=0;i<bays;i++){
+   const lo=margin+i*bay,hi=lo+bay;
+   rect('timber',lo,.08,hi,.66,-.06);
+   rect('glazing',lo,.66,hi,2.32,-.06);
+   rect('timber',lo,.10,lo+.07,2.38,-.015);
+   rect('timber',lo,.6,hi,.69,-.014);
+   side(lo,.08,2.38,-.05,.07);
+   if(spec.kind==='kyoya'&&i<3){
+    // Golden reed blinds hang in front of the closed lower windows.
+    rect('brick',lo+.07,.43,hi-.05,2.33,.11);
+    for(let j=0;j<19;j++)rect('timber',lo+.07,.43+j*.10,hi-.05,.44+j*.10,.115);
+    for(const t of [.18,.78])rect('timber',lo+t*bay,.43,lo+t*bay+.012,2.33,.119);
+   }else if(spec.kind==='santokutei'){
+    rect('roof',lo+.04,1.97,hi-.04,2.47,.15);
+   }
+  }
+  for(let i=0;i<=bays*2;i++){const u=margin+i*width/(2*bays);side(u,2.58,2.66,.01,eaveDepth);}
+  rect('timber',margin,2.30,length-margin,2.40,.06);
+ }else if(spec.kind==='tsujitei'){
   // Dark hanging cloth over timber-framed offering shelves; simplified goods.
   rect('roof',margin,.18,length-margin,2.52,.018);
   rect('timber',margin,.20,length-margin,1.68,.025);
@@ -102,5 +136,5 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
    for(let u=pier+(row%2?.30:0);u<length-margin;u+=.60)rect('roof',u,y,Math.min(u+.018,length-margin),Math.min(y+.29,2.45),.025);
   }
  }
- return {id:building.id,shrine:spec.shrine,edge,kind:spec.kind,setback,facadeWidth:width,source:'https://livingkyo.com/2699/'};
+ return {id:building.id,shrine:spec.shrine,edge,kind:spec.kind,setback,facadeWidth:width,...(spec.route?{route:spec.route,windowFaces:spec.kind==='kyoya'?1:5}:{}),source:spec.source??'https://livingkyo.com/2699/'};
 }

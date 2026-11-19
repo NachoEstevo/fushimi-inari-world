@@ -16,7 +16,7 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const keys=new Set(),direction=new THREE.Vector3(),right=new THREE.Vector3();
   const panel=document.getElementById('interaction');
   const proximity=createProximityInteractions({targets:assembly.legacy?.interactables??[],camera});
-  const hint=document.createElement('div');hint.id='interaction-hint';hint.hidden=true;
+  const hint=document.createElement('div');hint.id='interaction-hint';hint.hidden=true;hint.setAttribute('role','status');
   const hintKey=document.createElement('kbd'),hintText=document.createElement('span');hintKey.textContent='E';hint.append(hintKey,hintText);document.body.append(hint);
   const feedback=document.createElement('div');feedback.id='interaction-feedback';feedback.hidden=true;feedback.setAttribute('role','status');document.body.append(feedback);
   let feedbackUntil=0;
@@ -24,7 +24,9 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   const inputBlocked=(target,interaction=true)=>interactionInputBlocked({active,paused,flying:interaction&&flying,body:document.body,document,target});
   function updateInteraction(){
     const blocked=inputBlocked(document.activeElement),target=blocked?null:proximity.find(),data=target?.userData.interactable;
-    hint.hidden=!target;if(data)hintText.textContent=data.prompt??data.actions?.[0]?.label??'Interact';
+    hint.hidden=!target;
+    const hintClass=target?.userData.fieldNote?'field-note-hint':'';if(hint.className!==hintClass)hint.className=hintClass;
+    if(data){const prompt=data.prompt??data.actions?.[0]?.label??'Interact';if(hintText.textContent!==prompt)hintText.textContent=prompt;}
     feedback.hidden=blocked||performance.now()>feedbackUntil;
     if(interactionAudit&&performance.now()-lastInteractionAudit>500){lastInteractionAudit=performance.now();document.body.dataset.nearbyInteraction=JSON.stringify({active,paused,flying,blocked,focus:document.activeElement?.tagName,target:target?.name,candidates:proximity.inspect()});}
   }
@@ -35,16 +37,18 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   // pause, stop, start or teleport so other camera owners never inherit it.
   const velocity=createWalkingVelocity(),bob=createHeadBob(),view={x:0,y:0,z:0},angles={yaw:0,pitch:0};
   let reducedMotion=null;try{reducedMotion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')??null;}catch{}
-  let active=false,paused=false,flying=false,pace='slow',supportY=0,menuHandler=null;
+  let active=false,paused=false,flying=false,pace='slow',supportY=0,menuHandler=null,cancelInteraction=null;
   function removeView(){camera.position.x-=view.x;camera.position.y-=view.y;camera.position.z-=view.z;view.x=view.y=view.z=0;}
   function settle(){removeView();bob.reset();velocity.reset();footsteps.reset();gamepad.reset();}
   function stop(){
+    cancelInteraction?.();
     settle();
     hint.hidden=true;feedback.hidden=true;active=false;flying=false;keys.clear();pointerLook.release();controls.enabled=allowDebugCamera;crosshair.hidden=true;
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(8));
     document.body.classList.remove('walking');button.textContent='Walk · WASD';
   }
   function start(flight=false){
+    cancelInteraction?.();
     document.activeElement?.blur();settle();
     onStart();active=true;flying=flight&&allowDebugCamera;keys.clear();controls.enabled=false;crosshair.hidden=false;
     if(!flying){supportY=assembly.walkHeight(camera.position.x,camera.position.z);camera.position.y=supportY+WALKING_EYE_HEIGHT;}
@@ -64,9 +68,10 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
   function interact(){
     const result=proximity.run();if(!result)return;
     onInteraction(result.object,result.event);
-    panel.hidden=true;feedback.textContent=result.message;feedbackUntil=performance.now()+2600;feedback.hidden=false;
+    panel.hidden=true;feedback.textContent=result.message;feedbackUntil=result.message?performance.now()+2600:0;feedback.hidden=!result.message;
     updateInteraction();
   }
+  addEventListener('keydown',e=>{if(e.code==='Escape'&&!e.repeat)cancelInteraction?.();},true);
   addEventListener('keydown',e=>{
     if(inputBlocked(e.target,e.code==='KeyE'))return;
     if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR','KeyF','Space','ControlLeft','ControlRight'].includes(e.code)){keys.add(e.code);e.preventDefault();}
@@ -79,15 +84,18 @@ export function installWalking({camera,renderer,controls,ground,assembly,audio,o
     if(!gamepad.connected)return null;
     const pad=gamepad.poll();if(!pad.connected)return null;
     if(pad.menu&&menuHandler){menuHandler();return null;}
-    if(pad.interact&&!inputBlocked(null,true))interact();
+    const canceled=pad.back&&cancelInteraction?.();
+    if(!canceled&&pad.interact&&!inputBlocked(null,true))interact();
     const seconds=Math.max(0,Math.min(Number(dt)||0,.1)),scale=GAMEPAD_LOOK_RADIANS*settings.sensitivity*seconds;
     if(pad.lookX||pad.lookY)rotateView(pad.lookX*scale,pad.lookY*scale*(settings.invertY?-1:1));
     return pad;
   }
   return {stop,start,settings,gamepad,setMenuHandler(fn){menuHandler=typeof fn==='function'?fn:null;},
+    setCancelInteraction(fn){cancelInteraction=typeof fn==='function'?fn:null;},
     interact:()=>{if(!inputBlocked(null,true))interact();},get pointerLooking(){return pointerLook.engaged;},releasePointerLock:()=>pointerLook.release(),fly:()=>start(true),get mode(){return active?(flying?'fly':'walk'):'orbit';},get pace(){return pace;},setPace(value){pace=value==='fast'?'fast':'slow';},
     get viewOffset(){return {x:view.x,y:view.y,z:view.z};},
-    pause(value){paused=value;keys.clear();settle();if(value){pointerLook.release();hint.hidden=true;feedback.hidden=true;}},get active(){return active;},get paused(){return paused;},teleport(point,target){
+    pause(value){paused=value;keys.clear();settle();if(value){cancelInteraction?.();pointerLook.release();hint.hidden=true;feedback.hidden=true;}},get active(){return active;},get paused(){return paused;},teleport(point,target){
+    cancelInteraction?.();
     keys.clear();settle();pointerLook.release();panel.hidden=true;
     const candidates=[];
     for(let r=0;r<=2;r+=.25)for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){

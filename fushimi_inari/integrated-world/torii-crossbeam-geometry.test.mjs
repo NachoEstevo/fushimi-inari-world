@@ -51,3 +51,54 @@ test('matching red and black Senbon profiles meet without an illuminated air sli
  for(const geometry of [red,black])geometry.dispose();material.dispose();
  assert.throws(()=>toriiCrossbeamGeometry({...senbon,segments:0}),RangeError);
 });
+
+test('four tapered nuki keys are watertight and rise from the timber only beside the posts',async()=>{
+ const {toriiNukiWedges}=await import('./torii-crossbeam-geometry.mjs');
+ const halfSpan=1.24,reach=.29,height=.095,depth=.115,seatY=2.722;
+ const g=toriiNukiWedges({halfSpan,reach,height,depth,seatY}),p=g.attributes.position,n=g.attributes.normal;
+ assert.equal(g.index.count/3,32);
+ const point=i=>new THREE.Vector3().fromBufferAttribute(p,i);
+ for(let wedge=0;wedge<4;wedge++){
+  const edges=new Map();
+  for(let i=wedge*24;i<(wedge+1)*24;i+=3){
+   const ids=[0,1,2].map(j=>g.index.getX(i+j)),[a,b,c]=ids.map(point),normal=b.clone().sub(a).cross(c.clone().sub(a));
+   assert.ok(normal.length()>1e-5);
+   assert.ok(normal.normalize().dot(new THREE.Vector3().fromBufferAttribute(n,ids[0]))>.999);
+   for(let j=0;j<3;j++){
+    const key=[point(ids[j]).toArray().join(','),point(ids[(j+1)%3]).toArray().join(',')].sort().join('|');
+    edges.set(key,1+(edges.get(key)??0));
+   }
+  }
+  assert.ok([...edges.values()].every(count=>count===2));
+ }
+ const material=new THREE.MeshBasicMaterial(),mesh=new THREE.Mesh(g,material);
+ const hit=x=>new THREE.Raycaster(new THREE.Vector3(x,3,0),new THREE.Vector3(0,-1,0)).intersectObject(mesh)[0];
+ for(const post of [-halfSpan,halfSpan])for(const side of [-1,1]){
+  const x=post+side*reach*.85;
+  assert.ok(Math.abs(hit(x).point.y-(seatY+height*.85))<1e-6);
+ }
+ assert.equal(hit(0),undefined);
+ g.dispose();material.dispose();
+});
+
+test('the assembled mountain gate joins the curved red support to the black cap from end to end',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {toriiNukiWedges,sleevedToriiPost}=await import('./torii-crossbeam-geometry.mjs');
+ const source=readFileSync(new URL('./legacy-builders.mjs',import.meta.url),'utf8');
+ const start=source.indexOf('    function mergeBufferGeometries('),end=source.indexOf('    const { vermilionGeo: toriiVermGeo',start);
+ const deps={THREE,toriiNukiWedges,sleevedToriiPost,toriiCrossbeamGeometry,applyMetricUVs:g=>g};
+ const unit=new Function(...Object.keys(deps),source.slice(start,end)+'\nreturn createToriiUnitGeometries();')(...Object.values(deps));
+ const material=new THREE.MeshBasicMaterial(),red=new THREE.Mesh(unit.vermilionGeo,material),black=new THREE.Mesh(unit.blackGeo,material);
+ const ray=(mesh,x,y,dy)=>new THREE.Raycaster(new THREE.Vector3(x,y,0),new THREE.Vector3(0,dy,0)).intersectObject(mesh)[0];
+ for(let i=0;i<100;i++){
+  const x=-1.829+3.658*i/99,top=ray(red,x,4,-1).point.y,cap=ray(black,x,2.9,1).point.y;
+  assert.ok(top>=cap&&top-cap<.03,'the red support seats into the cap across the complete overlap');
+ }
+ for(const post of [-1.24,1.24])for(const side of [-1,1]){
+  const key=ray(red,post+side*.29*.85,2.9,-1);
+  assert.ok(Math.abs(key.point.y-(2.722+.095*.85))<1e-6);
+ }
+ assert.ok(Math.abs(ray(red,0,.5,1).point.y-2.555)<1e-6);
+ assert.equal((red.geometry.index.count+black.geometry.index.count)/3,352);
+ red.geometry.dispose();black.geometry.dispose();material.dispose();
+});

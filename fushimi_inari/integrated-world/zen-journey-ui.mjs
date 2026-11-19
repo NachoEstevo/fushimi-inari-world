@@ -1,6 +1,7 @@
 import {ZEN_INTENTIONS,ZEN_PHOTO_PROMPTS,ZEN_SKETCHES} from './zen-journey-state.mjs';
 import {ZEN_QUIET_WALKS} from './quiet-walks.mjs';
 import {ZEN_SKETCH_ART as SKETCH_INK} from './zen-sketch-art.mjs';
+import {FIELD_OBSERVATIONS,FIELD_WALK_ID,FIELD_WALK_TITLE} from './field-notes.mjs';
 
 const AKI=[
  'Aki is on the station platform.',
@@ -81,7 +82,10 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
  const walkButtons=new Map();for(const {id,title}of ZEN_QUIET_WALKS){const choice=button(title,()=>journey.setActiveWalk(id));walkChoices.append(choice);walkButtons.set(id,choice);}
  const noWalk=button('No invitation',()=>journey.setActiveWalk('none'));walkChoices.append(noWalk);walks.append(walkSummary,walkChoices);
  const storyCopy=element('p','zen-story-copy');storyCopy.setAttribute('aria-live','polite');
- const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(walks,storyCopy,returnButton);
+ const fieldPlaces=element('p','zen-fine zen-field-places');
+ const fieldSheet=element('article','zen-field-sheet'),fieldTitle=element('h3','',FIELD_WALK_TITLE),fieldLabel=element('p','zen-fine','Folded field sheet'),fieldEntries=element('dl');
+ fieldTitle.id='zen-field-title';fieldSheet.setAttribute('aria-labelledby',fieldTitle.id);fieldSheet.append(fieldLabel,fieldTitle,fieldEntries);
+ const returnButton=button('Return by train',()=>{book.close();Promise.resolve().then(()=>onReturn()).catch(error=>announce(error.message??'Train unavailable.'));},'zen-primary');panes.story.append(walks,storyCopy,fieldPlaces,fieldSheet,returnButton);
  const photoGrid=element('div','zen-photo-grid'),albumStatus=element('p','zen-fine'),photoIdeas=element('details','zen-photo-ideas');photoIdeas.append(element('summary','','Photo ideas'));
  const promptNodes=new Map();for(const prompt of ZEN_PHOTO_PROMPTS){const card=element('div','zen-prompt'),{label,hint}=prompt,heading=element('span','',label),action=button('Photo',()=>{book.close();onPhoto(prompt.id);});action.setAttribute('aria-label',`Photograph ${label}`);card.append(heading,element('small','',hint),action);photoIdeas.append(card);promptNodes.set(prompt.id,{heading,label});}
  panes.photos.append(button('Take photo',()=>{book.close();onPhoto(null);},'zen-primary'),albumStatus,photoGrid,photoIdeas);
@@ -105,6 +109,12 @@ export function installZenJourneyUI({journey,album,onIntention=()=>{},onWeather=
   for(const input of intentionInputs)input.checked=input.value===state.intention;weather.value=state.weather;
   const active=state.walks.find(walk=>walk.id===state.activeWalk);walkSummary.textContent=active?`Quiet walks · ${active.title}`:'Quiet walks';
   storyCopy.textContent=active?(active.next??active.finished):AKI[state.story.stage];noWalk.setAttribute('aria-pressed',String(!active));
+  const isFieldWalk=active?.id===FIELD_WALK_ID,remaining=FIELD_OBSERVATIONS.filter(({id})=>!state.moments[id]);
+  storyCopy.hidden=isFieldWalk&&remaining.length<FIELD_OBSERVATIONS.length;
+  fieldPlaces.hidden=!isFieldWalk||!remaining.length;
+  fieldPlaces.textContent=remaining.length===2?'Shin-ike at Kumataka-sha · Mitsutsuji':remaining.length===1?`Another stop at ${remaining[0].place}`:'';
+  fieldSheet.hidden=!state.fieldSheet;
+  fieldEntries.replaceChildren(...(state.fieldSheet?.notes??[]).flatMap(({place,note})=>[element('dt','',place),element('dd','',note)]));
   for(const walk of state.walks){const choice=walkButtons.get(walk.id);choice.textContent=`${walk.title}${walk.complete?' ✓':''}`;choice.setAttribute('aria-pressed',String(walk.id===state.activeWalk));choice.setAttribute('aria-label',walk.complete?`${walk.title}, completed`:walk.title);}
   for(const prompt of ZEN_PHOTO_PROMPTS){const node=promptNodes.get(prompt.id);node.heading.textContent=`${state.photoPrompts?.[prompt.id]?'✓ ':''}${node.label}`;}
   for(const sketch of ZEN_SKETCHES){const node=sketchNodes.get(sketch.id),found=!!state.sketches[sketch.id];node.drawing.hidden=!found;node.note.hidden=found;node.action.disabled=found;node.action.textContent=found?'Saved':'Sketch';}

@@ -228,3 +228,28 @@ test('volumetric slots keep world bounds and canopy phases aligned with instance
  effect.setQuality('balanced');effect.update(camera);assert.equal(effect.stats.draws,0);
  effect.dispose();depth.dispose();
 });
+
+test('one canopy projects its own phase on daytime ground and leaves capped sunset rays overhead',()=>{
+ const sites=chooseShaftSites({
+  routes:[Array.from({length:100},(_,i)=>[i*2,0,0])],
+  canopies:[new THREE.Box3(new THREE.Vector3(-30,5,-20),new THREE.Vector3(260,15,20))],
+  ground:()=>0,maxSites:6
+ });
+ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),depth=new THREE.DepthTexture(1,1);
+ const roof=new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(...sites[0].source),new THREE.Vector3(1,1,1));
+ const effect=createLocalSunShafts({scene,depthTexture:texture(depth),sites,roofs:[roof],audit:true});
+ try{
+  effect.setQuality('high');
+  const placements=effect.stats.placement;
+  assert.equal(placements[0].blocked,true);assert.equal(placements[0].groundOpening,false);
+  const projected=placements.filter(entry=>entry.groundOpening);assert.equal(projected.length,1);
+  camera.position.fromArray(projected[0].end);effect.update(camera,0);
+  const meta=effect.mesh.geometry.getAttribute('shaftLengthPhase'),phases=effect.mesh.geometry.getAttribute('shaftPhase');
+  const slots=Array.from({length:effect.mesh.count},(_,i)=>i).filter(i=>meta.getZ(i)===1);
+  assert.equal(slots.length,1);assert.equal(meta.getY(slots[0]),phases.getX(slots[0]));
+  assert.equal(effect.stats.draws,1);assert.equal(effect.stats.extraLights,0);
+  effect.setMode('gold');assert.equal(effect.stats.placement.some(entry=>entry.groundOpening),false);
+  effect.setMode('night');effect.update(camera,1);assert.equal(effect.stats.draws,0);
+  effect.setMode('day');assert.deepEqual(effect.stats.placement.filter(e=>e.groundOpening),projected);
+ }finally{effect.dispose();depth.dispose();}
+});

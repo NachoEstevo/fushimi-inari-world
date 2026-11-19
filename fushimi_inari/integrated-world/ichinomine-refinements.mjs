@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {replaceSummitMarker} from './ichinomine-elevation-sign.mjs';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const KEY='ichinomineRefinement';
@@ -210,12 +211,13 @@ export function refineIchinomine(object,materials={}, {createCanvas=()=>document
   const boundary=stoneSideReturns(group,materials.entryStoneMat);
   const paving=sideCourtPaving(group,canopy,materials.entryStoneMat);
   const trim=removeUnsourcedSummitTrim(canopy);
+  const summitNotice=replaceSummitMarker(canopy,createCanvas);
   let disposed=false;
-  const result={group,originalGeometry,getColliders:()=>disposed?[]:boundary?.getColliders()??[],stats:{crests:2,tassels:7,extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs,...(boundary?{stoneBoundary:boundary.stats}:{}),...(paving?{sideCourtPaving:paving}:{}),...(trim.stats.plaque+trim.stats.goldBands?{referenceCorrections:trim.stats}:{})},dispose(){
+  const result={group,originalGeometry,getColliders:()=>disposed?[]:boundary?.getColliders()??[],stats:{crests:2,tassels:7,...(summitNotice?{summitNotice:summitNotice.source}:{}),extraBatches:group.children.length,lanterns:stone.lanterns,stairs:stone.stairs,...(boundary?{stoneBoundary:boundary.stats}:{}),...(paving?{sideCourtPaving:paving}:{}),...(trim.stats.plaque+trim.stats.goldBands?{referenceCorrections:trim.stats}:{})},dispose(){
     if(disposed)return;disposed=true;group.removeFromParent();
     for(const mesh of group.children){mesh.geometry.dispose();mesh.material.dispose();}
     if(curtain.geometry===geometry)curtain.geometry=originalGeometry;if(curtain.material===material)curtain.material=originalMaterial;
-    geometry.dispose();material.dispose();texture.dispose();stone.dispose();trim.restore();if(object.userData[KEY]===result)delete object.userData[KEY];
+    geometry.dispose();material.dispose();texture.dispose();stone.dispose();trim.restore();summitNotice?.dispose();if(object.userData[KEY]===result)delete object.userData[KEY];
   }};
   object.userData[KEY]=result;return result;
 }

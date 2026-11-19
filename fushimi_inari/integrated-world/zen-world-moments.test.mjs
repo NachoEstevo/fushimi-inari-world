@@ -7,6 +7,7 @@ import {createZenWorldMoments} from './zen-world-moments.mjs';
 import {createPaperMomentState} from './zen-paper-moments.mjs';
 import {createAkiConversation,planZenStorySites} from './zen-story-people.mjs';
 import {createProximityInteractions} from './proximity-interaction.mjs';
+import {createZenJourney} from './zen-journey-state.mjs';
 
 function documentFixture(){
  const nodes=[],doc={activeElement:null};
@@ -220,6 +221,28 @@ test('a Kyoto photo before meeting Aki keeps the first station encounter availab
   f.camera.position.fromArray(sites.station).add(new THREE.Vector3(0,1.1,1));runtime.update(0,2,{mode:'walk'});assert.equal(runtime.stats.people.stage,alreadyMet?'return':'station');
   actor.userData.interactable.directAction();const choices=doc.getElementById('zen-aki').querySelector('[data-aki-choices]');assert.equal(f.actions.length,0);choices.children[0].click();assert.equal(f.actions.length,0);choices.children[0].click();assert.equal(f.actions[0]?.type,alreadyMet?'meetreturn':'meetstation');runtime.dispose();
  }
+});
+
+test('Aki can recognize either saved field observation when the visitor returns to the station',async()=>{
+ const f=fixture(),doc=documentFixture(),journey=createZenJourney({locations:{'field-pond':[100,60,0],'field-steps':[200,100,0]}}),runtime=f.create({document:doc,journey});await runtime.ready;
+ try{
+  const actor=runtime.interactionRoots.find(object=>object.userData.zenMoment==='aki'),sites=runtime.stats.people.positions;
+  const returnToAki=()=>{
+   f.camera.position.fromArray(sites.station).add(new THREE.Vector3(0,1.1,1));runtime.update(0,2,{mode:'walk'});
+   actor.userData.interactable.directAction();assert.equal(runtime.stats.people.stage,'return');
+   return doc.getElementById('zen-aki');
+  };
+  f.camera.position.set(100,61.7,0);runtime.update(0,1,{mode:'walk'});
+  journey.recordMoment('field-pond',{position:f.camera.position.toArray(),mode:'walk',intent:'interact'});
+  const dialog=returnToAki(),choices=dialog.querySelector('[data-aki-choices]'),words=dialog.querySelector('[data-aki-words]');
+  assert.ok(choices.children.some(choice=>choice.textContent==='Show the pond note'));
+  assert.ok(!choices.children.some(choice=>choice.textContent==='Show the steps note'));
+  choices.children.find(choice=>choice.textContent==='Show the pond note').click();assert.match(words.textContent,/ripples/);
+  choices.children[0].click();assert.equal(f.actions.at(-1)?.type,'meetreturn');
+  journey.recordMoment('field-steps',{position:[200,101.7,0],mode:'walk',intent:'interact'});
+  returnToAki();choices.children.find(choice=>choice.textContent==='Show the steps note').click();assert.match(words.textContent,/trees/);
+  assert.equal(f.actions.length,1,'a repeat conversation does not add a second encounter');
+ }finally{runtime.dispose();journey.dispose();}
 });
 
 test('paper pressure writes only advancing stamp progress, with no idle map or completed-card writes',async()=>{

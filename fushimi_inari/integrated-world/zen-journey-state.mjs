@@ -1,4 +1,5 @@
 import {ZEN_QUIET_WALKS,describeQuietWalks} from './quiet-walks.mjs';
+import {FIELD_OBSERVATIONS,atFieldObservation,describeFieldSheet,hasFieldObservation} from './field-notes.mjs';
 
 export const ZEN_JOURNEY_KEY='inari-quiet-visit-v2';
 export const ZEN_INTENTIONS=Object.freeze([
@@ -18,6 +19,7 @@ export const ZEN_SKETCHES=Object.freeze([
  {id:'sketch-city',place:'yotsu',title:'A city in layers',hint:'At Yotsutsuji, look west and notice the layers of the view.',note:'Near rooftops, distant hills, a little air between them.'}
 ]);
 const moments={aki:['station'],cat:['station'],tea:['tea'],drink:['station','canal','drink'],map:['station','tea'],postcard:['station','postcard'],return:['station']};
+const fieldIds=FIELD_OBSERVATIONS.map(({id})=>id);
 const finitePoint=p=>Array.isArray(p)&&p.length===3&&p.every(n=>Number.isFinite(n)&&Math.abs(n)<1e6);
 const positive=n=>Number.isSafeInteger(n)&&n>0;
 // A corrupt far-future clock must not exhaust the monotonic safe-integer range.
@@ -63,7 +65,7 @@ function decode(raw){
  try{
   const data=JSON.parse(raw);if(data?.version!==2)return null;const value=blank();
   for(const [field,ids]of Object.entries(choices))if(ids.includes(data[field])){value[field]=data[field];value.settingsAt[field]=validTime(data.settingsAt?.[field])?data.settingsAt[field]:0;}
-  for(const [field,ids]of [['moments',Object.keys(moments)],['sketches',ZEN_SKETCHES.map(s=>s.id)],['photoPrompts',ZEN_PHOTO_PROMPTS.map(p=>p.id)]])for(const id of ids)if(validTime(data[field]?.[id]))value[field][id]=data[field][id];
+  for(const [field,ids]of [['moments',[...Object.keys(moments),...fieldIds]],['sketches',ZEN_SKETCHES.map(s=>s.id)],['photoPrompts',ZEN_PHOTO_PROMPTS.map(p=>p.id)]])for(const id of ids)if(validTime(data[field]?.[id]))value[field][id]=data[field][id];
   value.photos=(Array.isArray(data.photos)?data.photos:[]).map(photoRecord).filter(p=>p?.id).slice(-12);
   if(positive(data.visit?.number))value.visit.number=Math.min(data.visit.number,9999);
   for(const key of ['startedAt','finishedAt','updatedAt'])if(validTime(data.visit?.[key]))value.visit[key]=data.visit[key];
@@ -94,13 +96,24 @@ export function createZenJourney({storage=null,locations={},now=()=>Date.now()}=
   const photos=state.photos.map(p=>({...p,position:[...p.position],direction:[...p.direction],promptIds:[...p.promptIds]}));
   const readyToReturn=Math.max(state.moments.aki??0,state.photoPrompts['kyoto-view']??0,state.moments.tea??0);
   const stage=!state.moments.aki?0:!state.photoPrompts['kyoto-view']?1:!state.moments.tea?2:!(state.moments.return>readyToReturn)?3:4;
-  return {version:2,intention:state.intention,weather:state.weather,activeWalk:state.activeWalk,walks:describeQuietWalks(state),moments:{...state.moments},sketches:{...state.sketches},photoPrompts:{...state.photoPrompts},photos,story:{stage,complete:stage===4},visit:{...state.visit},persistent};
+  return {version:2,intention:state.intention,weather:state.weather,activeWalk:state.activeWalk,walks:describeQuietWalks(state),fieldSheet:describeFieldSheet(state.moments),moments:{...state.moments},sketches:{...state.sketches},photoPrompts:{...state.photoPrompts},photos,story:{stage,complete:stage===4},visit:{...state.visit},persistent};
  }
- function changed(){if(persistent)try{const raw=JSON.stringify(state);storage.setItem(ZEN_JOURNEY_KEY,raw);lastRaw=raw;}catch{persistent=false;}for(const fn of listeners)fn(snapshot());}
+ function save(){if(persistent)try{const raw=JSON.stringify(state);storage.setItem(ZEN_JOURNEY_KEY,raw);lastRaw=raw;}catch{persistent=false;}}
+ function notify(){for(const fn of listeners)fn(snapshot());}
+ function changed(){save();notify();}
  function setting(field,id){if(disposed||!choices[field].includes(id))return false;refresh();if(state[field]===id)return false;state[field]=id;state.settingsAt[field]=timestamp();changed();return true;}
  refresh();
  // Existing seals remain owned by the original journal, under its original key.
- const onStorage=event=>{if(disposed||event.key!==ZEN_JOURNEY_KEY||!acceptRaw(event.newValue))return;for(const fn of listeners)fn(snapshot());};
+ const onStorage=event=>{
+  if(disposed||event.key!==ZEN_JOURNEY_KEY||!acceptRaw(event.newValue))return;
+  // Two tabs may both read before either writes. Repair the stored union when
+  // a concurrent write left an earned field observation out of the journal.
+  if(persistent&&hasFieldObservation(state.moments))try{
+   const saved=decode(storage.getItem(ZEN_JOURNEY_KEY));
+   if(saved&&fieldIds.some(id=>state.moments[id]&&(saved.moments[id]??Infinity)>state.moments[id])){accept(saved);save();}
+  }catch{persistent=false;}
+  notify();
+ };
  globalThis.window?.addEventListener?.('storage',onStorage);
  return {snapshot,setIntention:id=>setting('intention',id),setWeather:id=>setting('weather',id),setActiveWalk:id=>setting('activeWalk',id),
   canRecordPhoto(details={}){return !disposed&&!!photoRecord({...details,id:'eligibility',createdAt:1});},
@@ -114,7 +127,9 @@ export function createZenJourney({storage=null,locations={},now=()=>Date.now()}=
    if(disposed||details.mode!=='walk'||!finitePoint(details.position))return false;refresh();
    const sketch=ZEN_SKETCHES.find(s=>s.id===id);
    if(sketch){if(details.intent!=='observe'||state.sketches[id]||!framing(details,locations,sketch.place))return false;state.sketches[id]=timestamp();changed();return true;}
-   if(!moments[id]||details.intent!=='interact'||!moments[id].some(place=>nearby(details.position,locations,place)))return false;
+   if(details.intent!=='interact')return false;
+   const atSite=fieldIds.includes(id)?atFieldObservation(details.position,locations[id]):Object.hasOwn(moments,id)&&moments[id].some(place=>nearby(details.position,locations,place));
+   if(!atSite)return false;
    if(id==='return'){if(state.visit.finishedAt||state.moments.return>state.visit.startedAt)return false;}
    else if(state.moments[id])return false;
    state.moments[id]=timestamp();changed();return true;

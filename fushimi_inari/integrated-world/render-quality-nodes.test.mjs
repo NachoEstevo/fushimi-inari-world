@@ -261,3 +261,25 @@ test('High-only GTAO uses scene depth without MRT, never renders in Balanced and
   try{await webgl.setMode('high');assert.equal(JSON.parse(document.body.dataset.renderQuality).ao,false);assert.equal(webgl.ambientOcclusion.supported,false);}finally{webgl.dispose();}
  });}finally{GTAO.prototype.updateBefore=render;}
 });
+
+test('r187 emits nine distinct AO taps and eight depth neighbours inside the non-uniform WGSL branch',async()=>{
+ const {ambientOcclusionResolve}=await import('./render-quality-nodes.mjs');
+ const {texture,passTexture,float,vec3,uniform}=await import('three/tsl');
+ const camera=new THREE.PerspectiveCamera(),mesh=new THREE.Mesh(new THREE.PlaneGeometry());
+ const renderer=new THREE.WebGPURenderer({canvas:{style:{},addEventListener(){}}});
+ renderer.hasFeature=()=>true;renderer.hasCompatibility=()=>true;
+ renderer.backend.utils={getTextureSampleData:()=>({primarySamples:1})};
+ const depth=texture(new THREE.DepthTexture(1,1)),aoTexture=passTexture(float(1),new THREE.Texture());
+ const builder=renderer.backend.createNodeBuilder(mesh,renderer);
+ builder.camera=camera;builder.setShaderStage('fragment');
+ const flow=builder.flowStagesNode(ambientOcclusionResolve({camera,depth,color:vec3(.4),aoTexture,strength:uniform(.7)}),'float');
+ const split=flow.code.search(/if \( \( \w+ < 1\.0/);
+ assert.ok(split>0);const prefix=flow.code.slice(0,split),region=flow.code.slice(split);
+ assert.equal((prefix.match(/textureLoad\(/g)??[]).length,1);
+ assert.doesNotMatch(prefix,/textureSampleLevel/);
+ const taps=Array.from(region.matchAll(/textureSampleLevel\( \w+, \w+, (\w+), 0\.0 \)/g),m=>m[1]);
+ assert.equal(taps.length,9);assert.equal(new Set(taps).size,9,'each tap retains its own UV on PassTextureNode');
+ assert.equal((region.match(/textureLoad\(/g)??[]).length,8);
+ assert.doesNotMatch(region,/textureSample\(/,'divergent lanes never request implicit derivatives');
+ mesh.geometry.dispose();mesh.material.dispose();depth.value.dispose();aoTexture.value.dispose();
+});

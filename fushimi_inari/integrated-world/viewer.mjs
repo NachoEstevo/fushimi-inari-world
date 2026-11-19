@@ -109,9 +109,11 @@ try {
   const scene=new THREE.Scene();scene.background=new THREE.Color('#263c36');
   await startupCheckpoint('createCompilationLightIndex');
   const compilationLights=createCompilationLightIndex(scene);
-  const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:new URLSearchParams(location.search).get('backend')==='webgl'});
+  const profileGpu=query.get('frameAudit')==='1'&&query.get('gpuTiming')==='1';
+  const renderer=new THREE.WebGPURenderer({antialias:true,forceWebGL:query.get('backend')==='webgl',trackTimestamp:profileGpu});
   document.body.dataset.bootPhase='graphics device';
   await renderer.init();
+  const gpuSample=profileGpu?(await import('./gpu-frame-sample.mjs')).createGpuFrameSample(renderer):null;
   await startupCheckpoint('installShadowMaterialSource');
   const shadowMaterialSource=installShadowMaterialSource(renderer);
   await startupCheckpoint('installPrecompileStateRestoration');
@@ -432,7 +434,7 @@ try {
       if($('itinerary').value==='loop'||completeKeihan)names.push('御劔社','御膳谷奉拝所','四ツ辻 (Yottsu tsuji)','楼門');
       chosen=names.map(name=>landmarks.find(p=>p.tags.name===name));
       const branch=features.paths.find(p=>p.id===$('branch').value);
-      chosen.splice(1,0,branch?{id:branch.id,tags:{name:'Senbon · rama seleccionada'},point:branch.points[Math.floor(branch.points.length/2)]}:landmarks.find(p=>p.id==='node/6865347485'));
+      chosen.splice(1,0,branch?{id:branch.id,tags:{name:'Senbon · selected branch'},point:branch.points[Math.floor(branch.points.length/2)]}:landmarks.find(p=>p.id==='node/6865347485'));
       if(chosen.some(p=>!p))throw new Error('An itinerary landmark is missing from the map');
       $('start').value=chosen[0].id;$('destination').value=chosen.at(-1).id;$('via').value='';
     }
@@ -468,9 +470,21 @@ try {
   $('route').onclick=trace;
   $('itinerary').onchange=trace;$('branch').onchange=trace;
   $('overview').onclick=()=>{if(!allowDebugCamera||sectorPreparation?.busy)return;interruptArrival();walker.stop();overview();};
-  $('walk').onclick=()=>{
-    if(!activeRoute.length)return;
+  $('walk').onclick=async()=>{
+    if(activeRoute.length<2)return;
     if(routeProgress>=activeRoute.length-1){routeProgress=0;travelled=0;}
+    const route=activeRoute;
+    const start=advanceGuidedRoute(route,routeProgress,travelled,0).position;
+    if(Math.hypot(camera.position.x-start[0],camera.position.z-start[2])>80){
+      // A remote start needs the same residency as fast travel. Queue uploads
+      // and compilation while the previous view is still on screen.
+      $('walk').disabled=true;
+      const target=route[Math.min(routeProgress+5,route.length-1)];
+      const ready=await requestCheckpoint({id:'route_start',label:'route start',point:start,target,guidedRoute:route});
+      if(route!==activeRoute)return;
+      $('walk').disabled=false;
+      if(!ready)return;
+    }
     walking=true;controls.enabled=false;$('stop').disabled=false;$('walk').textContent='Following route…';
   };
   $('stop').onclick=()=>{
@@ -532,10 +546,13 @@ try {
   const canMove=(from,to)=>(fareGates?.canMove(from,to)??true)&&(assembly.keihanRail?.canMove(from,to)??true);
   let journal=null,sectorPreparation=null,sectorPause=null,checkpointRequest=0,qualityPending=0;
   await startupCheckpoint();
-  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:(object,event)=>{journal?.recordInteraction(object);if(event?.type==='drink.collected')zen?.collectDrink(event);if(event?.type==='food.collected')zen?.collectFood(event);},onStart:()=>{walking=false;$('stop').disabled=true;}});
+  const walker=installWalking({camera,renderer,controls,ground,assembly,audio,canMove,allowDebugCamera,resolveMove:allowDebugCamera?undefined:publicWalkDomain.resolveMove,onInteraction:(object,event)=>{if(!object?.userData?.fieldNote)zen?.world.cancelFieldNote();journal?.recordInteraction(object);if(event?.type==='drink.collected')zen?.collectDrink(event);if(event?.type==='food.collected')zen?.collectFood(event);},onStart:()=>{walking=false;$('stop').disabled=true;}});
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     const reviewPoints=[
+      ['audit_iseya_up','Review · Iseya approach',929,-10.6,938.4,-2],
+      ['audit_iseya_down','Review · Iseya return',943,-2.1,932,-9],
+      ['audit_gozendani_front','Review · Gozendani entrance',996.46,-260.109,993.63,-262.32],
       ['audit_south_shinme','Review · Southern Shinme',97.801,-17.377,94.577,-6.451],
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
       ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1151.8,-190.8],
@@ -556,7 +573,7 @@ try {
     }
     const reviewTargets=contextFinishes.stats.records.filter(r=>r.upperCafe).map(record=>{
       const building=features.buildings.find(b=>b.id===record.id),i=record.upperCafe.edge,a=building.points[i],b=building.points[i+1];
-      return {id:record.id,label:record.upperCafe.kind==='tsujitei'?'Tsujitei':'Okamoto',point:[(a[0]+b[0])/2,(a[2]+b[2])/2]};
+      return {id:record.id,label:{tsujitei:'Tsujitei',okamoto:'Okamoto',iseya:'Iseya'}[record.upperCafe.kind]??record.id,point:[(a[0]+b[0])/2,(a[2]+b[2])/2]};
     });
     for(const marker of assembly.root.getObjectByName('Mapped lateral route landmarks')?.userData.markers??[])reviewTargets.push({id:marker.id,label:marker.inscription??'Yotsutsuji route map',point:[marker.point[0],marker.point[2]]});
     for(const {id,label,point:[tx,tz]}of reviewTargets){
@@ -638,7 +655,7 @@ try {
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
   await startupCheckpoint('createRenderQuality');
   const shaftVolumeScene=query.get('shaftVolumes')!=='0'&&renderer.backend.isWebGPUBackend?new THREE.Scene():null;
-  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene:shaftVolumeScene});
+  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene:shaftVolumeScene,aoEarlyOut:query.get('aoEarlyOut')!=='0',projectedCrowns:query.get('projectedCrowns')==='1'});
   let auditCompileDepth=0;
   if(renderBuildAudit){
     const compile=quality.compileAsync;
@@ -676,7 +693,7 @@ try {
   const shaftSites=chooseShaftSites({routes:shaftRoutes,canopies:forestCrowns.bounds,ground:assembly.ground});
   await startupCheckpoint();
   const shaftReducedMotion=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const sunShafts=createLocalSunShafts({scene:shaftVolumeScene??scene,depthTexture:quality.shaftDepth,sites:shaftSites,roofs:forestRoofs.bounds,audit:query.get('shaftAudit')==='1'});
+  const sunShafts=createLocalSunShafts({scene:shaftVolumeScene??scene,depthTexture:quality.shaftDepth,sites:shaftSites,roofs:forestRoofs.bounds,groundOpening:query.get('groundOpening')!=='0',audit:query.get('shaftAudit')==='1'});
   sunShafts.setQuality(quality.mode);sunShafts.setMode($('light').value);sunShafts.update(camera);
   const sunShaftReport=()=>({...sunShafts.stats,volumePass:quality.shaftVolumeStats,coverage:shaftCoverage});
   healthCamera=camera;healthShafts=()=>JSON.stringify(sunShaftReport());
@@ -702,7 +719,8 @@ try {
   const menu=installExplorationMenu({walker,controls,camera,assembly,allowDebugCamera,allowFastTravel,places:hud.places,onNavigate:interruptArrival,
     sound:{get enabled(){return audio.enabled;},set:value=>audio.setEnabled(value)},cameraOwned:()=>!!zen?.active||!!arrival?.active||(!!sectorPreparation?.busy||qualityPending>0),
     onRenderQuality:async value=>{
-      qualityPending++;
+      if(!qualityPending&&quality.mode===value)return;
+      qualityPending++;$('render-quality').setAttribute('aria-busy','true');
       try{await renderPreparation.run(async()=>{
       walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();
       textureStreaming.setMode(value);
@@ -724,6 +742,7 @@ try {
       });}finally{
         qualityPending--;
         if(!qualityPending){
+          $('render-quality').removeAttribute('aria-busy');$('render-quality').value=quality.mode;
           const blocked=!!zen?.active||photo.active||menu.active||journal.active||!!arrival?.active||!!sectorPreparation?.busy||document.body.classList.contains('welcome-open');
           walker.pause(blocked);controls.enabled=allowDebugCamera&&!blocked&&!walker.active&&$('stop').disabled;
         }
@@ -756,11 +775,11 @@ try {
   function requestCheckpoint(destination){
     if(!sectorPreparation||photo.active)return;
     const token=++checkpointRequest;showCheckpointStatus(`Preparing ${destination.label}...`);
-    sectorPreparation.request(destination).catch(error=>{
+    return sectorPreparation.request(destination).catch(error=>{
       if(token!==checkpointRequest)return;
       $('position').textContent=`Could not prepare ${destination.label}: ${error.message}. Retry this checkpoint.`;
       showCheckpointStatus(`Could not prepare ${destination.label}. Retry this checkpoint. ${error.message}`.slice(0,260),true);
-      console.warn('Checkpoint preparation failed',error);
+      console.warn('Checkpoint preparation failed',error);return false;
     });
   }
   sectorPreparation=createSectorPreparation({
@@ -816,6 +835,10 @@ try {
       }
     },
     commit(destination){
+      if(destination.guidedRoute){
+        if(destination.guidedRoute!==activeRoute)return false;
+        interruptArrival();return true;
+      }
       interruptArrival();
       if(!walker.teleport(destination.point,destination.target)){$('position').textContent='No clear access found at this checkpoint.';return false;}
       if(sectorPause)sectorPause.committed=true;
@@ -916,11 +939,18 @@ try {
   }
   if(query.get('audit')==='1'){
     for(const [i,owner] of zen.world.interactionRoots.entries()){
-      const target=owner.getWorldPosition(new THREE.Vector3()),id=`audit_zen_${i}`;
-      const seatProp=['cat','map','postcard'].includes(owner.userData.zenMoment);
-      const teaApproach=owner.userData.zenMoment==='tea'?summitShop.stats.front.outward:null;
-      const x=target.x+(teaApproach?teaApproach[0]*2:seatProp?0:-1.5),z=target.z+(teaApproach?teaApproach[1]*2:seatProp?-1.5:1.0),y=assembly.walkHeight(x,z);
-      const anchor={id,label:`Review · ${owner.userData.interactable?.title??owner.name}`,target:[target.x,target.y+.8,target.z],checkpoint:[x,y,z],lookAt:[target.x,target.y+.8,target.z]};
+      const site=zen.world.stats.fieldNotes.sites[owner.userData.fieldNote];
+      const id=site?'audit_'+owner.userData.fieldNote:`audit_zen_${i}`;
+      let anchor;
+      if(site){
+        anchor={id,label:'Review · '+site.label,checkpoint:site.point,target:site.target,lookAt:site.target};
+      }else{
+        const target=owner.getWorldPosition(new THREE.Vector3());
+        const seatProp=['cat','map','postcard'].includes(owner.userData.zenMoment);
+        const teaApproach=owner.userData.zenMoment==='tea'?summitShop.stats.front.outward:null;
+        const x=target.x+(teaApproach?teaApproach[0]*2:seatProp?0:-1.5),z=target.z+(teaApproach?teaApproach[1]*2:seatProp?-1.5:1.0),y=assembly.walkHeight(x,z);
+        anchor={id,label:`Review · ${owner.userData.interactable?.title??owner.name}`,target:[target.x,target.y+.8,target.z],checkpoint:[x,y,z],lookAt:[target.x,target.y+.8,target.z]};
+      }
       assembly.spatial.byId[id]=anchor;const option=document.createElement('option');option.value=id;option.textContent=anchor.label;$('place').append(option);$('checkpoint-select').append(option.cloneNode(true));
     }
   }
@@ -1073,7 +1103,7 @@ try {
   let movementFrameAudit=null;
   if(query.get('frameAudit')==='1'){
     const {installMovementFrameAudit}=await import('./movement-frame-audit.mjs');
-    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,threeRevision:THREE.REVISION,quality:quality.mode,look:quality.look,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio,pixelRatio:renderer.getPixelRatio()},architecture:assembly.architecturalSurfaces?.stats,mode:walker.mode,prewarm:walkingPrewarm.stats,neighborhood:JSON.parse(document.body.dataset.walkingNeighborhood??'null'),staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats,walkingCompiles:walkingCompileHistory}:{})})});
+    movementFrameAudit=installMovementFrameAudit({camera,durationMs:Number(query.get('frameAuditSeconds')||16)*1000,onStart:()=>{gpuSample?.reset();renderBuildAudit?.reset();frameStallAudit?.reset();backendWorkAudit?.reset();frameSchedulingAudit?.reset();if(walkingCompileHistory)walkingCompileHistory.length=0;},getContext:()=>({backend:document.body.dataset.rendererBackend,threeRevision:THREE.REVISION,quality:quality.mode,look:quality.look,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio,pixelRatio:renderer.getPixelRatio()},architecture:assembly.architecturalSurfaces?.stats,mode:walker.mode,prewarm:walkingPrewarm.stats,neighborhood:JSON.parse(document.body.dataset.walkingNeighborhood??'null'),staticCull:query.get('prewarmCull')!=='0',textures:textureStreaming.stats,gpuMemory:renderer.info.memory,drawCalls:renderer.info.render.drawCalls,triangles:renderer.info.render.triangles,gpuPasses:gpuSample?.stats,assets:{visitorModels:visitors.people.filter(p=>p.bones).length,visitorsReadyAt:document.body.dataset.visitorsReadyAt,streetLife:{...streetLife.stats}},resources:renderBuildAudit?performance.getEntriesByType('resource').filter(r=>/\.glb(?:\.gz)?(?:[?#]|$)/.test(r.name)).map(r=>({url:r.name.split(/[?#]/)[0],startTime:r.startTime,responseEnd:r.responseEnd,duration:r.duration})):undefined,...(renderBuildAudit?{builds:renderBuildAudit.stats,stalls:frameStallAudit.stats,scheduling:frameSchedulingAudit.stats,backendWork:backendWorkAudit.stats,walkingCompiles:walkingCompileHistory}:{})})});
     addEventListener('pagehide',event=>{if(!event.persisted)movementFrameAudit.dispose();});
   }
   let horizonAuditAt=0;
@@ -1164,7 +1194,10 @@ try {
         const index=assembly.legacy.foliage.findIndex(source=>source.geometry===object.geometry);
         return index>=0?['forest trunks','sugi crowns','maple crowns','understory','bamboo culms','bamboo leaves'][index]:object.name||object.parent?.name||`geometry ${object.geometry.id}`;
       }}));
-    }else renderWalkingFrame();
+    }else{
+      if(movementFrameAudit?.active)gpuSample?.begin(time);
+      try{renderWalkingFrame();}finally{gpuSample?.end();}
+    }
     showcase?.afterRender();const submitMs=performance.now()-submitStart;shadowRouteAudit?.afterRender(time,submitMs);recordRender(time,submitMs);
     // Frame diagnostics keep their audit cadence; ordinary visits skip them.
     if(telemetry.enabled){

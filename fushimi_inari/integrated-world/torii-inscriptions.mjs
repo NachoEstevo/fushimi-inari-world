@@ -122,10 +122,14 @@ export function buildToriiInscriptions(root,entries,{halfSpan,bottomRadius,topRa
     // A six-segment curved patch's chord must remain outside the post, too:
     // moving just its vertices 2mm out lets thicker posts occlude the ink.
     const radius=y=>((bottomRadius+(topRadius-bottomRadius)*(y-bottomY)/(topY-bottomY))*(entry.thickness??1))/Math.cos(angle/12)+.001;
-    const geo=new THREE.CylinderGeometry(radius(high),radius(low),high-low,6,1,true,(front?Math.PI:0)-angle/2,angle);
+    // Turn the complete inscription pair together: swapping faces alone
+    // would reverse the right-to-left dedication and the donor/date sides.
+    const azimuth=(front?Math.PI:0)+(entry.reverseInk?Math.PI:0);
+    const post=entry.reverseInk?-side:side;
+    const geo=new THREE.CylinderGeometry(radius(high),radius(low),high-low,6,1,true,azimuth-angle/2,angle);
     const uv=geo.attributes.uv,bounds=toriiInkUvBounds(tile);
     for(let i=0;i<uv.count;i++)uv.setXY(i,bounds.uMin+uv.getX(i)*(bounds.uMax-bounds.uMin),bounds.vMin+uv.getY(i)*(bounds.vMax-bounds.vMin));
-    geo.translate(side*halfSpan,(low+high)/2,0);geo.applyMatrix4(entry.m);geometries.push(geo);
+    geo.translate(post*halfSpan,(low+high)/2,0);geo.applyMatrix4(entry.m);geometries.push(geo);
   }
   for(const entry of entries)for(const side of [-1,1]){
     patch(entry,side,true,toriiInkTile(entry,side,true));

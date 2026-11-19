@@ -84,3 +84,26 @@ test('hidden middle cards are admitted to prewarm and share the reversible Aozor
  assert.equal(middle.material.colorNode,node);assert.equal(middle.material.version,version);
  foliage.dispose();assert.equal(middle.material,material);assert.equal(near.material,material);
 });
+
+test('projected crown transitions account for actual deviation, pixel height, zoom and cell radius',async()=>{
+ const {createCrownProjection}=await import('./forest-lod.mjs');
+ const {crownCardDeviation,coarseFoliageCards}=await import('./foliage-card-lod.mjs');
+ const source=new THREE.PlaneGeometry(8,8,3,3),pos=source.attributes.position;
+ assert.ok(crownCardDeviation(source,coarseFoliageCards(source))<1e-6,'planar interpolation is exact');
+ pos.setZ(5,2.2);source.computeBoundingBox();source.computeBoundingSphere();
+ const error=crownCardDeviation(source,coarseFoliageCards(source));
+ assert.ok(error>.5&&error<=2.2);
+ const group=new THREE.Group(),near=new THREE.InstancedMesh(source,new THREE.MeshBasicMaterial(),1);
+ near.setMatrixAt(0,new THREE.Matrix4().makeScale(1.4,1.4,1.4));near.computeBoundingSphere();group.add(near);
+ preservedForestLOD(group);const lod=group.children[0],camera=new THREE.PerspectiveCamera(70,1.6);
+ const update=createCrownProjection(group,camera);update(720);
+ const nearLimit=lod.levels[1].distance,farLimit=lod.levels[2].distance;
+ assert.ok(nearLimit*.88>=45+near.boundingSphere.radius);
+ update(1440);assert.ok(lod.levels[1].distance>nearLimit);
+ assert.ok(lod.levels[2].distance>=farLimit);
+ camera.fov=35;camera.updateProjectionMatrix();const wide=lod.levels[1].distance;
+ update(1440);assert.ok(lod.levels[1].distance>wide);
+ camera.zoom=.5;camera.updateProjectionMatrix();update(100);
+ assert.ok(lod.levels[1].distance*.88*camera.zoom>=45+near.boundingSphere.radius);
+ assert.ok(lod.levels[2].distance>=lod.levels[1].distance);
+});

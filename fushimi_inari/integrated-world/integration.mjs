@@ -6,6 +6,8 @@ import {createStartupCheckpoint,yieldStartupTask} from './startup-work.mjs';
 import {telemetry} from './telemetry.mjs';
 import {findVotiveWaxToRetain} from './candle-flame-instances.mjs';
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
+import {refineGozendani} from './gozendani-prayer-hall.mjs';
+import {clearIseyaTerrace,buildKumatakaStoneTerrace} from './pilgrimage-terraces.mjs';
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
 import {buildMappedRoofCanopies} from './mapped-roof-canopies.mjs';
 import {registeredZenShelters} from './zen-shelter-metadata.mjs';
@@ -540,6 +542,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   }).filter(Boolean);
   if(ichinomineRefinement)colliders.push(...ichinomineRefinement.getColliders());
   telemetry.text('azumamaroTreesCleared',clearAzumamaroLegacySugi(legacy,features,colliders));
+  telemetry.report('gozendaniPrayerHall',refineGozendani(root,features,surfaces,legacy,colliders));
+  telemetry.report('iseyaTerraceClearance',clearIseyaTerrace(root,features,legacy,colliders));
   telemetry.report('mitsurugiRegistration',registerMitsurugi(root,features,surfaces,colliders));
   await checkpoint('buildMitsurugiCafeFrontage');
   const mitsurugiCafe=buildMitsurugiCafeFrontage(root,features,surfaces,colliders,legacy.materials);
@@ -764,6 +768,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const kumatakaRegistrationR97=buildKumatakaRegistrationR97(root,features,surfaces,legacy.materials,colliders,{water:shinikeWater});
   telemetry.report('kumatakaRegistrationR97',kumatakaRegistrationR97?(({group,...report})=>report)(kumatakaRegistrationR97):null);
   await checkpoint('buildKumatakaRoofR97');
+  telemetry.report('shinikeStoneTerrace',buildKumatakaStoneTerrace(root,features,surfaces,legacy.materials,colliders,kumatakaRegistrationR97));
   const kumatakaRoofR97=buildKumatakaRoofR97(root);
   telemetry.report('kumatakaRoofR97',kumatakaRoofR97?(({group,...report})=>report)(kumatakaRoofR97):null);
   const shinikeVegetation=repairShinikeVegetationR97(root,legacy,shinikeWater,colliders);

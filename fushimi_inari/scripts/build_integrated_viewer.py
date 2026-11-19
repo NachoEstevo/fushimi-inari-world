@@ -131,7 +131,7 @@ js=js.replace("    }else controls.update();","""    }else if(!walker.update(dt))
 """)
 js=js.replace("  $('overview').onclick=overview;","  $('overview').onclick=()=>{walker.stop();overview();};")
 js=js.replace("chosen.splice(1,0,landmarks.find(p=>p.id==='node/6865347485'));","""const branch=features.paths.find(p=>p.id===$('branch').value);
-      chosen.splice(1,0,branch?{id:branch.id,tags:{name:'Senbon · rama seleccionada'},point:branch.points[Math.floor(branch.points.length/2)]}:landmarks.find(p=>p.id==='node/6865347485'));""")
+      chosen.splice(1,0,branch?{id:branch.id,tags:{name:'Senbon · selected branch'},point:branch.points[Math.floor(branch.points.length/2)]}:landmarks.find(p=>p.id==='node/6865347485'));""")
 js=js.replace("shortestRoute(graph,snapped[i-1].node.id,snapped[i].node.id)","shortestRoute(graph,snapped[i-1].node.id,snapped[i].node.id,new Set($('branch').value?['way/260121328','way/377968455'].filter(id=>id!==$('branch').value):[]))")
 js=js.replace("  $('itinerary').onchange=trace;","  $('itinerary').onchange=trace;$('branch').onchange=trace;")
 js=js.replace("camera.lookAt(look[0],look[1]+1.7,look[2])","camera.lookAt(look[0],ground(look[0],look[2])+1.7,look[2])")

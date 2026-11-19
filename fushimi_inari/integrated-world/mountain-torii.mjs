@@ -66,7 +66,9 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
     {from:'yotsu',to:'sannomine',spacing:1.6,scale:1.08},
     {from:'sannomine',to:'ninomine',spacing:1.5,scale:1.12},
     {from:'ninomine',to:'summit',spacing:1.7,scale:1.12},
-    {from:'summit',to:'mitsurugi',spacing:2.1,scale:1.14},
+    // This route is generated downhill. The photographed approach from Mitsurugi
+    // faces Ichinomine (Living Kyoto, 2019-08-17, https://livingkyo.com/2699/).
+    {from:'summit',to:'mitsurugi',spacing:2.1,scale:1.14,reverseInk:true},
     {from:'mitsurugi',to:'gozendani',spacing:2.3,scale:1.12},
     {from:'gozendani',to:'yotsu',spacing:2.2,scale:1.14},
   ];
@@ -127,7 +129,7 @@ export function buildMountainTorii(root,legacy,spatial,surfaces,colliders,{exclu
           from:section.from,to:section.to,point:[x,y,z],reason});
         continue;
       }
-      matrices.push({m,variation,posts,thickness:profile.thickness,...toriiInscriptionProfile(sectionIndex,index)});
+      matrices.push({m,variation,posts,reverseInk:section.reverseInk,thickness:profile.thickness,...toriiInscriptionProfile(sectionIndex,index)});
     }
   }
   const supportTerrain=terrainPositions?.length?mountainToriiSupportTriangles(terrainPositions,matrices.flatMap(e=>e.posts)):[];

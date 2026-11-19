@@ -15,6 +15,8 @@ import {installZenSeatedLook} from './zen-seated-look.mjs';
 import {createZenHeldDrink} from './zen-held-drink.mjs';
 
 import {zenJourneyLocations} from './zen-locations.mjs';
+import {FIELD_OBSERVATIONS} from './field-notes.mjs';
+import {planFieldNoteSites} from './zen-field-notes.mjs';
 
 // Connect optional activities through explicit completions. Existing walking,
 // journal and route owners retain their responsibilities and their data.
@@ -22,7 +24,10 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./zen-experience.css?v=living-nov05-1',import.meta.url).href;document.head.append(style);
  let storage=null;try{storage=localStorage;}catch{}
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
- const locations=zenJourneyLocations(assembly,shop,streetCommerce),journey=createZenJourney({storage,locations}),album=createZenPhotoAlbum();
+ const fieldNoteSites=planFieldNoteSites(assembly);
+ const locations=zenJourneyLocations(assembly,shop,streetCommerce);
+ for(const [id,site]of Object.entries(fieldNoteSites))locations[id]=site.point;
+ const journey=createZenJourney({storage,locations}),album=createZenPhotoAlbum();
  let ui,world,boardingContext=null,disposed=false,lastObserve=-Infinity,worldWasActive=false,autoDay=true,lastMode=getTimeOfDay(),rested=false,departurePhase=null;
  let journeyState=journey.snapshot();
  const weather=createZenWeather({scene,camera,assembly,shop,getQuality});
@@ -35,7 +40,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  const announce=text=>{notice.textContent=text;notice.hidden=false;noticeUntil=performance.now()+4200;};
  function applyTime(mode){if(getTimeOfDay()===mode)return;onTimeOfDay(mode);lastMode=mode;}
  const returning=createZenReturnTrain({station:assembly.keihanStation??assembly.inariStation,camera,walker,controls,reducedMotion:()=>reducedMotion.matches,
-  onBegin(){boardingContext={...context(),mode:'walk',intent:'interact'};seat.stand();world?.setSeated(false);drink.stow();food.stow();setUmbrella(false);if(autoDay&&rested&&getTimeOfDay()==='gold')applyTime('night');},
+  onBegin(){boardingContext={...context(),mode:'walk',intent:'interact'};world?.cancelFieldNote();seat.stand();world?.setSeated(false);drink.stow();food.stow();setUmbrella(false);if(autoDay&&rested&&getTimeOfDay()==='gold')applyTime('night');},
   onComplete(){if(boardingContext){journey.recordMoment('return',boardingContext);journey.finishVisit();boardingContext=null;}ui.showEnding();},
   onCancel(){boardingContext=null;announce('Back on the platform.');}
  });
@@ -47,15 +52,20 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
  }
  function action(event){
   if(!event?.completed)return;
-  const id=event.type==='meetstation'?'aki':event.type;
+  if(FIELD_OBSERVATIONS.some(({id})=>id===event.type))return journey.recordMoment(event.type,{...context(),intent:'interact'});
+  const id=event.type==='meetstation'||event.type==='meetreturn'?'aki':event.type;
   if(['tea','cat','map','postcard','aki'].includes(id))journey.recordMoment(id,{...context(),intent:'interact'});
   if(id==='cat.pet')weather.purr?.();
   if(id==='tea'){rested=true;if(autoDay&&getTimeOfDay()==='day')applyTime('gold');announce('Warm tea.');}
  }
- world=createZenWorldMoments({scene,camera,assembly,shop,visitors,journey,onAction:action,onSeat:payload=>{
+ world=createZenWorldMoments({scene,camera,assembly,shop,visitors,journey,fieldNoteSites,fieldNotesBlocked:()=>getBlocked()||document.hidden||walker.paused||world.active||seat.active||returning.cameraOwned||food.active||vending.active,onAction:action,onSeat:payload=>{
   if(payload.leave){seat.stand();world.setSeated(false);return;}
   const accepted=!returning.cameraOwned&&!getBlocked()&&seat.sit({...payload,onLeave(){world?.setSeated(false);payload.onLeave?.();}});world.setSeated(!!accepted);
  },onReturn:startReturn});
+ walker.setCancelInteraction?.(world.cancelFieldNote);
+ const onVisibility=()=>{if(document.hidden)world.cancelFieldNote();};
+ document.addEventListener('visibilitychange',onVisibility);
+ window.addEventListener('pagehide',world.cancelFieldNote);
  const food=installStreetFoodService({scene,camera,assembly,commerce:streetCommerce,walker,announce,onSound:commerceSound,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||vending.active,onCollected:()=>drink.stow()});
  const vending=installDrinkMachineService({commerce:streetCommerce,camera,walker,announce,onSound:commerceSound,getBlocked:()=>getBlocked()||world.active||seat.active||returning.cameraOwned||food.active});
  const heldFood={group:food.held.group,canConsume:()=>food.held.stats.bites>0,consume:()=>food.held.eat()},heldDrink={group:drink.group,canConsume:()=>drink.stats.sips>0,consume:()=>drink.sip()};
@@ -99,7 +109,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
    if(!record)return 'This view cannot be kept in the journal.';
    return thumbnail?(thumbnail.persistent?'Kept in your journal.':'Kept for this visit · browser photo storage unavailable.'):'The memory is noted; the image preview could not be kept.';
   },selectPhotoPrompt(id){capturedPrompt=id;},collectFood(event){return food.collect(event);},get food(){return food;},get vending(){return vending;},collectDrink(event){if(!drink.collect(event))return false;food.stow();commerceSound({type:'drink.collect',position:camera.position.toArray(),productId:event.productId});journey.recordMoment('drink',{...context(),intent:'interact'});return true;},
-  cancelActivity(){seat.stand();world.setSeated(false);returning.cancel();},
+  cancelActivity(){world.cancelFieldNote();seat.stand();world.setSeated(false);returning.cancel();},
   update(dt,time,{blocked=false}={}){
    if(disposed)return;
    const external=blocked||document.hidden;inputBlocked=external;
@@ -108,7 +118,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
    worldState.blocked=external||returning.cameraOwned||food.active||vending.active;worldState.mode=walker.mode;worldState.weather=journeyState.weather;world.update(dt,time/1000,worldState);
    if(world.active!==worldWasActive){worldWasActive=world.active;walker.pause(world.active||external||seat.active||returning.cameraOwned);if(world.active)controls.enabled=false;}
 
-   const canInteract=!!(!external&&!runtime.active&&hint&&!hint.hidden);if(lastInteractHidden===canInteract){lastInteractHidden=!canInteract;interactButton.hidden=lastInteractHidden;}if(canInteract&&interactButton.textContent!==hint.textContent)interactButton.textContent=hint.textContent;
+   const canInteract=!!(!external&&!runtime.active&&hint&&!hint.hidden);if(lastInteractHidden===canInteract){lastInteractHidden=!canInteract;interactButton.hidden=lastInteractHidden;}if(canInteract){const text=hint.lastElementChild?.textContent??hint.textContent;if(interactButton.textContent!==text)interactButton.textContent=text;}
    ui.update(time);const hideDeparture=!returning.active||external;if(lastDepartureHidden!==hideDeparture){lastDepartureHidden=hideDeparture;departure.hidden=hideDeparture;}if(lastDepartureDisabled!==external){lastDepartureDisabled=external;cancel.disabled=skip.disabled=external;}if(departurePhase!==returning.stats.phase){departurePhase=returning.stats.phase;departureText.textContent=returning.active?({opening:'Doors opening',boarding:'Boarding',aisle:'Inside the train',turning:'Take a seat',seating:'Take a seat',closing:'Doors closing',departing:'Leaving Fushimi-Inari'}[returning.stats.phase]??'Your return journey'):'';}
    if(time-lastObserve>=500){lastObserve=time;weather.setAudioEnabled(audio.enabled);weather.setVolume(Number(volume?.value??55)/100);if(!external&&!returning.cameraOwned)journey.observe(camera.position.toArray(),{mode:walker.mode});
     const mode=getTimeOfDay();if(mode!==lastMode){autoDay=false;day.checked=false;lastMode=mode;}
@@ -117,6 +127,7 @@ export function installZenExperience({scene,camera,cameraElement,walker,controls
    if(!notice.hidden&&time>noticeUntil)notice.hidden=true;
   },afterCamera(dt,time,{blocked=false}={}){if(disposed)return;weatherState.blocked=blocked||document.hidden;drinkState.blocked=weatherState.blocked||world.active||seat.active||returning.cameraOwned||food.active||vending.active;weather.update(dt,time/1000,weatherState);drink.update(dt,drinkState);food.afterCamera(dt,drinkState);},dispose(){if(disposed)return;disposed=true;unsubscribe();vendingInput.dispose();heldInput.dispose();vending.dispose();food.dispose();seatedLook.dispose();seat.dispose();world.dispose();returning.dispose();weather.dispose();drink.dispose();ui.dispose();album.dispose();journey.dispose();
    const i=roots.indexOf(returning.interactionRoot);if(i>=0)roots.splice(i,1);extras.remove();notice.remove();departure.remove();interactButton.remove();style.remove();document.removeEventListener('pointerdown',unlock);document.removeEventListener('keydown',unlock);document.removeEventListener('keydown',onKey,true);
+   walker.setCancelInteraction?.(null);document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('pagehide',world.cancelFieldNote);
   }};
  return runtime;
 }

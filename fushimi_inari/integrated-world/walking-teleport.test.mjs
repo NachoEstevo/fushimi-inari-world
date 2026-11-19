@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {installWalking} from './walking.mjs';
 import {createWalkSettings} from './walk-settings.mjs';
-function fixture({sample=true,colliders=[],isWalkable,resolveMove,allowDebugCamera=false,interactables=[]}={}){
+import {createGamepadInput} from './gamepad-input.mjs';
+function fixture({sample=true,colliders=[],isWalkable,resolveMove,allowDebugCamera=false,interactables=[],gamepad}={}){
  const saved={document:globalThis.document,location:globalThis.location,addEventListener:globalThis.addEventListener},els=new Map(),events={};
  globalThis.document={createElement(){return {append(){},setAttribute(){},hidden:false};},querySelector(){return null;},body:{append(){},dataset:{},classList:{add(){},remove(){},contains(){return false;}}},getElementById(id){if(!els.has(id))els.set(id,{hidden:false,textContent:''});return els.get(id);}};
- globalThis.location={search:''};globalThis.addEventListener=(name,fn)=>events[name]=fn;
+ globalThis.location={search:''};globalThis.addEventListener=(name,fn)=>{const prior=events[name];events[name]=event=>{prior?.(event);fn(event);};};
  const camera=new THREE.PerspectiveCamera();camera.position.set(20,30,40);const controls={enabled:true,target:new THREE.Vector3()};
  const assembly={legacy:{interactables},colliders,isWalkable,spatial:{main:[],returning:[]},surfaces:{segments:[],sample:()=>sample?{segment:{id:'way/105449722',kind:'stone'}}:null,height:()=>33.664626},walkHeight:()=>33.664626};
- const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:()=>33.664626,assembly,audio:{step(){}},onStart(){},resolveMove,allowDebugCamera,settings:createWalkSettings({storage:null,initial:{headBob:false}})});
+ const walker=installWalking({camera,controls,renderer:{domElement:{addEventListener(){}}},ground:()=>33.664626,assembly,audio:{step(){}},onStart(){},resolveMove,allowDebugCamera,gamepad,settings:createWalkSettings({storage:null,initial:{headBob:false}})});
  return {camera,controls,walker,events,els,restore(){for(const [k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}};
 }
 test('E triggers a nearby action directly once and leaves the interaction menu hidden',()=>{
@@ -23,6 +24,31 @@ test('E triggers a nearby action directly once and leaves the interaction menu h
   f.walker.pause(true);f.events.keydown(event);assert.equal(calls,1);
  }finally{f.restore();}
 });
+test('walking dispatches separate observation presses via keyboard, touch action and gamepad',()=>{
+ let pressed=[],pending=false,saved=0;
+ const padEvents={},gamepad=createGamepadInput({events:{addEventListener(type,fn){padEvents[type]=fn;}},getGamepads:()=>[{buttons:pressed.map(value=>({pressed:value}))}]});
+ const point=new THREE.Group();point.position.set(20,33.664626,40);point.userData.fieldNote='field-steps';
+ point.userData.interactable={proximity:true,requiresFacing:false,cooldownMs:0,prompt:'Observe',
+  directAction(){if(pending){saved++;pending=false;return 'Field note saved.';}pending=true;return '';}
+ };
+ const f=fixture({interactables:[point],gamepad});
+ try{
+  const cancel=()=>{const wasPending=pending;pending=false;return wasPending;};
+  f.walker.setCancelInteraction(cancel);
+  f.walker.start();
+  const key={code:'KeyE',target:{},preventDefault(){}};
+  f.events.keydown(key);f.events.keydown({...key,repeat:true});assert.equal(saved,0);assert.equal(pending,true);
+  f.events.keydown({code:'Escape'});assert.equal(pending,false);
+  f.walker.interact();f.walker.interact();assert.equal(saved,1);
+  padEvents.gamepadconnected();f.walker.update(.01);
+  pressed=[true,false];f.walker.update(.01);f.walker.update(.01);assert.equal(saved,1);assert.equal(pending,true);
+  pressed=[false,true];f.walker.update(.01);assert.equal(pending,false);
+  pressed=[true,false];f.walker.update(.01);assert.equal(pending,true);
+  pressed=[];f.walker.update(.01);pressed=[true,false];f.walker.update(.01);assert.equal(saved,2);
+  f.walker.interact();f.walker.pause(true);assert.equal(pending,false);
+ }finally{f.restore();}
+});
+
 test('arrival teleport accepts mapped clear crossing and retains its exact requested center',()=>{
  const f=fixture();try{assert.equal(f.walker.teleport([-157.407,33.664626,10.342],[-138.295876,35.364626,10.764595]),true);assert.ok(Math.abs(f.camera.position.x+157.407)<1e-9);assert.ok(Math.abs(f.camera.position.z-10.342)<1e-9);assert.ok(Math.abs(f.camera.position.y-35.364626)<1e-9);assert.equal(f.walker.mode,'walk');assert.equal(f.controls.enabled,false);}finally{f.restore();}
 });

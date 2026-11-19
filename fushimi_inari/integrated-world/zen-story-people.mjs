@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {withinZenInteractionReach} from './zen-interaction-reach.mjs';
+import {FIELD_OBSERVATIONS} from './field-notes.mjs';
 
 export function planZenStorySites(assembly){
  const spec=assembly.keihanStation?.spec,view=assembly.spatial?.byId?.yotsu,world=new SpatialCollisionWorld(4);
@@ -30,9 +31,10 @@ const CONVERSATIONS={
 };
 
 export function createAkiConversation(onAction=()=>{}){
- const met=new Set();let stage=null,responded=false;
- return {open(site){if(!CONVERSATIONS[site])return false;stage=site;responded=false;return true;},
-  respond(index){if(!stage||!Number.isInteger(index)||!CONVERSATIONS[stage].choices[index])return false;responded=true;return true;},
+ const met=new Set();let stage=null,responded=false,choices=[];
+ return {open(site,extraChoices=[]){if(!CONVERSATIONS[site])return false;stage=site;choices=[...CONVERSATIONS[site].choices,...extraChoices];responded=false;return true;},
+  get choices(){return choices;},
+  respond(index){if(!stage||!Number.isInteger(index)||!choices[index])return false;responded=true;return true;},
   seedJourney(state={}){if(state.moments?.aki)met.add('station');if(state.photoPrompts?.['kyoto-view'])met.add('view');if(state.moments?.return)met.add('return');},
   hasMet:site=>met.has(site),finish(){if(!stage||!responded||met.has(stage))return false;met.add(stage);onAction({type:`meet${stage}`,site:stage,completed:true});return true;}
  };
@@ -41,7 +43,12 @@ export function createAkiConversation(onAction=()=>{}){
 export function createZenStoryPeople({assembly,camera,visitors,journey,onAction=()=>{},document:doc=globalThis.document}){
  const group=new THREE.Group();group.name='Aki · fictional fellow traveler';group.userData.zenMoment='aki';assembly.root.add(group);
  const sites=planZenStorySites(assembly),interactionRoots=[],ownedMaterials=[],ownedGeometry=[],skeletons=new Set(),conversation=createAkiConversation(onAction);
- conversation.seedJourney(journey?.snapshot?.());const unsubscribe=journey?.subscribe?.(state=>conversation.seedJourney(state));
+ let fieldChoices=[];
+ function syncJourney(state){
+  conversation.seedJourney(state);
+  fieldChoices=FIELD_OBSERVATIONS.filter(({id})=>state?.moments?.[id]).map(({share,reply})=>[share,reply]);
+ }
+ syncJourney(journey?.snapshot?.());const unsubscribe=journey?.subscribe?.(syncJourney);
  let disposed=false,blocked=false,time=0,stage=sites.station?'station':'view',dialogStage=null,answer=false,head=null,headRest=null,model=null;
  const stats={storyPeople:0,loadedModels:0,batches:0,triangles:0,assetRequests:0,sites:Object.keys(sites).filter(key=>sites[key]),positions:sites,fictional:true,get stage(){return stage;}};
  const dialog=doc?.createElement?.('dialog');
@@ -51,7 +58,7 @@ export function createZenStoryPeople({assembly,camera,visitors,journey,onAction=
  if(dialog){$('.zen-close').onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});dialog.addEventListener('close',()=>{dialogStage=null;});}
  function render(){
   if(!dialog||!dialogStage)return;const story=CONVERSATIONS[dialogStage];$('#zen-aki-title').textContent=story.title;const choices=$('[data-aki-choices]');choices.replaceChildren();
-  if(!answer){$('[data-aki-words]').textContent=story.intro;for(const [index,[label,reply]]of story.choices.entries()){const b=doc.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>{answer=conversation.respond(index);$('[data-aki-words]').textContent=reply;renderFarewell();};choices.append(b);}}
+  if(!answer){$('[data-aki-words]').textContent=story.intro;for(const [index,[label,reply]]of conversation.choices.entries()){const b=doc.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>{answer=conversation.respond(index);$('[data-aki-words]').textContent=reply;renderFarewell();};choices.append(b);}}
   else renderFarewell();
  }
  function renderFarewell(){
@@ -60,7 +67,7 @@ export function createZenStoryPeople({assembly,camera,visitors,journey,onAction=
  }
  const action=()=>{
   if(disposed||blocked||!model||!dialog||dialog.open||!withinZenInteractionReach(camera,group))return 'Aki is nearby.';
-  dialogStage=stage;conversation.open(stage);answer=false;render();dialog.showModal();$('[data-aki-choices] button')?.focus();return 'Talking with Aki.';
+  dialogStage=stage;conversation.open(stage,stage==='return'?fieldChoices:[]);answer=false;render();dialog.showModal();$('[data-aki-choices] button')?.focus();return 'Talking with Aki.';
  };
  group.userData.interactable={language:'en',title:'Aki',proximity:true,reach:2.5,cooldownMs:900,get prompt(){return conversation.hasMet(stage)?'Talk with Aki again':'Talk with Aki';},directAction:action};
  if(sites[stage]){group.position.set(...sites[stage]);assembly.legacy.interactables.push(group);interactionRoots.push(group);}
@@ -82,7 +89,7 @@ export function createZenStoryPeople({assembly,camera,visitors,journey,onAction=
   if(!dialogStage){
    const remote=camera.position.distanceToSquared(group.position)>2500;
    if(sites.view&&Math.hypot(camera.position.x-sites.view[0],camera.position.z-sites.view[2])<38&&(remote||sites[stage]===sites.view))stage='view';
-   else if(conversation.hasMet('view')&&sites.return&&Math.hypot(camera.position.x-sites.return[0],camera.position.z-sites.return[2])<65&&(remote||sites[stage]===sites.return))stage=conversation.hasMet('station')?'return':'station';
+   else if((conversation.hasMet('view')||fieldChoices.length)&&sites.return&&Math.hypot(camera.position.x-sites.return[0],camera.position.z-sites.return[2])<65&&(remote||sites[stage]===sites.return))stage=conversation.hasMet('station')||fieldChoices.length?'return':'station';
   }
   const p=sites[stage];if(!p||!model){group.visible=false;return;}group.position.set(...p);const d=camera.position.distanceToSquared(group.position);group.visible=d<3600;if(!group.visible||hold)return;
   const yaw=Math.atan2(camera.position.x-p[0],camera.position.z-p[2]);group.rotation.y=THREE.MathUtils.damp(group.rotation.y,d<36?yaw:Math.PI*.8,4,Math.min(.1,dt));

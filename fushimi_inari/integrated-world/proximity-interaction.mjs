@@ -22,10 +22,13 @@ export function createProximityInteractions({targets,camera,now=()=>performance.
    }
    const d=point.distanceTo(camera.position);
    if(d>=(data.reach??2.8)||d>=distance)continue;
-   // Nearby things behind the player should not steal a visible prompt.
-   if(!facingReady){camera.getWorldDirection(nearest);facingReady=true;}
-   point.sub(camera.position).normalize();
-   if(point.dot(nearest)<-.2)continue;
+   if(data.isAvailable&&!data.isAvailable())continue;
+   if(data.requiresFacing!==false){
+    // Nearby things behind the player should not steal a visible prompt.
+    if(!facingReady){camera.getWorldDirection(nearest);facingReady=true;}
+    point.sub(camera.position).normalize();
+    if(point.dot(nearest)<-.2)continue;
+   }
    best=object;distance=d;
   }
   return best;

@@ -194,3 +194,15 @@ test('initial gates have full upright columns on both faces of both posts',()=>{
  }
  assert.ok(texts[0].size>=4&&texts[1].size>=8,'initial donor labels and dates vary by gate');
 });
+
+test('on the trail built downhill from Ichinomine the entire painted pair turns toward the ascent',()=>{
+ const entry={recordIndex:pairedIndex,reverseInk:true},root=make({},entry);
+ for(const front of [true,false])for(const side of [-1,1]){
+  const x=-side*options.halfSpan,z=front?1:-1,y=front?2.17:1.4;
+  const hit=new THREE.Raycaster(new THREE.Vector3(x,y,z),new THREE.Vector3(0,0,-z),0,2).intersectObject(root,true)[0];
+  const bounds=toriiInkUvBounds(toriiInkTile(entry,side,front));
+  assert.ok(hit&&hit.uv.x>bounds.uMin&&hit.uv.x<bounds.uMax&&hit.uv.y>bounds.vMin&&hit.uv.y<bounds.vMax);
+  if(front)assert.equal(toriiInkTiles[toriiInkTile(entry,side,true)],x>0?'奉':'納');
+  else assert.equal(toriiInkTiles[toriiInkTile(entry,side,false)],x<0?toriiInscriptionRecords[pairedIndex].date:toriiInscriptionRecords[pairedIndex].donorLines[0]);
+ }
+});

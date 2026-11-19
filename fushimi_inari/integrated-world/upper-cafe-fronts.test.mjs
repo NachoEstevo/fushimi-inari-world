@@ -33,7 +33,7 @@ test('real mapped upper cafes receive priority within the existing route and cel
  const cells=new Map();for(const record of result.stats.records){const b=record.bounds,key=`${Math.floor((b[0]+b[2])/2/256)},${Math.floor((b[1]+b[3])/2/256)}`;cells.set(key,(cells.get(key)??0)+1);}
  for(const count of cells.values())assert.ok(count<=8);
  result.dispose();
- const excluded=make({excludesBuilding:b=>ids.includes(b.id)});
+ const excluded=make({excludesBuilding:b=>ids.includes(b.id)||['way/626313745','way/301527778','way/301527776'].includes(b.id)});
  for(const id of ids)assert.equal(excluded.detailedIds.has(id),false);
  assert.equal(excluded.stats.records.some(record=>record.upperCafe),false);excluded.dispose();
  const distant=make({segments:[],maxDistance:24});for(const id of ids)assert.equal(distant.detailedIds.has(id),false);assert.equal(distant.group.children.length,0);distant.dispose();

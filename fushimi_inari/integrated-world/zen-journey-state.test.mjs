@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createZenJourney,ZEN_JOURNEY_KEY} from './zen-journey-state.mjs';
 import {JOURNAL_KEY} from './journey-journal.mjs';
 
-const locations={station:[0,0,0],canal:[150,0,0],senbon:[300,10,0],yotsu:[500,100,0],tea:[510,100,0],summit:[900,200,0]};
+const locations={station:[0,0,0],canal:[150,0,0],senbon:[300,10,0],yotsu:[500,100,0],tea:[510,100,0],summit:[900,200,0], 'field-pond':[530,75,0], 'field-steps':[580,100,0]};
 const context=(place,extra={})=>({position:locations[place].map((n,i)=>n+(i===1?1.7:0)),mode:'walk',intent:'interact',...extra});
 const photo=(place,extra={})=>({...context(place),direction:[-1,0,0],fov:45,width:1920,height:1080,weather:'clear',...extra});
 function fixture(raw=null){let value=raw,time=1000;const storage={getItem:()=>value,setItem:(key,data)=>{assert.equal(key,ZEN_JOURNEY_KEY);value=data;}};const journey=createZenJourney({storage,locations,now:()=>time++});return {journey,storage,get raw(){return value;}};}
@@ -153,6 +153,53 @@ test('an optional walk can be changed or dismissed without altering v2 accomplis
  const saved=JSON.parse(f.raw);assert.equal(saved.version,2);assert.equal(saved.activeWalk,'none');
  assert.deepEqual(saved.moments,{aki:20});assert.deepEqual(saved.photoPrompts,{'canal-light':30});assert.deepEqual(saved.sketches,{'sketch-gates':40});
  const restored=createZenJourney({storage:f.storage,locations});assert.equal(restored.snapshot().activeWalk,'none');assert.deepEqual(restored.snapshot().sketches,{'sketch-gates':40});j.dispose();restored.dispose();
+});
+
+for(const [first,second] of [['field-pond','field-steps'],['field-steps','field-pond']]){
+ test(`${first} can complete the invitation and the other observation joins its sheet after reload`,()=>{
+  const f=fixture(JSON.stringify({version:2,moments:{aki:10},sketches:{'sketch-gates':20}})),j=f.journey;
+  assert.equal(j.setActiveWalk('steps-fade'),true);
+  assert.equal(j.snapshot().walks.find(w=>w.id==='steps-fade').next,'Stop by the pond, or follow the stone steps to the landing.');
+  assert.equal(j.snapshot().fieldSheet,null);
+  assert.equal(j.recordMoment(first,context(second)),false);
+  assert.equal(j.recordMoment(first,context(first,{intent:'observe'})),false);
+  assert.equal(j.recordMoment(first,context(first,{mode:'fly'})),false);
+  assert.equal(j.recordMoment(first,context(first,{position:[locations[first][0],locations[first][1]+3,0]})),false);
+  assert.equal(j.recordMoment(first,context(first)),true);
+  assert.equal(j.recordMoment(first,context(first)),false);
+  assert.equal(j.snapshot().walks.find(w=>w.id==='steps-fade').complete,true);
+  assert.deepEqual(j.snapshot().fieldSheet.notes.map(note=>note.id),[first]);
+  j.dispose();
+  const restored=createZenJourney({storage:f.storage,locations});
+  assert.equal(restored.recordMoment(second,context(second)),true);
+  assert.deepEqual(restored.snapshot().fieldSheet.notes.map(note=>note.id),[first,second]);
+  assert.equal(restored.snapshot().fieldSheet.id,'steps-fade');
+  assert.equal(restored.snapshot().version,2);
+  assert.equal(restored.snapshot().moments.aki,10);
+  assert.equal(restored.snapshot().sketches['sketch-gates'],20);
+  restored.dispose();
+ });
+}
+
+test('overlapping tab writes reconcile both field observations on disk',()=>{
+ const previous=globalThis.window,listeners=new Set(),events=[];
+ globalThis.window={addEventListener(_,fn){listeners.add(fn);},removeEventListener(_,fn){listeners.delete(fn);}};
+ let raw=null,staleRead=true,a,b;
+ const storage={getItem:()=>staleRead?null:raw,setItem(_,value){raw=value;events.push(value);}};
+ try{
+  a=createZenJourney({locations,storage,now:()=>1000});b=createZenJourney({locations,storage,now:()=>1001});
+  assert.equal(a.recordMoment('field-pond',context('field-pond')),true);
+  assert.equal(b.recordMoment('field-steps',context('field-steps')),true);
+  assert.equal(events.length,2);
+  staleRead=false;
+  for(let i=0;events.length&&i<8;i++){
+   const newValue=events.shift();for(const fn of [...listeners])fn({key:ZEN_JOURNEY_KEY,newValue});
+  }
+  assert.equal(events.length,0,'reconciled storage stops writing');
+  const atReload=createZenJourney({storage,locations});
+  assert.deepEqual(atReload.snapshot().fieldSheet.notes.map(note=>note.id),['field-pond','field-steps']);
+  atReload.dispose();
+ }finally{a?.dispose();b?.dispose();globalThis.window=previous;}
 });
 
 test('choosing a walk preserves existing saved photos and the separate seal journal',()=>{

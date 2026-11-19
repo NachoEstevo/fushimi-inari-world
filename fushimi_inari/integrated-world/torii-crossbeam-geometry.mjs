@@ -30,3 +30,40 @@ export function toriiCrossbeamGeometry({width,height,depth,centerY,endRise,curve
  geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);
  geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
 }
+
+// The split keys above the through-timber rise toward their exposed ends.
+// The thin points meet inside each pillar. Dimensions are photographic
+// estimates from the mountain gates in https://livingkyo.com/2699/.
+export function toriiNukiWedges({halfSpan,reach,height,depth,seatY}){
+ const positions=[],uvs=[],indices=[];
+ for(const post of [-halfSpan,halfSpan])for(const side of [-1,1]){
+  const x=post+side*reach,z=depth*.5;
+  const corners=[[post,seatY,z],[x,seatY,z],[x,seatY+height,z],
+                 [post,seatY,-z],[x,seatY,-z],[x,seatY+height,-z]];
+  // Separate the flat painted faces to retain the arris at the thick end.
+  for(const face of [[0,1,2],[3,5,4],[0,3,4,1],[1,4,5,2],[0,2,5,3]]){
+   const start=positions.length/3;
+   for(const i of side===1?face:face.toReversed()){
+    const [px,py,pz]=corners[i];positions.push(px,py,pz);
+    const end=face[0]===1,horizontal=face.length===4&&!end;
+    uvs.push((end?pz:px)/1.5,(horizontal?pz:py)/1.5);
+   }
+   indices.push(start,start+1,start+2);
+   if(face.length===4)indices.push(start,start+2,start+3);
+  }
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}
+
+
+// The wider black sleeve encloses the post's bottom. Preserve the original
+// vertex layout (mountain width cohorts use its ranges) while dropping that cap.
+export function sleevedToriiPost(topRadius,bottomRadius,height,segments){
+ const g=new THREE.CylinderGeometry(topRadius,bottomRadius,height,segments);
+ const bottom=g.groups.find(group=>group.materialIndex===2);
+ g.setIndex(new THREE.BufferAttribute(g.index.array.slice(0,bottom.start),1));
+ g.clearGroups();return g;
+}

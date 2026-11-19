@@ -1,3 +1,5 @@
+import {FIELD_WALK_ID, FIELD_WALK_TITLE, hasFieldObservation} from './field-notes.mjs';
+
 // Walks are invitations over memories the journal already owns; they keep no
 // separate counters or completion flags.
 export const ZEN_QUIET_WALKS=Object.freeze([
@@ -17,6 +19,9 @@ export const ZEN_QUIET_WALKS=Object.freeze([
    const returned=s.moments.return??0,visit=s.visit;
    return returned>Math.max(visit.startedAt,s.moments.tea??0,s.photoPrompts['kyoto-view']??0)&&visit.finishedAt>=returned;
   }}
+ ]},
+ {id:FIELD_WALK_ID,title:FIELD_WALK_TITLE,finished:'Your field note is in the journal.',steps:[
+  {text:'Stop by the pond, or follow the stone steps to the landing.',done:s=>hasFieldObservation(s.moments)}
  ]}
 ]);
 

@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,36 @@ SCRIPT = Path(__file__).with_name('prepare-web-assets.py')
 
 
 class TextureRebuildTest(unittest.TestCase):
+    def test_copper_mips_preserve_level_zero_and_compensate_only_unresolved_normals(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'fushimi_inari/assets/textures/nanobanana'
+            source.mkdir(parents=True)
+            normals = Image.new('RGB', (4, 4), (128, 128, 255))
+            for y in range(4):
+                for x in (2, 3):
+                    normals.putpixel((x, y), (128 + (-90 if x == 2 else 90), 128, 219))
+            path = source / 'roof_copper_patina_normal.png'
+            normals.save(path)
+            Image.new('L', normals.size, 100).save(source / 'roof_copper_patina_roughness.png')
+            original = path.read_bytes()
+            out = root / 'review'
+            run = subprocess.run([sys.executable, str(SCRIPT.resolve()), 'copper-mips', str(out)],
+                                 cwd=root, check=True, capture_output=True, text=True)
+            report = json.loads(run.stdout)
+            self.assertEqual([(level['width'], level['height']) for level in report], [(2, 2), (1, 1)])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertFalse((source.parent / 'balanced').exists())
+            with Image.open(out / 'roughness-2x2.webp') as image:
+                roughness = image.convert('L')
+                self.assertLessEqual(abs(roughness.getpixel((0, 0)) - 100), 1)
+                self.assertGreater(roughness.getpixel((1, 0)), 115)
+            with Image.open(out / 'normal-2x2.webp') as image:
+                r, g, b = image.getpixel((1, 0))
+                self.assertLessEqual(abs(r-128), 1)
+                self.assertLessEqual(abs(g-128), 1)
+                self.assertGreaterEqual(b, 254)
+
     def test_rebuilds_webp_and_png_and_detects_output_collisions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

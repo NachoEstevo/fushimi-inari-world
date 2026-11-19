@@ -1,11 +1,12 @@
 import * as THREE from 'three/webgpu';
-import {pass,uniform,vec2,vec3,vec4,mix,float,Fn,If,uv,smoothstep,reference,perspectiveDepthToViewZ,textureSize,max,abs} from 'three/tsl';
+import {pass,uniform,vec2,vec3,vec4,mix,float,Fn,If,uv,smoothstep,reference,perspectiveDepthToViewZ,textureSize,texture,max,abs} from 'three/tsl';
 import {bloom} from 'three/addons/tsl/display/BloomNode.js';
 import {ao} from 'three/addons/tsl/display/GTAONode.js';
 import {installPendingPipelineGuard} from './pending-pipeline-guard.mjs';
 import {normalizeVisualLook,LOOK_BLOOM,LOOK_GRADE} from './visual-look.mjs';
 import {settleRenderer} from './renderer-settle.mjs';
 import {compileScenePass} from './scene-pass-compilation.mjs';
+import {createCrownProjection} from './forest-lod.mjs';
 import {createShaftVolumePass} from './shaft-volume-pass.mjs';
 
 // The RenderPipeline applies this once in its output transform (renderOutput);
@@ -40,11 +41,12 @@ export function qualityPixelRatio(mode,dpr,width,height){
 }
 
 // One scene pass feeds bloom and the output transform. There is no duplicate scene render.
-export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene}){
+export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene,aoEarlyOut=true,projectedCrowns=false}){
   let mode='balanced',look='natural',disposed=false,transitioning=false;
   let pending=0,compiling=0,queue=Promise.resolve(),resolution;
   const pipelineGuard=installPendingPipelineGuard(renderer.backend);
   const originalTextures=new Map();
+  const updateCrownProjection=projectedCrowns?createCrownProjection(scene,camera):null;
   // Set before the pipeline exists so its first output transform is final.
   const previousToneMapping=renderer.toneMapping;renderer.toneMapping=OUTPUT_TONE_MAPPING;
   const post=new THREE.RenderPipeline(renderer);
@@ -53,7 +55,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   const shaftPass=shaftScene?createShaftVolumePass({renderer,scene:shaftScene,camera,scenePass}):null;
   // One graph serves both tiers. Balanced keeps AO strength at 0: the GTAO
   // render is skipped and the composite is behind a uniform branch.
-  const occlusion=createAmbientOcclusion({renderer,camera,depth,color:baseColor});
+  const occlusion=createAmbientOcclusion({renderer,camera,depth,color:baseColor,earlyOut:aoEarlyOut});
   // AO darkens opaque scene light before the additive shaft volume. Bloom reads
   // the unoccluded colour, so its half-resolution pass never evaluates AO.
   const occluded=occlusion?baseColor.rgb.mul(occlusion.factor):baseColor.rgb;
@@ -133,6 +135,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   }
   function render(){
     if(disposed||transitioning)return;
+    updateCrownProjection?.(renderer.domElement?.height);
     cityHorizon?.render();
     // Animation commits transforms before this call. The main pass and nested
     // shadow renders use the same world matrices; do not traverse/recompose
@@ -151,7 +154,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
 // GTAO; depthWrite:false transparents (water, halos, petals, sky dome) and
 // alpha-tested leaf texels never form depth rectangles; the additive shaft
 // volume is composited afterwards. WebGL2 fallback: disabled (returns null).
-export function createAmbientOcclusion({renderer,camera,depth,color}){
+export function createAmbientOcclusion({renderer,camera,depth,color,earlyOut=true}){
   if(!renderer.backend?.isWebGPUBackend)return null;
   const node=ao(depth,null,camera);
   node.resolutionScale=AO_RESOLUTION_SCALE;node.radius.value=AO_RADIUS;node.thickness.value=AO_THICKNESS;node.samples.value=AO_SAMPLES;
@@ -159,29 +162,37 @@ export function createAmbientOcclusion({renderer,camera,depth,color}){
   // The node stays registered in the one graph; Balanced skips its render.
   const render=node.updateBefore.bind(node);
   node.updateBefore=frame=>{if(!stats.active)return;stats.renders++;return render(frame);};
-  const aoTexture=node.getTextureNode(),near=reference('near','float',camera),far=reference('far','float',camera);
-  const distanceAt=position=>perspectiveDepthToViewZ(depth.sample(position).r,near,far).negate();
-  const factor=Fn(()=>{
-    const result=float(1).toVar();
-    If(strength.greaterThan(0),()=>{
-      const center=uv(),centerDistance=distanceAt(center).toVar();
-      const texel=vec2(1).div(vec2(textureSize(aoTexture,0)));
-      const tolerance=centerDistance.mul(AO_BLUR_DEPTH_TOLERANCE).add(.05);
-      const sum=float(0).toVar(),weight=float(0).toVar();
-      for(let x=-AO_BLUR_TEXELS;x<=AO_BLUR_TEXELS;x++)for(let y=-AO_BLUR_TEXELS;y<=AO_BLUR_TEXELS;y++){
-        const position=x||y?center.add(vec2(x,y).mul(texel)):center;
-        const w=x||y?float(1).sub(smoothstep(0,tolerance,abs(distanceAt(position).sub(centerDistance)))):float(1);
-        sum.addAssign(aoTexture.sample(position).r.mul(w));weight.addAssign(w);
-      }
-      const shade=sum.div(max(weight,1e-4));
-      const fade=max(smoothstep(AO_FADE_START,AO_FADE_END,centerDistance),smoothstep(AO_LIGHT_PROTECT_START,AO_LIGHT_PROTECT_END,color.rgb.dot(vec3(.2126,.7152,.0722))));
-      result.assign(mix(float(1),shade,strength.mul(fade.oneMinus())));
-    });
-    return result;
-  })();
+  const factor=ambientOcclusionResolve({camera,depth,color,aoTexture:node.getTextureNode(),strength,earlyOut});
   return {node,factor,stats,get active(){return stats.active;},setActive(value){
     stats.active=!!value;strength.value=stats.active?AO_INTENSITY:0;
     // Release the half-resolution buffer outside High; GTAO resizes it per frame.
     if(!stats.active)node.setSize(1,1);
   },dispose(){node.dispose();}};
+}
+
+export function ambientOcclusionResolve({camera,depth,color,aoTexture,strength,earlyOut=true}){
+  const near=reference('near','float',camera),far=reference('far','float',camera);
+  const distanceAt=position=>perspectiveDepthToViewZ(texture(depth,position,0).r,near,far).negate();
+  return Fn(()=>{
+    const result=float(1).toVar();
+    If(strength.greaterThan(0),()=>{
+      const center=uv(),centerDistance=distanceAt(center).toVar();
+      const fade=max(smoothstep(AO_FADE_START,AO_FADE_END,centerDistance),smoothstep(AO_LIGHT_PROTECT_START,AO_LIGHT_PROTECT_END,color.rgb.dot(vec3(.2126,.7152,.0722))));
+      // Fixed-level samples remain valid when neighbouring fragments take different branches.
+      const resolve=()=>{
+        const texel=vec2(1).div(vec2(textureSize(aoTexture,0)));
+        const tolerance=centerDistance.mul(AO_BLUR_DEPTH_TOLERANCE).add(.05);
+        const sum=float(0).toVar(),weight=float(0).toVar();
+        for(let x=-AO_BLUR_TEXELS;x<=AO_BLUR_TEXELS;x++)for(let y=-AO_BLUR_TEXELS;y<=AO_BLUR_TEXELS;y++){
+          const position=x||y?center.add(vec2(x,y).mul(texel)):center;
+          const w=x||y?float(1).sub(smoothstep(0,tolerance,abs(distanceAt(position).sub(centerDistance)))):float(1);
+          sum.addAssign(texture(aoTexture,position,0).r.mul(w));weight.addAssign(w);
+        }
+        const shade=sum.div(max(weight,1e-4));
+        result.assign(mix(float(1),shade,strength.mul(fade.oneMinus())));
+      };
+      if(earlyOut)If(fade.lessThan(1),resolve);else resolve();
+    });
+    return result;
+  })();
 }

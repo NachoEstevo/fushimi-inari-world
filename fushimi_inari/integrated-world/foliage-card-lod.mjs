@@ -47,3 +47,24 @@ export function coarseFoliageCards(source){
  geometry.boundingBox=source.boundingBox.clone();geometry.boundingSphere=source.boundingSphere.clone();
  geometry.name='Preserved crown · whole leaf cards';return geometry;
 }
+
+// Both meshes use the same card UV domain and diagonal direction. Overlay the
+// thirds and halves on a sixths lattice: all intersections of the two triangle
+// meshes lie on it. A linear displacement reaches its maximum at a vertex.
+export function crownCardDeviation(source,middle){
+ const nearPosition=source.attributes.position,midPosition=middle.attributes.position;
+ const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),nearPoint=new THREE.Vector3(),midPoint=new THREE.Vector3();
+ function point(attribute,card,steps,x,y,out){
+  const i=Math.min(steps-1,Math.floor(x*steps)),j=Math.min(steps-1,Math.floor(y*steps));
+  const u=x*steps-i,v=y*steps-j,side=steps+1,base=card*side*side+j*side+i;
+  b.fromBufferAttribute(attribute,base+1);c.fromBufferAttribute(attribute,base+side);
+  if(u+v<=1)return out.copy(a.fromBufferAttribute(attribute,base)).multiplyScalar(1-u-v).addScaledVector(b,u).addScaledVector(c,v);
+  return out.copy(a.fromBufferAttribute(attribute,base+side+1)).multiplyScalar(u+v-1).addScaledVector(b,1-v).addScaledVector(c,1-u);
+ }
+ let maximum=0;
+ for(let card=0;card<nearPosition.count/16;card++)for(let y=0;y<=6;y++)for(let x=0;x<=6;x++){
+  point(nearPosition,card,3,x/6,y/6,nearPoint);point(midPosition,card,2,x/6,y/6,midPoint);
+  maximum=Math.max(maximum,nearPoint.distanceToSquared(midPoint));
+ }
+ return Math.sqrt(maximum);
+}

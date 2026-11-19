@@ -5,7 +5,7 @@ import {routeSpec} from './route-spec.mjs';
 import {toriiVariation} from './torii-variation.mjs';
 import {senbonLayout} from './senbon-layout.mjs';
 import {toriiMaterials} from './torii-materials.mjs?v=29';
-import {toriiCrossbeamGeometry} from './torii-crossbeam-geometry.mjs';
+import {toriiCrossbeamGeometry,toriiNukiWedges,sleevedToriiPost} from './torii-crossbeam-geometry.mjs';
 
 // Refines the original Inari-torii construction at its actual small-gate scale.
 // Materials are inherited; architecture elsewhere is left intact.
@@ -16,11 +16,12 @@ export function buildSenbon(root,legacy,spatial,surfaceHeight,colliders){
   }
   // One post per instance lets the entrance be heavier without stretching the
   // opening or upper beams. Both cohorts still share their original materials.
-  const redGeo=new THREE.CylinderGeometry(s.pillarDiameter*.48,s.pillarDiameter*.5,s.height-.16,12);
+  const redGeo=sleevedToriiPost(s.pillarDiameter*.48,s.pillarDiameter*.5,s.height-.16,12);
   redGeo.translate(0,(s.height-.16)/2,0);
   const baseGeo=new THREE.CylinderGeometry(.079,.083,s.blackBaseHeight,12);
   baseGeo.translate(0,s.blackBaseHeight/2,0);
   box(2.55,.14,.13,0,s.crossbarUnderside+.07,0,beams);
+  beams.push(toriiNukiWedges({halfSpan:s.pillarCenters/2,reach:.195,height:.065,depth:.098,seatY:s.crossbarUnderside+.137}));
   beams.push(toriiCrossbeamGeometry({width:2.78,height:.13,depth:.18,centerY:s.height-.161,endRise:.075,curveWidth:s.beamWidth}));
   box(.14,.25,.12,0,s.height-.34,0,beams);
   black.push(toriiCrossbeamGeometry({width:s.beamWidth,height:.10,depth:.22,centerY:s.height-.05,endRise:.075}));

@@ -4,6 +4,8 @@ import {pathToFileURL} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import assert from 'node:assert/strict';
 
+import {verifyFieldNoteWalk} from './brave-field-note-check.mjs';
+
 const {chromium}=await import(pathToFileURL(process.env.BRAVE_DRIVER));
 const out='outputs/brave-route-check',base='http://127.0.0.1:8421/integrated-world/index.html';
 await mkdir(out,{recursive:true});
@@ -20,6 +22,7 @@ page.on('response',response=>{
 });
 const save=()=>writeFile(out+'/report.json',JSON.stringify(report,null,2));
 async function enter(search,label){
+ console.log('Entering '+label);
  const start=performance.now();
  await page.goto(base+search,{waitUntil:'domcontentloaded'});
  await page.locator('#welcome-enter').click();
@@ -41,14 +44,20 @@ async function capture(label){
  assert.ok(!data.gpuError&&!data.bootstrap&&!data.health?.firstError&&!data.health?.failed,'GPU or startup error in '+label);
 }
 async function route(label,itinerary,quality,speed){
+ console.log('Starting '+label);
  await page.locator('#menu-open').click();
  await page.getByRole('tab',{name:'Settings'}).click();
- await page.locator('#render-quality').selectOption(quality);
+ const preset=page.locator('#render-quality');
+ if(await preset.inputValue()!==quality){
+  await preset.selectOption(quality);
+  await page.locator('#render-quality:not([aria-busy])').waitFor({state:'attached'});
+ }
  await page.getByRole('tab',{name:'Routes'}).click();
  await page.locator('#itinerary').selectOption({label:itinerary});
  await page.locator('#speed').selectOption(speed);
  await page.locator('#route').click();
  await page.locator('#walk').click();
+ await page.waitForFunction(()=>document.querySelector('#walk')?.textContent==='Following route…');
  await page.getByRole('button',{name:'Record movement 120s'}).press('Enter');
  await page.waitForFunction(()=>JSON.parse(document.body.dataset.movementFrameAudit??'{}').phase==='complete',null,{timeout:240000});
  const sample=await page.evaluate(()=>JSON.parse(document.body.dataset.movementFrameAudit).result);
@@ -67,8 +76,14 @@ try{
  report.adapter=adapter;
  await route('senbon','Senbon and the three summits','balanced','12');
  await route('summit-loop','Summit loop via Gozendani','high','50');
+ report.fieldNotes=await verifyFieldNoteWalk(page,{capture});
  assert.deepEqual(report.errors,[]);
  console.log(JSON.stringify({startup:report.startup,adapter,frames:report.frames.map(({label,distanceWalked,p99,worst})=>({label,distanceWalked,p99,worst}))}));
+}catch(error){
+ report.failure=String(error);
+ report.lastScreen=await page.locator('body').innerText({timeout:12000}).catch(()=>null);
+ await page.screenshot({path:out+'/failure.png',timeout:15000}).catch(()=>{});
+ throw error;
 }finally{
  await save();
  await browser.close();

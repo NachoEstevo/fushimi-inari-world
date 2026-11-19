@@ -1,4 +1,4 @@
-import {Fn, float, vec3, uniform, varying, instancedBufferAttribute, positionWorld,
+import {Fn, If, float, vec3, uniform, varying, instancedBufferAttribute, positionWorld,
  cameraPosition, cameraProjectionMatrixInverse, screenUV, getViewPosition, isBackgroundDepth,
  smoothstep, sin, sqrt, max, min, abs, dot} from 'three/tsl';
 import * as THREE from 'three/webgpu';
@@ -37,7 +37,7 @@ export function createShaftVolumeNodes({depthTexture, centerRadius, lengthPhase}
   const axialValid=axialParallel.select(abs(y).lessThanEqual(half),float(1).equal(1));
   const an=axialParallel.select(float(-100000),min(t0,t1)),af=axialParallel.select(float(100000),max(t0,t1));
   const start=max(max(rn,an),0), end=min(rf,af);
-  const depth=depthTexture.sample(screenUV).r;
+  const depth=depthTexture.sample(screenUV).r.toVar();
   const viewPos=getViewPosition(screenUV,depth,cameraProjectionMatrixInverse);
   // Perspective camera: reconstructed view-space distance is a ray distance.
   const opaqueDistance=isBackgroundDepth(depth).select(float(100000),viewPos.length());
@@ -45,22 +45,36 @@ export function createShaftVolumeNodes({depthTexture, centerRadius, lengthPhase}
   // Cross-section coordinates use a fixed world basis, common to all views.
   const fallback=axis.y.abs().greaterThan(.95).select(vec3(0,0,1),vec3(0,1,0));
   const right=axis.cross(fallback).normalize(),forward=axis.cross(right).normalize();
-  const sample=(fraction)=>{
-   const p=rel.add(ray.mul(start.add(span.mul(fraction))));
-   const h=dot(p,axis), q=p.sub(axis.mul(h));
-   const r=q.length().div(radius), edge=float(1).sub(smoothstep(.35,1,r));
-   const ends=smoothstep(0,.22,h.div(half).add(1)).mul(float(1).sub(smoothstep(.55,1,h.div(half))));
+  // Evaluate the same opening in the plane perpendicular to the solar ray.
+  // Its projection is constant all the way from the crown to the ground.
+  const opening=q=>{
+   const r=q.length().div(radius),edge=float(1).sub(smoothstep(.35,1,r));
    const u=dot(q,right).div(radius),v=dot(q,forward).div(radius);
    const openings=sin(u.mul(4.1).add(v.mul(2.7)).add(meta.y).add(sin(time.mul(.65).add(meta.y)).mul(.22)))
     .mul(sin(v.mul(4.7).sub(u.mul(2.3)).add(meta.y.mul(1.61)).sub(sin(time.mul(.43).add(meta.y.mul(1.31))).mul(.18))));
-   const leaf=smoothstep(-.5,.6,openings).mul(.8).add(.2);
-   return edge.mul(ends).mul(leaf);
+   return edge.mul(smoothstep(-.5,.6,openings).mul(.8).add(.2));
+  };
+  const sample=fraction=>{
+   const p=rel.add(ray.mul(start.add(span.mul(fraction))));
+   const h=dot(p,axis),q=p.sub(axis.mul(h));
+   const ends=smoothstep(0,.22,h.div(half).add(1)).mul(float(1).sub(smoothstep(.55,1,h.div(half))));
+   return opening(q).mul(ends);
   };
   const density=sample(1/6).add(sample(.5)).add(sample(5/6)).div(3);
   const valid=radialValid.and(axialValid);
   const distance=start.add(span.mul(.5));
   const fade=smoothstep(.05,.6,distance).mul(float(1).sub(smoothstep(28,48,distance)));
-  return valid.select(density.mul(min(span,SHAFT_MAX_INTEGRATED_LENGTH)).mul(strength).mul(fade),0);
+  const light=valid.select(density.mul(min(span,SHAFT_MAX_INTEGRATED_LENGTH)).mul(strength).mul(fade),0).toVar();
+  If(meta.z.greaterThan(.5).and(isBackgroundDepth(depth).not()),()=>{
+   const surface=rel.add(ray.mul(opaqueDistance)),h=dot(surface,axis);
+   // The source site records ground + 15 cm. A soft height window rejects
+   // nearby railings and upper surfaces; opaque depth clips the projected light.
+   const aboveGround=surface.y.add(axis.y.mul(half)).add(.15);
+   const onGround=float(1).sub(smoothstep(.25,.75,abs(aboveGround)));
+   const nearby=float(1).sub(smoothstep(28,48,opaqueDistance));
+   light.addAssign(opening(surface.sub(axis.mul(h))).mul(onGround).mul(nearby).mul(strength).mul(2.2));
+  });
+  return light;
  })();
  return {opacity,tint,strength,time,axis};
 }

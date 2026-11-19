@@ -20,7 +20,7 @@ export const SKY_ENVIRONMENT_SCENE_NAME='Sky environment source';
 
 const luminance=c=>.2126*c.r+.7152*c.g+.0722*c.b;
 const smoothstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
-const _dir=new THREE.Vector3();
+const _dir=new THREE.Vector3(),hemisphereScales=new Map();
 
 // Directional sky radiance for one time of day and look, in linear sRGB. The
 // gradient follows sky-nodes' canvas stops (zenith 0, middle .30, horizon .51).
@@ -44,13 +44,19 @@ export function createSkyRadiance({mode='day',look='natural',ground='#73755d'}={
     raw(direction,target);const y=luminance(target);
     return target.set(y+(target.r-y)*SKY_ENVIRONMENT_SATURATION,y+(target.g-y)*SKY_ENVIRONMENT_SATURATION,y+(target.b-y)*SKY_ENVIRONMENT_SATURATION);
   }
-  // Cosine-weighted mean over the upper hemisphere (stratified, deterministic).
-  let sum=0;const sample=new THREE.Color(),direction=new THREE.Vector3();
-  for(let i=0;i<24;i++)for(let j=0;j<48;j++){
-    const u=(i+.5)/24,phi=(j+.5)/48*Math.PI*2,r=Math.sqrt(u);
-    sum+=luminance(shaped(direction.set(r*Math.cos(phi),Math.sqrt(1-u),r*Math.sin(phi)),sample));
+  // The integration samples only positive elevations, so ground colour has
+  // no effect on the scale. One value per canonical mode and look suffices.
+  const scaleKey=palette.mode+'|'+normalizeVisualLook(look);
+  let scale=hemisphereScales.get(scaleKey);
+  if(scale===undefined){
+    let sum=0;const sample=new THREE.Color(),direction=new THREE.Vector3();
+    for(let i=0;i<24;i++)for(let j=0;j<48;j++){
+      const u=(i+.5)/24,phi=(j+.5)/48*Math.PI*2,r=Math.sqrt(u);
+      sum+=luminance(shaped(direction.set(r*Math.cos(phi),Math.sqrt(1-u),r*Math.sin(phi)),sample));
+    }
+    scale=SKY_ENVIRONMENT_LUMINANCE/Math.max(1e-6,sum/(24*48));
+    hemisphereScales.set(scaleKey,scale);
   }
-  const scale=SKY_ENVIRONMENT_LUMINANCE/Math.max(1e-6,sum/(24*48));
   return {mode:palette.mode,scale,sample:(direction,target=new THREE.Color())=>shaped(direction,target).multiplyScalar(scale)};
 }
 
@@ -67,9 +73,10 @@ export function createSkyEnvironment({renderer,createGenerator=value=>new THREE.
   const stats={generations:0,key:null,mode:null,look:null,scale:0,error:null};
   function update({mode='day',look='natural',ground='#73755d'}={}){
     if(disposed)return false;
-    const radiance=createSkyRadiance({mode,look:normalizeVisualLook(look),ground});
-    const groundHex=new THREE.Color(ground).getHexString(),next=`${radiance.mode}|${normalizeVisualLook(look)}|${groundHex}`;
+    const canonicalLook=normalizeVisualLook(look),canonicalMode=Object.hasOwn(SKY_SUN_DIRECTIONS,mode)?mode:'day';
+    const groundHex=new THREE.Color(ground).getHexString(),next=`${canonicalMode}|${canonicalLook}|${groundHex}`;
     if(next===key)return false;
+    const radiance=createSkyRadiance({mode:canonicalMode,look:canonicalLook,ground});
     const direction=new THREE.Vector3(),color=new THREE.Color();
     for(let i=0;i<positions.count;i++){radiance.sample(direction.fromBufferAttribute(positions,i),color);colors.setXYZ(i,color.r,color.g,color.b);}
     colors.needsUpdate=true;
@@ -77,7 +84,7 @@ export function createSkyEnvironment({renderer,createGenerator=value=>new THREE.
     const result=generator.fromScene(scene,0,.1,100,{size:SKY_ENVIRONMENT_SIZE,renderTarget:target});
     if(target&&result!==target)target.dispose();
     target=result;key=next;
-    Object.assign(stats,{generations:stats.generations+1,key,mode:radiance.mode,look:normalizeVisualLook(look),scale:radiance.scale,error:null});
+    Object.assign(stats,{generations:stats.generations+1,key,mode:radiance.mode,look:canonicalLook,scale:radiance.scale,error:null});
     return true;
   }
   return {update,stats,get texture(){return target?.texture??null;},dispose(){

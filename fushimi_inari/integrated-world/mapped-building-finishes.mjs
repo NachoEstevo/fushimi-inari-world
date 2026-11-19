@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {spatialMeshes} from './spatial-mesh.mjs';
 import {createArchitecturalSurfaceLibrary} from './architectural-surface-library.mjs';
+import {appendIseya,iseyaId} from './iseya-frontage.mjs';
 import {appendUpperCafeFront,isReferencedUpperCafe,upperCafeInferredHeight,upperCafeFront} from './upper-cafe-fronts.mjs';
 
 const pointDistance=(p,a,b)=>{const dx=b[0]-a[0],dz=b[2]-a[2],t=THREE.MathUtils.clamp(((p[0]-a[0])*dx+(p[2]-a[2])*dz)/(dx*dx+dz*dz||1),0,1);return Math.hypot(p[0]-a[0]-dx*t,p[2]-a[2]-dz*t);};
@@ -40,18 +41,21 @@ function selectBuildings(options){
   const key=Math.floor(center[0]/256)+','+Math.floor(center[2]/256);
   if(!cells.has(key))cells.set(key,[]);cells.get(key).push({building,ring,bounds,distance});
  }
- const rank=(a,b)=>Number(isReferencedUpperCafe(b.building))-Number(isReferencedUpperCafe(a.building))||a.distance-b.distance||a.building.id.localeCompare(b.building.id);
+ const referenced=b=>isReferencedUpperCafe(b)||b.id===iseyaId;
+ const rank=(a,b)=>Number(referenced(b.building))-Number(referenced(a.building))||a.distance-b.distance||a.building.id.localeCompare(b.building.id);
  const queues=[...cells.values()].map(list=>list.sort(rank).slice(0,maxPerCell));
  queues.sort((a,b)=>rank(a[0],b[0]));
- const selected=[];for(let index=0;selected.length<maxBuildings;index++){
-  let added=false;for(const queue of queues)if(queue[index]&&selected.length<maxBuildings){selected.push(queue[index]);added=true;}
+ const selected=queues.flatMap(queue=>queue.filter(entry=>referenced(entry.building))).sort(rank).slice(0,maxBuildings);
+ const ordinary=queues.map(queue=>queue.filter(entry=>!referenced(entry.building)));
+ for(let index=0;selected.length<maxBuildings;index++){
+  let added=false;for(const queue of ordinary)if(queue[index]&&selected.length<maxBuildings){selected.push(queue[index]);added=true;}
   if(!added)break;
  }
  return selected;
 }
 
 // The caller omits returned IDs from its cheap distant extrusion pass. Public
-// collision/surfaces stay untouched; only the two sourced cafe fronts open.
+// collision/surfaces stay untouched; only sourced cafe fronts open.
 export function createMappedBuildingFinishes({buildings,segments,ground,excludesBuilding=()=>false,omitBuilding=()=>false,maxDistance=24,maxBuildings=64,maxPerCell=8,focusPoints,focusRadius=80,surfaceLibrary}){
  const started=performance.now(),selected=selectBuildings({buildings,segments,maxDistance,maxBuildings,maxPerCell,focusPoints,focusRadius,excludesBuilding,omitBuilding});
  const group=new THREE.Group();group.name='Bounded mapped building facade finishes';
@@ -61,6 +65,10 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
  const append=(kind,p,uv)=>{bucket(kind).vertices.push(...p);bucket(kind).uv.push(...uv);};
  for(const {building,ring,bounds,distance}of selected){
   const tags=building.tags??{},heightValue=Number.parseFloat(tags.height),levels=Number.parseFloat(tags['building:levels']);
+  const iseya=building.id===iseyaId&&appendIseya({building,buildings,ring,ground,append});
+  if(iseya){
+   detailedIds.add(building.id);records.push({id:building.id,distance,height:iseya.height,heightSource:Number.isFinite(heightValue)?'height':Number.isFinite(levels)?'levels':'inferred',base:iseya.base,roof:iseya.roof,bounds,material:'timber',windowFaces:iseya.windowFaces,inferredFacade:true,opaqueOnly:true,upperCafe:iseya});continue;
+  }
   const height=Number.isFinite(heightValue)?heightValue:Number.isFinite(levels)?levels*3:upperCafeInferredHeight(building)??6;
   const terrain=ring.map(p=>ground(p[0],p[2]));if(!terrain.every(Number.isFinite))continue;
   const base=Math.min(...terrain),front=upperCafeFront({building,buildings,ring});
@@ -72,15 +80,16 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
   const kind=/wood|timber/i.test(tags['building:material']??'')?'timber':/stone|brick|concrete/i.test(tags['building:material']??'')?'mineral':'plaster';
   const upperCafe=frontFloor===null?null:appendUpperCafeFront({building,buildings,ring,base:frontFloor,roof,append,front});
   if(upperCafe)upperCafe.frontFloor=frontFloor;
-  const windowFaces=0;
+  const windowFaces=upperCafe?.windowFaces??0;
   for(let i=0;i<ring.length;i++){
    const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[2]-a[2]);
    // Only a successfully built referenced frontage opens the facing wall.
    // Its terrain support stays below the high grade; all other walls remain.
    const wallTop=upperCafe?.edge===i?frontFloor:roof;if(wallTop-base<1e-6)continue;
-   const tile=surfaces.tileMetres(kind),u0=0,u1=length/tile,vertical=(wallTop-base)/tile;
+   const wallKind=upperCafe?.route&&upperCafe.edge===i?'mineral':kind;
+   const tile=surfaces.tileMetres(wallKind),u0=0,u1=length/tile,vertical=(wallTop-base)/tile;
    const corners=[[a[0],base,a[2]],[b[0],base,b[2]],[b[0],wallTop,b[2]],[a[0],wallTop,a[2]]],uv=[[u0,0],[u1,0],[u1,vertical],[u0,vertical]];
-   for(const j of [0,1,2,0,2,3])append(kind,corners[j],uv[j]);
+   for(const j of [0,1,2,0,2,3])append(wallKind,corners[j],uv[j]);
   }
   for(const tri of THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(p[0],p[2])),[]))for(const j of tri)append('roof',[ring[j][0],roof,ring[j][2]],[ring[j][0]/3,ring[j][2]/3]);
   detailedIds.add(building.id);records.push({id:building.id,distance,height,heightSource:Number.isFinite(heightValue)?'height':Number.isFinite(levels)?'levels':'inferred',base,roof,bounds,material:kind,windowFaces,inferredFacade:!!upperCafe,opaqueOnly:true,...(upperCafe?{upperCafe}:{})});
@@ -91,6 +100,6 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.computeVertexNormals();
   const chunks=spatialMeshes(geometry,material,256);geometry.dispose();for(const mesh of chunks.children){mesh.receiveShadow=false;geometries.push(mesh.geometry);}group.add(chunks);
  }
- const stats={buildings:detailedIds.size,records,maxBuildings,maxPerCell,maxDistance,materials:materials.size,textures:maps.size,textureBytes:[...maps].reduce((n,t)=>n+(t.image.data?.byteLength??t.image.width*t.image.height*4),0),batches:geometries.length,triangles:geometries.reduce((n,g)=>n+g.attributes.position.count/3,0),extraLights:0,perFrameWork:false,buildMs:performance.now()-started,provenance:'OSM footprint and existing extrusion heights; two photographed upper cafes have inferred shallow facade details; all other context remains opaque; no added collisions'};
+ const stats={buildings:detailedIds.size,records,maxBuildings,maxPerCell,maxDistance,materials:materials.size,textures:maps.size,textureBytes:[...maps].reduce((n,t)=>n+(t.image.data?.byteLength??t.image.width*t.image.height*4),0),batches:geometries.length,triangles:geometries.reduce((n,g)=>n+g.attributes.position.count/3,0),extraLights:0,perFrameWork:false,buildMs:performance.now()-started,provenance:'OSM footprint and existing extrusion heights; photographed upper cafes have inferred architectural details; all other context remains opaque; no added collisions'};
  let disposed=false;return {group,detailedIds,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();if(ownsSurfaces)surfaces.dispose();}};
 }
