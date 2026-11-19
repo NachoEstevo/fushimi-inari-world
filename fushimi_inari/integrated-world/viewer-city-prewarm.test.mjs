@@ -45,3 +45,14 @@ test('disabling buildings while geometry is prepared skips the city shader submi
  const compile=makeCompile(()=>checkbox,panorama,{prepare(){assert.fail('unexpected city shader submission');}},{},async()=>{});
  assert.equal(await compile(panorama.group,{isCurrent:()=>true}),false);
 });
+
+test('checkpoint admission respects a building toggle between geometry and shader stages',async()=>{
+ const section=source.split('      const needsCity=')[1].split('\n    },\n    commit(destination)')[0];
+ const checkpoint=new Function('panoramaVisible','$','panorama','cityHorizon','walkingPrewarm',
+   'return async function(position,destination,stage,isCurrent,targetCamera){const needsCity='+section+'}');
+ const checkbox={checked:true},stages=[];
+ const prepare=checkpoint(()=>true,()=>checkbox,{prepare(){checkbox.checked=false;}},
+   {prepare(){assert.fail('unexpected checkpoint shader submission');}},{markPrepared(){assert.fail('skipped skyline marked ready');}});
+ await prepare({}, {},async(name,work)=>{stages.push(name);await work();},()=>true,{});
+ assert.deepEqual(stages,['mapped city geometry']);
+});

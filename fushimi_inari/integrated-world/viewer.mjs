@@ -842,7 +842,7 @@ try {
       const needsCity=$('buildings').checked&&(panoramaVisible(position,false)||destination.guidedRoute?.some(([x,y,z])=>panoramaVisible({x,y:y+1.7,z},false)));
       if(needsCity){
         await stage('mapped city geometry',()=>panorama.prepare());
-        if(!isCurrent())return;
+        if(!isCurrent()||!$('buildings').checked)return;
         await stage('mapped city shaders',()=>cityHorizon.prepare(targetCamera));
         walkingPrewarm?.markPrepared(panorama.group);
       }
