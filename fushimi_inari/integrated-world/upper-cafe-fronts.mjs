@@ -72,7 +72,7 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
  side(0,0,roof-base,inset,0);side(length,0,roof-base,inset,0);
  // An overhanging eave with an exposed underside and fascia. Its exact slope
  // is inferred; the source shows the shaded upper edge rather than a survey.
- const eaveY=Math.min(spec.route?2.83:2.66,roof-base-.12),eaveDepth=spec.route?.length ? .61 : .30;
+ const eaveY=Math.min(spec.route?2.83:2.66,roof-base-.12),eaveDepth=spec.route ? .61 : .30;
  quad('roof',[point(margin,eaveY,.01),point(length-margin,eaveY,.01),point(length-margin,eaveY-.08,eaveDepth),point(margin,eaveY-.08,eaveDepth)]);
  rect('roof',margin,eaveY-.15,length-margin,eaveY-.08,eaveDepth);
  side(margin,eaveY-.15,eaveY,.01,eaveDepth);side(length-margin,eaveY-.15,eaveY,.01,eaveDepth);

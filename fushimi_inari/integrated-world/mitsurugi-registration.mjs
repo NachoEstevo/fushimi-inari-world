@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {refineMitsurugiStoneAndWell} from './mitsurugi-stone-and-well.mjs';
 import {rotateXZ} from './spatial.mjs';
 
 // The legacy model used the generic 12.5m peak apron at a 3.2m-wide shrine.
@@ -22,6 +23,7 @@ export function registerMitsurugi(root,features,surfaces,colliders){
   const probe=compound.clone(true);probe.position.set(0,0,0);probe.rotation.set(0,0,0);probe.scale.set(1,1,1);
   const bounds=new THREE.Box3().setFromObject(probe),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   const sx=width/size.x,sz=depth/size.z;
+  const rockAndWell=refineMitsurugiStoneAndWell(compound);
   for(const child of [...owner.children])if(child!==compound)owner.remove(child);
   owner.position.set(x,y,z);owner.rotation.set(0,yaw,0);owner.scale.set(1,1,1);
   compound.rotation.set(0,0,0);compound.scale.set(sx,1,sz);compound.position.set(-center.x*sx,0,-center.z*sz);
@@ -29,7 +31,7 @@ export function registerMitsurugi(root,features,surfaces,colliders){
   const previous=colliders.filter(c=>c.type==='box'&&c.args.at(-1)==='peak_sanctuary'&&Math.hypot(c.args[0]-x,c.args[1]-z)<20);
   for(const collider of previous)colliders.splice(colliders.indexOf(collider),1);
   colliders.push({type:'box',args:[x,z,width/2,depth/2,yaw,y,y+bounds.max.y,'mitsurugi_mapped_shrine']});
-  const report={built:true,sourceId:feature.id,width,depth,center:[x,y,z],yaw,replacedColliders:previous.length,
+  const report={built:true,...(rockAndWell?{rockAndWell}:{}),sourceId:feature.id,width,depth,center:[x,y,z],yaw,replacedColliders:previous.length,
     provenance:'Mapped OSM building footprint; existing artistic compound compressed horizontally into its footprint. Architectural proportions and roof details remain inferred.'};
   owner.userData.mappedMitsurugi=report;
   return report;

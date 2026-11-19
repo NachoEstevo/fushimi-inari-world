@@ -29,7 +29,7 @@ export function appendIseya({building,buildings,ring,ground,append}){
   const declared=Number.parseFloat(building.tags?.height),levels=Number.parseFloat(building.tags?.['building:levels']);
   const height=Number.isFinite(declared)?declared:Number.isFinite(levels)?levels*3:4.75;
   if(height<3.9)return null;
-  const roofRise=p=>Math.max(0,(p[0]-a[0])*nx+(p[2]-a[2])*nz)*.16;
+  const roofRise=p=>Math.max(0,(p[0]-a[0])*nx+(p[2]-a[2])*nz)*.11;
   const roofY=p=>floor+height+roofRise(p);
   const quad=(kind,p,q,r,s)=>{
     const scale=kind==='timber'||kind==='plaster'?1:3;

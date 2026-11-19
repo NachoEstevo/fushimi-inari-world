@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {staticParts} from './mountain-landmarks-geometry.mjs';
+import {riceSheafCrestGeometry,staticParts} from './mountain-landmarks-geometry.mjs';
 
 const shrineId='way/301554315';
 const sourcePhoto='https://cdn-ak.f.st-hatena.com/images/fotolife/h/hayabusa8823/20210319/20210319002904.jpg';
@@ -12,7 +12,7 @@ export function refineGozendani(root,features,surfaces,legacy,colliders){
   const hall=owner.children.find(o=>hasBox(o,4.4,2.8,3.2)&&o.userData.interactable);
   const roof=owner.children.find(o=>hasBox(o,5.6,.55,4.4));
   const base=owner.children.find(o=>hasBox(o,5.2,.55,4.2));
-  const curtain=owner.children.find(o=>o.geometry?.parameters.width===3.6&&o.geometry.parameters.height===.95);
+  const curtain=owner.children.find(o=>o.geometry?.parameters?.width===3.6&&o.geometry.parameters.height===.95);
   const candle=owner.children.find(o=>o.isGroup&&near(o.position.x,1.85)&&near(o.position.z,1.45));
   const old=colliders.find(c=>c.args.at(-1)==='gozendani'&&Math.hypot(c.args[0]-owner.position.x,c.args[1]-owner.position.z)<.05);
   const site=features.buildings.find(b=>b.id===shrineId),path=features.paths.find(p=>p.id==='way/60272187');
@@ -33,7 +33,7 @@ export function refineGozendani(root,features,surfaces,legacy,colliders){
   const materials=legacy.materials,red=materials.vermilionMat,stone=materials.entryStoneMat??materials.stoneMat;
   const cover=roof.material.clone();cover.color.set('#717b73');cover.side=THREE.DoubleSide;cover.roughness=.82;
   const cloth=new THREE.MeshStandardMaterial({color:'#432649',roughness:.97,side:THREE.DoubleSide});
-  const pale=materials.plasterMat,dark=materials.blackNemakiMat??stone;
+  const pale=materials.plasterMat;
   const group=new THREE.Group(),parts=staticParts(group);
   parts.box(3.62,.15-low,3.16,0,(low+.15)/2,0,stone);
   parts.box(2.72,.12,.29,0,.065,1.69,stone);
@@ -47,6 +47,7 @@ export function refineGozendani(root,features,surfaces,legacy,colliders){
     for(let j=-5;j<=5;j++)parts.box(.076,.57,.08,x,.52,j*.245,red);
     parts.box(.06,.67,2.92,side*1.76,1.97,0,cloth);
     parts.box(.70,.76,.07,side*1.23,1.96,1.55,cloth);
+    parts.put(riceSheafCrestGeometry(.215).translate(side*1.23,1.96,1.589),pale);
   }
   for(const u of [-.55,0,.55])parts.box(.06,1.24,.06,u,.85,1.46,red);
   parts.box(1.16,.91,.08,0,.69,1.47,red);

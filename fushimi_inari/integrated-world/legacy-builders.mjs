@@ -651,7 +651,7 @@ export async function buildLegacy(renderer, callbacks={}) {
       const halfSpan = 1.88 + .225 * Math.cos(.14) + .07 * Math.sin(.14);
       const peak = 3.35 + .225 * Math.sin(.14) + .07 * Math.cos(.14);
       const curve = {curveWidth:halfSpan*2,endRise:peak-3.38,segments:4};
-      const shimaki = toriiCrossbeamGeometry({...curve,width:3.66,height:.16,depth:.21,centerY:3.168});
+      const shimaki = toriiCrossbeamGeometry({...curve,width:3.66,height:.16,depth:.21,centerY:3.172});
       const wedges = toriiNukiWedges({halfSpan:1.24,reach:.29,height:.095,depth:.115,seatY:2.722});
       const gakuzuka = applyMetricUVs(new THREE.BoxGeometry(0.18, 0.42, 0.14), 1.0);
       gakuzuka.translate(0, 2.91, 0);

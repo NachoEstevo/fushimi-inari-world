@@ -17,6 +17,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture({stream,compile=async()=>{},applyQuality}={}){
  const events=[],camera={position:new THREE.Vector3()},controls={enabled:false},pauses=[];
  const quality={mode:'balanced',async setMode(value){events.push('quality');await applyQuality?.(value);quality.mode=value;}};
+ const preset={setAttribute(key,value){this[key]=value;},removeAttribute(key){delete this[key];}};
  const dependencies={
   camera,quality,controls,textureStreaming:stream,scene:{},group:{},query:new URLSearchParams(),
   walkingPrewarm:{setBlocked:()=>events.push('block'),awaitIdle:async()=>events.push('idle'),setRadius(){},invalidate:()=>events.push('invalidate')},
@@ -27,10 +28,10 @@ function fixture({stream,compile=async()=>{},applyQuality}={}){
   leafLight:{setEnabled(){},stats:{}},sunShafts:{setQuality(){},update(){},mesh:{}},
   appearance:{prepare:async()=>events.push('appearance'),stats:{}},zen:{prepare:async()=>events.push('zen')},compileZen(){},assembly:{keihanStation:{group:{}}},
   photo:{active:false},menu:{active:false},journal:{active:false},arrival:null,sectorPreparation:{busy:false},
-  document:{body:{dataset:{},classList:{contains:()=>false}}},walker:{active:false,pause:value=>pauses.push(value)},allowDebugCamera:true,$:()=>({disabled:true})
+  document:{body:{dataset:{},classList:{contains:()=>false}}},walker:{active:false,pause:value=>pauses.push(value)},allowDebugCamera:true,$:id=>id==='render-quality'?preset:{disabled:true}
  };
  const make=new Function(...Object.keys(dependencies),`let qualityPending=0;return {deferred:${deferredExpression},changeQuality:${qualityExpression},get pending(){return qualityPending;}};`);
- return Object.assign(make(...Object.values(dependencies)),{events,camera,quality,controls,pauses});
+ return Object.assign(make(...Object.values(dependencies)),{events,camera,quality,controls,pauses,preset});
 }
 
 test('quality preparation waits for actual final-tier images before configuring/render preparation',async()=>{
@@ -39,9 +40,9 @@ test('quality preparation waits for actual final-tier images before configuring/
  scene.add(new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:texture})),new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial({map:clone})));stream.index(scene);
  const f=fixture({stream,applyQuality(){assert.equal(texture.image.width,256);assert.equal(clone.image.width,256);}});
  const work=f.changeQuality('high');await tick();
- assert.equal(f.pending,1);assert.equal(f.quality.mode,'balanced');assert.equal(texture.image.width,1);assert.ok(!f.events.includes('compile'));
+ assert.equal(f.pending,1);assert.equal(f.preset['aria-busy'],'true');assert.equal(f.quality.mode,'balanced');assert.equal(texture.image.width,1);assert.ok(!f.events.includes('compile'));
  image.resolve({width:256,height:256});await work;
- assert.equal(f.pending,0);assert.equal(f.quality.mode,'high');assert.ok(f.events.indexOf('quality')<f.events.indexOf('compile'));assert.deepEqual(f.pauses,[false]);
+ assert.equal(f.pending,0);assert.equal(f.preset['aria-busy'],undefined);assert.equal(f.preset.value,'high');assert.equal(f.quality.mode,'high');assert.ok(f.events.indexOf('quality')<f.events.indexOf('compile'));assert.deepEqual(f.pauses,[false]);
  assert.ok(f.events.indexOf('invalidate')<f.events.indexOf('neighborhood'));assert.equal(f.events.at(-1),'neighborhood','prepared owner generation is not invalidated after readiness');
 });
 

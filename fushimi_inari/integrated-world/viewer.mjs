@@ -553,6 +553,7 @@ try {
       ['audit_iseya_up','Review · Iseya approach',929,-10.6,938.4,-2],
       ['audit_iseya_down','Review · Iseya return',943,-2.1,932,-9],
       ['audit_gozendani_front','Review · Gozendani entrance',996.46,-260.109,993.63,-262.32],
+      ['audit_canopy_opening','Review · Senbon canopy opening',189.774,17.9,192.477,23.783],
       ['audit_south_shinme','Review · Southern Shinme',97.801,-17.377,94.577,-6.451],
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
       ['audit_yakuriki','Review · Yakuriki trail',1146.15,-189.77,1151.8,-190.8],
@@ -938,6 +939,15 @@ try {
     };$('checkpoint-buttons').append(reviewVisitor);
   }
   if(query.get('audit')==='1'){
+    const registerReview=anchor=>{
+      assembly.spatial.byId[anchor.id]=anchor;
+      const option=document.createElement('option');option.value=anchor.id;option.textContent=anchor.label;
+      $('place').append(option);$('checkpoint-select').append(option.cloneNode(true));
+    };
+    const platform=zen.returning.plan?.platform;
+    if(platform){
+      registerReview({id:'audit_return_door',label:'Review · Return train',checkpoint:zen.returning.interactionRoot.position.toArray(),target:platform.target,lookAt:platform.target});
+    }
     for(const [i,owner] of zen.world.interactionRoots.entries()){
       const site=zen.world.stats.fieldNotes.sites[owner.userData.fieldNote];
       const id=site?'audit_'+owner.userData.fieldNote:`audit_zen_${i}`;
@@ -951,8 +961,15 @@ try {
         const x=target.x+(teaApproach?teaApproach[0]*2:seatProp?0:-1.5),z=target.z+(teaApproach?teaApproach[1]*2:seatProp?-1.5:1.0),y=assembly.walkHeight(x,z);
         anchor={id,label:`Review · ${owner.userData.interactable?.title??owner.name}`,target:[target.x,target.y+.8,target.z],checkpoint:[x,y,z],lookAt:[target.x,target.y+.8,target.z]};
       }
-      assembly.spatial.byId[id]=anchor;const option=document.createElement('option');option.value=id;option.textContent=anchor.label;$('place').append(option);$('checkpoint-select').append(option.cloneNode(true));
+      registerReview(anchor);
     }
+  }
+  if(query.get('audit')==='1'&&query.get('surfaceAudit')==='1'){
+    const {installSurfacePickAudit}=await import('./surface-pick-audit.mjs');
+    const inspector=installSurfacePickAudit({scene,camera,element:renderer.domElement,assembly,features,exclude:()=>[routeLine,marker,landmarkGroup],
+      isBlocked:()=>photo.active||menu.active||journal.active||!!arrival?.active||renderPreparation.busy||sectorPreparation.busy,
+      onPick:result=>{document.body.dataset.surfacePick=JSON.stringify(result);}});
+    addEventListener('pagehide',event=>{if(!event.persisted)inspector.dispose();});
   }
   loadingStage('Preparing small encounters and weather…');
   await zen.prepare(compileZen);
