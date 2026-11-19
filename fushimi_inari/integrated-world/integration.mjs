@@ -981,7 +981,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   callbacks.progress?.('Finishing the landscape…');await yieldWork();
   await checkpoint('batchStaticScene');
   const staticBatches=batchStaticScene(root,retained,128,residencyRetained);
-  if(forestSubcells.size>0&&renderer.backend?.isWebGPUBackend)yotsutsuji.sharedGateShadows=shareYotsutsujiGateShadows(staticBatches.meshes,legacy.materials.blackNemakiMat);
+  yotsutsuji.sharedGateShadows=renderer.backend?.isWebGPUBackend?shareYotsutsujiGateShadows(staticBatches.meshes,legacy.materials.blackNemakiMat):0;
   const forestChunks=[];root.updateMatrixWorld(true);
   // Only completed, immutable foliage/torii owners qualify. Animated visitors,
   // flames and railway objects retain automatic transforms.

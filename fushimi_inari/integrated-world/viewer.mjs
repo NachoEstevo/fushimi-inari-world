@@ -187,7 +187,7 @@ try {
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
   // r180 preserves an explicitly extended shadow mask. The visitor and
   // reflection cameras stay on layer 0; layer 1 contains shadow-only instances.
-  if(assembly.shadowPartitions.size>0)sun.shadow.camera.layers.enable(1);
+  if(assembly.shadowPartitions.size>0||assembly.inventory.yotsutsuji.sharedGateShadows>0)sun.shadow.camera.layers.enable(1);
   Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40,near:1,far:200});
   sun.shadow.normalBias=.04;sun.shadow.bias=-.0001;scene.add(sun.target);
   await startupCheckpoint('createSunShadowSchedule');
