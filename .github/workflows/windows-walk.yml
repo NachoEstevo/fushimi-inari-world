@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [route, trace]
+        check: [senbon, summit-loop, trace]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +44,9 @@ jobs:
           "BRAVE_DRIVER=$driver/node_modules/playwright-core/index.mjs" >> $env:GITHUB_ENV
           Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion
       - name: Walk the release build
+        timeout-minutes: 28
+        env:
+          BRAVE_ROUTE_CASE: ${{ matrix.check }}
         shell: pwsh
         run: |
           $server = Start-Process python -ArgumentList '-m','http.server','8421','--bind','127.0.0.1','--directory','dist' -PassThru
