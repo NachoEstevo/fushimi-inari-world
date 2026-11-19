@@ -32,7 +32,7 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
  const frustum=new THREE.Frustum(),projectionView=new THREE.Matrix4(),drawingSize=new THREE.Vector2();
  const lastWorld=new THREE.Matrix4(),lastProjection=new THREE.Matrix4(),lastFog=new THREE.Color();
  const active=uniform(0),depthCutoff=uniform(1),depthDirection=uniform(1),sample=texture(target.texture),replacements=new Map(),bindings=[],boundMeshes=new WeakSet();
- let disposed=false,initialized=false,cached=false,structure=null,lastStructure=null,lastFar=null,lastFogPresent=false,preparing=null;
+ let disposed=false,initialized=false,cached=false,structure=null,lastStructure=null,lastFar=null,lastFogPresent=false,preparing=null,preparedStructure=null;
  const stats={active:false,width:1,height:1,maxPixels:CITY_HORIZON_MAX_PIXELS,far:CITY_HORIZON_FAR,renders:0,cachedFrames:0,bindings:0};
  const structureKey=()=>root.children.map(child=>`${child.id}:${child.children.length}:${child.geometry?.id??''}`).join('|')+':'+(root.userData.panoramaGeometryVersion??0);
  function bindMaterials(){
@@ -46,6 +46,19 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
    }));
    const material=replacements.get(original);boundMeshes.add(object);object.material=material;bindings.push({object,original,material});
   });
+ }
+ // r187 keys its render context and render list using camera identity. Both
+ // preparation and display use this isolated camera, including parented poses.
+ function positionView(source){
+  source.updateWorldMatrix(true,false);
+  horizonCamera.copy(source,false);
+  horizonCamera.matrixAutoUpdate=false;
+  horizonCamera.matrix.copy(source.matrixWorld);
+  horizonCamera.near=Math.max(.1,source.far>=CITY_HORIZON_FAR?source.near:source.far);
+  horizonCamera.far=CITY_HORIZON_FAR;
+  stats.near=horizonCamera.near;
+  horizonCamera.updateProjectionMatrix();
+  horizonCamera.updateMatrixWorld(true);
  }
  function render(){
   active.value=0;stats.active=false;
@@ -66,14 +79,8 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
   if(root.visible&&cached&&lastStructure===structure&&lastFar===camera.far&&!fogChanged&&lastWorld.equals(camera.matrixWorld)&&lastProjection.equals(camera.projectionMatrix)){
    active.value=1;stats.active=true;stats.cachedFrames++;return;
   }
-  horizonCamera.copy(camera,false);
-  horizonCamera.matrixAutoUpdate=false;horizonCamera.matrix.copy(camera.matrixWorld);
-  // Debug cameras can see farther than this isolated city pass. Their far
-  // plane must not become a near plane beyond the horizon's own far plane.
-  horizonCamera.near=Math.max(.1,camera.far>=CITY_HORIZON_FAR?camera.near:camera.far);horizonCamera.far=CITY_HORIZON_FAR;
-  stats.near=horizonCamera.near;
-  horizonCamera.updateProjectionMatrix();
-  horizonCamera.updateMatrixWorld(true);horizonScene.updateMatrixWorld(true);
+  positionView(camera);
+  horizonScene.updateMatrixWorld(true);
   frustum.setFromProjectionMatrix(projectionView.multiplyMatrices(horizonCamera.projectionMatrix,horizonCamera.matrixWorldInverse),horizonCamera.coordinateSystem,horizonCamera.reversedDepth);
   stats.meshes=bindings.length;stats.visibleChunks=bindings.filter(({object})=>object.visible&&frustum.intersectsObject(object)).length;
   stats.cameraPosition=new THREE.Vector3().setFromMatrixPosition(horizonCamera.matrixWorld).toArray();
@@ -102,16 +109,15 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
    renderer.setViewport(previous.viewport);renderer.setScissor(previous.scissor);renderer.setScissorTest(previous.scissorTest);
   }
  }
- function prepare(cameraOverride=camera){
+ function prepare(cameraOverride=camera,{yieldWork,batchSize=4}={}){
   if(disposed)return Promise.resolve();
   if(preparing)return preparing;
+  const nextStructure=structureKey();
+  if(preparedStructure===nextStructure)return Promise.resolve();
   stats.prepareStatus='preparing';stats.prepareError=null;
   preparing=(async()=>{
-    const nextStructure=structureKey();if(nextStructure!==structure){bindMaterials();structure=nextStructure;cached=false;}
-    const view=new THREE.PerspectiveCamera();cameraOverride.updateWorldMatrix(true,false);
-    view.copy(cameraOverride,false);view.matrixAutoUpdate=false;view.matrix.copy(cameraOverride.matrixWorld);
-    view.near=Math.max(.1,cameraOverride.far>=CITY_HORIZON_FAR?cameraOverride.near:cameraOverride.far);view.far=CITY_HORIZON_FAR;
-    view.updateProjectionMatrix();view.updateMatrixWorld(true);
+    if(nextStructure!==structure){bindMaterials();structure=nextStructure;cached=false;}
+    positionView(cameraOverride);
     if(worldScene.fog?.color)horizonScene.fog.color.copy(worldScene.fog.color);
     // Bind the real target only for synchronous pipeline submission. Never
     // retain global renderer state while yielding or awaiting GPU compilation.
@@ -120,7 +126,14 @@ export function createCityHorizonPass({renderer,worldScene,root,camera}){
       try{renderer.setRenderTarget(target);return renderer.compileAsync(scope,compileCamera,targetScene);}
       finally{restorePrecompileTarget(renderer,previous);renderer.setRenderTarget(previous.target,previous.face,previous.mip);}
     }};
-    await compileAddedGroup(compiler,horizonScene,root,view,{includeHiddenRoot:true,batchSize:4,report(value){stats.preparation=value;}});
+    // Scoped compilation borrows the real scene only during synchronous
+    // submission. The dedicated scene has no lights. r187 prepares the map,
+    // vertex buffers and render pipeline together for this scene/camera pair.
+    await compileAddedGroup(compiler,horizonScene,root,horizonCamera,{
+      reuseRenderScene:true,getLights:()=>[],includeHiddenRoot:true,batchSize,yieldWork,
+      report(value){stats.preparation=value;}
+    });
+    preparedStructure=nextStructure;
     stats.prepareStatus='ready';
   })().catch(error=>{stats.prepareStatus='failed';stats.prepareError=String(error.message??error);throw error;}).finally(()=>{preparing=null;});
   return preparing;

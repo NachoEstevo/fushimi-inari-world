@@ -21,11 +21,16 @@ test('horizon renders only its city root and restores renderer and ownership',{s
  parentCamera.position.set(10,0,0);camera.position.set(795,164,-216);parentCamera.add(camera);
  camera.coordinateSystem=THREE.WebGPUCoordinateSystem;camera.updateProjectionMatrix();city.position.set(805,164,-600);
  const target={},clearColor=new THREE.Color('#123456');let activeTarget=target,renders=0,fail=false,width=1920,height=1080;
+ let compiledScene,compiledView,compiledTarget;
  const renderer={autoClear:false,
+  async compileAsync(scene,view){compiledScene=scene;compiledView=view;compiledTarget=activeTarget;},
   getDrawingBufferSize:v=>v.set(width,height),getMRT:()=>null,getRenderTarget:()=>activeTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
   getClearColor:v=>v.copy(clearColor),getClearAlpha:()=>.75,getViewport:v=>v.set(1,2,3,4),getScissor:v=>v.set(5,6,7,8),getScissorTest:()=>true,
   setRenderTarget(value){activeTarget=value;},setClearColor(){},setViewport(){},setScissor(){},setScissorTest(){},
   clear(){},render(scene,view){
+   assert.equal(scene,compiledScene,'same scene selects the prepared r187 render list');
+   assert.equal(view,compiledView,'same camera selects the prepared r187 context');
+   assert.equal(activeTarget,compiledTarget);
    renders++;assert.equal(scene.children.length,1);assert.equal(scene.children[0],root);
    assert.equal(view.coordinateSystem,THREE.WebGPUCoordinateSystem);assert.equal(view.far,6000);assert.equal(view.near,camera.far>=6000?Math.max(.1,camera.near):camera.far);assert.ok(view.near<view.far);
    view.updateMatrixWorld();assert.equal(view.matrixWorld.elements[12],camera.getWorldPosition(new THREE.Vector3()).x);
@@ -47,6 +52,7 @@ test('horizon renders only its city root and restores renderer and ownership',{s
   assert.ok(horizonNodes.some(node=>node.isSplitNode&&node.components==='xyz'&&node.node.value===pass.texture),'second operand uses the horizon RGB');
   assert.ok(horizonNodes.some(node=>node.isSplitNode&&node.components==='w'&&node.node===foreground),'second operand preserves foreground alpha');
   root.visible=false;pass.render();assert.equal(renders,0);assert.equal(pass.stats.active,false);
+  await pass.prepare(camera,{yieldWork:async()=>{},batchSize:1});
   root.visible=true;pass.render();assert.equal(renders,1);assert.equal(pass.stats.active,true);
   assert.equal(activeTarget,target);assert.equal(renderer.autoClear,false);assert.equal(camera.far,100);
   assert.ok(pass.stats.width*pass.stats.height<=262144);
@@ -97,14 +103,15 @@ test('hidden horizon prewarm compiles actual Basic materials and target without 
  const geometry=new THREE.BoxGeometry(),source=new THREE.MeshLambertMaterial();
  root.add(new THREE.Mesh(geometry,source),new THREE.Mesh(geometry,source));root.visible=false;worldScene.add(root);
  const originalTarget={},override=camera.clone();override.position.set(700,150,-200);override.far=150;override.updateProjectionMatrix();
- let currentTarget=originalTarget,release,fail=false,compiles=0,renders=0;
+ let currentTarget=originalTarget,release,fail=false,compiles=0,renders=0,liveCamera;
  const renderer={getMRT:()=>null,getRenderTarget:()=>currentTarget,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
   setRenderTarget(value){currentTarget=value;},render(){renders++;},compileAsync(scope,view,targetScene){
    compiles++;assert.equal(currentTarget.texture.type,THREE.HalfFloatType);
-   assert.equal(targetScene.name,'Isolated mapped city horizon');assert.equal(scope.fog.far,6000);
-   assert.equal(root.visible,false);assert.equal(root.parent,targetScene);assert.equal(view.near,150);assert.equal(view.far,6000);
+   assert.equal(targetScene,undefined);assert.equal(scope,root.parent);assert.equal(scope.name,'Isolated mapped city horizon');assert.equal(scope.fog.far,6000);
+   if(liveCamera)assert.equal(view,liveCamera);else liveCamera=view;
+   assert.equal(root.visible,false);assert.equal(root.parent,scope);assert.equal(view.near,150);assert.equal(view.far,6000);
    assert.notEqual(view,camera);assert.notEqual(view,override);assert.equal(camera.far,100);assert.equal(override.far,150);
-   assert.equal(scope.children.length,2);for(const mesh of scope.children){assert.ok(mesh.material.isMeshBasicMaterial);assert.equal(mesh.frustumCulled,false);}
+   assert.ok(scope.children.length>=2);for(const mesh of scope.children){assert.ok(mesh.material.isMeshBasicMaterial);assert.equal(mesh.frustumCulled,false);}
    if(fail)return Promise.reject(Error('pipeline failed'));
    return new Promise(resolve=>{release=resolve;});
   }};
@@ -116,6 +123,8 @@ test('hidden horizon prewarm compiles actual Basic materials and target without 
   assert.equal(root.visible,false);assert.equal(renders,0);release();await pending;
   assert.equal(pass.stats.prepareStatus,'ready');assert.equal(compiles,1);
   for(const mesh of root.children)assert.equal(mesh.frustumCulled,true);
+  await pass.prepare(override);assert.equal(compiles,1,'same prepared geometry is reused across admission and manual approach');
+  root.add(new THREE.Mesh(geometry,source));
   fail=true;await assert.rejects(pass.prepare(override),/pipeline failed/);
   assert.equal(pass.stats.prepareStatus,'failed');assert.equal(currentTarget,originalTarget);assert.equal(root.visible,false);assert.equal(renders,0);
  }finally{pass.dispose();geometry.dispose();source.dispose();}

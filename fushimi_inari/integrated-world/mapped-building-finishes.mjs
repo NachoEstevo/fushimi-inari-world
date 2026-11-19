@@ -62,7 +62,12 @@ export function createMappedBuildingFinishes({buildings,segments,ground,excludes
  const surfaces=surfaceLibrary??createArchitecturalSurfaceLibrary(),ownsSurfaces=!surfaceLibrary;
  const detailedIds=new Set(),records=[],buckets=new Map(),materials=new Map(),maps=new Set(),geometries=[];
  const bucket=kind=>{if(!buckets.has(kind))buckets.set(kind,{vertices:[],uv:[]});return buckets.get(kind);};
- const append=(kind,p,uv)=>{bucket(kind).vertices.push(...p);bucket(kind).uv.push(...uv);};
+ const append=(kind,p,uv)=>{
+  const isSign=kind==='iseya-sign',batch=bucket(isSign?'cloth':kind);
+  batch.vertices.push(...p);
+  if(isSign||kind==='cloth')batch.uv.push((uv[0]+Number(isSign))*.5,uv[1]);
+  else batch.uv.push(...uv);
+ };
  for(const {building,ring,bounds,distance}of selected){
   const tags=building.tags??{},heightValue=Number.parseFloat(tags.height),levels=Number.parseFloat(tags['building:levels']);
   const iseya=building.id===iseyaId&&appendIseya({building,buildings,ring,ground,append});

@@ -2,11 +2,11 @@ import {Group} from 'three';
 import {SpatialCollisionWorld} from './collision.mjs';
 import {FIELD_NOTE_REACH,FIELD_OBSERVATIONS,atFieldObservation} from './field-notes.mjs';
 
-// The pond stop stays on the mapped public approach (way/301527750), south of
-// the pavilion and rail return. At Mitsutsuji the mapped stair (way/439990449)
+// The pond stop uses the public side of the mapped approach (way/301527750),
+// with a sightline past the pavilion and rail return. At Mitsutsuji the stair (way/439990449)
 // reaches this junction; looking back from the junction shows the last flight.
 const stops = {
-  'field-pond': {anchor: 'kumataka', label: 'Shin-ike field note', point: [543.78,-143.18], target: [555.6,-137.2]},
+  'field-pond': {anchor: 'kumataka', label: 'Shin-ike field note', point: [535.766,-128.761], target: [546,-124]},
   'field-steps': {anchor: 'mitsu', label: 'Mitsutsuji field note', point: [556.331,-335.517], target: [552.536,-331.2255]}
 };
 

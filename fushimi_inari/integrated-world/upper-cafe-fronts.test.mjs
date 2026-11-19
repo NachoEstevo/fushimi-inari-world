@@ -64,7 +64,7 @@ test('real summit slopes support each shopfront at the high point of its facing 
 });
 
 test('Tsujitei has narrow cloth panels with per-panel UVs and observed vertical name',()=>{
- const texts=[],old=globalThis.document;globalThis.document={createElement(){return {width:0,height:0,getContext(){return {createImageData(w,h){return {data:new Uint8ClampedArray(w*h*4)};},putImageData(){},fillText(text){texts.push(text);},set fillStyle(v){},set textAlign(v){},set textBaseline(v){},set font(v){}};}};}};
+ const texts=[],old=globalThis.document;globalThis.document={createElement(){return {width:0,height:0,getContext(){return {createImageData(w,h){return {data:new Uint8ClampedArray(w*h*4)};},putImageData(){},drawImage(){},save(){},translate(){},scale(){},restore(){},fillRect(){},fillText(text){texts.push(text);},set fillStyle(v){},set textAlign(v){},set textBaseline(v){},set font(v){}};}};}};
  try{
   const cafe=byId('way/626313740'),shrine=byId('way/626313736'),parts=[];
   const detail=appendUpperCafeFront({building:cafe,buildings:[cafe,shrine],ring:cafe.points.slice(0,-1),base:200,roof:204,append:(kind,p,uv)=>{if(kind==='cloth')parts.push({p,uv});}});
@@ -75,7 +75,7 @@ test('Tsujitei has narrow cloth panels with per-panel UVs and observed vertical 
   const backFacing=(-dz*(cx-edge[0])+dx*(cz-edge[2]))<0;
   assert.equal(v[0].uv[0],backFacing?1:0);assert.equal(v[1].uv[0],backFacing?0:1);
   const result=createMappedBuildingFinishes({buildings:[cafe,shrine],segments:[{a:cafe.points[0],b:cafe.points[1]}],ground:()=>200});
-  assert.deepEqual(texts,['辻','亭']);assert.ok(result.stats.textureBytes>0);result.dispose();
+  assert.deepEqual(texts,['辻','亭','●','16','い','せ','や','い','せ','や']);assert.ok(result.stats.textureBytes>0);result.dispose();
  }finally{if(old===undefined)delete globalThis.document;else globalThis.document=old;}
 });
 

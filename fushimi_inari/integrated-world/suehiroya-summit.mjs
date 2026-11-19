@@ -111,6 +111,12 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
  const eaveA=at(.05,0,.04),eaveB=at(length-.05,0,.04);
  eaveA[1]=roofY(eaveA[2])-.11;eaveB[1]=roofY(eaveB[2])-.11;
  parts.beam(eaveA,eaveB,.035,roof,.035,4);
+ // The January 2016 uphill view shows the eave underside and timber brackets.
+ const soffit=(u,v,drop)=>{const p=at(u,0,v);p[1]=roofY(p[2])-drop;return p;};
+ quad(soffit(.25,.04,.09),soffit(length-.25,.04,.09),soffit(length-.25,inset,.09),soffit(.25,inset,.09),roof);
+ for(let i=0;i<=bays;i++){
+  const u=.25+i*pitch;parts.beam(soffit(u,.085,.12),soffit(u,inset,.12),.034,dark,.034,4);
+ }
  for(let i=0;i<=bays;i++){const u=.25+i*pitch;box(.055,2.00,.075,u,1.04,inset,timber);box(.020,.78,.06,u,2.40,inset-.03,roof);}
  // Close only the two shallow returns inside the mapped roof edge.
  for(const [corner,u]of [[a,.25],[b,length-.25]])quad([corner[0],floor,corner[2]],at(u,floor,inset),at(u,roofY(at(u,0,inset)[2])-.08,inset),[corner[0],roofY(corner[2])-.08,corner[2]],timber);
@@ -142,7 +148,7 @@ export function createSuehiroyaSummit({buildings,ground,walkHeight,materials={}}
   }
  }
  const budget=parts.flush();group.traverse(mesh=>{if(mesh.isMesh&&mesh.material===roof)mesh.name='Suehiro-ya pitched metal roof';});
- builtIds.add(CAFE);Object.assign(stats,budget,{built:true,buildMs:performance.now()-started,floor,roofFrontRun,skylights:3,references:[stats.reference,{author:'Petr Nouza',date:'September 2025',photo:'CIABIhAqKh32_ZCTC5JQqXjkjJou',url:'https://www.google.com/maps/place/Suehiroya/@34.9669704,135.7855404/'}],roofMin:roofY(minZ),roofMax:roofY(maxZ),bays,offeringPouches:6,offeringTablets:6,
+ builtIds.add(CAFE);Object.assign(stats,budget,{built:true,buildMs:performance.now()-started,floor,roofFrontRun,skylights:3,references:[stats.reference,{author:'Petr Nouza',date:'September 2025',photo:'CIABIhAqKh32_ZCTC5JQqXjkjJou',url:'https://www.google.com/maps/place/Suehiroya/@34.9669704,135.7855404/'}],soffitSource:'https://blog-imgs-90.fc2.com/k/y/o/kyoto1966/372-5.jpg',roofMin:roofY(minZ),roofMax:roofY(maxZ),bays,offeringPouches:6,offeringTablets:6,
   sharedArchitecturalSurfaces:!!surfaces?.getMaps,front:{edge:front.edge,a:[...a],b:[...b],outward:[-n[0],-n[1]],inset},footprint:ring.map(p=>[p[0],p[2]])});
  group.userData={sourceFeature:CAFE,builtIds:[CAFE],reference:stats.reference,estimatedDimensions:true};
  return result;

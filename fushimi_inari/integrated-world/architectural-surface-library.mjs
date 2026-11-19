@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {paintIseyaSign} from './iseya-frontage.mjs';
 
 // These repeatable surfaces contain material variation, never cast shadows.
 // Albedo images can stream later without replacing the texture or material.
@@ -48,9 +49,11 @@ function surfaceMaps(kind,loadTexture,assets){
   map.wrapS=map.wrapT=THREE.RepeatWrapping;map.generateMipmaps=true;map.minFilter=THREE.LinearMipmapLinearFilter;map.magFilter=THREE.LinearFilter;map.anisotropy=4;map.needsUpdate=true;
  }else map=dataTexture(color,`Architectural ${kind} albedo`,THREE.SRGBColorSpace);
  if(kind==='cloth'&&typeof document!=='undefined'){
-  const canvas=fallbackImage(color),ctx=canvas.getContext?.('2d');
-  if(ctx){ctx.fillStyle='#e8ddc8';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 49px serif';ctx.fillText('辻',128,98);ctx.fillText('亭',128,157);
-   map.dispose();map=new THREE.CanvasTexture(canvas);map.name='Tsujitei noren with observed name';map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.ClampToEdgeWrapping;map.anisotropy=4;
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
+  const ctx=canvas.getContext?.('2d');
+  if(ctx){ctx.drawImage(fallbackImage(color),0,0);ctx.fillStyle='#e8ddc8';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 49px serif';ctx.fillText('辻',128,98);ctx.fillText('亭',128,157);
+   ctx.save();ctx.translate(256,0);ctx.scale(2,2);paintIseyaSign(ctx);ctx.restore();
+   map.dispose();map=new THREE.CanvasTexture(canvas);map.name='Tsujitei and Iseya observed shop cloth and sign';map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.ClampToEdgeWrapping;map.anisotropy=4;
   }
  }
  const relief=dataTexture(packed,`Architectural ${kind} height / roughness`,THREE.NoColorSpace);

@@ -95,6 +95,7 @@ try{
  console.log(JSON.stringify({startup:report.startup,adapter,frames:report.frames.map(({label,distanceWalked,p99,worst})=>({label,distanceWalked,p99,worst}))}));
 }catch(error){
  report.failure=String(error);
+ report.lastState=await page.evaluate(()=>Object.fromEntries(['bootPhase','checkpointPreparation','deferredBuildings','deferredCompilation','walkingNeighborhood','renderQuality','gpuError','movementFrameAudit'].map(key=>[key,document.body.dataset[key]?.slice(-16000)]))).catch(()=>null);
  report.lastScreen=await page.locator('body').innerText({timeout:12000}).catch(()=>null);
  await page.screenshot({path:out+'/failure.png',timeout:15000}).catch(()=>{});
  throw error;

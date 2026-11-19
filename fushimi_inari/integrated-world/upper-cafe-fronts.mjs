@@ -69,7 +69,8 @@ export function appendUpperCafeFront({building,buildings,ring,base,roof,append,f
  const side=(u,y0,y1,back,front)=>quad('timber',[point(u,y0,back),point(u,y0,front),point(u,y1,front),point(u,y1,back)]);
  const inset=-.16;
  rect('plaster',0,0,length,roof-base,inset);
- side(0,0,roof-base,inset,0);side(length,0,roof-base,inset,0);
+ const jambEnd=spec.route?setback:0;
+ side(0,0,roof-base,inset,jambEnd);side(length,0,roof-base,inset,jambEnd);
  // An overhanging eave with an exposed underside and fascia. Its exact slope
  // is inferred; the source shows the shaded upper edge rather than a survey.
  const eaveY=Math.min(spec.route?2.83:2.66,roof-base-.12),eaveDepth=spec.route ? .61 : .30;

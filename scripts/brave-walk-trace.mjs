@@ -30,12 +30,14 @@ export function summarizeWalkTrace(events,{pageMarkMs,walk,dataLossOccurred=fals
   if(e.name==='thread_name')threadNames.set(track(e),e.args?.name);
  }
  if(!marker)return {markerMissing:true,dataLossOccurred,eventCount:events.length};
- const start=marker.ts,end=start+durationMs*1000,slices=[];
+ const start=marker.ts,slices=[];
  const endMarker=events.find(e=>e.name==='clock_sync'&&e.args?.sync_id===endSyncId);
  let lastActivityUs=start;
  for(const e of events)if(e.ph!=='M'&&Number.isFinite(e.ts)){
   lastActivityUs=Math.max(lastActivityUs,e.ts+(Number.isFinite(e.dur)?e.dur:0));
  }
+ const end=Math.min(start+durationMs*1000,endMarker?.ts??lastActivityUs);
+ const observedWindowMs=ms(Math.max(0,end-start));
  function add(e,dur){
   if(!Number.isFinite(dur)||dur<=0||e.ts>=end||e.ts+dur<=start)return;
   const thread=threadNames.get(track(e))??'',process=processNames.get(e.pid)??'';
@@ -56,13 +58,13 @@ export function summarizeWalkTrace(events,{pageMarkMs,walk,dataLossOccurred=fals
  let worstFrame=null;
  if(worst&&Number.isFinite(pageMarkMs)&&Number.isFinite(walk.startTimeMs)){
   const to=walk.startTimeMs-pageMarkMs+worst.elapsedMs,from=to-worst.gap;
-  const intersects=to>0&&from<durationMs;
-  const overlap=e=>Math.max(0,Math.min(to,durationMs,e.startMs+e.durationMs)-Math.max(from,0,e.startMs));
+  const intersects=to>0&&from<observedWindowMs;
+  const overlap=e=>Math.max(0,Math.min(to,observedWindowMs,e.startMs+e.durationMs)-Math.max(from,0,e.startMs));
   worstFrame={startMs:from,endMs:to,gapMs:worst.gap,position:worst.position,
-   intersectsWindow:intersects,fullyInsideWindow:from>=0&&to<=durationMs,
+   intersectsWindow:intersects,fullyInsideWindow:from>=0&&to<=observedWindowMs,
    overlapping:intersects?slices.filter(e=>overlap(e)>0).sort((a,b)=>overlap(b)-overlap(a)).slice(0,15):[]};
  }
- return {markerMissing:false,startTimestampUs:start,windowMs:durationMs,dataLossOccurred,eventCount:events.length,
+ return {markerMissing:false,startTimestampUs:start,windowMs:durationMs,observedWindowMs,dataLossOccurred,eventCount:events.length,
   endSyncTimestampUs:endMarker?.ts??null,lastActivityMs:ms(lastActivityUs-start),
   rendererMain:slices.filter(e=>e.lane==='rendererMain').slice(0,12),gpuProcess:slices.filter(e=>e.lane==='gpuProcess').slice(0,12),worstFrame};
 }
@@ -105,14 +107,16 @@ export async function recordBraveWalkTrace(page,{outDir,label,startWalk,readWalk
    await writeFile(join(outDir,label+'.trace.json.gz'),bytes);
    return {result,bytes};
   };
-  const [capture,action]=await Promise.allSettled([stop(),deadline(Promise.resolve().then(()=>startWalk(markerName)),30000,'Start walk')]);
-  if(capture.status==='rejected')throw capture.reason;
-  if(action.status==='rejected')throw action.reason;
-  const {bytes,result}=capture.value;
-  const {traceEvents}=JSON.parse((await unzip(bytes,{maxOutputLength:maxJson})).toString('utf8'));
+  // On virtual Windows the page may wait seconds for a renderer slot. Start the
+  // stop clock once the page's mark is acknowledged, allowing twelve complete
+  // seconds after admission even if sending the mark itself had to wait.
+  const pageMarkMs=await deadline(Promise.resolve().then(()=>startWalk(markerName)),30000,'Start walk');
+  const {bytes,result}=await stop();
+  const {traceEvents,metadata={}}=JSON.parse((await unzip(bytes,{maxOutputLength:maxJson})).toString('utf8'));
   const walk=await readWalk();
-  const summary={label,pageMarkMs:action.value,bytes:bytes.length,...summarizeWalkTrace(traceEvents,{
-   pageMarkMs:action.value,walk,dataLossOccurred:result.dataLossOccurred}),walk};
+  const gpu={renderer:metadata['gpu-gl-renderer'],vendor:metadata['gpu-gl-vendor'],driverVersion:metadata['gpu-driver-version']};
+  const summary={label,pageMarkMs,bytes:bytes.length,gpu,...summarizeWalkTrace(traceEvents,{
+   pageMarkMs,walk,dataLossOccurred:result.dataLossOccurred}),walk};
   await writeFile(join(outDir,label+'.trace-summary.json'),JSON.stringify(summary,null,2));
   return summary;
  }finally{

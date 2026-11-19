@@ -7,6 +7,7 @@ import {telemetry} from './telemetry.mjs';
 import {findVotiveWaxToRetain} from './candle-flame-instances.mjs';
 import {createPublicFloorQuery,createPublicGravelSupport} from './public-walk-domain.mjs?v=repair-20261025b';
 import {refineGozendani} from './gozendani-prayer-hall.mjs';
+import {iseyaShopLane} from './iseya-frontage.mjs';
 import {clearIseyaTerrace,buildKumatakaStoneTerrace} from './pilgrimage-terraces.mjs';
 import {registerMitsurugi} from './mitsurugi-registration.mjs';
 import {buildMappedRoofCanopies} from './mapped-roof-canopies.mjs';
@@ -737,7 +738,8 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   const forestSubcellSize=callbacks.forestSubcellSize??0;
   const mountainDrawStart=root.children.length;
   await checkpoint('buildMountainTorii');
-  const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{terrainPositions:renderedTerrainPositions,excludeGate:gate=>ainomine?.excludeGate?.(gate)||mitsutsujiFrontages.excludeGate?.(gate)});
+  const excludeShopLane=iseyaShopLane(features,ainomine?.plan);
+  const mountainTorii=buildMountainTorii(root,legacy,spatial,surfaces,colliders,{terrainPositions:renderedTerrainPositions,excludeGate:gate=>ainomine?.excludeGate?.(gate)||excludeShopLane?.(gate)||mitsutsujiFrontages.excludeGate?.(gate)});
   const mountainDrawRoots=root.children.slice(mountainDrawStart).filter(object=>object.isInstancedMesh);
   await checkpoint('buildReception');
   const reception=buildReception(root,features,ground,legacy.materials,colliders);

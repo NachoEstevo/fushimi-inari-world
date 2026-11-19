@@ -24,6 +24,9 @@ export function createPanoramaYield({now=()=>performance.now(),requestFrame=glob
 export function installCityPanorama(scene,features,ground,excludes,{yieldWork,now=()=>performance.now()}={}){
   yieldWork??=createPanoramaYield({now});
   const root=new THREE.Group();root.name='Lookout city facades';root.visible=false;scene.add(root);
+  // Walking admission is spatially indexed by the three places from which this
+  // asset is seen. Its physical buildings lie kilometres west of the walker.
+  const prewarmBounds=new THREE.Sphere().setFromPoints(outlooks.map(point=>new THREE.Vector3(...point)));
   let built=false,count=0,triangles=0,pending=null,automaticAttempted=false,wanted=false;
   const stats={status:'idle',built:false,buildings:0,triangles:0,cpuMs:0,maxSliceMs:0,yields:0,error:null,stage:'idle',cpuByStage:{},maxSliceByStage:{}};
   const report=()=>{document.body.dataset.panoramaDetail=JSON.stringify({active:root.visible,...stats});};
@@ -125,10 +128,10 @@ export function installCityPanorama(scene,features,ground,excludes,{yieldWork,no
     }
     await checkpoint();stats.stage='buffers';
     staged=new THREE.Group();
-    for(const bucket of buckets.values()){
+    for(const [cell,bucket] of buckets){
       const geometry=new THREE.BufferGeometry();
       for(const [attribute,size]of [['position',3],['uv',2],['color',3],['normal',3]])geometry.setAttribute(attribute,new THREE.Float32BufferAttribute(bucket[attribute],size));
-      const mesh=new THREE.Mesh(geometry,material);mesh.receiveShadow=false;staged.add(mesh);
+      const mesh=new THREE.Mesh(geometry,material);mesh.name='Mapped Kyoto city '+cell;mesh.receiveShadow=false;staged.add(mesh);
       const center=new THREE.Vector3(...bucket.min.map((value,i)=>(value+bucket.max[i])/2));let radius2=0;
       for(let i=0;i<bucket.position.length;i+=3){radius2=Math.max(radius2,(bucket.position[i]-center.x)**2+(bucket.position[i+1]-center.y)**2+(bucket.position[i+2]-center.z)**2);if(i%(3*512)===0)await checkpoint();}
       geometry.boundingSphere=new THREE.Sphere(center,Math.sqrt(radius2));
@@ -156,7 +159,7 @@ export function installCityPanorama(scene,features,ground,excludes,{yieldWork,no
   }
 
   let horizonPass=null;
-  return {prepare,stats,group:root,createHorizonPass({renderer,camera}){
+  return {prepare,stats,group:root,prewarmBounds,createHorizonPass({renderer,camera}){
     return horizonPass??=import('./city-horizon-pass.mjs').then(({createCityHorizonPass})=>createCityHorizonPass({renderer,worldScene:scene,root,camera}));
   },update(camera,enabled){
     wanted=panoramaVisible(camera.position,wanted,enabled);

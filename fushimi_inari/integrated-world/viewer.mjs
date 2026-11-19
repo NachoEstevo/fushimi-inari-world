@@ -171,7 +171,7 @@ try {
     quality.refreshTextures(group);
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
-    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await textureStreaming.prepareAt(camera.position);await compileAddedGroup(quality,scene,group,camera,{batchSize:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
+    const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await textureStreaming.prepareAt(camera.position);await compileAddedGroup(quality,scene,group,camera,{batchSize:sectorPreparation?.busy?12:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
     await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
     group.updateWorldMatrix(true,true);
     const bounds=new THREE.Box3().setFromObject(group);
@@ -475,7 +475,10 @@ try {
     if(routeProgress>=activeRoute.length-1){routeProgress=0;travelled=0;}
     const route=activeRoute;
     const start=advanceGuidedRoute(route,routeProgress,travelled,0).position;
-    if(Math.hypot(camera.position.x-start[0],camera.position.z-start[2])>80){
+    // WebGL2 keeps its renderer-managed first-use compilation. Asking the
+    // software fallback to compile an entire remote sector serially can hold
+    // the player at the station for minutes.
+    if(renderer.backend.isWebGPUBackend&&Math.hypot(camera.position.x-start[0],camera.position.z-start[2])>80){
       // A remote start needs the same residency as fast travel. Queue uploads
       // and compilation while the previous view is still on screen.
       $('walk').disabled=true;
@@ -485,6 +488,7 @@ try {
       $('walk').disabled=false;
       if(!ready)return;
     }
+    interruptArrival();
     walking=true;controls.enabled=false;$('stop').disabled=false;$('walk').textContent='Following route…';
   };
   $('stop').onclick=()=>{
@@ -550,9 +554,9 @@ try {
   // Visible review destinations use existing exterior paths, never service interiors.
   if(new URLSearchParams(location.search).get('audit')==='1'){
     const reviewPoints=[
-      ['audit_iseya_up','Review · Iseya approach',929,-10.6,938.4,-2],
-      ['audit_iseya_down','Review · Iseya return',943,-2.1,932,-9],
-      ['audit_gozendani_front','Review · Gozendani entrance',996.46,-260.109,993.63,-262.32],
+      ['audit_iseya_up','Review · Iseya approach',926.3,-12.5,932.8,-9.4],
+      ['audit_iseya_down','Review · Iseya return',933.9,-4.0,931.1,-10.3],
+      ['audit_gozendani_front','Review · Gozendani entrance',1001.9,-264.86,993.63,-262.32],
       ['audit_canopy_opening','Review · Senbon canopy opening',189.774,17.9,192.477,23.783],
       ['audit_south_shinme','Review · Southern Shinme',97.801,-17.377,94.577,-6.451],
       ['audit_osugi','Review · Osugi approach',909.15,-185.27,923.59,-183.51],
@@ -802,7 +806,8 @@ try {
       telemetry.report('checkpointPreparation',value);
       const latest=value.history.at(-1);
       if(value.busy&&latest?.stage){
-        const message=`Preparing ${assembly.spatial.byId[latest.id]?.label??latest.id} · ${latest.stage}`;
+        const label=latest.id==='route_start'?'route start':assembly.spatial.byId[latest.id]?.label??latest.id;
+        const message=`Preparing ${label} · ${latest.stage}`;
         $('position').textContent=message;showCheckpointStatus(message);
       }else if(!value.busy&&latest?.status==='ready'){clearTimeout(checkpointStatusTimer);checkpointStatus.hidden=true;}
       else if(!value.busy&&latest?.status==='blocked')showCheckpointStatus('No clear access found. Try another checkpoint.',true);
@@ -829,17 +834,16 @@ try {
         await compileSelectedVisuals(quality,scene,visuals,camera,{batchSize:4,yieldWork:yieldPreparation,report,reuseRenderScene:true,getLights:compilationLights.getLights,onCompiled:objects=>{renderBuildAudit?.noteCompiled(objects);if(query.get('pipelineAudit')!=='1'||query.get('prewarmPrepared')!=='0')for(const object of objects)walkingPrewarm?.markPrepared(object);}});
       });
       if(!isCurrent())return;
-      if($('buildings').checked&&panoramaVisible(position,false)){
+      const needsCity=$('buildings').checked&&(panoramaVisible(position,false)||destination.guidedRoute?.some(([x,y,z])=>panoramaVisible({x,y:y+1.7,z},false)));
+      if(needsCity){
         await stage('mapped city geometry',()=>panorama.prepare());
         if(!isCurrent())return;
         await stage('mapped city shaders',()=>cityHorizon.prepare(targetCamera));
+        walkingPrewarm?.markPrepared(panorama.group);
       }
     },
     commit(destination){
-      if(destination.guidedRoute){
-        if(destination.guidedRoute!==activeRoute)return false;
-        interruptArrival();return true;
-      }
+      if(destination.guidedRoute)return destination.guidedRoute===activeRoute;
       interruptArrival();
       if(!walker.teleport(destination.point,destination.target)){$('position').textContent='No clear access found at this checkpoint.';return false;}
       if(sectorPause)sectorPause.committed=true;
@@ -869,7 +873,11 @@ try {
   const reportWalkingNeighborhood=stats=>{telemetry.report('walkingNeighborhood',stats);};
   await startupCheckpoint();
   const walkingPreparationYield=createWalkingPreparationYield(),framePacedWalkingPreparation=query.get('prewarmFrameYield')!=='0';
-  walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds})),
+  // The skyline is drawn by its own distant camera. Keep it out of the main
+  // camera's neighborhood batch, whose completion marks all its owners ready.
+  const walkingEntries=[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds}));
+  walkingEntries.push({object:panorama.group,bounds:panorama.prewarmBounds});
+  walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:walkingEntries,
     compile:async(object,{isCurrent})=>{
       if(!isCurrent())return false;
       const yieldIdle=async()=>{
@@ -879,6 +887,12 @@ try {
         await (framePacedWalkingPreparation?walkingPreparationYield.yield():yieldPreparation());
         if(!isCurrent())throw new Error('Walking preparation paused');
       };
+      if(object===panorama.group){
+        await panorama.prepare();
+        if(!isCurrent())return false;
+        await cityHorizon.prepare(camera,{yieldWork:yieldIdle,batchSize:1});
+        return isCurrent();
+      }
       // Both near and far variants must be ready before the LOD switches.
       // Explicit roots let scoped compilation borrow dormant levels safely.
       const visuals=object.isLOD?object.levels.map(level=>level.object):[object];

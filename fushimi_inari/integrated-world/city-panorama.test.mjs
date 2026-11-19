@@ -11,6 +11,10 @@ test('panorama skips missing terrain and keeps fallback heights above the real f
  const scene=new THREE.Scene();
  try{
   const panorama=installCityPanorama(scene,{buildings:[missing,valid]},x=>x<430?NaN:40,()=>false,{yieldWork:async()=>{}});
+  for(const point of [[795,164,-216],[793,180,-315],[730,140,-270]]) {
+   assert.ok(panorama.prewarmBounds.distanceToPoint(new THREE.Vector3(...point))<1e-9);
+  }
+  assert.ok(panorama.prewarmBounds.distanceToPoint(new THREE.Vector3(-305,32,-126))>800,'station is outside city admission');
   panorama.update({position:new THREE.Vector3(730,140,-270)},true);
   await panorama.prepare();
   const report=JSON.parse(document.body.dataset.panoramaDetail);

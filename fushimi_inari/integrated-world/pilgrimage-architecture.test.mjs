@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {heightAt} from '../geography/geo-core.mjs';
-import {appendIseya,iseyaId} from './iseya-frontage.mjs';
+import {appendIseya,iseyaId,iseyaShopLane} from './iseya-frontage.mjs';
 import {createMappedBuildingFinishes} from './mapped-building-finishes.mjs';
 import {clearIseyaTerrace} from './pilgrimage-terraces.mjs';
 import {refineMitsurugiStoneAndWell} from './mitsurugi-stone-and-well.mjs';
@@ -33,6 +33,16 @@ test('Iseya opens the long public side, seats its toe and uses the slope for one
   const roof=points.filter(p=>p.kind==='roof');
   assert.ok(ring.every(p=>roof.some(v=>v.p[0]===p[0]&&v.p[2]===p[2]&&v.p[1]>detail.frontFloor+4.5)));
   assert.equal(appendIseya({building,buildings:[building],ring,ground,append:()=>assert.fail('unidentified site drew geometry')}),null);
+});
+
+test('only complete inferred stations inside the photographed paved lane are reserved',()=>{
+  const exclude=iseyaShopLane(features,{route:{point:[937.5,196,-2.3]}});
+  assert.ok(exclude({x:930.1,z:-8.88}));
+  assert.ok(exclude({x:936.2,z:-2.30}));
+  assert.equal(exclude({x:924.5,z:-15.5}),null);
+  assert.equal(exclude({x:942.1,z:-2.2}),null);
+  assert.equal(exclude({x:933.5,z:-9.8}),null);
+  assert.equal(iseyaShopLane({buildings:[],paths:[]},null),null);
 });
 
 test('five sourced cafes retain their single mapped owners within the selection budgets',()=>{

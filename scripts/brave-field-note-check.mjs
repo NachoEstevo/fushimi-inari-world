@@ -7,9 +7,11 @@ const [pond,steps] = FIELD_OBSERVATIONS;
 
 // Runs after the frame recordings, in the caller's dedicated release-test
 // browser. Uses public controls plus the two review destinations and audit data.
-export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=true,checkTouch=false,timeout=120000}={}) {
-  const url = new URL(page.url());
+export async function verifyFieldNoteWalk(page,{entryURL=page.url(),capture=async()=>{},checkAki=true,checkTouch=false,checkReturn=true,timeout=120000}={}) {
+  const url = new URL(entryURL);
+  const backend=url.searchParams.get('backend');
   url.search = '?audit=1';
+  if (backend) url.searchParams.set('backend',backend);
   const canvas = page.locator('#world canvas');
   const journal = page.locator('#journey-journal');
   const hint = page.locator('#interaction-hint span');
@@ -31,7 +33,7 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
     const value=JSON.parse(document.body.dataset.zenExperience??'{}').world?.fieldNotes;
     return !!value&&value.pending===expected;
   },id);
-  const checkpoint = id => ready(expected=>document.body.dataset.checkpoint===expected,id);
+  const checkpointRecord=()=>page.evaluate(()=>JSON.parse(document.body.dataset.checkpointPreparation??'{}').history?.at(-1)??null);
   const activate = async tab => {
     if (!await page.locator('#exploration-menu').isVisible()) await page.locator('#menu-open').click({timeout});
     await page.getByRole('tab',{name:tab}).click({timeout});
@@ -42,9 +44,17 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
     if (await places.getAttribute('open')===null) await places.locator('summary').click({timeout});
     const select=page.locator('#checkpoint-select');
     const [id]=await select.selectOption(destination,{timeout});
+    const prior=await checkpointRecord();
     await page.locator('#checkpoint-go').click({timeout});
-    await checkpoint(id);
-    await page.locator('#checkpoint-status').waitFor({state:'hidden',timeout});
+    await ready(({id,previous})=>{
+      const value=JSON.parse(document.body.dataset.checkpointPreparation??'{}');
+      const latest=value.history?.at(-1);
+      return latest?.id===id&&latest.started!==previous&&!value.busy;
+    },{id,previous:prior?.started??null});
+    const result=await checkpointRecord();
+    assert.equal(result.status,'ready',`Checkpoint ${id}: ${result.error??result.status}`);
+    assert.equal(await page.locator('body').getAttribute('data-checkpoint'),id);
+    await page.locator('#exploration-menu').waitFor({state:'hidden',timeout});
     await canvas.focus({timeout});
   }
   async function enter(reload=false) {
@@ -70,6 +80,7 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
     else await page.keyboard.press('KeyE');
   }
   async function observe(note) {
+    if(!checkTouch) await canvas.focus({timeout});
     await prompt(note.prompt);
     await press();
     await pending(note.id);
@@ -85,7 +96,14 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
   async function closeJournal() {
     await journal.getByRole('button',{name:'Close journal'}).click({timeout});
     await journal.waitFor({state:'hidden',timeout});
+    await ready(()=>!document.body.classList.contains('journal-open'));
     await canvas.focus({timeout});
+  }
+  const sheet=journal.locator('article.zen-field-sheet');
+  async function checkSheet() {
+    await sheet.waitFor({state:'visible',timeout});
+    assert.equal(await sheet.count(),1);
+    assert.deepEqual(await sheet.locator('dd').allTextContents(),[pond.note,steps.note]);
   }
 
   await enter();
@@ -119,7 +137,7 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
     await ready(([x,,z])=>{
       const values=document.body.dataset.camera?.split(',').map(Number);
       return values&&Math.hypot(values[0]-x,values[2]-z)>2;
-    },origin,20000);
+    },origin,Math.min(timeout,90000));
   } finally {await page.keyboard.up('KeyA');}
   await pending(null);
   assert.deepEqual(await savedNotes(),[],'Walking away must discard the unsaved note');
@@ -145,10 +163,7 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
   await save(steps);
   assert.deepEqual(await savedNotes(),[pond.id,steps.id]);
   await openJournal();
-  const sheet=journal.locator('article.zen-field-sheet');
-  await sheet.waitFor({state:'visible',timeout});
-  assert.equal(await sheet.count(),1);
-  assert.deepEqual(await sheet.locator('dd').allTextContents(),[pond.note,steps.note]);
+  await checkSheet();
   const after=await state();
   assert.equal(after.journey.version,2);
   assert.deepEqual(after.journey.photos,before.journey.photos??[]);
@@ -166,6 +181,12 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
         return node&&!node.hidden&&node.textContent.includes('Talk with Aki');
       },checkTouch);
       await press();
+      // Aki's action has a short cooldown between two separate conversations.
+      const open=await aki.waitFor({state:'visible',timeout:1250}).then(()=>true,error=>{
+        if (error.name!=='TimeoutError') throw error;
+        return false;
+      });
+      if (!open) await press();
       await aki.getByRole('button',{name:note.share,exact:true}).click({timeout});
       const reply=await aki.locator('[data-aki-words]').textContent();
       assert.equal(reply,note.reply);
@@ -175,5 +196,37 @@ export async function verifyFieldNoteWalk(page,{capture=async()=>{},checkAki=tru
       await canvas.focus({timeout});
     }
   }
-  return {input:checkTouch?'touch':'keyboard',muted:true,night:true,walkedAway:true,reloaded:true,sheetCount:1,notes:[pond.note,steps.note],akiReplies};
+
+  let returned=null;
+  if (checkReturn) {
+    await go('audit_return_door');
+    await prompt('Board the return train');
+    await press();
+    await ready(()=>JSON.parse(document.body.dataset.zenExperience??'{}').returnTrain?.active===true);
+    await ready(()=>{
+      const train=JSON.parse(document.body.dataset.zenExperience??'{}').returnTrain;
+      return train?.phase==='complete'&&train.seated&&train.cameraOwned&&train.completed===1;
+    });
+    const continueWalking=journal.getByRole('button',{name:'Continue walking'});
+    await continueWalking.waitFor({state:'visible',timeout});
+    const finished=await state();
+    assert.ok(finished.journey.visit.finishedAt>=finished.journey.moments.return&&finished.journey.moments.return>0);
+    await capture('field-return-seated');
+    await continueWalking.click({timeout});
+    await journal.waitFor({state:'hidden',timeout});
+    await ready(()=>{
+      const train=JSON.parse(document.body.dataset.zenExperience??'{}').returnTrain;
+      return train?.cameraOwned===false&&!train.seated&&document.body.dataset.movementMode==='walk';
+    });
+    await openJournal();
+    await journal.getByRole('tab',{name:'Journal',exact:true}).click({timeout});
+    await checkSheet();
+    const resumed=await state();
+    assert.equal(resumed.journey.visit.number,finished.journey.visit.number+1);
+    assert.equal(resumed.journey.visit.finishedAt,0);
+    assert.deepEqual(FIELD_OBSERVATIONS.map(({id})=>resumed.journey.moments[id]),FIELD_OBSERVATIONS.map(({id})=>after.journey.moments[id]));
+    await closeJournal();
+    returned={completed:1,seated:true,continuedWalking:true,visit:resumed.journey.visit.number};
+  }
+  return {input:checkTouch?'touch':'keyboard',muted:true,night:true,walkedAway:true,reloaded:true,sheetCount:1,notes:[pond.note,steps.note],akiReplies,returned};
 }
