@@ -55,6 +55,8 @@ test('records normal movement for sixteen RAF seconds without changing the camer
   assert.equal(r.duration,16);assert.equal(r.elapsedMs,16000);assert.equal(r.frameCount,2);assert.equal(r.sampleCount,2);
   assert.equal(r.p50,8000);assert.equal(r.p95,8000);assert.equal(r.p99,8000);assert.equal(r.worst,8000);assert.equal(r.fps,.125);
   assert.equal(r.updateSum,4);assert.equal(r.updateMean,2);assert.equal(r.updateMax,3);assert.equal(r.submitSum,8);assert.equal(r.submitMean,4);assert.equal(r.submitMax,6);
+  assert.deepEqual(r.countsAboveMs,{33:2,50:2,100:2});
+  assert.deepEqual(r.slowFrames.map(s=>s.position),[[3,1.7,0],[3,1.7,4]]);
   assert.equal(r.distanceWalked,7);assert.ok(Math.abs(r.angularCumulativeRadians-Math.PI)<1e-12);
   assert.deepEqual(r.firstPose,{position:[0,1.7,0],rotation:[0,0,0,1]});assert.deepEqual(r.lastPose,{position:[3,1.7,4],rotation:[0,1,0,0]});
   assert.deepEqual(r.contextStart,{context:1});assert.deepEqual(r.contextEnd,{context:2});assert.match(r.timing,/CPU/);assert.match(r.timing,/GPU.*not measured/);
@@ -75,7 +77,7 @@ test('keeps the twenty largest frame gaps and their measured CPU costs',()=>{
   f.audit.run();let time=0;f.audit.afterRender(time,0);
   for(let gap=1;gap<=30;gap++){time+=gap;f.audit.afterRender(time,gap*2,gap*3);}
   f.audit.afterRender(16000,4,5);const r=f.state().result;
-  assert.equal(r.slowFrames.length,20);assert.equal(r.slowFrames[0].gap,16000-time);assert.deepEqual(r.slowFrames[1],{elapsedMs:time,gap:30,submitMs:60,updateMs:90,priorSubmitMs:58,priorUpdateMs:87,priorEntryLagMs:null,entryLagMs:null});assert.equal(r.worst,16000-time);
+  assert.equal(r.slowFrames.length,20);assert.equal(r.slowFrames[0].gap,16000-time);assert.deepEqual(r.slowFrames[1],{position:[0,1.7,0],elapsedMs:time,gap:30,submitMs:60,updateMs:90,priorSubmitMs:58,priorUpdateMs:87,priorEntryLagMs:null,entryLagMs:null});assert.equal(r.worst,16000-time);
  }finally{f.cleanup();}
 });
 
@@ -83,7 +85,7 @@ test('keeps the twenty most CPU-intensive frames even when their preceding gaps 
  const f=fixture();try{
   f.audit.run();f.audit.afterRender(0,0);for(let i=1;i<=30;i++)f.audit.afterRender(i*8,i===1?60:i,i===1?10:0);
   f.audit.afterRender(16000,0,0);const r=f.state().result;
-  assert.equal(r.slowCpuFrames.length,20);assert.deepEqual(r.slowCpuFrames[0],{elapsedMs:8,gap:8,submitMs:60,updateMs:10,entryLagMs:null});
+  assert.equal(r.slowCpuFrames.length,20);assert.deepEqual(r.slowCpuFrames[0],{position:[0,1.7,0],elapsedMs:8,gap:8,submitMs:60,updateMs:10,entryLagMs:null});
   assert.equal(r.slowCpuFrames.at(-1).submitMs,12);assert.equal(r.slowFrames[0].gap,15760);
  }finally{f.cleanup();}
 });

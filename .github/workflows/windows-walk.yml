@@ -1,0 +1,62 @@
+name: Windows Brave route check
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/windows-walk]
+permissions:
+  contents: read
+jobs:
+  walk:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Prepare Brave and test driver
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = "v1.100.58"
+          $archive = "brave-$tag-win32-x64.zip"
+          $base = "https://github.com/brave/brave-browser/releases/download/$tag"
+          $zip = Join-Path $env:RUNNER_TEMP $archive
+          curl.exe --fail --location --retry 2 -o $zip "$base/$archive"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $expected = ((Invoke-RestMethod "$base/$archive.sha256") -split '\s+')[0]
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $expected) { throw "Brave checksum mismatch" }
+          $folder = Join-Path $env:RUNNER_TEMP 'brave-test'
+          Expand-Archive -Path $zip -DestinationPath $folder
+          $exe = (Get-ChildItem $folder -Filter brave.exe -Recurse | Select-Object -First 1).FullName
+          if (!$exe) { throw "Brave executable missing" }
+          "BRAVE_EXE=$exe" >> $env:GITHUB_ENV
+          $driver = Join-Path $env:RUNNER_TEMP 'brave-driver'
+          npm install --prefix $driver --no-audit --no-fund playwright-core@1.65.1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "BRAVE_DRIVER=$driver/node_modules/playwright-core/index.mjs" >> $env:GITHUB_ENV
+          Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion
+      - name: Walk the release build
+        shell: pwsh
+        run: |
+          $server = Start-Process python -ArgumentList '-m','http.server','8421','--bind','127.0.0.1','--directory','dist' -PassThru
+          try {
+            $ready = $false
+            for ($i=0; $i -lt 30; $i++) {
+              try { $ready = (Invoke-WebRequest 'http://127.0.0.1:8421/integrated-world/index.html').StatusCode -eq 200 } catch {}
+              if ($ready) { break }
+              Start-Sleep -Seconds 1
+            }
+            if (!$ready) { throw "Release server unavailable" }
+            node scripts/brave-route-check.mjs
+            exit $LASTEXITCODE
+          } finally { Stop-Process -Id $server.Id -ErrorAction SilentlyContinue }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-brave-route
+          path: outputs/brave-route-check/
+          if-no-files-found: ignore

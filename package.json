@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-static.mjs",
-    "test": "node --test fushimi_inari/geography/*.test.mjs fushimi_inari/integrated-world/*.test.mjs",
+    "test": "node scripts/test-rendering.mjs",
     "test:build": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {

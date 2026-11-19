@@ -11,6 +11,7 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
  button.type='button';button.textContent=`Record movement ${duration/1000}s`;section.append(button);section.append(output);doc.body.append(section);
  let phase='idle',result=null,error=null,disposed=false,startTime=null,lastTime=null,firstPose=null,lastPose=null,contextStart=null;
  let priorSubmitMs=null,priorUpdateMs=null,priorEntryLagMs=null;
+ let above33=0,above50=0,above100=0;
  let gaps=[],slowFrames=[],slowCpuFrames=[],count=0,updateSum=0,updateMax=0,submitSum=0,submitMax=0,worst=0,distanceWalked=0,angularCumulativeRadians=0;
  function emit(){
   doc.body.dataset.movementFrameAudit=JSON.stringify({phase,result,error});
@@ -23,6 +24,7 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
   if(disposed||phase==='recording')return;
   phase='recording';result=null;error=null;startTime=null;lastTime=null;firstPose=null;lastPose=null;contextStart=null;
   priorSubmitMs=null;priorUpdateMs=null;priorEntryLagMs=null;
+  above33=above50=above100=0;
   gaps=[];slowFrames=[];slowCpuFrames=[];count=0;updateSum=0;updateMax=0;submitSum=0;submitMax=0;worst=0;distanceWalked=0;angularCumulativeRadians=0;
   if(doc.hidden){finish('error','Movement recording requires a visible document');return;}
   try{onStart();}catch(reason){finish('error',String(reason.message??reason));return;}emit();
@@ -42,15 +44,18 @@ export function installMovementFrameAudit({camera,getContext=()=>({}),onStart=()
    angularCumulativeRadians+=2*Math.acos(Math.min(1,dot));
    p[0]=x;p[1]=y;p[2]=z;r[0]=q.x;r[1]=q.y;r[2]=q.z;r[3]=q.w;
    lastTime=time;count++;updateSum+=updateMs;updateMax=Math.max(updateMax,updateMs);submitSum+=submitMs;submitMax=Math.max(submitMax,submitMs);worst=Math.max(worst,gap);
+   if(gap>33)above33++;
+   if(gap>50)above50++;
+   if(gap>100)above100++;
    if(gaps.length<maxSamples)gaps.push(gap);
-   if(slowFrames.length<MAX_SLOW_FRAMES||gap>slowFrames.at(-1).gap){slowFrames.push({elapsedMs,gap,submitMs,updateMs,priorSubmitMs,priorUpdateMs,priorEntryLagMs,entryLagMs});slowFrames.sort((a,b)=>b.gap-a.gap);if(slowFrames.length>MAX_SLOW_FRAMES)slowFrames.length=MAX_SLOW_FRAMES;}
-   if(slowCpuFrames.length<MAX_SLOW_FRAMES||submitMs+updateMs>slowCpuFrames.at(-1).submitMs+slowCpuFrames.at(-1).updateMs){slowCpuFrames.push({elapsedMs,gap,submitMs,updateMs,entryLagMs});slowCpuFrames.sort((a,b)=>(b.submitMs+b.updateMs)-(a.submitMs+a.updateMs));if(slowCpuFrames.length>MAX_SLOW_FRAMES)slowCpuFrames.length=MAX_SLOW_FRAMES;}
+   if(slowFrames.length<MAX_SLOW_FRAMES||gap>slowFrames.at(-1).gap){slowFrames.push({position:[x,y,z],elapsedMs,gap,submitMs,updateMs,priorSubmitMs,priorUpdateMs,priorEntryLagMs,entryLagMs});slowFrames.sort((a,b)=>b.gap-a.gap);if(slowFrames.length>MAX_SLOW_FRAMES)slowFrames.length=MAX_SLOW_FRAMES;}
+   if(slowCpuFrames.length<MAX_SLOW_FRAMES||submitMs+updateMs>slowCpuFrames.at(-1).submitMs+slowCpuFrames.at(-1).updateMs){slowCpuFrames.push({position:[x,y,z],elapsedMs,gap,submitMs,updateMs,entryLagMs});slowCpuFrames.sort((a,b)=>(b.submitMs+b.updateMs)-(a.submitMs+a.updateMs));if(slowCpuFrames.length>MAX_SLOW_FRAMES)slowCpuFrames.length=MAX_SLOW_FRAMES;}
    priorSubmitMs=submitMs;priorUpdateMs=updateMs;priorEntryLagMs=entryLagMs;
    if(elapsedMs>=duration){
     result={duration:duration/1000,startTimeMs:startTime,elapsedMs,frameCount:count,sampleCount:gaps.length,samplesTruncated:count>gaps.length,
      fps:count*1000/elapsedMs,p50:percentile(gaps,.5),p95:percentile(gaps,.95),p99:percentile(gaps,.99),worst,
      updateSum,updateMean:updateSum/count,updateMax,submitSum,submitMean:submitSum/count,submitMax,
-     distanceWalked,angularCumulativeRadians,firstPose,lastPose,slowFrames,slowCpuFrames,contextStart,contextEnd:context(),
+     countsAboveMs:{33:above33,50:above50,100:above100},distanceWalked,angularCumulativeRadians,firstPose,lastPose,slowFrames,slowCpuFrames,contextStart,contextEnd:context(),
      timing:'CPU update and render submission in milliseconds; GPU time not measured'};
     finish('complete');
    }
