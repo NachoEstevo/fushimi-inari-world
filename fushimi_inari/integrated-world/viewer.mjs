@@ -495,7 +495,12 @@ try {
     walking=false;controls.target.copy(camera.position).add(new THREE.Vector3(0,0,-10).applyQuaternion(camera.quaternion));
     controls.enabled=allowDebugCamera;if(allowDebugCamera)controls.update();else walker.start();$('stop').disabled=true;$('walk').textContent='Resume';
   };
-  $('buildings').onchange=e=>buildingGroup.visible=e.target.checked;
+  $('buildings').onchange=e=>{
+    buildingGroup.visible=e.target.checked;
+    // append deduplicates this owner and refreshes the spatial query even
+    // when the visitor is standing where its preparation was declined.
+    if(e.target.checked)walkingPrewarm?.append([{object:panorama.group,bounds:panorama.prewarmBounds}]);
+  };
   $('aerial-canopy').onchange=e=>canopy.group.visible=e.target.checked;
   $('paths').onchange=e=>{pathGroup.visible=e.target.checked;drawMap();};
   $('landmarks').onchange=e=>{landmarkGroup.visible=e.target.checked;drawMap();};
@@ -876,7 +881,7 @@ try {
   // The skyline is drawn by its own distant camera. Keep it out of the main
   // camera's neighborhood batch, whose completion marks all its owners ready.
   const walkingEntries=[...walkingPreparationBounds].map(([object,bounds])=>({object,bounds}));
-  walkingEntries.push({object:panorama.group,bounds:panorama.prewarmBounds});
+  if($('buildings').checked)walkingEntries.push({object:panorama.group,bounds:panorama.prewarmBounds});
   walkingPrewarm=createWalkingPrewarm({refillIntervalMs:100,radius:Math.min(prewarmViewRadius(camera)+24,300),entries:walkingEntries,
     compile:async(object,{isCurrent})=>{
       if(!isCurrent())return false;
@@ -888,8 +893,9 @@ try {
         if(!isCurrent())throw new Error('Walking preparation paused');
       };
       if(object===panorama.group){
+        if(!$('buildings').checked)return false;
         await panorama.prepare();
-        if(!isCurrent())return false;
+        if(!isCurrent()||!$('buildings').checked)return false;
         await cityHorizon.prepare(camera,{yieldWork:yieldIdle,batchSize:1});
         return isCurrent();
       }
