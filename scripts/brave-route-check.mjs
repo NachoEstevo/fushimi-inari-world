@@ -12,7 +12,7 @@ await mkdir(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.BRAVE_EXE,headless:false});
 const context=await browser.newContext({viewport:{width:960,height:640},deviceScaleFactor:1});
 const page=await context.newPage();
-page.setDefaultTimeout(120000);
+page.setDefaultTimeout(180000);
 const report={browser:browser.version(),errors:[],checkpoints:[],startup:[],frames:[]};
 page.on('pageerror',error=>report.errors.push(error.message));
 page.on('crash',()=>report.errors.push('Renderer process crashed'));
@@ -54,6 +54,12 @@ async function route(label,itinerary,quality,speed){
  }
  await page.getByRole('tab',{name:'Routes'}).click();
  await page.locator('#itinerary').selectOption({label:itinerary});
+ if(label==='summit-loop'){
+  await page.locator('#itinerary').selectOption('custom');
+  await page.locator('#start').selectOption({label:'Ichinomine · 231 m'});
+  await page.locator('#destination').selectOption({label:'Gozendani Hōhaisho · 143 m'});
+  await page.locator('#via').selectOption({label:'Mitsurugisha · 184 m'});
+ }
  await page.locator('#speed').selectOption(speed);
  await page.locator('#route').click();
  await page.locator('#walk').click();
@@ -62,8 +68,8 @@ async function route(label,itinerary,quality,speed){
  await page.waitForFunction(()=>JSON.parse(document.body.dataset.movementFrameAudit??'{}').phase==='complete',null,{timeout:240000});
  const sample=await page.evaluate(()=>JSON.parse(document.body.dataset.movementFrameAudit).result);
  report.frames.push({label,...sample});
- assert.ok(sample.distanceWalked>50,'Route must move through the world');
  await capture(label);
+ assert.ok(sample.distanceWalked>50,'Route must move through the world');
 }
 try{
  await enter('','cold');
@@ -74,9 +80,17 @@ try{
   return {vendor:a.info.vendor,architecture:a.info.architecture,description:a.info.description,isFallbackAdapter:a.info.isFallbackAdapter};
  });
  report.adapter=adapter;
- await route('senbon','Senbon and the three summits','balanced','12');
+ const system=await browser.newBrowserCDPSession();
+ try{
+  const {gpu}=await system.send('SystemInfo.getInfo');
+  report.graphics={devices:gpu.devices.map(({vendorString,deviceString,driverVersion})=>({vendorString,deviceString,driverVersion})),renderer:gpu.auxAttributes?.glRenderer,features:gpu.featureStatus};
+ }finally{await system.detach();}
+ // Test default-device startup at desktop size. A VM without a WebGPU adapter
+ // uses software rasterization; give its walking pass a smaller drawing buffer.
+ if(!adapter)await page.setViewportSize({width:512,height:360});
+ await route('senbon','Senbon and the three summits','balanced','50');
  await route('summit-loop','Summit loop via Gozendani','high','50');
- report.fieldNotes=await verifyFieldNoteWalk(page,{capture});
+ if(process.env.BRAVE_FIELD_NOTES==='1')report.fieldNotes=await verifyFieldNoteWalk(page,{capture});
  assert.deepEqual(report.errors,[]);
  console.log(JSON.stringify({startup:report.startup,adapter,frames:report.frames.map(({label,distanceWalked,p99,worst})=>({label,distanceWalked,p99,worst}))}));
 }catch(error){

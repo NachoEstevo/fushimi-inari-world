@@ -9,6 +9,10 @@ jobs:
   walk:
     runs-on: windows-2025
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [route, trace]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,12 +55,13 @@ jobs:
               Start-Sleep -Seconds 1
             }
             if (!$ready) { throw "Release server unavailable" }
-            node scripts/brave-route-check.mjs
+            if ('${{ matrix.check }}' -eq 'trace') { node scripts/brave-walk-trace.mjs }
+            else { node scripts/brave-route-check.mjs }
             exit $LASTEXITCODE
           } finally { Stop-Process -Id $server.Id -ErrorAction SilentlyContinue }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: windows-brave-route
+          name: windows-brave-${{ matrix.check }}
           path: outputs/brave-route-check/
           if-no-files-found: ignore
