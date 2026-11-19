@@ -1,5 +1,5 @@
 // Opt-in release test. CI supplies Brave and playwright-core outside the game build.
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import assert from 'node:assert/strict';
@@ -29,8 +29,12 @@ async function enter(search,label){
 }
 async function capture(label){
  const data=await page.evaluate(()=>({place:document.body.dataset.checkpoint??null,backend:document.body.dataset.rendererBackend,
-  gpuError:document.body.dataset.gpuError??null,bootstrap:document.body.dataset.bootstrapError??null,
-  health:JSON.parse(document.body.dataset.rendererHealth??'null')}));
+  gpuError:document.body.dataset.gpuError??null,bootstrap:document.body.dataset.bootstrapError??null}));
+ const monitor=page.getByRole('button',{name:'Exportar diagnóstico'});
+ if(await monitor.isVisible()){
+  const [download]=await Promise.all([page.waitForEvent('download'),monitor.click()]);
+  data.health=JSON.parse(await readFile(await download.path(),'utf8'));
+ }
  report.checkpoints.push({label,...data});
  await page.screenshot({path:out+'/'+label+'.png',timeout:120000});
  await save();

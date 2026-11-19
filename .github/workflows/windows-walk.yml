@@ -27,7 +27,7 @@ jobs:
           $zip = Join-Path $env:RUNNER_TEMP $archive
           curl.exe --fail --location --retry 2 -o $zip "$base/$archive"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $expected = ((Invoke-RestMethod "$base/$archive.sha256") -split '\s+')[0]
+          $expected = "4da0032c59caeb76b5669aed562b399826bd7c2156c685855d461e169b8dd9c8"
           if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $expected) { throw "Brave checksum mismatch" }
           $folder = Join-Path $env:RUNNER_TEMP 'brave-test'
           Expand-Archive -Path $zip -DestinationPath $folder

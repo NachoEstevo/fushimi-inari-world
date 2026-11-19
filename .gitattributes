@@ -1,0 +1,2 @@
+# The extraction adapter verifies the canonical source HTML by its byte hash.
+fushimi_inari/interactive_viewer/index.html text eol=lf
