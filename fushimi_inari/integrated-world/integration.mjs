@@ -129,6 +129,7 @@ import {okushaCourtGrade} from './okusha-court.mjs?v=25';
 import {buildOkushaCourt} from './okusha-details.mjs?v=95-release';
 import {refineEntranceObjects,buildReception} from './entrance-refinements.mjs?v=86';
 import {refineTemizuyaDetails} from './temizuya-details.mjs?v=40b';
+import {installTemizuyaWetStone} from './temizuya-wet-stone.mjs';
 import {buildPathMargins} from './path-margins.mjs';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -374,7 +375,7 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     const upper=sanctuaryCourtBlend(nx+byId.naihaiden.source[0],nz+byId.naihaiden.source[2],connected,datum);
     return northCourtGrade(x,z,azumamaroCourtGrade(x,z,okushaCourtGrade(x,z,datum+westLandingTransition(ex,ez,upper-datum),byId.okusha.target[1])));
   }
-  let kumatakaRefinement=null,okumiyaRefinement=null,ichinomineRefinement=null;
+  let kumatakaRefinement=null,okumiyaRefinement=null,ichinomineRefinement=null,temizuyaWetStone=null;
   function moveObject(object){
     if(isUnsupportedEntranceProp(object))return;
     // The illustrative flank pavilion was carried with Gehaiden onto the
@@ -394,8 +395,9 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
     // the mapped staircase now owns this connection. Keep shrine groups intact.
     if(object.userData.zone==='okumiya'&&object.isMesh&&object.geometry.type==='BoxGeometry')return;
     refineSenbonSakaki(object);
-    refineEntranceObjects(object,legacy.materials);
+    const temizuyaBasin=refineEntranceObjects(object,legacy.materials);
     refineTemizuyaDetails(object);
+    if(temizuyaBasin)temizuyaWetStone=installTemizuyaWetStone(object,temizuyaBasin,legacy.materials.flagstoneMat);
     refineShrineFinishes(object,legacy.materials.entryStoneMat);
     const summitDetail=refineIchinomine(object,legacy.materials);
     if(summitDetail){
@@ -1011,6 +1013,6 @@ export async function integrate(scene,renderer,terrain,features,callbacks={}){
   inventory.anchors=spatial.anchors.length;
   await checkpoint('registeredZenShelters');
   const zenShelters=registeredZenShelters({features,colliders,mitsurugi:mappedRoofCanopies,okusha:okushaMappedSheltersR102,yotsutsuji:yotsutsujiContextR95});
-  return {root,architecturalSurfaces,zenShelters,deferredBuildings,staticBatches,instancePrewarmEntries,staticBoundaryRoots:[mappedBoundaries.group,...(callbacks.cullPathMargins?pathMarginRoots:[])],shadowPartitions:forestSubcells,staticInstanceTransforms:staticInstances,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,isPublicWalkSupport,
+  return {root,architecturalSurfaces,zenShelters,temizuyaWetStone,deferredBuildings,staticBatches,instancePrewarmEntries,staticBoundaryRoots:[mappedBoundaries.group,...(callbacks.cullPathMargins?pathMarginRoots:[])],shadowPartitions:forestSubcells,staticInstanceTransforms:staticInstances,keihanRail,keihanStation,keihanApproach,keihanFrontages,keihanStreetContext,keihanUrasando,inariStation,inariStationRoute,inariStationFrontage,isWalkable:(x,z)=>Number.isFinite(keihanStation?.surfaceHeight(x,z)??keihanApproach?.surfaceHeight(x,z)??keihanFrontages?.surfaceHeight?.(x,z)??keihanUrasando?.surfaceHeight?.(x,z)??inariStation?.surfaceHeight(x,z)??inariStationRoute?.surfaceHeight(x,z)??inariStationFrontage?.surfaceHeight?.(x,z))||!!surfaces.sample(x,z),apronTransitionsR100:apronTransitionsR100.report??apronTransitionsR100,spatial,ground,omotesandoArrival,mikoshikoPrecinct:mikoshiko,shinsenjoPrecinct:shinsenjo,renderedTerrainPositions,officePonds,shinikeWater,mitsuFrontageAprons,walkHeight,precinctLife,forestChunks,surfaces,pathDistance,legacy,colliders,inventory,entranceSurfaces,isPublicWalkSupport,
     excludesBuilding:b=>kandakaraShrine.builtIds.includes(b.id)||yakurikiTrail.builtIds.includes(b.id)||mitsurugiCafe.builtIds.includes(b.id)||mappedRoofCanopies.builtIds.includes(b.id)||(keihanUrasando?.builtIds??[]).includes(b.id)||(keihanStreetContext?.builtIds??[]).includes(b.id)||(keihanStation?.builtIds??[]).includes(b.id)||(keihanFrontages?.builtIds??[]).includes(b.id)||(inariStationFrontage?.builtIds??[]).includes(b.id)||(inariStation?.builtIds??[]).includes(b.id)||(inariStationRoute?.builtIds??[]).includes(b.id)||(okushaMappedSheltersR102?.builtIds??[]).includes(b.id)||(kumatakaRegistrationR97?.builtIds??[]).includes(b.id)||(restBoundaryR96?.builtIds??[]).includes(b.id)||(shinkosuiWellR96.builtIds??[]).includes(b.id)||(mappedChojaR95.builtIds??[]).includes(b.id)||(okumiyaStairLanternsR95.builtIds??[]).includes(b.id)||(mikoshiko.builtIds??[]).includes(b.id)||(shinsenjo.builtIds??[]).includes(b.id)||(southShinmesha.builtIds??[]).includes(b.id)||takeyaFrontage.builtIds.includes(b.id)||mitsutsujiFrontages.builtIds.includes(b.id)||nosatsushoPavilion.builtIds.includes(b.id)||precinctNorthContext.builtIds.includes(b.id)||nearPrecinctShrineRow.builtIds.includes(b.id)||entranceNeighborhood.builtIds.includes(b.id)||(stationPlacement.placed&&b.id===mappedStationId)||northCourtBuildingIds.includes(b.id)||azumamaroContextIds.includes(b.id)||azumamaroHouseIds.includes(b.id)||['way/301527739','way/301527730'].includes(b.id)||b.id==='way/105449708'||teaHouses.some(s=>s.id===b.id)||anchors.some(a=>a.osm===b.id||a.radius&&b.points.some(p=>Math.hypot(p[0]-a.target[0],p[2]-a.target[2])<a.radius*.65))};
 }

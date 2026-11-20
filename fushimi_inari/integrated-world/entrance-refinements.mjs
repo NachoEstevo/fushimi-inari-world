@@ -24,7 +24,11 @@ export function refineEntranceObjects(object,materials){
       box(.10,.13,8.7,x,3.27,0,timber,object);
     }
   }
-  if(object.userData.zone==='temizuya'&&object.isGroup){refineBasin(object,materials);refineTemizuyaCanopy(object,materials);}
+  if(object.userData.zone==='temizuya'&&object.isGroup){
+    const basin=refineBasin(object);
+    refineTemizuyaCanopy(object,materials);
+    return basin;
+  }
   if(object.userData.zone==='entrance'){
     if(object.isGroup)sculptEntranceFoxes(object);
     const shops=[];object.traverse(g=>{
@@ -44,7 +48,7 @@ function basinStone(){
   ctx.putImageData(p,0,0);const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.anisotropy=8;
   return new THREE.MeshStandardMaterial({map,bumpMap:map,bumpScale:.013,roughness:.88});
 }
-function refineBasin(g,m){
+function refineBasin(g){
   const basin=g.children.find(o=>o.geometry?.parameters?.width===2.2&&o.geometry.parameters.height===.86);
   if(!basin)return;
   const stone=basinStone(),pieces=[];
@@ -90,6 +94,7 @@ function refineBasin(g,m){
     const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.11,.10,.075,20,1,true),metal);bowl.position.set(0,.015,-.12);ladle.add(bowl);
     const bottom=new THREE.Mesh(new THREE.CircleGeometry(.10,20),metal);bottom.rotation.x=-Math.PI/2;bottom.position.set(0,-.022,-.12);ladle.add(bottom);g.add(ladle);
   }
+  return basin;
 }
 function materialsWood(){return new THREE.MeshStandardMaterial({color:'#615f50',roughness:.85});}
 function sign(text,w,h){

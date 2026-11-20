@@ -8,6 +8,7 @@ import {float,vec3,mix,sin,exp,smoothstep,uv,uniform,instancedBufferAttribute,va
 // Canvas textures repaint only on appearance changes; cloud motion stays on the GPU.
 export const SKY_SUN_DIRECTIONS=SUN_DIRECTIONS;
 export const SKY_CLOUD_DRIFT=.0018;
+export const SUN_CORE_RADIUS_UV=.11;
 export const skyDistanceScale=far=>Math.min(1,far/7500);
 // [zenith, middle, horizon, lit cloud, cloud shade] per time of day.
 export const SKY_PALETTES=Object.freeze({
@@ -55,11 +56,17 @@ export function installSky(scene,camera){
   const clouds=new THREE.Mesh(new THREE.SphereGeometry(5800,48,24),cloudMaterial);
   clouds.name='Drifting sky clouds';clouds.frustumCulled=false;clouds.renderOrder=-95;scene.add(clouds);
   const sunRadius=uv().sub(.5).length();
-  const sunCore=float(1).sub(smoothstep(.104,.115,sunRadius));
-  const sunHalo=exp(sunRadius.mul(sunRadius).mul(-24)).mul(.25);
+  const sunCore=float(1).sub(smoothstep(SUN_CORE_RADIUS_UV-.006,SUN_CORE_RADIUS_UV+.005,sunRadius));
+  const spriteHaloStrength=uniform(1);
+  const sunHalo=exp(sunRadius.mul(sunRadius).mul(-24)).mul(.25).mul(spriteHaloStrength);
   const sunMaterial=new THREE.SpriteNodeMaterial({transparent:true,depthWrite:false,toneMapped:false,fog:false});
   const sunTint=uniform(new THREE.Color('#fff4d0')),sunCenter=uniform(new THREE.Color('#fff9e6'));
-  sunMaterial.colorNode=mix(sunTint,sunCenter,float(1).sub(smoothstep(.015,.115,sunRadius)));
+  const gradientRange=uniform(new THREE.Vector2(.015,.115));
+  const baseTint=new THREE.Color(),baseCenter=new THREE.Color();
+  // The post halo also reaches the limb. Give the billboard its own red edge
+  // and a brighter amber centre underneath, still depth-tested at each pixel.
+  const sunsetLimb=new THREE.Color('#ed2919'),sunsetCenter=new THREE.Color(1.9,1,.24);
+  sunMaterial.colorNode=mix(sunTint,sunCenter,float(1).sub(smoothstep(gradientRange.x,gradientRange.y,sunRadius)));
   sunMaterial.opacityNode=sunCore.add(sunHalo).mul(float(1).sub(smoothstep(.4,.5,sunRadius)));
   const sunDisc=new THREE.Sprite(sunMaterial);sunDisc.name='Solar disc';sunDisc.scale.setScalar(350);
   sunDisc.frustumCulled=false;sunDisc.renderOrder=-98;scene.add(sunDisc);
@@ -91,10 +98,17 @@ export function installSky(scene,camera){
   stars.frustumCulled=false;stars.renderOrder=-90;scene.add(stars);
   let mode='day',look='natural',disposed=false;
   const paintedClouds=createPaintedClouds({onReady(){if(look==='aozora'&&!disposed)paint();}});
+  function updateDiscColors(){
+    const weight=mode==='gold'&&look==='natural'?1-spriteHaloStrength.value:0;
+    sunTint.value.lerpColors(baseTint,sunsetLimb,weight);
+    sunCenter.value.lerpColors(baseCenter,sunsetCenter,weight);
+    gradientRange.value.set(.015+.013*weight,.115-.019*weight);
+  }
   function paint(){
     stars.visible=mode==='night';sunDisc.visible=mode!=='night';
-    sunTint.value.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
-    sunCenter.value.set(mode==='gold'?'#ffb16a':'#fff9e6');
+    baseTint.set(mode==='gold'?GOLDEN_ATMOSPHERE.disc:'#fff4d0');
+    baseCenter.set(mode==='gold'?'#ffb16a':'#fff9e6');
+    updateDiscColors();
     sunDirection.fromArray(SKY_SUN_DIRECTIONS[mode]??SKY_SUN_DIRECTIONS.day).normalize().multiplyScalar(5400);
     const {zenith,middle,horizon,lit,shade}=skyPalette(mode,look);
     const gradient=ctx.createLinearGradient(0,0,0,1024);
@@ -132,7 +146,9 @@ export function installSky(scene,camera){
     look=next;paint();
   }
   paint();
-  return {setMode,setLook,get stats(){return {...paintedClouds.stats,look,mode,canvasBytes:2*2048*1024*4};},dispose(){
+  return {setMode,setLook,sunDisc,get naturalSunset(){return mode==='gold'&&look==='natural';},
+    setSpriteHaloStrength(value){if(value!==spriteHaloStrength.value){spriteHaloStrength.value=value;updateDiscColors();}},
+    get stats(){return {...paintedClouds.stats,look,mode,canvasBytes:2*2048*1024*4};},dispose(){
     if(disposed)return;disposed=true;paintedClouds.dispose();
     for(const object of [dome,clouds,sunDisc,stars]){scene.remove(object);if(object===dome||object===clouds)object.geometry.dispose();object.material.dispose();}
     texture.dispose();cloudTexture.dispose();

@@ -8,6 +8,7 @@ import {settleRenderer} from './renderer-settle.mjs';
 import {compileScenePass} from './scene-pass-compilation.mjs';
 import {createCrownProjection} from './forest-lod.mjs';
 import {createShaftVolumePass} from './shaft-volume-pass.mjs';
+import {createYotsutsujiSunsetHalo} from './yotsutsuji-sunset-halo.mjs';
 
 // The RenderPipeline applies this once in its output transform (renderOutput);
 // the scene pass renders to a target, so materials never tone map themselves.
@@ -41,7 +42,7 @@ export function qualityPixelRatio(mode,dpr,width,height){
 }
 
 // One scene pass feeds bloom and the output transform. There is no duplicate scene render.
-export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene,aoEarlyOut=true,projectedCrowns=false}){
+export function createRenderQuality({renderer,scene,camera,sun,sky,cityHorizon,shaftScene,aoEarlyOut=true,projectedCrowns=false}){
   let mode='balanced',look='natural',disposed=false,transitioning=false;
   let pending=0,compiling=0,queue=Promise.resolve(),resolution;
   const pipelineGuard=installPendingPipelineGuard(renderer.backend);
@@ -52,6 +53,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   const post=new THREE.RenderPipeline(renderer);
   const scenePass=pass(scene,camera),foreground=scenePass.getTextureNode('output'),depth=scenePass.getTextureNode('depth');
   const baseColor=cityHorizon?cityHorizon.compose(foreground,depth):foreground;
+  const sunset=sky&&renderer.backend?.isWebGPUBackend?createYotsutsujiSunsetHalo({sky,camera,depth}):null;
   const shaftPass=shaftScene?createShaftVolumePass({renderer,scene:shaftScene,camera,scenePass}):null;
   // One graph serves both tiers. Balanced keeps AO strength at 0: the GTAO
   // render is skipped and the composite is behind a uniform branch.
@@ -65,7 +67,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   const saturation=uniform(1),tint=uniform(new THREE.Vector3(1,1,1));
   const luminance=color.rgb.dot(vec3(.2126,.7152,.0722));
   const graded=mix(vec3(luminance),color.rgb,saturation).mul(tint).max(0);
-  post.outputNode=vec4(graded,color.a).add(glow);
+  post.outputNode=vec4(sunset?graded.add(sunset.light):graded,color.a).add(glow);
   const looks=LOOK_BLOOM;
   function report(status=transitioning?'resizing':'ready'){
     document.body.dataset.renderQuality=JSON.stringify({mode,look,status,pixelRatio:renderer.getPixelRatio(),shadowSize:sun.shadow.mapSize.x,ao:!!occlusion?.active,bloom:glow.strength.value,detailScale:mode==='high'?1.25:1,maxPixels:presets[mode].maxPixels});
@@ -135,6 +137,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   }
   function render(){
     if(disposed||transitioning)return;
+    sunset?.update(mode==='high');
     updateCrownProjection?.(renderer.domElement?.height);
     cityHorizon?.render();
     // Animation commits transforms before this call. The main pass and nested
@@ -147,7 +150,7 @@ export function createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaft
   }
   // The menu emits changes only; establish balanced bloom and telemetry now.
   applyMode('balanced');
-  return {setMode,setLook,resize,render,compileAsync,get shaftDepth(){return shaftPass?.depth;},prepareShafts:()=>shaftPass?.prepare(),get shaftVolumeStats(){return shaftPass?.stats;},refreshTextures:textures,get compiling(){return compiling>0;},get pipelineStats(){return pipelineGuard.stats;},get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},get ambientOcclusion(){return occlusion?.stats??{supported:false,active:false,renders:0};},dispose(){if(disposed)return;disposed=true;pipelineGuard.dispose();cityHorizon?.dispose();shaftPass?.dispose();occlusion?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();if(renderer.toneMapping===OUTPUT_TONE_MAPPING)renderer.toneMapping=previousToneMapping;}};
+  return {setMode,setLook,resize,render,compileAsync,get shaftDepth(){return shaftPass?.depth;},prepareShafts:()=>shaftPass?.prepare(),get shaftVolumeStats(){return shaftPass?.stats;},refreshTextures:textures,get compiling(){return compiling>0;},get pipelineStats(){return pipelineGuard.stats;},get detailScale(){return mode==='high'?1.25:1;},get mode(){return mode;},get look(){return look;},get ambientOcclusion(){return occlusion?.stats??{supported:false,active:false,renders:0};},dispose(){if(disposed)return;disposed=true;pipelineGuard.dispose();cityHorizon?.dispose();shaftPass?.dispose();sunset?.dispose();occlusion?.dispose();glow.dispose();scenePass.dispose();post.dispose();originalTextures.clear();if(renderer.toneMapping===OUTPUT_TONE_MAPPING)renderer.toneMapping=previousToneMapping;}};
 }
 
 // GTAO from scene depth alone. Sky and other background depth are discarded by

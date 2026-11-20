@@ -6,6 +6,14 @@ import * as THREE from 'three/webgpu';
 export const SHAFT_RAY_EPSILON=.000001;
 export const SHAFT_MAX_INTEGRATED_LENGTH=8;
 
+// A broad forward shoulder keeps shafts readable off-axis. The tighter
+// lobe adds a soft peak toward the sun, with a finite gain even on-axis.
+const shaftForwardScattering=Fn(([cosTheta])=>{
+ const broad=smoothstep(-.58,.78,cosTheta).mul(.58);
+ const tight=smoothstep(.72,.98,cosTheta).mul(.4);
+ return broad.add(tight).add(.92);
+}).setLayout({name:'shaftForwardScattering',type:'float',inputs:[{name:'cosTheta',type:'float'}]});
+
 // The caller supplies stable, per-instance world-space center/radius and half-length/phase
 // attributes alongside the proxy's instance matrices. All shafts share the unit sun axis.
 // `depthTexture` must be a plain texture node bound to the already-rendered scene depth,
@@ -64,7 +72,10 @@ export function createShaftVolumeNodes({depthTexture, centerRadius, lengthPhase}
   const valid=radialValid.and(axialValid);
   const distance=start.add(span.mul(.5));
   const fade=smoothstep(.05,.6,distance).mul(float(1).sub(smoothstep(28,48,distance)));
-  const light=valid.select(density.mul(min(span,SHAFT_MAX_INTEGRATED_LENGTH)).mul(strength).mul(fade),0).toVar();
+  // The ray points from the camera into the volume, and the axis toward the sun.
+  // Their positive alignment means incoming sunlight continues toward the eye.
+  const scattering=shaftForwardScattering(dy);
+  const light=valid.select(density.mul(min(span,SHAFT_MAX_INTEGRATED_LENGTH)).mul(strength).mul(fade).mul(scattering),0).toVar();
   If(meta.z.greaterThan(.5).and(isBackgroundDepth(depth).not()),()=>{
    const surface=rel.add(ray.mul(opaqueDistance)),h=dot(surface,axis);
    // The source site records ground + 15 cm. A soft height window rejects

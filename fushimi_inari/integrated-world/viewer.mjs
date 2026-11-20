@@ -665,7 +665,7 @@ try {
   const cityHorizon=await panorama.createHorizonPass({renderer,camera});
   await startupCheckpoint('createRenderQuality');
   const shaftVolumeScene=query.get('shaftVolumes')!=='0'&&renderer.backend.isWebGPUBackend?new THREE.Scene():null;
-  const quality=createRenderQuality({renderer,scene,camera,sun,cityHorizon,shaftScene:shaftVolumeScene,aoEarlyOut:query.get('aoEarlyOut')!=='0',projectedCrowns:query.get('projectedCrowns')==='1'});
+  const quality=createRenderQuality({renderer,scene,camera,sun,sky:query.get('sunsetHalo')==='0'?null:sky,cityHorizon,shaftScene:shaftVolumeScene,aoEarlyOut:query.get('aoEarlyOut')!=='0',projectedCrowns:query.get('projectedCrowns')==='1'});
   let auditCompileDepth=0;
   if(renderBuildAudit){
     const compile=quality.compileAsync;

@@ -131,6 +131,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     }
   }
   applyStationQuality();
+  assembly.temizuyaWetStone?.setQuality(quality?.mode);
   const stationProbe=createStationReflectionReadiness({renderer,scene,station,quality,sun});
   const updateBaseLighting=callback=>{if(!disposed){lighting.updateBaseLighting(callback);stationProbe.sync();stats.localReflections=stationProbe.stats.enabled;}};
   // Retain the global environment. High prepares a station-only surrogate once
@@ -139,6 +140,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     if(disposed)return;
     stats.prepared=true;
     applyStationQuality();
+    assembly.temizuyaWetStone?.setQuality(quality?.mode);
     await stationProbe.prepare();
     if(typeof quality?.compileAsync==='function')await compileSelectedVisuals(quality,scene,[motes.mesh,petals],camera,{batchSize:1,reuseRenderScene:true,includeHiddenRoots:true});
     stats.localReflections=stationProbe.stats.enabled;
@@ -167,6 +169,7 @@ export async function installWorldAppearance({scene,renderer,assembly,camera,hem
     if(disposed)return;disposed=true;
     stationProbe.dispose();
     materials?.dispose();
+    assembly.temizuyaWetStone?.dispose();
     removeSeasonListener();
     foliage.dispose();
     for(const {object,original,next} of bindings)if(object.material===next)object.material=original;
