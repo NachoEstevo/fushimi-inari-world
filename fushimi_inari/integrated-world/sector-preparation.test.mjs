@@ -59,6 +59,38 @@ test('renderer queue preserves FIFO after synchronous and asynchronous failures 
  const service=createSectorPreparation({run:queue.run,prepare:async()=>{throw Error('checkpoint failed');},commit:()=>assert.fail('failed preparation cannot commit')});
  await assert.rejects(service.request({id:'broken'}),/checkpoint failed/);await queue.awaitIdle();assert.equal(service.busy,false);assert.equal(await queue.run(()=>7),7);
 });
+
+test('detached work allows frames while retaining shared renderer ownership through a mixed queue and failure',async()=>{
+ const events=[],busy=[],queue=createRenderPreparationQueue({onBusy:value=>busy.push(value)});
+ let releaseInitial,releaseGroup,releaseNext,enterGroup,enterNext;
+ const initial=queue.run(async()=>{
+  assert.equal(queue.blocksRendering,true);events.push('exclusive');
+  await new Promise(resolve=>releaseInitial=resolve);
+ });
+ const groupStarted=new Promise(resolve=>enterGroup=resolve);
+ const group=queue.runDetached(async()=>{
+  assert.equal(queue.busy,true);assert.equal(queue.blocksRendering,false);events.push('detached');enterGroup();
+  await new Promise(resolve=>releaseGroup=resolve);
+  throw Error('group compile failed');
+ });
+ const failure=assert.rejects(group,/group compile failed/);
+ const nextStarted=new Promise(resolve=>enterNext=resolve);
+ const next=queue.run(async()=>{
+  assert.equal(queue.blocksRendering,true);events.push('next exclusive');enterNext();
+  await new Promise(resolve=>releaseNext=resolve);
+ });
+ assert.equal(queue.pending,3);
+ await Promise.resolve();
+ assert.equal(queue.blocksRendering,true);releaseInitial();await initial;await groupStarted;
+ assert.equal(queue.busy,true);assert.equal(queue.blocksRendering,false);
+ assert.deepEqual(events,['exclusive','detached']);assert.deepEqual(busy,[true]);
+ releaseGroup();await failure;await nextStarted;
+ assert.equal(queue.blocksRendering,true);
+ releaseNext();await next;await queue.awaitIdle();
+ assert.equal(queue.blocksRendering,false);assert.equal(queue.busy,false);
+ assert.deepEqual(events,['exclusive','detached','next exclusive']);assert.deepEqual(busy,[true,false]);
+});
+
 test('destination waits for preparation and only latest queued destination commits',async()=>{
  let release;const events=[],busy=[];
  const service=createSectorPreparation({prepare:async d=>{events.push('prepare '+d.id);if(d.id==='a')await new Promise(r=>release=r);},commit:d=>events.push('commit '+d.id),onBusy:v=>busy.push(v)});

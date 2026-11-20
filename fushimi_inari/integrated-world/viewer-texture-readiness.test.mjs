@@ -10,6 +10,7 @@ import {createTextureStreaming} from './texture-streaming.mjs';
 const source=readFileSync(new URL('./viewer.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const expression=(start,end)=>source.slice(source.indexOf(start)+start.length,source.indexOf(end,source.indexOf(start))).trim();
 const deferredExpression=expression('const compileGroup=',';\n    await (renderPreparation');
+const deferredQueueExpression=expression('await (renderPreparation',');\n    group.updateWorldMatrix');
 const qualityExpression=expression('onRenderQuality:',',\n    onDetailDistance:');
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -65,6 +66,19 @@ test('deferred building shaders wait for texture readiness and never compile fai
   if(failed){gate.reject(Error('No destination images'));await assert.rejects(work,/destination images/);assert.ok(!f.events.includes('compile'));}
   else{gate.resolve();await work;assert.deepEqual(f.events,['block','idle','compile']);}
  }
+});
+
+test('the viewer keeps frames flowing for detached groups and reserves exclusive work for the shared renderer',async()=>{
+ const runGroup=new Function('renderPreparation','compileGroup',`return (renderPreparation${deferredQueueExpression});`);
+ const frameGate=expression('const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);','if(showcase?.preparing)return;');
+ const frame=new Function('renderPreparation',`${frameGate}\nreturn true;`);
+ const events=[];
+ const queue={busy:true,blocksRendering:false,runDetached:async compile=>{events.push('detached');return compile();}};
+ const compile=async()=>{events.push('compile');assert.equal(frame(queue),true);};
+ await runGroup(queue,compile);await runGroup(null,compile);
+ assert.deepEqual(events,['detached','compile','compile']);
+ queue.blocksRendering=true;
+ assert.equal(frame(queue),undefined);
 });
 
 test('startup awaits the platform neighborhood with the real camera before it can release the welcome sheet',async()=>{

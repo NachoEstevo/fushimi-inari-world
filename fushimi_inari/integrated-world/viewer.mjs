@@ -172,7 +172,7 @@ try {
     textureStreaming.index(group,{append:true});
     textureStreaming.update(camera.position,1);
     const compileGroup=async()=>{walkingPrewarm?.setBlocked(true);await walkingPrewarm?.awaitIdle();await textureStreaming.prepareAt(camera.position);await compileAddedGroup(quality,scene,group,camera,{batchSize:sectorPreparation?.busy?12:1,reuseRenderScene:true,getLights:compilationLights.getLights,report:stats=>{document.body.dataset.deferredCompilation=JSON.stringify(stats);}});};
-    await (renderPreparation?renderPreparation.run(compileGroup):compileGroup());
+    await (renderPreparation?renderPreparation.runDetached(compileGroup):compileGroup());
     group.updateWorldMatrix(true,true);
     const bounds=new THREE.Box3().setFromObject(group);
     detailChunks.add(group,{bounds:bounds.getBoundingSphere(new THREE.Sphere())});preparationResidency.add(group);
@@ -1156,11 +1156,9 @@ try {
     requestAnimationFrame(animate);const dt=Math.min(.1,(time-lastTime)/1000);lastTime=time;if(document.hidden)return;
     const updateStart=movementFrameAudit?.active?performance.now():0;
     const captureOwnsCamera=(shadowRouteAudit?.update(time)??false)||(showcase?.update(time)??false);
-    // r180 publishes async pipelines before the backend has finished creating
-    // them. Preserve the last frame while preparation owns this renderer; main
-    // and pond renders pause for explicit quality/teleport transactions only.
-    // Background warming uses the selective draw guard to keep walking fluid.
-    if(renderPreparation.busy)return;
+    // Quality and destination changes can reconfigure live render state.
+    // Detached building preparation restores the scene before yielding.
+    if(renderPreparation.blocksRendering)return;
     if(showcase?.preparing)return;
     if(!captureOwnsCamera&&(sectorPreparation.busy||qualityPending>0)&&sectorPause){camera.position.copy(sectorPause.position);camera.quaternion.copy(sectorPause.rotation);controls.enabled=false;}
     zen.update(dt,time,{blocked:captureOwnsCamera||!!arrival?.active||photo.active||menu.active||journal.active||sectorPreparation.busy||qualityPending>0||document.body.classList.contains('welcome-open')});
@@ -1218,14 +1216,14 @@ try {
     // Keep the remaining mapped buildings visible near the walker too.
     // Capture only settled images; a probe made from placeholders must refresh.
     const textureState=textureStreaming.stats;
-    if(!arrival?.active&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,pondAppearanceKey());
+    if(!arrival?.active&&!renderPreparation.busy&&!quality.compiling&&textureState.pending===0)pondReflections.update(camera.position,pondAppearanceKey());
     appearance.update(time/1000);
     if(prewarmFrameBudget){
       const warmState=walkingPrewarm.stats;
       if(!prewarmFrameBudget.shouldRender(time,camera,!warmState.blocked&&(warmState.active||warmState.scheduled||warmState.queued>0)))return;
     }
     const submitStart=performance.now();renderer.info.reset();
-    if(shadowCasterPending&&!shadowRouteAudit.active){
+    if(shadowCasterPending&&!shadowRouteAudit.active&&!renderPreparation.busy){
       shadowCasterPending=false;sunShadows.invalidate();sunShadows.update(time,camera.position,sunOffset);
       document.body.dataset.shadowCasterAudit=JSON.stringify(shadowCasterCapture({scene,shadowCamera:sun.shadow.camera,render:renderWalkingFrame,label:object=>{
         const index=assembly.legacy.foliage.findIndex(source=>source.geometry===object.geometry);

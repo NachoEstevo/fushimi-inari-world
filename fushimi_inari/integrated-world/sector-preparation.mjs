@@ -31,15 +31,25 @@ export function createSectorPreparation({prepare,prepareSources,commit,run=actio
  return {request,get busy(){return busy;}};
 }
 
-// Quality changes and complete checkpoint transactions share one renderer.
-// Account for queued work immediately so walking prewarm can yield ownership
-// before an action starts and remain blocked through all of its awaited stages.
+// All preparation shares one queue. Walking prewarm yields as soon as work
+// is queued, even when detached shader preparation can coexist with frames.
 export function createRenderPreparationQueue({onBusy=()=>{}}={}){
- let serial=Promise.resolve(),pending=0;
- function run(action){
+ let serial=Promise.resolve(),pending=0,detachedActive=false;
+ function enqueue(action,detached){
   pending++;if(pending===1)onBusy(true);
-  const work=serial.then(action).finally(()=>{pending--;if(pending===0)onBusy(false);});
+  const work=serial.then(async()=>{
+   detachedActive=detached;
+   try{return await action();}
+   finally{detachedActive=false;pending--;if(pending===0)onBusy(false);}
+  });
   serial=work.catch(()=>{});return work;
  }
- return {run,get busy(){return pending>0;},get pending(){return pending;},async awaitIdle(){let observed;do{observed=serial;await observed;}while(observed!==serial);}};
+ return {
+  run:action=>enqueue(action,false),
+  runDetached:action=>enqueue(action,true),
+  get busy(){return pending>0;},
+  get blocksRendering(){return pending>0&&!detachedActive;},
+  get pending(){return pending;},
+  async awaitIdle(){let observed;do{observed=serial;await observed;}while(observed!==serial);}
+ };
 }
